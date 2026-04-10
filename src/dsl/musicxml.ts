@@ -336,7 +336,7 @@ function noteXml(
   ].join("");
 }
 
-function measureXml(score: NormalizedScore, measureIndex: number, divisions: number): string {
+function measureXml(score: NormalizedScore, measureIndex: number, divisions: number, forceLineBreak: boolean): string {
   const measure = score.measures[measureIndex];
   const measureDuration = {
     numerator: score.ast.headers.time.beats,
@@ -449,6 +449,7 @@ function measureXml(score: NormalizedScore, measureIndex: number, divisions: num
 
   return [
     `<measure number="${measure.globalIndex + 1}">`,
+    forceLineBreak ? "<print new-system=\"yes\"/>" : "",
     attributes,
     repeatStart,
     ...voiceContent,
@@ -459,7 +460,15 @@ function measureXml(score: NormalizedScore, measureIndex: number, divisions: num
 
 export function buildMusicXml(score: NormalizedScore): string {
   const divisions = collectDivisions(score);
-  const measures = score.measures.map((_, index) => measureXml(score, index, divisions)).join("");
+  const measures = score.measures.map((_, index) => {
+    const prevMeasure = index > 0 ? score.measures[index - 1] : undefined;
+    const currMeasure = score.measures[index];
+    const forceLineBreak = prevMeasure !== undefined &&
+      currMeasure.sourceLine !== undefined &&
+      prevMeasure.sourceLine !== undefined &&
+      currMeasure.sourceLine !== prevMeasure.sourceLine;
+    return measureXml(score, index, divisions, forceLineBreak);
+  }).join("");
 
   return `<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE score-partwise PUBLIC "-//Recordare//DTD MusicXML 3.1 Partwise//EN"

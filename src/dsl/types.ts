@@ -188,6 +188,7 @@ export type NormalizedMeasure = {
   paragraphIndex: number;
   measureInParagraph: number;
   events: NormalizedEvent[];
+  sourceLine?: number;
 };
 
 export type NormalizedScore = {

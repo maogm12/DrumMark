@@ -124,6 +124,7 @@ function voiceForTrack(track: TrackName): VoiceTrack {
     case "HH":
     case "RC":
     case "C":
+    case "SD":
       return { voice: 1, stem: "up" };
     default:
       return { voice: 2, stem: "down" };
@@ -286,6 +287,12 @@ function restXml(duration: Fraction, divisions: number, voice: VoiceTrack): stri
   ].join("");
 }
 
+function isBeamable(duration: Fraction): boolean {
+  const normalized = simplify(duration);
+  const denominator = normalized.denominator;
+  return denominator >= 8;
+}
+
 function noteXml(
   event: NormalizedEvent,
   duration: Fraction,
@@ -293,6 +300,7 @@ function noteXml(
   voice: VoiceTrack,
   isChord: boolean,
   closesTuplet: boolean,
+  beamState: "begin" | "continue" | "end" | null = null,
 ): string {
   const instrument = instrumentForTrack(event.track);
   const baseDuration = event.tuplet
@@ -304,6 +312,7 @@ function noteXml(
     : "";
   const notehead = instrument.notehead ? `<notehead>${instrument.notehead}</notehead>` : "";
   const closingNotation = closesTuplet ? `<notations><tuplet type="stop" number="1"/></notations>` : "";
+  const beam = beamState ? `<beam number="1">${beamState}</beam>` : "";
 
   return [
     "<note>",
@@ -318,6 +327,7 @@ function noteXml(
     timeModification,
     notehead,
     `<stem>${voice.stem}</stem>`,
+    beam,
     `<staff>1</staff>`,
     notationsXml(event),
     closingNotation,
@@ -359,31 +369,59 @@ function measureXml(score: NormalizedScore, measureIndex: number, divisions: num
       }</barline>`
     : "";
 
+  function processVoiceEntries(entries: VoiceEntry[], voice: VoiceTrack): string[] {
+    const result: string[] = [];
+
+    for (let i = 0; i < entries.length; i++) {
+      const entry = entries[i];
+
+      if (entry.kind === "rest") {
+        result.push(restXml(entry.duration, divisions, voice));
+        continue;
+      }
+
+      if (!isBeamable(entry.duration)) {
+        result.push(
+          ...entry.events.map((event, index) =>
+            noteXml(event, entry.duration, divisions, voice, index > 0, index === entry.events.length - 1 && Boolean(event.tuplet)),
+          ),
+        );
+        continue;
+      }
+
+      const nextEntry = entries[i + 1];
+      const nextIsBeamable = nextEntry?.kind === "notes" && isBeamable(nextEntry.duration);
+      const prevEntry = entries[i - 1];
+      const prevIsBeamable = prevEntry?.kind === "notes" && isBeamable(prevEntry.duration);
+
+      let beamState: "begin" | "continue" | "end" | null = null;
+      if (!prevIsBeamable && nextIsBeamable) {
+        beamState = "begin";
+      } else if (prevIsBeamable && nextIsBeamable) {
+        beamState = "continue";
+      } else if (prevIsBeamable && !nextIsBeamable) {
+        beamState = "end";
+      }
+
+      result.push(
+        ...entry.events.map((event, index) =>
+          noteXml(event, entry.duration, divisions, voice, index > 0, index === entry.events.length - 1 && Boolean(event.tuplet), beamState),
+        ),
+      );
+    }
+
+    return result;
+  }
+
   return [
     `<measure number="${measure.globalIndex + 1}">`,
     attributes,
     repeatStart,
-    ...upEntries.flatMap((entry) => {
-      if (entry.kind === "rest") {
-        return restXml(entry.duration, divisions, { voice: 1, stem: "up" });
-      }
-
-      return entry.events.map((event, index) =>
-        noteXml(event, entry.duration, divisions, { voice: 1, stem: "up" }, index > 0, index === entry.events.length - 1 && Boolean(event.tuplet)),
-      );
-    }),
+    ...processVoiceEntries(upEntries, { voice: 1, stem: "up" }),
     "<backup>",
     `<duration>${fractionToDivisions(measureDuration, divisions)}</duration>`,
     "</backup>",
-    ...downEntries.flatMap((entry) => {
-      if (entry.kind === "rest") {
-        return restXml(entry.duration, divisions, { voice: 2, stem: "down" });
-      }
-
-      return entry.events.map((event, index) =>
-        noteXml(event, entry.duration, divisions, { voice: 2, stem: "down" }, index > 0, index === entry.events.length - 1 && Boolean(event.tuplet)),
-      );
-    }),
+    ...processVoiceEntries(downEntries, { voice: 2, stem: "down" }),
     repeatEnd,
     "</measure>",
   ].join("");

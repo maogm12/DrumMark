@@ -387,34 +387,36 @@ Internally, `o` should normalize to `x` with modifier `open`.
 Group syntax:
 
 ```txt
-[n/m: item1 item2 item3 ...]
+[m: item1 item2 item3 ...]
+[item1 item2 item3 ...]
 ```
 
 Examples:
 
 ```txt
-[3/2: x x x]
-[4/2: d d d d]
-[3/2: R L R]
-[3/2: o x x]
+[3/2: x x x]    # old format: 3 items in 2 slots
+[2: x]           # new format: 1 item in 2 slots (half note)
+[x x x]          # simplified: 3 items in 1 slot (triplet eighths)
+[2: p p]         # 2 items in 2 slots (two eighth notes)
 ```
 
 ### Group Semantics
 
-- `n` = number of items inside the group
 - `m` = number of measure slots the group occupies
-- The group's total duration is `m` slots
-- The group's items divide that duration evenly
+- Items are distributed evenly across `m` slots
+- When `m` equals the number of items, the ratio is 1:1 (no tuplet effect)
+- When `m` is less than the number of items, items are compressed (triplet feel)
+- When `m` is greater than the number of items, items are stretched
 
 Examples:
 
-- `[3/2: x x x]` = three events in the time of two slots
-- `[4/2: d d d d]` = four events in the time of two slots
+- `[3/2: x x x]` = three events in the time of two slots → triplet
+- `[2: x]` = one event stretched to two slots → half note (in 4/4)
+- `[x x x]` = three events in one slot → triplet (shorthand for `[1: x x x]`)
 
 ### Group Rules
 
 - The group occupies `m` slots in measure validation
-- The group must contain exactly `n` items
 - Group items must be valid tokens for the enclosing track
 - Modifiers are allowed inside groups
 - `o` is allowed inside `HH` groups
@@ -423,8 +425,9 @@ Examples:
 Examples:
 
 ```txt
-HH | x - [3/2: x o x] - x - |
-SD | - - [3/2: g d D] - - - |
+HH | x - [2: o] - x - |           # stretched: open HH as half note
+SD | - - [x x x] - - - |          # triplet: three snare ghost notes
+ST | R - [R L R] - - - |          # triplet: sticking pattern
 ST | R - [3/2: R L R] - - - |
 ```
 

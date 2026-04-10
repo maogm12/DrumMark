@@ -237,24 +237,42 @@ function parseMeasureTokens(
       }
 
       const body = content.slice(cursor + 1, closeIndex);
-      const match = body.match(/^(\d+)\/(\d+)\s*:\s*(.*)$/);
+      const slashMatch = body.match(/^(\d+)\/(\d+)\s*:\s*(.*)$/);
+      const colonMatch = !slashMatch && body.match(/^(\d+)\s*:\s*(.*)$/);
 
-      if (!match) {
+      let count: number;
+      let span: number;
+      let inner: string;
+
+      if (slashMatch) {
+        count = Number(slashMatch[1]);
+        span = Number(slashMatch[2]);
+        inner = slashMatch[3];
+      } else if (colonMatch) {
+        count = 0;
+        span = Number(colonMatch[1]);
+        inner = colonMatch[2];
+      } else if (body.trim()) {
+        count = 0;
+        span = 1;
+        inner = body.trim();
+      } else {
         errors.push({
           line: lineNumber,
           column: columnOffset + cursor,
-          message: "Group must use the form [n/m: ...]",
+          message: "Empty group",
         });
         cursor = closeIndex + 1;
         continue;
       }
 
-      const count = Number(match[1]);
-      const span = Number(match[2]);
-      const inner = match[3];
       const items = parseMeasureTokens(inner, track, lineNumber, columnOffset + cursor + body.indexOf(inner), errors, false);
 
-      if (items.length !== count) {
+      if (count === 0) {
+        count = items.length;
+      }
+
+      if (slashMatch && items.length !== count) {
         errors.push({
           line: lineNumber,
           column: columnOffset + cursor,

@@ -121,13 +121,11 @@ function noteTypeForFraction(duration: Fraction): string {
 
 function voiceForTrack(track: TrackName): VoiceTrack {
   switch (track) {
-    case "HH":
-    case "RC":
-    case "C":
-    case "SD":
-      return { voice: 1, stem: "up" };
-    default:
+    case "BD":
+    case "HF":
       return { voice: 2, stem: "down" };
+    default:
+      return { voice: 1, stem: "up" };
   }
 }
 
@@ -371,6 +369,8 @@ function measureXml(score: NormalizedScore, measureIndex: number, divisions: num
 
   function processVoiceEntries(entries: VoiceEntry[], voice: VoiceTrack): string[] {
     const result: string[] = [];
+    const { beats, beatUnit } = score.ast.headers.time;
+    const slotsPerHalfMeasure = (beats * divisions * 2) / beatUnit;
 
     for (let i = 0; i < entries.length; i++) {
       const entry = entries[i];
@@ -390,16 +390,24 @@ function measureXml(score: NormalizedScore, measureIndex: number, divisions: num
       }
 
       const nextEntry = entries[i + 1];
-      const nextIsBeamable = nextEntry?.kind === "notes" && isBeamable(nextEntry.duration);
       const prevEntry = entries[i - 1];
-      const prevIsBeamable = prevEntry?.kind === "notes" && isBeamable(prevEntry.duration);
+
+      const prevGroup = prevEntry?.kind === "notes" && isBeamable(prevEntry.duration);
+      const nextGroup = nextEntry?.kind === "notes" && isBeamable(nextEntry.duration);
+
+      const entrySlotInMeasure = entry.start.numerator * divisions * 2 / entry.start.denominator;
+      const prevSlotInMeasure = prevEntry?.kind === "notes" ? prevEntry.start.numerator * divisions * 2 / prevEntry.start.denominator : -1;
+      const nextSlotInMeasure = nextEntry?.kind === "notes" ? nextEntry.start.numerator * divisions * 2 / nextEntry.start.denominator : -1;
+
+      const sameHalfPrev = prevGroup && Math.floor(prevSlotInMeasure / slotsPerHalfMeasure) === Math.floor(entrySlotInMeasure / slotsPerHalfMeasure);
+      const sameHalfNext = nextGroup && Math.floor(entrySlotInMeasure / slotsPerHalfMeasure) === Math.floor(nextSlotInMeasure / slotsPerHalfMeasure);
 
       let beamState: "begin" | "continue" | "end" | null = null;
-      if (!prevIsBeamable && nextIsBeamable) {
+      if (!sameHalfPrev && sameHalfNext) {
         beamState = "begin";
-      } else if (prevIsBeamable && nextIsBeamable) {
+      } else if (sameHalfPrev && sameHalfNext) {
         beamState = "continue";
-      } else if (prevIsBeamable && !nextIsBeamable) {
+      } else if (sameHalfPrev && !sameHalfNext) {
         beamState = "end";
       }
 

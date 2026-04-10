@@ -112,7 +112,7 @@ function pushTokenEvents(
         measureIndex,
         measureInParagraph,
         into,
-        { actual: token.count, normal: token.span },
+        { normal: token.count, actual: token.span },
       );
       itemStart = addFractions(itemStart, itemDuration);
     }

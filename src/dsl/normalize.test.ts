@@ -61,7 +61,7 @@ ST | [3/2: R L R] - - |`);
         kind: "sticking",
         glyph: "R",
         modifier: undefined,
-        tuplet: { actual: 3, normal: 2 },
+        tuplet: { actual: 2, normal: 3 },
       },
       {
         track: "ST",
@@ -73,7 +73,7 @@ ST | [3/2: R L R] - - |`);
         kind: "sticking",
         glyph: "L",
         modifier: undefined,
-        tuplet: { actual: 3, normal: 2 },
+        tuplet: { actual: 2, normal: 3 },
       },
       {
         track: "HH",
@@ -85,7 +85,7 @@ ST | [3/2: R L R] - - |`);
         kind: "hit",
         glyph: "x",
         modifier: undefined,
-        tuplet: { actual: 3, normal: 2 },
+        tuplet: { actual: 2, normal: 3 },
       },
       {
         track: "HF",
@@ -108,7 +108,7 @@ ST | [3/2: R L R] - - |`);
         kind: "sticking",
         glyph: "R",
         modifier: undefined,
-        tuplet: { actual: 3, normal: 2 },
+        tuplet: { actual: 2, normal: 3 },
       },
       {
         track: "HH",
@@ -120,7 +120,7 @@ ST | [3/2: R L R] - - |`);
         kind: "hit",
         glyph: "x",
         modifier: "open",
-        tuplet: { actual: 3, normal: 2 },
+        tuplet: { actual: 2, normal: 3 },
       },
       {
         track: "SD",
@@ -143,7 +143,7 @@ ST | [3/2: R L R] - - |`);
         kind: "accent",
         glyph: "X",
         modifier: undefined,
-        tuplet: { actual: 3, normal: 2 },
+        tuplet: { actual: 2, normal: 3 },
       },
     ]);
   });

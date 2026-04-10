@@ -3,25 +3,25 @@
 ## Phase 0: Project Setup
 
 - [x] Write DSL design document
-- [ ] Initialize git repository
-- [ ] Add initial project scaffold
-- [ ] Choose frontend stack and package manager
+- [x] Initialize git repository
+- [x] Add initial project scaffold
+- [x] Choose frontend stack and package manager
 
 ## Phase 1: DSL Core
 
-- [ ] Define tokenizer output types
-- [ ] Implement line preprocessing
-- [ ] Implement comment stripping
-- [ ] Implement header parsing (`tempo`, `time`, `divisions`)
-- [ ] Implement paragraph splitting by blank lines
-- [ ] Implement track line parsing
-- [ ] Implement base token parsing
-- [ ] Implement modifier parsing
-- [ ] Implement `o` sugar for `HH`
-- [ ] Implement group parsing (`[n/m: ...]`)
-- [ ] Implement repeat parsing (`|:`, `:|`, `:|xN`)
-- [ ] Build AST types
-- [ ] Build normalized event model
+- [x] Define tokenizer output types
+- [x] Implement line preprocessing
+- [x] Implement comment stripping
+- [x] Implement header parsing (`tempo`, `time`, `divisions`)
+- [x] Implement paragraph splitting by blank lines
+- [x] Implement track line parsing
+- [x] Implement base token parsing
+- [x] Implement modifier parsing
+- [x] Implement `o` sugar for `HH`
+- [x] Implement group parsing (`[n/m: ...]`)
+- [x] Implement repeat parsing (`|:`, `:|`, `:|xN`)
+- [x] Build AST types
+- [x] Build normalized event model
 
 ## Phase 2: Validation
 
@@ -30,20 +30,20 @@
 - [ ] Validate per-track token legality
 - [ ] Validate modifier legality
 - [ ] Validate group arity
-- [ ] Validate measure slot totals against `divisions`
-- [ ] Validate paragraph measure-count consistency
-- [ ] Validate repeat boundary consistency across tracks
+- [x] Validate measure slot totals against `divisions`
+- [x] Validate paragraph measure-count consistency
+- [x] Validate repeat boundary consistency across tracks
 - [ ] Collect structured errors and warnings with line/column info
 
 ## Phase 3: Grid Preview
 
-- [ ] Render paragraphs as preview rows
-- [ ] Render measures with clear boundaries
-- [ ] Render groups spanning multiple slots
+- [x] Render paragraphs as preview rows
+- [x] Render measures with clear boundaries
+- [x] Render groups spanning multiple slots
 - [ ] Render modifiers visually
 - [ ] Render repeat boundaries
-- [ ] Render `ST` sticking row
-- [ ] Highlight parse errors in preview
+- [x] Render `ST` sticking row
+- [x] Highlight parse errors in preview
 
 ## Phase 4: MusicXML Export
 
@@ -57,14 +57,15 @@
 
 ## Phase 5: App UI
 
-- [ ] Set up editor pane
-- [ ] Set up preview pane
-- [ ] Add error panel
+- [x] Set up editor pane
+- [x] Set up preview pane
+- [x] Add error panel
 - [ ] Add `Export MusicXML`
 - [ ] Add `Export PDF`
+- [x] Add staff-style preview tab
 
 ## Immediate Next Tasks
 
-1. Initialize git repository
-2. Scaffold project structure
-3. Implement parser types and preprocessing
+1. Add `Export MusicXML`
+2. Improve staff repeat/modifier rendering fidelity
+3. Add `Export PDF`

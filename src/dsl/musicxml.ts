@@ -461,13 +461,8 @@ function measureXml(score: NormalizedScore, measureIndex: number, divisions: num
 export function buildMusicXml(score: NormalizedScore): string {
   const divisions = collectDivisions(score);
   const measures = score.measures.map((_, index) => {
-    const prevMeasure = index > 0 ? score.measures[index - 1] : undefined;
-    const currMeasure = score.measures[index];
-    const sourceLineChanged = currMeasure.sourceLine !== undefined &&
-      prevMeasure?.sourceLine !== undefined &&
-      currMeasure.sourceLine !== prevMeasure.sourceLine;
-    const forceLineBreak = prevMeasure !== undefined &&
-      (sourceLineChanged || (currMeasure.sourceLine === undefined && currMeasure.globalIndex !== prevMeasure.globalIndex));
+    const measure = score.measures[index];
+    const forceLineBreak = measure.measureInParagraph === 0 && measure.globalIndex > 0;
     return measureXml(score, index, divisions, forceLineBreak);
   }).join("");
 

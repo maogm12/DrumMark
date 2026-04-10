@@ -157,17 +157,12 @@ export function normalizeScoreAst(ast: ScoreAst): NormalizedScore {
       const globalIndex = paragraph.tracks[0]?.measures[measureInParagraph]?.globalIndex ?? measures.length;
       const measureStart = multiplyFraction(measureDuration, globalIndex);
       const events: NormalizedEvent[] = [];
-      let sourceLine: number | undefined;
 
       for (const track of paragraph.tracks) {
         const measure = track.measures[measureInParagraph];
 
         if (!measure) {
           continue;
-        }
-
-        if (sourceLine === undefined && !track.generated && measure.sourceLine !== undefined) {
-          sourceLine = measure.sourceLine;
         }
 
         let slotOffset = 0;
@@ -197,7 +192,6 @@ export function normalizeScoreAst(ast: ScoreAst): NormalizedScore {
         globalIndex,
         paragraphIndex,
         measureInParagraph,
-        sourceLine,
         events: events.sort((left, right) => {
           const denominator = lcm(left.start.denominator, right.start.denominator);
           const leftValue = left.start.numerator * (denominator / left.start.denominator);

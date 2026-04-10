@@ -382,6 +382,18 @@ HH | x - o - x - x:close - |
 
 Internally, `o` should normalize to `x` with modifier `open`.
 
+## Crash Sugar on Hi-Hat
+
+`c` is valid on `HH` and produces a crash cymbal sound (same as writing on the `C` track).
+
+Example:
+
+```txt
+HH | x - c - x - c:choke - |
+```
+
+Internally, `c` on `HH` is rendered with the crash instrument in MusicXML.
+
 ## Groups
 
 Group syntax:

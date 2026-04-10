@@ -129,7 +129,10 @@ function voiceForTrack(track: TrackName): VoiceTrack {
   }
 }
 
-function instrumentForTrack(track: TrackName): InstrumentSpec {
+function instrumentForTrack(track: TrackName, glyph?: string): InstrumentSpec {
+  if (track === "HH" && glyph === "c") {
+    return { displayStep: "A", displayOctave: 5, notehead: "x" };
+  }
   switch (track) {
     case "HH":
       return { displayStep: "G", displayOctave: 5, notehead: "x" };
@@ -300,7 +303,7 @@ function noteXml(
   closesTuplet: boolean,
   beamState: "begin" | "continue" | "end" | null = null,
 ): string {
-  const instrument = instrumentForTrack(event.track);
+  const instrument = instrumentForTrack(event.track, event.glyph);
   const baseDuration = event.tuplet
     ? multiplyFraction(duration, event.tuplet.actual / event.tuplet.normal)
     : duration;

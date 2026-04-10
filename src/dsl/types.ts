@@ -39,7 +39,7 @@ export type MeasureBoundary =
   | { kind: "repeat_start" }
   | RepeatEnd;
 
-export type BasicGlyph = "-" | "x" | "X" | "d" | "D" | "g" | "p" | "R" | "L" | "o";
+export type BasicGlyph = "-" | "x" | "X" | "d" | "D" | "g" | "p" | "R" | "L" | "o" | "c";
 
 export type TokenGlyph =
   | { kind: "basic"; value: BasicGlyph }
@@ -125,6 +125,7 @@ export type DocumentSkeleton = {
 export type ScoreMeasure = ParsedMeasure & {
   generated: boolean;
   globalIndex: number;
+  sourceLine?: number;
 };
 
 export type ScoreTrackParagraph = {
@@ -138,6 +139,7 @@ export type ScoreParagraph = {
   startLine: number;
   measureCount: number;
   tracks: ScoreTrackParagraph[];
+  groups: TrackName[][];
 };
 
 export type RepeatSpan = {

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { buildMusicXml, buildNormalizedScore } from "./dsl";
-import { TRACKS, type MeasureToken, type Modifier, type NormalizedScore, type ScoreTrackParagraph, type TrackName } from "./dsl";
+import { TRACKS, type MeasureToken, type Modifier, type NormalizedScore, type ScoreMeasure, type ScoreTrackParagraph, type TrackName } from "./dsl";
 
 const seedDsl = `tempo 96
 time 4/4
@@ -135,30 +135,56 @@ function Preview({ score }: { score: NormalizedScore }) {
               <span>{paragraph.measureCount} bar{paragraph.measureCount === 1 ? "" : "s"}</span>
             </header>
             <div className="system-body">
-              {tracks.map((track) => (
-                <div className="track-row" key={`${paragraphIndex}-${track.track}`}>
-                  <div className="track-label">{trackLabel[track.track]}</div>
-                  <div className="track-measures">
-                    {track.measures.map((measure) => (
-                      <div className={`measure-card${measure.generated ? " generated" : ""}`} key={`${track.track}-${measure.globalIndex}`}>
-                        <div className="measure-boundary">
-                          {measure.repeatStart ? <span className="repeat-flag">|:</span> : <span className="repeat-flag subtle">|</span>}
-                          {measure.repeatEnd ? (
-                            <span className="repeat-flag">
-                              :|{measure.repeatTimes && measure.repeatTimes > 2 ? `x${measure.repeatTimes}` : ""}
-                            </span>
-                          ) : (
-                            <span className="repeat-flag subtle">|</span>
-                          )}
-                        </div>
-                        <div className="measure-tokens">
-                          {measure.tokens.map((token, index) => renderToken(token, `${track.track}-${measure.globalIndex}-${index}`))}
-                        </div>
-                      </div>
-                    ))}
+              {tracks.map((track) => {
+                const groups: ScoreMeasure[][] = [];
+                let currentGroup: ScoreMeasure[] = [];
+                let lastLine: number | undefined;
+
+                for (const measure of track.measures) {
+                  if (lastLine !== undefined && measure.sourceLine !== lastLine) {
+                    groups.push(currentGroup);
+                    currentGroup = [];
+                  }
+                  currentGroup.push(measure);
+                  lastLine = measure.sourceLine;
+                }
+                if (currentGroup.length > 0) {
+                  groups.push(currentGroup);
+                }
+
+                return (
+                  <div className="track-row" key={`${paragraphIndex}-${track.track}`}>
+                    <div className="track-label">{trackLabel[track.track]}</div>
+                    <div className="track-measures">
+                      {groups.flatMap((group, gi) => {
+                        const groupKey = `${track.track}-group-${gi}`;
+                        return [
+                          <div key={groupKey} className="measure-group">
+                            {group.map((measure) => (
+                              <div className={`measure-card${measure.generated ? " generated" : ""}`} key={`${track.track}-${measure.globalIndex}`}>
+                                <div className="measure-boundary">
+                                  {measure.repeatStart ? <span className="repeat-flag">|:</span> : <span className="repeat-flag subtle">|</span>}
+                                  {measure.repeatEnd ? (
+                                    <span className="repeat-flag">
+                                      :|{measure.repeatTimes && measure.repeatTimes > 2 ? `x${measure.repeatTimes}` : ""}
+                                    </span>
+                                  ) : (
+                                    <span className="repeat-flag subtle">|</span>
+                                  )}
+                                </div>
+                                <div className="measure-tokens">
+                                  {measure.tokens.map((token, index) => renderToken(token, `${track.track}-${measure.globalIndex}-${index}`))}
+                                </div>
+                              </div>
+                            ))}
+                          </div>,
+                          gi < groups.length - 1 ? <div key={`${groupKey}-break`} className="line-break" /> : null,
+                        ];
+                      })}
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </section>
         );

@@ -190,6 +190,22 @@ textarea {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+  align-items: flex-start;
+}
+
+.measure-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+.line-break {
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(to right, #d8dee3 0%, transparent 100%);
+  margin: 8px 0;
+  flex-shrink: 0;
 }
 
 .measure-card {

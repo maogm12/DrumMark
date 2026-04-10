@@ -142,7 +142,7 @@ function isTrackGlyphAllowed(track: TrackName, glyph: BasicGlyph): boolean {
     case "HH":
     case "RC":
     case "C":
-      return glyph === "-" || glyph === "x" || glyph === "X" || glyph === "o";
+      return glyph === "-" || glyph === "x" || glyph === "X" || glyph === "o" || glyph === "c";
     case "SD":
     case "T1":
     case "T2":
@@ -176,7 +176,7 @@ function isModifierAllowed(track: TrackName, glyph: Exclude<BasicGlyph, "-">, mo
 }
 
 function isBasicGlyph(value: string): value is BasicGlyph {
-  return ["-", "x", "X", "d", "D", "g", "p", "R", "L", "o"].includes(value);
+  return ["-", "x", "X", "d", "D", "g", "p", "R", "L", "o", "c"].includes(value);
 }
 
 function readModifier(input: string, start: number): { modifier: Modifier; next: number } | null {

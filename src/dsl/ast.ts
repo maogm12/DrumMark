@@ -155,6 +155,7 @@ export function buildScoreAst(source: string): ScoreAst {
               ...measure,
               generated: false,
               globalIndex: globalBarIndex + index,
+              sourceLine: explicit.lineNumber,
             })),
           };
         }
@@ -173,6 +174,7 @@ export function buildScoreAst(source: string): ScoreAst {
       startLine: paragraph.startLine,
       measureCount,
       tracks: paragraphTracks,
+      groups: paragraph.lines.map((line) => [line.track]),
     });
 
     globalBarIndex += measureCount;

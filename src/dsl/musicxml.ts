@@ -373,8 +373,9 @@ function measureXml(score: NormalizedScore, measureIndex: number, divisions: num
 
   function processVoiceEntries(entries: VoiceEntry[], voice: VoiceTrack): string[] {
     const result: string[] = [];
-    const { beats, beatUnit } = score.ast.headers.time;
-    const slotsPerHalfMeasure = (beats * divisions * 2) / beatUnit;
+    const { beatUnit } = score.ast.headers.time;
+    const slotsPerMeasure = (divisions * 4) / beatUnit;
+    const slotsPerHalfMeasure = slotsPerMeasure / 2;
 
     for (let i = 0; i < entries.length; i++) {
       const entry = entries[i];

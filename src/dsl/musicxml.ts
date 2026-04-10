@@ -342,8 +342,12 @@ function measureXml(score: NormalizedScore, measureIndex: number, divisions: num
   const measureStart = multiplyFraction(measureDuration, measure.globalIndex);
   const upEvents = measure.events.filter((event) => voiceForTrack(event.track).voice === 1 && event.track !== "ST");
   const downEvents = measure.events.filter((event) => voiceForTrack(event.track).voice === 2 && event.track !== "ST");
-  const upEntries = buildVoiceEntries(groupVoiceEvents(upEvents), measureStart, measureDuration);
-  const downEntries = buildVoiceEntries(groupVoiceEvents(downEvents), measureStart, measureDuration);
+  const upEntries = upEvents.length > 0
+    ? buildVoiceEntries(groupVoiceEvents(upEvents), measureStart, measureDuration)
+    : [];
+  const downEntries = downEvents.length > 0
+    ? buildVoiceEntries(groupVoiceEvents(downEvents), measureStart, measureDuration)
+    : [];
   const attributes =
     measureIndex === 0
       ? [
@@ -421,15 +425,29 @@ function measureXml(score: NormalizedScore, measureIndex: number, divisions: num
     return result;
   }
 
+  const upNotes = processVoiceEntries(upEntries, { voice: 1, stem: "up" });
+  const downNotes = processVoiceEntries(downEntries, { voice: 2, stem: "down" });
+
+  const voiceContent: string[] = [];
+  if (upNotes.length > 0) {
+    voiceContent.push(...upNotes);
+  }
+  if (downNotes.length > 0) {
+    if (upNotes.length > 0) {
+      voiceContent.push(
+        "<backup>",
+        `<duration>${fractionToDivisions(measureDuration, divisions)}</duration>`,
+        "</backup>",
+      );
+    }
+    voiceContent.push(...downNotes);
+  }
+
   return [
     `<measure number="${measure.globalIndex + 1}">`,
     attributes,
     repeatStart,
-    ...processVoiceEntries(upEntries, { voice: 1, stem: "up" }),
-    "<backup>",
-    `<duration>${fractionToDivisions(measureDuration, divisions)}</duration>`,
-    "</backup>",
-    ...processVoiceEntries(downEntries, { voice: 2, stem: "down" }),
+    ...voiceContent,
     repeatEnd,
     "</measure>",
   ].join("");

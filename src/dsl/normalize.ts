@@ -100,6 +100,8 @@ function pushTokenEvents(
   if (token.kind === "group") {
     const itemDuration = divideFraction(tokenDuration, token.items.length || 1);
     let itemStart = tokenStart;
+    // Only add tuplet when compressing (count > span), not when stretching (count < span)
+    const tupletForGroup = token.count > token.span ? { actual: token.count, normal: token.span } : undefined;
 
     for (const item of token.items) {
       pushTokenEvents(
@@ -112,7 +114,7 @@ function pushTokenEvents(
         measureIndex,
         measureInParagraph,
         into,
-        { actual: token.count, normal: token.span },
+        tupletForGroup,
       );
       itemStart = addFractions(itemStart, itemDuration);
     }

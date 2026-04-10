@@ -420,8 +420,8 @@ Examples (4/4, divisions=8, each slot = 1/8 note):
 
 - `span` = number of measure slots the group occupies
 - Each item's duration = slotDuration × span / itemCount
-- When itemCount < span: items are stretched (longer notes)
-- When itemCount > span: items are compressed (tuplet)
+- When itemCount < span: items are stretched (longer notes, no tuplet)
+- When itemCount > span: items are compressed (MusicXML tuplet)
 - When itemCount == span: normal 1:1 ratio, no tuplet needed
 
 ### Group Rules

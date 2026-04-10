@@ -403,9 +403,9 @@ function measureXml(score: NormalizedScore, measureIndex: number, divisions: num
       const prevGroup = prevEntry?.kind === "notes" && isBeamable(prevEntry.duration);
       const nextGroup = nextEntry?.kind === "notes" && isBeamable(nextEntry.duration);
 
-      const entrySlotInMeasure = entry.start.numerator * divisions * 2 / entry.start.denominator;
-      const prevSlotInMeasure = prevEntry?.kind === "notes" ? prevEntry.start.numerator * divisions * 2 / prevEntry.start.denominator : -1;
-      const nextSlotInMeasure = nextEntry?.kind === "notes" ? nextEntry.start.numerator * divisions * 2 / nextEntry.start.denominator : -1;
+      const entrySlotInMeasure = entry.start.numerator * slotsPerMeasure / entry.start.denominator;
+      const prevSlotInMeasure = prevEntry?.kind === "notes" ? prevEntry.start.numerator * slotsPerMeasure / prevEntry.start.denominator : -1;
+      const nextSlotInMeasure = nextEntry?.kind === "notes" ? nextEntry.start.numerator * slotsPerMeasure / nextEntry.start.denominator : -1;
 
       const sameHalfPrev = prevGroup && Math.floor(prevSlotInMeasure / slotsPerHalfMeasure) === Math.floor(entrySlotInMeasure / slotsPerHalfMeasure);
       const sameHalfNext = nextGroup && Math.floor(entrySlotInMeasure / slotsPerHalfMeasure) === Math.floor(nextSlotInMeasure / slotsPerHalfMeasure);

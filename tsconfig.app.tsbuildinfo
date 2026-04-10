@@ -1,0 +1,1 @@
+{"root":["./src/app.tsx","./src/main.tsx","./src/dsl/ast.test.ts","./src/dsl/ast.ts","./src/dsl/index.ts","./src/dsl/musicxml.ts","./src/dsl/normalize.test.ts","./src/dsl/normalize.ts","./src/dsl/parser.test.ts","./src/dsl/parser.ts","./src/dsl/preprocess.test.ts","./src/dsl/preprocess.ts","./src/dsl/types.ts"],"version":"5.9.3"}

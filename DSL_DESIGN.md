@@ -165,7 +165,7 @@ divisions 16
 
 HH | x - x - x - x - | x - x - X - x - |
 SD | - - d - - - D - | - - g - d - - - |
-BD | d - - - d - - - | d - d - - - d - |
+BD | p - - - p - - - | p - p - - - p - |
 
 C  | X - - - - - - - | - - - - X - - - |
 ```
@@ -257,11 +257,17 @@ Track names are case-sensitive. Unknown track names are errors.
 - `x`
 - `X`
 
-`SD`, `BD`, `T1`, `T2`, `T3` allow:
+`SD`, `T1`, `T2`, `T3` allow:
 
 - `-`
 - `d`
 - `D`
+- `g`
+
+`BD` allows:
+
+- `-`
+- `p`
 - `g`
 
 `HF` allows:
@@ -442,7 +448,7 @@ Examples:
 ```txt
 HH |: x - x - x - x - | x - x - X - x - :|
 SD |  - - d - - - D - | - - g - d - - -  |
-BD |  d - - - d - - - | d - d - - - d -  |
+BD |  p - - - p - - - | p - p - - - p -  |
 ```
 
 Single-measure repeat repeated four times total:
@@ -456,7 +462,7 @@ Two-measure repeat played three times total:
 ```txt
 HH |: x - x - x - x - | x - x - X - x - :|x3
 SD |  - - d - - - D - | - - g - d - - -  |
-BD |  d - - - d - - - | d - d - - - d -  |
+BD |  p - - - p - - - | p - p - - - p -  |
 ```
 
 ### Repeat Semantics
@@ -649,7 +655,7 @@ divisions 16
 
 HH |: x - x - o - x - | x - x:close - X - x - :|x3
 SD |  - - d:cross - g - | D:rim - [3/2: d d:flam d] - - -  |
-BD |  d - - - d - - - | d - d - - - d -                     |
+BD |  p - - - p - - - | p - p - - - p -                     |
 HF |  - - - - p - - - | - - - - p:close - -                |
 
 RC | - - x:bell - - - x - | - - - - - - - - |

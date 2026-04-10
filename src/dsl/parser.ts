@@ -237,23 +237,15 @@ function parseMeasureTokens(
       }
 
       const body = content.slice(cursor + 1, closeIndex);
-      const slashMatch = body.match(/^(\d+)\/(\d+)\s*:\s*(.*)$/);
-      const colonMatch = !slashMatch && body.match(/^(\d+)\s*:\s*(.*)$/);
+      const colonMatch = body.match(/^(\d+)\s*:\s*(.*)$/);
 
-      let count: number;
       let span: number;
       let inner: string;
 
-      if (slashMatch) {
-        count = Number(slashMatch[1]);
-        span = Number(slashMatch[2]);
-        inner = slashMatch[3];
-      } else if (colonMatch) {
-        count = 0;
+      if (colonMatch) {
         span = Number(colonMatch[1]);
         inner = colonMatch[2];
       } else if (body.trim()) {
-        count = 0;
         span = 1;
         inner = body.trim();
       } else {
@@ -268,21 +260,9 @@ function parseMeasureTokens(
 
       const items = parseMeasureTokens(inner, track, lineNumber, columnOffset + cursor + body.indexOf(inner), errors, false);
 
-      if (count === 0) {
-        count = items.length;
-      }
-
-      if (slashMatch && items.length !== count) {
-        errors.push({
-          line: lineNumber,
-          column: columnOffset + cursor,
-          message: `Group [${count}/${span}] expects ${count} items, got ${items.length}`,
-        });
-      }
-
       tokens.push({
         kind: "group",
-        count,
+        count: items.length,
         span,
         items,
       });

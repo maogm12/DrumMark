@@ -399,36 +399,35 @@ Internally, `c` on `HH` is rendered with the crash instrument in MusicXML.
 Group syntax:
 
 ```txt
-[m: item1 item2 item3 ...]
+[span: item1 item2 item3 ...]
 [item1 item2 item3 ...]
 ```
 
-Examples:
+`span` is the number of measure slots the group occupies. Items are distributed evenly across those slots. If `span=1`, the `1:` prefix may be omitted.
+
+Examples (4/4, divisions=8, each slot = 1/8 note):
 
 ```txt
-[3/2: x x x]    # old format: 3 items in 2 slots
-[2: x]           # new format: 1 item in 2 slots (half note)
-[x x x]          # simplified: 3 items in 1 slot (triplet eighths)
-[2: p p]         # 2 items in 2 slots (two eighth notes)
+[2: p]           # 1 item in 2 slots → quarter note (2 × 1/8)
+[3: p]           # 1 item in 3 slots → dotted quarter (3 × 1/8)
+[4: p]           # 1 item in 4 slots → half note (4 × 1/8)
+[2: p p p]       # 3 items in 2 slots → triplet (each = 2/3 × 1/8)
+[p p]            # 2 items in 1 slot → two sixteenth notes
+[p p p]          # 3 items in 1 slot → triplet sixteenth notes
 ```
 
 ### Group Semantics
 
-- `m` = number of measure slots the group occupies
-- Items are distributed evenly across `m` slots
-- When `m` equals the number of items, the ratio is 1:1 (no tuplet effect)
-- When `m` is less than the number of items, items are compressed (triplet feel)
-- When `m` is greater than the number of items, items are stretched
-
-Examples:
-
-- `[3/2: x x x]` = three events in the time of two slots → triplet
-- `[2: x]` = one event stretched to two slots → half note (in 4/4)
-- `[x x x]` = three events in one slot → triplet (shorthand for `[1: x x x]`)
+- `span` = number of measure slots the group occupies
+- Each item's duration = slotDuration × span / itemCount
+- When itemCount < span: items are stretched (longer notes)
+- When itemCount > span: items are compressed (tuplet)
+- When itemCount == span: normal 1:1 ratio, no tuplet needed
 
 ### Group Rules
 
-- The group occupies `m` slots in measure validation
+- The group occupies `span` slots in measure validation
+- Item count is always inferred from the token list
 - Group items must be valid tokens for the enclosing track
 - Modifiers are allowed inside groups
 - `o` is allowed inside `HH` groups
@@ -437,10 +436,15 @@ Examples:
 Examples:
 
 ```txt
+HH | x - [2: o] - x - |           # stretched: open HH as quarter note
+SD | - - [p p p] - - - |          # triplet: three snare ghost notes
+ST | R - [R L R] - - - |          # triplet: sticking pattern
+
+```txt
 HH | x - [2: o] - x - |           # stretched: open HH as half note
 SD | - - [x x x] - - - |          # triplet: three snare ghost notes
 ST | R - [R L R] - - - |          # triplet: sticking pattern
-ST | R - [3/2: R L R] - - - |
+ST | R - [2: R L R] - - - |
 ```
 
 ## Repeats
@@ -502,7 +506,7 @@ BD |  p - - - p - - - | p - p - - - p -  |
 Within a measure:
 
 - An ordinary token counts as `1` slot
-- A group `[n/m: ...]` counts as `m` slots
+- A group `[span: ...]` counts as `span` slots
 
 For each explicitly written measure on a track:
 
@@ -514,7 +518,7 @@ Example:
 time 4/4
 divisions 16
 
-HH | x - x - [3/2: x x x] - x - x - |
+HH | x - x - [2: x x x] - x - x - |
 ```
 
 The total slot count must equal `16`.
@@ -633,7 +637,7 @@ Suggested mapping:
 
 - Export from normalized events, not raw DSL
 - Measures and time signatures come from `time`
-- Tuplets come from groups `[n/m: ...]`
+- Tuplets come from groups `[span: ...]` where item count ≠ span
 - `divisions` in MusicXML may be chosen independently as needed for accurate durations
 - `:|` and `:|x2` should export as actual repeat barlines when possible
 - `:|xN` where `N > 2` may be expanded in v0 if repeat-count preservation is unreliable
@@ -669,13 +673,13 @@ time 4/4
 divisions 16
 
 HH |: x - x - o - x - | x - x:close - X - x - :|x3
-SD |  - - d:cross - g - | D:rim - [3/2: d d:flam d] - - -  |
+SD |  - - d:cross - g - | D:rim - [2: d d:flam d] - - -  |
 BD |  p - - - p - - - | p - p - - - p -                     |
 HF |  - - - - p - - - | - - - - p:close - -                |
 
 RC | - - x:bell - - - x - | - - - - - - - - |
 C  | X:choke - - - - - - - | - - - - X - - - |
-ST | R - L - [3/2: R L R] - | R - L - R - L - |
+ST | R - L - [2: R L R] - | R - L - R - L - |
 ```
 
 ## Summary

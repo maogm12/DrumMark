@@ -99,8 +99,8 @@ HH |: x - x - | x - X - :|x3`);
     const doc = parseDocumentSkeleton(`time 4/4
 divisions 16
 
-HH | x o x:close [3/2: x o X] |
-SD | d g D:rim [3/2: d d:flam D] |`);
+HH | x o x:close [2: x o X] |
+SD | d g D:rim [2: d d:flam D] |`);
 
     expect(doc.errors).toEqual([]);
     expect(doc.paragraphs[0].lines[0].measures[0].tokens).toEqual([
@@ -139,12 +139,11 @@ SD | d g D:rim [3/2: d d:flam D] |`);
     const doc = parseDocumentSkeleton(`time 4/4
 divisions 16
 
-HH | d x:bell [3/2: x] |`);
+HH | d x:bell [2: x] |`);
 
     expect(doc.errors).toEqual([
       { line: 4, column: 6, message: "Token `d` is invalid on track HH" },
       { line: 4, column: 8, message: "Token `x:bell` is invalid on track HH" },
-      { line: 4, column: 15, message: "Group [3/2] expects 3 items, got 1" },
     ]);
   });
 });

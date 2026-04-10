@@ -305,7 +305,7 @@ function noteXml(
 ): string {
   const instrument = instrumentForTrack(event.track, event.glyph);
   const baseDuration = event.tuplet
-    ? multiplyFraction(duration, event.tuplet.actual / event.tuplet.normal)
+    ? multiplyFraction(duration, event.tuplet.normal / event.tuplet.actual)
     : duration;
   const noteType = noteTypeForFraction(baseDuration);
   const timeModification = event.tuplet

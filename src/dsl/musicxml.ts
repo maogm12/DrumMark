@@ -463,10 +463,11 @@ export function buildMusicXml(score: NormalizedScore): string {
   const measures = score.measures.map((_, index) => {
     const prevMeasure = index > 0 ? score.measures[index - 1] : undefined;
     const currMeasure = score.measures[index];
-    const forceLineBreak = prevMeasure !== undefined &&
-      currMeasure.sourceLine !== undefined &&
-      prevMeasure.sourceLine !== undefined &&
+    const sourceLineChanged = currMeasure.sourceLine !== undefined &&
+      prevMeasure?.sourceLine !== undefined &&
       currMeasure.sourceLine !== prevMeasure.sourceLine;
+    const forceLineBreak = prevMeasure !== undefined &&
+      (sourceLineChanged || (currMeasure.sourceLine === undefined && currMeasure.globalIndex !== prevMeasure.globalIndex));
     return measureXml(score, index, divisions, forceLineBreak);
   }).join("");
 

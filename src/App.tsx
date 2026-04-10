@@ -7,12 +7,12 @@ time 4/4
 divisions 16
 
 HH |: x - x - o - x - | x - x:close - X - x - :|x3
-SD |  - - d:cross - g - | D:rim - [3/2: d d:flam d] - - -  |
+SD |  - - d:cross - g - | D:rim - [2: d d:flam d] - - -  |
 BD |  p - - - p - - - | p - p - - - p -                     |
 HF |  - - - - p - - - | - - - - p:close - -                |
 
 RC |  - - x:bell - - - - - | - - - - x - - - |
-ST |  [3/2: R L R] - - -     | R - L - R - L - |`;
+ST |  [2: R L R] - - -     | R - L - R - L - |`;
 
 const trackLabel: Record<TrackName, string> = {
   HH: "HH",

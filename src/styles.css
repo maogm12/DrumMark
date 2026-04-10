@@ -137,6 +137,22 @@ textarea {
   color: #9a3f3f;
 }
 
+.xml-debug {
+  margin-bottom: 12px;
+  font-size: 0.75rem;
+}
+
+.xml-debug pre {
+  max-height: 200px;
+  overflow: auto;
+  background: #f0f0f0;
+  padding: 8px;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
 .score-summary {
   display: flex;
   flex-wrap: wrap;

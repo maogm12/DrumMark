@@ -216,6 +216,7 @@ function StaffPreview({ xml }: { xml: string }) {
           autoResize: true,
           drawTitle: false,
           drawingParameters: "compacttight",
+          newSystemFromXML: true,
         });
 
         await osmd.load(xml);
@@ -238,6 +239,10 @@ function StaffPreview({ xml }: { xml: string }) {
   return (
     <div className="staff-preview-shell">
       {error ? <div className="staff-error">{error}</div> : null}
+      <details className="xml-debug">
+        <summary>MusicXML</summary>
+        <pre>{xml}</pre>
+      </details>
       <div className="staff-preview" ref={containerRef} />
     </div>
   );

@@ -1,4 +1,4 @@
-# Drum Notation DSL Design v0
+# Drum Notation DSL Design v0.1 (Revised)
 
 ## Goal
 
@@ -28,17 +28,49 @@ Single-page web app:
 
 The editor is the source of truth. The preview is derived from parsed DSL. MusicXML is generated from the parsed score model, not from raw text.
 
+---
+
 ## Architecture
 
 Pipeline:
 
-`DSL -> Tokenizer -> Parser -> AST -> Normalized Events -> Renderers / MusicXML`
+```txt
+DSL -> Tokenizer -> Parser -> AST -> Normalized Events -> Renderers / MusicXML
+```
 
 Outputs:
 
 - Grid preview
 - Staff preview
 - MusicXML export
+
+### Normalized Events
+
+Normalized event is the single source for rendering and export.
+
+Each event contains:
+
+```txt
+measureIndex
+slotStart
+slotSpan
+track
+instrument
+glyphType
+accent
+ghost
+modifier
+tuplet
+tieStart
+tieEnd
+```
+
+Notes:
+
+- `track` is where the token came from in DSL
+- `instrument` is the actual sounding instrument (for example HH `c` → crash)
+
+---
 
 ## Header Fields
 
@@ -47,6 +79,7 @@ Supported header fields:
 - `tempo`
 - `time`
 - `divisions`
+- `grouping` (new)
 
 Example:
 
@@ -54,6 +87,7 @@ Example:
 tempo 96
 time 4/4
 divisions 16
+grouping 2+2
 ```
 
 ### `tempo`
@@ -70,6 +104,8 @@ Rules:
 - Positive integer
 - Default: `120`
 - Interpreted as quarter-note BPM
+
+---
 
 ### `time`
 
@@ -92,7 +128,9 @@ Rules:
 - Required
 - `beats` and `beatUnit` must be positive integers
 - `beatUnit` should be one of `2`, `4`, `8`, `16`
-- Defines the musical duration of one measure
+- Defines measure duration and beat grouping intent
+
+---
 
 ### `divisions`
 
@@ -102,31 +140,91 @@ Syntax:
 divisions <number>
 ```
 
-Examples:
-
-```txt
-divisions 8
-divisions 12
-divisions 16
-divisions 24
-```
-
 Rules:
 
 - Required
 - Positive integer
-- Defines how many base slots each measure is divided into
-- One ordinary token occupies one slot
+- Defines grid resolution per measure
 
-Notes:
+---
 
-- `time` defines measure duration
-- `divisions` defines input granularity
-- Slot duration is:
+### `grouping`
+
+Declares the measure's internal beat grouping.
+
+This is a musical structure field, not a display-only hint.
+
+Syntax:
 
 ```txt
-slotDuration = (beats / beatUnit) / divisions
+grouping <a+b+c+...>
 ```
+
+Examples:
+
+```txt
+grouping 2+2
+grouping 3+3
+grouping 2+2+3
+```
+
+Rules:
+
+- Each item must be a positive integer
+- Sum must equal the numerator of `time`
+- Values are interpreted in units of the denominator of `time`
+- Controls beat structure, default accents, visual grouping, and default beaming
+- Does not affect duration math
+- Does not change measure duration
+- Does not change tuplet math
+- Does not depend on `divisions` for its meaning
+
+Examples:
+
+- `time 4/4` + `grouping 2+2` = two half-note beats inside the bar
+- `time 6/8` + `grouping 3+3` = two dotted-quarter beats
+- `time 7/8` + `grouping 2+2+3` = irregular eighth-note grouping
+
+`grouping` should be treated as the default source for:
+
+- internal beat structure
+- default accent placement
+- default visual grouping
+- default beaming strategy
+- default beaming must stay inside `grouping` boundaries
+- default beaming should not cross `grouping` boundaries
+
+Default behavior:
+
+- If omitted, inferred from `time` only for common stable meters
+
+  * `2/4` → `1+1`
+  * `3/4` → `1+1+1`
+  * `4/4` → `2+2`
+  * `2/2` → `1+1`
+  * `3/8` → `1+1+1`
+  * `6/8` → `3+3`
+  * `9/8` → `3+3+3`
+  * `12/8` → `3+3+3+3`
+
+- For meters without a single stable default grouping, `grouping` must be written explicitly
+
+  * `5/8`
+  * `7/8`
+  * `5/4`
+  * `7/4`
+  * `8/8`
+  * `10/8`
+  * `11/8`
+
+Compatibility with `divisions`:
+
+- `divisions` defines grid resolution, not beat grouping
+- Every `grouping` boundary must fall on an integer slot position under the current `divisions`
+- Every supported group must produce item durations that can be represented cleanly under the current `divisions`
+- If `divisions` cannot represent the intended grouping or supported group durations cleanly, validation should report an error
+
+---
 
 ## Measures, Paragraphs, and Layout
 
@@ -138,11 +236,27 @@ Each measure is enclosed by barlines:
 | ... |
 ```
 
+An empty measure is allowed:
+
+```txt
+| |
+```
+
+An empty measure means a full-measure rest on that track.
+
 Multiple measures can appear on one track line:
 
 ```txt
 HH | x - x - | x - x - |
 ```
+
+Rules:
+
+- Empty measures are valid on any track
+- Empty measure content is shorthand for a full-measure rest
+- Non-empty measures must still satisfy normal slot-count validation
+
+---
 
 ### Paragraphs
 
@@ -150,32 +264,23 @@ After the header, track content is organized into paragraphs.
 
 Rules:
 
-- A paragraph is a consecutive block of track lines
-- One or more blank lines separate paragraphs
-- Each paragraph becomes one rendered system/row in preview
-- Blank lines affect layout only, not musical time
-- Measures across paragraphs are concatenated in order
+- Paragraph = consecutive block of track lines
+- Blank lines separate paragraphs
+- Paragraph primarily affects layout and text organization
+- Paragraph does not change musical time structure
+- Active tracks continue across paragraph boundaries
+- Omitting an active track in a later paragraph means that track is present but silent for that paragraph
 
-Example:
+---
 
-```txt
-tempo 96
-time 4/4
-divisions 16
+### Track Registry and Auto Fill
 
-HH | x - x - x - x - | x - x - X - x - |
-SD | - - d - - - D - | - - g - d - - - |
-BD | p - - - p - - - | p - p - - - p - |
+- Tracks are registered globally in order of first appearance
+- Once a track appears, it remains active
+- Missing tracks in later paragraphs are auto-filled with rests
+- Tracks never seen before are not auto-created
 
-C  | X - - - - - - - | - - - - X - - - |
-```
-
-In the second paragraph, previously seen tracks not written explicitly are auto-filled with rests for that paragraph's measure count.
-
-Rules:
-
-- Missing previously known tracks are auto-filled with rests
-- Explicitly written tracks within a paragraph must have the same measure count
+---
 
 ## Tracks
 
@@ -185,6 +290,7 @@ Percussion tracks:
 
 - `HH` hand hi-hat
 - `HF` hi-hat foot
+- `DR` drum-combined input sugar
 - `SD` snare drum
 - `BD` bass drum
 - `T1` high tom
@@ -207,6 +313,7 @@ Cymbal-family tracks:
 
 Drum-family tracks:
 
+- `DR`
 - `SD`
 - `BD`
 - `T1`
@@ -235,11 +342,45 @@ HH | x - x - x - x - |
 
 Track names are case-sensitive. Unknown track names are errors.
 
+### `DR` Input Sugar
+
+`DR` is an input-only sugar track for quickly writing snare/tom patterns on one line.
+
+It is not a real score track. After parsing, `DR` is expanded into standard track events:
+
+- `s` -> `SD` normal hit
+- `S` -> `SD` accent hit
+- `g` -> `SD` ghost hit
+- `t1` -> `T1` normal hit
+- `t2` -> `T2` normal hit
+- `t3` -> `T3` normal hit
+
+Rules:
+
+- `DR` exists only as source syntax sugar
+- AST, normalized events, preview semantics, and export should use only the standard target tracks
+- `DR` only covers `SD`, `T1`, `T2`, and `T3`
+- `DR` should not be mixed with explicit `SD`, `T1`, `T2`, or `T3` lines in the same paragraph
+- `DR` may use normal group syntax
+- Group items inside `DR` must still use only valid `DR` tokens
+- In v0, `DR` does not support modifiers
+
+Example:
+
+```txt
+DR | s - t1 - t2 - t3 - |
+```
+
 ## Base Tokens
 
 ### Core Tokens
 
 - `-` rest
+- `s` snare normal hit (`DR` only)
+- `S` snare accent hit (`DR` only)
+- `t1` high tom hit (`DR` only)
+- `t2` mid tom hit (`DR` only)
+- `t3` floor tom hit (`DR` only)
 - `x` cymbal-family normal hit
 - `X` cymbal-family accent hit
 - `d` drum-family normal hit
@@ -250,6 +391,16 @@ Track names are case-sensitive. Unknown track names are errors.
 - `L` left hand sticking
 
 ### Per-Track Token Rules
+
+`DR` allows:
+
+- `-`
+- `s`
+- `S`
+- `g`
+- `t1`
+- `t2`
+- `t3`
 
 `HH`, `RC`, `C` allow:
 
@@ -290,9 +441,11 @@ HF | - - p - |
 ST | R - L - |
 ```
 
+---
+
 ## Modifiers
 
-Modifier syntax:
+Syntax:
 
 ```txt
 <glyph>:<modifier>
@@ -311,6 +464,10 @@ p:close
 ```
 
 Modifiers do not change slot count. They only affect playing meaning and rendering/export.
+
+Modifiers are a fixed v0 whitelist, not a general extension system.
+
+Any unknown modifier, or any modifier used on an unsupported track/glyph combination, is a hard error.
 
 ### Supported Modifiers
 
@@ -384,7 +541,13 @@ Internally, `o` should normalize to `x` with modifier `open`.
 
 ## Crash Sugar on Hi-Hat
 
-`c` is valid on `HH` and produces a crash cymbal sound (same as writing on the `C` track).
+`c` is valid on `HH` and produces a crash cymbal sound.
+
+This is a convenience sugar, not a new primary notation form.
+
+`C` remains the canonical crash track.
+
+`HH` with `c` is shorthand for a crash hit that should be interpreted the same way as writing on the `C` track at the model/export level.
 
 Example:
 
@@ -392,60 +555,100 @@ Example:
 HH | x - c - x - c:choke - |
 ```
 
+Rules:
+
+- `c` on `HH` is a special-case input sugar
+- It should not be generalized into arbitrary cross-track remapping
+- It should map to crash cymbal semantics in rendering and export
+
 Internally, `c` on `HH` is rendered with the crash instrument in MusicXML.
 
 ## Groups
 
-Group syntax:
+### Syntax
 
 ```txt
-[span: item1 item2 item3 ...]
-[item1 item2 item3 ...]
+[span: item1 item2 ...]
+[item1 item2 ...]
 ```
 
-`span` is the number of measure slots the group occupies. Items are distributed evenly across those slots. If `span=1`, the `1:` prefix may be omitted.
-
-Examples (4/4, divisions=8, each slot = 1/8 note):
+`[item1 item2 ...]` is shorthand for:
 
 ```txt
-[2: p]           # 1 item in 2 slots → quarter note (2 × 1/8)
-[3: p]           # 1 item in 3 slots → dotted quarter (3 × 1/8)
-[4: p]           # 1 item in 4 slots → half note (4 × 1/8)
-[2: p p p]       # 3 items in 2 slots → triplet (each = 2/3 × 1/8)
-[p p]            # 2 items in 1 slot → two sixteenth notes
-[p p p]          # 3 items in 1 slot → triplet sixteenth notes
+[1: item1 item2 ...]
 ```
 
-### Group Semantics
+---
 
-- `span` = number of measure slots the group occupies
-- Each item's duration = slotDuration × span / itemCount
-- When itemCount < span: items are stretched (longer notes, no tuplet)
-- When itemCount > span: items are compressed (MusicXML tuplet)
-- When itemCount == span: normal 1:1 ratio, no tuplet needed
-
-### Group Rules
-
-- The group occupies `span` slots in measure validation
-- Item count is always inferred from the token list
-- Group items must be valid tokens for the enclosing track
-- Modifiers are allowed inside groups
-- `o` is allowed inside `HH` groups
-- Nested groups are not allowed in v0
-
-Examples:
+### Semantics
 
 ```txt
-HH | x - [2: o] - x - |           # stretched: open HH as quarter note
-SD | - - [p p p] - - - |          # triplet: three snare ghost notes
-ST | R - [R L R] - - - |          # triplet: sticking pattern
-
-```txt
-HH | x - [2: o] - x - |           # stretched: open HH as half note
-SD | - - [x x x] - - - |          # triplet: three snare ghost notes
-ST | R - [R L R] - - - |          # triplet: sticking pattern
-ST | R - [2: R L R] - - - |
+Each item's duration = slotDuration × span / itemCount
 ```
+
+---
+
+## Supported Group Constraints (v0)
+
+v0 only accepts groups that can be exported reliably to MusicXML.
+
+Unsupported group forms are hard errors.
+
+---
+
+### Stretched Groups
+
+`itemCount <= span`
+
+Allowed only if each resulting item duration maps to:
+
+- standard note value
+- dotted note
+
+and does not require automatic tie splitting.
+
+Otherwise validation fails.
+
+---
+
+### Compressed Groups
+
+Allowed ratios:
+
+```txt
+2 in 1
+3 in 1
+4 in 1
+3 in 2
+5 in 4
+6 in 4
+7 in 4
+```
+
+Mapping:
+
+- 2 in 1, 4 in 1 → subdivide (no tuplet)
+- others → tuplet
+
+---
+
+### Minimum Duration
+
+```txt
+No guarantees below 64th note
+```
+
+---
+
+### No Automatic Tie Splitting
+
+```txt
+Exporter does not split one item into multiple tied notes
+```
+
+Any group that would require automatic tie splitting is a hard error in v0.
+
+---
 
 ## Repeats
 
@@ -489,8 +692,17 @@ BD |  p - - - p - - - | p - p - - - p -  |
 - `:|` is equivalent to `:|x2`
 - `xN` means total play count for the repeated region, not extra repeats
 - Repeats are global measure structure, not private to one track
-- If any track declares repeat boundaries, they apply to the whole score
-- If multiple tracks declare them, they must agree
+- Repeat boundaries may be written on any track
+- A repeat declaration on any track applies to the whole score
+- Track choice does not change repeat meaning
+- Tracks that do not write repeat boundaries are treated as undeclared, not conflicting
+- If multiple tracks declare repeat boundaries, they must agree exactly
+
+Practical guidance:
+
+- In most cases, writing repeat boundaries on a single track is enough
+- Repeating the same boundaries on multiple tracks is allowed for readability
+- If repeated declarations disagree, validation should report a hard error rather than guessing
 
 ### Repeat Rules
 
@@ -498,6 +710,7 @@ BD |  p - - - p - - - | p - p - - - p -  |
 - Nested repeats are not allowed in v0
 - Crossing repeats are not allowed
 - `N` in `:|xN` must be an integer greater than or equal to `2`
+- If multiple tracks declare the same repeat region, start bar, end bar, and play count must all match
 - First/second endings are not supported in v0
 - D.C., D.S., Segno, and Coda are not supported in v0
 
@@ -563,7 +776,7 @@ Rules:
 - Comments are ignored by the parser
 - Only `#` comments are supported in v0
 
-## Errors and Warnings
+## Errors
 
 ### Parsing Strategy
 
@@ -571,6 +784,8 @@ Rules:
 - Be strict about semantics
 - Try to collect multiple errors in one pass
 - Do not silently rewrite user intent
+- v0 does not use warnings
+- Any unsupported, ambiguous, inconsistent, or non-exportable construct is a hard error
 
 ### Errors
 
@@ -587,13 +802,6 @@ Examples of hard errors:
 - Repeat conflict
 - Repeat structure mismatch
 - Paragraph measure-count mismatch among explicit tracks
-
-### Warnings
-
-Examples of soft warnings:
-
-- Unusual `time` + `divisions` combination
-- `g` on `BD`
 
 ### Error Format
 
@@ -648,7 +856,11 @@ Suggested mapping:
 
 ### Modifier Export Priority
 
-Strong priority to preserve:
+v0 modifiers are limited to forms with stable MusicXML export semantics.
+
+The exporter should preserve the supported modifier set directly.
+
+Supported export priorities:
 
 - accents
 - ghost notes
@@ -656,14 +868,14 @@ Strong priority to preserve:
 - tuplets
 - flam
 
-Try to preserve where possible:
+Supported when explicitly included in the whitelist:
 
 - rim
 - cross
 - bell
 - choke
 
-If a modifier cannot be represented reliably, degrade gracefully without breaking rhythm.
+If a modifier cannot be represented reliably in MusicXML, it is out of scope for v0 and should not be accepted by validation.
 
 ## Example
 
@@ -671,6 +883,7 @@ If a modifier cannot be represented reliably, degrade gracefully without breakin
 tempo 96
 time 4/4
 divisions 16
+grouping 2+2
 
 HH |: x - x - o - x - | x - x:close - X - x - :|x3
 SD |  - - d:cross - g - | D:rim - [2: d d:flam d] - - -  |
@@ -682,15 +895,15 @@ C  | X:choke - - - - - - - | - - - - X - - - |
 ST | R - L - [2: R L R] - | R - L - R - L - |
 ```
 
+---
+
 ## Summary
 
-This v0 DSL is designed around:
+This version:
 
-- fast text entry
-- clean drum-centric semantics
-- inline tuplets and repeats
-- permissive visual formatting
-- auto-filled missing tracks by paragraph
-- MusicXML export as a practical interchange target
-
-It is intentionally scoped to cover common drum writing well before tackling full engraving complexity.
+- Adds explicit beat grouping via `grouping`
+- Defines normalized event model
+- Restricts exportable durations
+- Fixes track filling semantics
+- Clarifies sugar behavior (`c`)
+- Simplifies repeat parsing

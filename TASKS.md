@@ -13,11 +13,15 @@
 - [x] Implement line preprocessing
 - [x] Implement comment stripping
 - [x] Implement header parsing (`tempo`, `time`, `divisions`)
+- [ ] Implement `grouping` header parsing and validation
 - [x] Implement paragraph splitting by blank lines
 - [x] Implement track line parsing
+- [ ] Implement empty-measure rest shorthand (`| |`)
 - [x] Implement base token parsing
 - [x] Implement modifier parsing
 - [x] Implement `o` sugar for `HH`
+- [ ] Implement `c` crash sugar for `HH`
+- [ ] Implement `DR` input sugar
 - [x] Implement group parsing (`[n/m: ...]`)
 - [x] Implement repeat parsing (`|:`, `:|`, `:|xN`)
 - [x] Build AST types
@@ -26,33 +30,36 @@
 ## Phase 2: Validation
 
 - [ ] Validate known headers
-- [ ] Validate known track names
+- [x] Validate known track names
 - [x] Validate per-track token legality
 - [x] Validate modifier legality
 - [x] Validate group arity
 - [x] Validate measure slot totals against `divisions`
+- [ ] Validate `grouping` compatibility against `time` and `divisions`
+- [ ] Validate `DR` paragraph exclusivity with explicit drum tracks
 - [x] Validate paragraph measure-count consistency
 - [x] Validate repeat boundary consistency across tracks
-- [ ] Collect structured errors and warnings with line/column info
+- [x] Collect structured errors with line/column info
 
 ## Phase 3: Grid Preview
 
 - [x] Render paragraphs as preview rows
 - [x] Render measures with clear boundaries
 - [x] Render groups spanning multiple slots
-- [ ] Render modifiers visually
-- [ ] Render repeat boundaries
+- [x] Render modifiers visually
+- [x] Render repeat boundaries
 - [x] Render `ST` sticking row
 - [x] Highlight parse errors in preview
 
 ## Phase 4: MusicXML Export
 
-- [ ] Map tracks to percussion instruments
-- [ ] Convert normalized events into MusicXML measures
-- [ ] Export tuplets from group syntax
-- [ ] Export repeats where possible
+- [x] Map tracks to percussion instruments
+- [x] Convert normalized events into MusicXML measures
+- [x] Export tuplets from group syntax
+- [x] Export repeats where possible
 - [ ] Degrade `:|xN` for `N > 2` by expansion if needed
-- [ ] Export a single percussion part
+- [x] Export a single percussion part
+- [ ] Keep default beaming within `grouping` boundaries
 - [ ] Verify import in MuseScore
 
 ## Phase 5: App UI
@@ -66,6 +73,6 @@
 
 ## Immediate Next Tasks
 
-1. Add `Export MusicXML`
-2. Improve staff repeat/modifier rendering fidelity
+1. Implement `grouping`, `DR`, `c`, and empty-measure support end to end
+2. Add `Export MusicXML`
 3. Add `Export PDF`

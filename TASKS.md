@@ -27,9 +27,9 @@
 
 - [ ] Validate known headers
 - [ ] Validate known track names
-- [ ] Validate per-track token legality
-- [ ] Validate modifier legality
-- [ ] Validate group arity
+- [x] Validate per-track token legality
+- [x] Validate modifier legality
+- [x] Validate group arity
 - [x] Validate measure slot totals against `divisions`
 - [x] Validate paragraph measure-count consistency
 - [x] Validate repeat boundary consistency across tracks

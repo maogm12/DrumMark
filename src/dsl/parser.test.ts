@@ -17,6 +17,7 @@ BD | p - - - |`);
     expect(doc.headers.tempo.value).toBe(96);
     expect(doc.headers.time).toMatchObject({ beats: 4, beatUnit: 4 });
     expect(doc.headers.divisions.value).toBe(16);
+    expect(doc.headers.grouping.values).toEqual([2, 2]);
     expect(doc.paragraphs).toHaveLength(2);
     expect(doc.paragraphs[0]).toMatchObject({
       startLine: 5,
@@ -58,6 +59,19 @@ divisions 16`);
       { line: 1, column: 7, message: "Tempo must be a positive integer" },
       { line: 4, column: 1, message: "Headers must appear before track content" },
       { line: 1, column: 1, message: "Missing required header `divisions`" },
+    ]);
+  });
+
+  it("reports unknown headers and missing explicit grouping for unstable meters", () => {
+    const doc = parseDocumentSkeleton(`swing 8
+time 7/8
+divisions 14
+
+HH | x - x - x - x |`);
+
+    expect(doc.errors).toEqual([
+      { line: 1, column: 1, message: "Unknown header `swing`" },
+      { line: 2, column: 1, message: "Missing required header `grouping` for time 7/8" },
     ]);
   });
 
@@ -133,6 +147,38 @@ SD | d g D:rim [2: d d:flam D] |`);
         ],
       },
     ]);
+  });
+
+  it("parses DR tokens and allows empty measures", () => {
+    const doc = parseDocumentSkeleton(`time 4/4
+divisions 8
+
+DR | s - [2: t1 s t2] - | |
+HH | x - c:choke - x - x - |`);
+
+    expect(doc.errors).toEqual([]);
+    expect(doc.paragraphs[0].lines[0].track).toBe("DR");
+    expect(doc.paragraphs[0].lines[0].measures[0].tokens).toEqual([
+      { kind: "basic", value: "s" },
+      { kind: "basic", value: "-" },
+      {
+        kind: "group",
+        count: 3,
+        span: 2,
+        items: [
+          { kind: "basic", value: "t1" },
+          { kind: "basic", value: "s" },
+          { kind: "basic", value: "t2" },
+        ],
+      },
+      { kind: "basic", value: "-" },
+    ]);
+    expect(doc.paragraphs[0].lines[0].measures[1].tokens).toEqual([]);
+    expect(doc.paragraphs[0].lines[1].measures[0].tokens[2]).toEqual({
+      kind: "modified",
+      value: "c",
+      modifier: "choke",
+    });
   });
 
   it("reports invalid tokens and group mistakes", () => {

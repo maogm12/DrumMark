@@ -95,27 +95,39 @@ function xmlEscape(value: string): string {
     .replaceAll("'", "&apos;");
 }
 
-function noteTypeForFraction(duration: Fraction): string {
+function noteShapeForFraction(duration: Fraction): { type: string; dots: number } {
   const normalized = simplify(duration);
   const key = `${normalized.numerator}/${normalized.denominator}`;
 
   switch (key) {
     case "1/1":
-      return "whole";
+      return { type: "whole", dots: 0 };
+    case "3/2":
+      return { type: "whole", dots: 1 };
     case "1/2":
-      return "half";
+      return { type: "half", dots: 0 };
+    case "3/4":
+      return { type: "half", dots: 1 };
     case "1/4":
-      return "quarter";
+      return { type: "quarter", dots: 0 };
+    case "3/8":
+      return { type: "quarter", dots: 1 };
     case "1/8":
-      return "eighth";
+      return { type: "eighth", dots: 0 };
+    case "3/16":
+      return { type: "eighth", dots: 1 };
     case "1/16":
-      return "16th";
+      return { type: "16th", dots: 0 };
+    case "3/32":
+      return { type: "16th", dots: 1 };
     case "1/32":
-      return "32nd";
+      return { type: "32nd", dots: 0 };
+    case "3/64":
+      return { type: "32nd", dots: 1 };
     case "1/64":
-      return "64th";
+      return { type: "64th", dots: 0 };
     default:
-      return "16th";
+      return { type: "16th", dots: 0 };
   }
 }
 
@@ -276,13 +288,15 @@ function notationsXml(event: NormalizedEvent): string {
 }
 
 function restXml(duration: Fraction, divisions: number, voice: VoiceTrack): string {
-  const type = noteTypeForFraction(duration);
+  const shape = noteShapeForFraction(duration);
+  const dots = Array.from({ length: shape.dots }, () => "<dot/>").join("");
   return [
     "<note>",
     "<rest/>",
     `<duration>${fractionToDivisions(duration, divisions)}</duration>`,
     `<voice>${voice.voice}</voice>`,
-    `<type>${type}</type>`,
+    `<type>${shape.type}</type>`,
+    dots,
     `<staff>1</staff>`,
     "</note>",
   ].join("");
@@ -307,13 +321,14 @@ function noteXml(
   const baseDuration = event.tuplet
     ? multiplyFraction(duration, event.tuplet.normal / event.tuplet.actual)
     : duration;
-  const noteType = noteTypeForFraction(baseDuration);
+  const shape = noteShapeForFraction(baseDuration);
   const timeModification = event.tuplet
     ? `<time-modification><actual-notes>${event.tuplet.actual}</actual-notes><normal-notes>${event.tuplet.normal}</normal-notes></time-modification>`
     : "";
   const notehead = instrument.notehead ? `<notehead>${instrument.notehead}</notehead>` : "";
   const closingNotation = closesTuplet ? `<notations><tuplet type="stop" number="1"/></notations>` : "";
   const beam = beamState ? `<beam number="1">${beamState}</beam>` : "";
+  const dots = Array.from({ length: shape.dots }, () => "<dot/>").join("");
 
   return [
     "<note>",
@@ -324,7 +339,8 @@ function noteXml(
     "</unpitched>",
     `<duration>${fractionToDivisions(duration, divisions)}</duration>`,
     `<voice>${voice.voice}</voice>`,
-    `<type>${noteType}</type>`,
+    `<type>${shape.type}</type>`,
+    dots,
     timeModification,
     notehead,
     `<stem>${voice.stem}</stem>`,
@@ -334,6 +350,21 @@ function noteXml(
     closingNotation,
     "</note>",
   ].join("");
+}
+
+function groupingSegmentIndex(score: NormalizedScore, position: Fraction): number {
+  let segment = 0;
+  let boundaryNumerator = 0;
+
+  for (let index = 0; index < score.ast.headers.grouping.values.length; index += 1) {
+    boundaryNumerator += score.ast.headers.grouping.values[index];
+    if (position.numerator * score.ast.headers.time.beats < boundaryNumerator * position.denominator) {
+      return segment;
+    }
+    segment += 1;
+  }
+
+  return Math.max(0, score.ast.headers.grouping.values.length - 1);
 }
 
 function measureXml(score: NormalizedScore, measureIndex: number, divisions: number, forceLineBreak: boolean): string {
@@ -376,9 +407,6 @@ function measureXml(score: NormalizedScore, measureIndex: number, divisions: num
 
   function processVoiceEntries(entries: VoiceEntry[], voice: VoiceTrack): string[] {
     const result: string[] = [];
-    const { beatUnit } = score.ast.headers.time;
-    const slotsPerMeasure = (divisions * 4) / beatUnit;
-    const slotsPerHalfMeasure = slotsPerMeasure / 2;
 
     for (let i = 0; i < entries.length; i++) {
       const entry = entries[i];
@@ -402,20 +430,19 @@ function measureXml(score: NormalizedScore, measureIndex: number, divisions: num
 
       const prevGroup = prevEntry?.kind === "notes" && isBeamable(prevEntry.duration);
       const nextGroup = nextEntry?.kind === "notes" && isBeamable(nextEntry.duration);
+      const entryPosition = subtractFractions(entry.start, measureStart);
+      const prevPosition = prevEntry?.kind === "notes" ? subtractFractions(prevEntry.start, measureStart) : null;
+      const nextPosition = nextEntry?.kind === "notes" ? subtractFractions(nextEntry.start, measureStart) : null;
 
-      const entrySlotInMeasure = entry.start.numerator * slotsPerMeasure / entry.start.denominator;
-      const prevSlotInMeasure = prevEntry?.kind === "notes" ? prevEntry.start.numerator * slotsPerMeasure / prevEntry.start.denominator : -1;
-      const nextSlotInMeasure = nextEntry?.kind === "notes" ? nextEntry.start.numerator * slotsPerMeasure / nextEntry.start.denominator : -1;
-
-      const sameHalfPrev = prevGroup && Math.floor(prevSlotInMeasure / slotsPerHalfMeasure) === Math.floor(entrySlotInMeasure / slotsPerHalfMeasure);
-      const sameHalfNext = nextGroup && Math.floor(entrySlotInMeasure / slotsPerHalfMeasure) === Math.floor(nextSlotInMeasure / slotsPerHalfMeasure);
+      const sameGroupingPrev = prevGroup && prevPosition !== null && groupingSegmentIndex(score, prevPosition) === groupingSegmentIndex(score, entryPosition);
+      const sameGroupingNext = nextGroup && nextPosition !== null && groupingSegmentIndex(score, entryPosition) === groupingSegmentIndex(score, nextPosition);
 
       let beamState: "begin" | "continue" | "end" | null = null;
-      if (!sameHalfPrev && sameHalfNext) {
+      if (!sameGroupingPrev && sameGroupingNext) {
         beamState = "begin";
-      } else if (sameHalfPrev && sameHalfNext) {
+      } else if (sameGroupingPrev && sameGroupingNext) {
         beamState = "continue";
-      } else if (sameHalfPrev && !sameHalfNext) {
+      } else if (sameGroupingPrev && !sameGroupingNext) {
         beamState = "end";
       }
 

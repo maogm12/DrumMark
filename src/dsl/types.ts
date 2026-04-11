@@ -1,4 +1,4 @@
-export const HEADER_FIELDS = ["tempo", "time", "divisions"] as const;
+export const HEADER_FIELDS = ["tempo", "time", "divisions", "grouping"] as const;
 
 export type HeaderField = (typeof HEADER_FIELDS)[number];
 
@@ -16,6 +16,7 @@ export const TRACKS = [
 ] as const;
 
 export type TrackName = (typeof TRACKS)[number];
+export type SourceTrackName = TrackName | "DR";
 
 export const MODIFIERS = [
   "open",
@@ -39,7 +40,7 @@ export type MeasureBoundary =
   | { kind: "repeat_start" }
   | RepeatEnd;
 
-export type BasicGlyph = "-" | "x" | "X" | "d" | "D" | "g" | "p" | "R" | "L" | "o" | "c";
+export type BasicGlyph = "-" | "x" | "X" | "d" | "D" | "g" | "p" | "R" | "L" | "o" | "c" | "s" | "S" | "t1" | "t2" | "t3";
 
 export type TokenGlyph =
   | { kind: "basic"; value: BasicGlyph }
@@ -80,7 +81,7 @@ export type ParsedMeasure = {
 };
 
 export type ParsedTrackLine = {
-  track: TrackName;
+  track: SourceTrackName;
   lineNumber: number;
   measures: ParsedMeasure[];
   source: PreprocessedLine;
@@ -105,10 +106,17 @@ export type DivisionsHeader = {
   line: number;
 };
 
+export type GroupingHeader = {
+  field: "grouping";
+  values: number[];
+  line: number;
+};
+
 export type ParsedHeaders = {
   tempo: TempoHeader;
   time: TimeHeader;
   divisions: DivisionsHeader;
+  grouping: GroupingHeader;
 };
 
 export type TrackParagraph = {

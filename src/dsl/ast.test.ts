@@ -81,4 +81,56 @@ SD |  d - d - |`);
       },
     ]);
   });
+
+  it("expands DR into canonical drum tracks and treats empty measures as rests", () => {
+    const score = buildScoreAst(`time 4/4
+divisions 8
+
+DR | s - [2: t1 s t2] - - - - | |
+HH | x - x - x - x - | |`);
+
+    expect(score.errors).toEqual([]);
+    expect(score.paragraphs[0].tracks.map((track) => track.track)).toEqual(["HH", "SD", "T1", "T2"]);
+    expect(score.paragraphs[0].tracks[1].measures[0].tokens).toEqual([
+      { kind: "basic", value: "d" },
+      { kind: "basic", value: "-" },
+      {
+        kind: "group",
+        count: 3,
+        span: 2,
+        items: [
+          { kind: "basic", value: "-" },
+          { kind: "basic", value: "d" },
+          { kind: "basic", value: "-" },
+        ],
+      },
+      { kind: "basic", value: "-" },
+      { kind: "basic", value: "-" },
+      { kind: "basic", value: "-" },
+      { kind: "basic", value: "-" },
+    ]);
+    expect(score.paragraphs[0].tracks[1].measures[1].tokens).toHaveLength(8);
+  });
+
+  it("reports grouping compatibility and DR mixing errors", () => {
+    const score = buildScoreAst(`time 7/8
+divisions 16
+grouping 2+2+3
+
+DR | s - - - |
+SD | d - - - |`);
+
+    expect(score.errors).toEqual([
+      {
+        line: 3,
+        column: 1,
+        message: "Grouping boundaries must fall on integer slot positions under the current divisions",
+      },
+      {
+        line: 5,
+        column: 1,
+        message: "Track `DR` cannot be mixed with explicit `SD`, `T1`, `T2`, or `T3` lines in the same paragraph",
+      },
+    ]);
+  });
 });

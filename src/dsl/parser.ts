@@ -10,6 +10,7 @@ import {
   type PreprocessedLine,
   type TrackParagraph,
   type TrackName,
+  type SourceTrackName,
   type Modifier,
   type BasicGlyph,
 } from "./types";
@@ -25,6 +26,38 @@ function parsePositiveInteger(value: string): number | null {
 
   const parsed = Number(value);
   return parsed > 0 ? parsed : null;
+}
+
+function inferGrouping(beats: number, beatUnit: number): number[] | null {
+  const key = `${beats}/${beatUnit}`;
+
+  switch (key) {
+    case "2/4":
+    case "2/2":
+      return [1, 1];
+    case "3/4":
+    case "3/8":
+      return [1, 1, 1];
+    case "4/4":
+      return [2, 2];
+    case "6/8":
+      return [3, 3];
+    case "9/8":
+      return [3, 3, 3];
+    case "12/8":
+      return [3, 3, 3, 3];
+    default:
+      return null;
+  }
+}
+
+function parseGroupingValue(value: string): number[] | null {
+  if (!/^\d+(?:\+\d+)*$/.test(value)) {
+    return null;
+  }
+
+  const values = value.split("+").map(Number);
+  return values.every((item) => item > 0) ? values : null;
 }
 
 function parseHeaderLine(line: PreprocessedLine, headers: HeaderAccumulator, errors: ParseError[]): boolean {
@@ -106,24 +139,46 @@ function parseHeaderLine(line: PreprocessedLine, headers: HeaderAccumulator, err
       };
       return true;
     }
+    case "grouping": {
+      const parsed = parseGroupingValue(value);
+
+      if (!parsed) {
+        errors.push({
+          line: line.lineNumber,
+          column: line.raw.indexOf(value) + 1,
+          message: "Grouping must use the form n+n+...",
+        });
+        return true;
+      }
+
+      headers.grouping = {
+        field: "grouping",
+        values: parsed,
+        line: line.lineNumber,
+      };
+      return true;
+    }
   }
 
   return false;
 }
 
 function finalizeHeaders(headers: HeaderAccumulator, errors: ParseError[]): ParsedHeaders {
+  const time =
+    headers.time ??
+    (() => {
+      errors.push({
+        line: 1,
+        column: 1,
+        message: "Missing required header `time`",
+      });
+      return { field: "time", beats: 4, beatUnit: 4, line: 0 } as const;
+    })();
+  const inferredGrouping = inferGrouping(time.beats, time.beatUnit);
+
   return {
     tempo: headers.tempo ?? { field: "tempo", value: 120, line: 0 },
-    time:
-      headers.time ??
-      (() => {
-        errors.push({
-          line: 1,
-          column: 1,
-          message: "Missing required header `time`",
-        });
-        return { field: "time", beats: 4, beatUnit: 4, line: 0 };
-      })(),
+    time,
     divisions:
       headers.divisions ??
       (() => {
@@ -134,15 +189,31 @@ function finalizeHeaders(headers: HeaderAccumulator, errors: ParseError[]): Pars
         });
         return { field: "divisions", value: 16, line: 0 };
       })(),
+    grouping:
+      headers.grouping ??
+      (() => {
+        if (!inferredGrouping) {
+          errors.push({
+            line: time.line || 1,
+            column: 1,
+            message: `Missing required header \`grouping\` for time ${time.beats}/${time.beatUnit}`,
+          });
+          return { field: "grouping", values: [time.beats], line: 0 };
+        }
+
+        return { field: "grouping", values: inferredGrouping, line: 0 };
+      })(),
   };
 }
 
-function isTrackGlyphAllowed(track: TrackName, glyph: BasicGlyph): boolean {
+function isTrackGlyphAllowed(track: SourceTrackName, glyph: BasicGlyph): boolean {
   switch (track) {
     case "HH":
     case "RC":
     case "C":
       return glyph === "-" || glyph === "x" || glyph === "X" || glyph === "o" || glyph === "c";
+    case "DR":
+      return glyph === "-" || glyph === "s" || glyph === "S" || glyph === "g" || glyph === "t1" || glyph === "t2" || glyph === "t3";
     case "SD":
     case "T1":
     case "T2":
@@ -157,14 +228,14 @@ function isTrackGlyphAllowed(track: TrackName, glyph: BasicGlyph): boolean {
   }
 }
 
-function isModifierAllowed(track: TrackName, glyph: Exclude<BasicGlyph, "-">, modifier: Modifier): boolean {
+function isModifierAllowed(track: SourceTrackName, glyph: Exclude<BasicGlyph, "-">, modifier: Modifier): boolean {
   switch (modifier) {
     case "open":
       return track === "HH" && (glyph === "x" || glyph === "X");
     case "close":
       return (track === "HH" && (glyph === "x" || glyph === "X")) || (track === "HF" && glyph === "p");
     case "choke":
-      return (track === "C" || track === "RC") && (glyph === "x" || glyph === "X");
+      return ((track === "C" || track === "RC") && (glyph === "x" || glyph === "X")) || (track === "HH" && glyph === "c");
     case "rim":
     case "cross":
       return track === "SD" && (glyph === "d" || glyph === "D");
@@ -176,7 +247,21 @@ function isModifierAllowed(track: TrackName, glyph: Exclude<BasicGlyph, "-">, mo
 }
 
 function isBasicGlyph(value: string): value is BasicGlyph {
-  return ["-", "x", "X", "d", "D", "g", "p", "R", "L", "o", "c"].includes(value);
+  return ["-", "x", "X", "d", "D", "g", "p", "R", "L", "o", "c", "s", "S", "t1", "t2", "t3"].includes(value);
+}
+
+function readBasicGlyph(track: SourceTrackName, input: string, cursor: number): { glyph: BasicGlyph; next: number } | null {
+  if (track === "DR") {
+    const multiChar = ["t1", "t2", "t3"] as const;
+    for (const glyph of multiChar) {
+      if (input.startsWith(glyph, cursor)) {
+        return { glyph, next: cursor + glyph.length };
+      }
+    }
+  }
+
+  const glyph = input[cursor];
+  return isBasicGlyph(glyph) ? { glyph, next: cursor + 1 } : null;
 }
 
 function readModifier(input: string, start: number): { modifier: Modifier; next: number } | null {
@@ -200,7 +285,7 @@ function readModifier(input: string, start: number): { modifier: Modifier; next:
 
 function parseMeasureTokens(
   content: string,
-  track: TrackName,
+  track: SourceTrackName,
   lineNumber: number,
   columnOffset: number,
   errors: ParseError[],
@@ -270,17 +355,19 @@ function parseMeasureTokens(
       continue;
     }
 
-    const glyph = content[cursor];
+    const parsedGlyph = readBasicGlyph(track, content, cursor);
 
-    if (!isBasicGlyph(glyph)) {
+    if (!parsedGlyph) {
       errors.push({
         line: lineNumber,
         column: columnOffset + cursor,
-        message: `Unknown token \`${glyph}\` on track ${track}`,
+        message: `Unknown token \`${content[cursor]}\` on track ${track}`,
       });
       cursor += 1;
       continue;
     }
+
+    const glyph = parsedGlyph.glyph;
 
     if (!isTrackGlyphAllowed(track, glyph)) {
       errors.push({
@@ -302,7 +389,17 @@ function parseMeasureTokens(
       continue;
     }
 
-    if (content[cursor + 1] === ":") {
+    if (content[parsedGlyph.next] === ":") {
+      if (track === "DR") {
+        errors.push({
+          line: lineNumber,
+          column: columnOffset + cursor,
+          message: "Track `DR` does not support modifiers",
+        });
+        cursor = parsedGlyph.next + 1;
+        continue;
+      }
+
       if (glyph === "-") {
         errors.push({
           line: lineNumber,
@@ -313,15 +410,15 @@ function parseMeasureTokens(
         continue;
       }
 
-      const parsedModifier = readModifier(content, cursor + 2);
+      const parsedModifier = readModifier(content, parsedGlyph.next + 1);
 
       if (!parsedModifier) {
         errors.push({
           line: lineNumber,
-          column: columnOffset + cursor + 2,
+          column: columnOffset + parsedGlyph.next + 1,
           message: "Unknown modifier",
         });
-        cursor += 2;
+        cursor = parsedGlyph.next + 1;
         continue;
       }
 
@@ -346,13 +443,13 @@ function parseMeasureTokens(
       kind: "basic",
       value: glyph,
     });
-    cursor += 1;
+    cursor = parsedGlyph.next;
   }
 
   return tokens;
 }
 
-function parseTrackName(line: PreprocessedLine, errors: ParseError[]): { track: TrackName; rest: string } | null {
+function parseTrackName(line: PreprocessedLine, errors: ParseError[]): { track: SourceTrackName; rest: string } | null {
   const match = line.content.match(/^([A-Z0-9]+)\s*(.*)$/);
 
   if (!match) {
@@ -366,7 +463,7 @@ function parseTrackName(line: PreprocessedLine, errors: ParseError[]): { track: 
 
   const track = match[1];
 
-  if (!TRACKS.includes(track as TrackName)) {
+  if (track !== "DR" && !TRACKS.includes(track as TrackName)) {
     errors.push({
       line: line.lineNumber,
       column: 1,
@@ -376,7 +473,7 @@ function parseTrackName(line: PreprocessedLine, errors: ParseError[]): { track: 
   }
 
   return {
-    track: track as TrackName,
+    track: track as SourceTrackName,
     rest: match[2] ?? "",
   };
 }
@@ -578,6 +675,17 @@ export function parseDocumentSkeleton(source: string): DocumentSkeleton {
     const isHeader = parseHeaderLine(line, headers, errors);
 
     if (!isHeader) {
+      const firstToken = line.content.split(/\s+/)[0];
+      if (firstToken && /^[a-z][a-z0-9-]*$/i.test(firstToken) && /^[a-z]/.test(firstToken) && !HEADER_FIELDS.includes(firstToken as (typeof HEADER_FIELDS)[number])) {
+        errors.push({
+          line: line.lineNumber,
+          column: 1,
+          message: `Unknown header \`${firstToken}\``,
+        });
+        bodyStartIndex = index + 1;
+        continue;
+      }
+
       bodyStartIndex = index;
       break;
     }

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { buildMusicXml, buildNormalizedScore } from "./dsl";
 import { TRACKS, type MeasureToken, type Modifier, type NormalizedScore, type ScoreMeasure, type ScoreTrackParagraph, type TrackName } from "./dsl";
 
@@ -323,6 +323,11 @@ export function App() {
     setPreviewMode("staff");
   }
 
+  const handleStaffRendered = useCallback((markup: string | null, error: string | null) => {
+    setStaffMarkup(markup);
+    setStaffRenderError(error);
+  }, []);
+
   return (
     <main className="app-shell">
       <header className="app-header">
@@ -369,10 +374,7 @@ export function App() {
           ) : (
             <StaffPreview
               xml={staffXml}
-              onRendered={(markup, error) => {
-                setStaffMarkup(markup);
-                setStaffRenderError(error);
-              }}
+              onRendered={handleStaffRendered}
             />
           )}
         </section>

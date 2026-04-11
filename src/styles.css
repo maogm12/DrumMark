@@ -71,9 +71,23 @@ textarea {
   gap: 12px;
 }
 
+.preview-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
 .preview-tabs {
   display: inline-flex;
   gap: 6px;
+}
+
+.export-actions {
+  display: inline-flex;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 .preview-tab {
@@ -89,6 +103,20 @@ textarea {
   background: #dff0e4;
   border-color: #b5d9bf;
   color: #1d5f34;
+}
+
+.export-button {
+  border: 1px solid #b9c7d4;
+  border-radius: 6px;
+  background: #f7fafc;
+  color: #284256;
+  padding: 6px 12px;
+  cursor: pointer;
+}
+
+.export-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
 }
 
 .editor,

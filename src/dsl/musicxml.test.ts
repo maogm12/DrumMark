@@ -25,4 +25,17 @@ HH | x x x x x x x x |`);
     expect(xml).toContain("<beam number=\"1\">end</beam>");
     expect(xml).toContain("<beam number=\"1\">begin</beam>");
   });
+
+  it("expands repeats when play count is greater than two", () => {
+    const score = buildNormalizedScore(`time 4/4
+divisions 4
+
+HH |: x - x - :|x3`);
+
+    expect(score.errors).toEqual([]);
+    const xml = buildMusicXml(score);
+    expect(xml.match(/<measure number=/g)).toHaveLength(3);
+    expect(xml).not.toContain("<repeat direction=\"forward\"/>");
+    expect(xml).not.toContain("<repeat direction=\"backward\"/>");
+  });
 });

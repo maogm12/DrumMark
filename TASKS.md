@@ -57,7 +57,7 @@
 - [x] Convert normalized events into MusicXML measures
 - [x] Export tuplets from group syntax
 - [x] Export repeats where possible
-- [ ] Degrade `:|xN` for `N > 2` by expansion if needed
+- [x] Degrade `:|xN` for `N > 2` by expansion if needed
 - [x] Export a single percussion part
 - [x] Keep default beaming within `grouping` boundaries
 - [ ] Verify import in MuseScore
@@ -67,12 +67,10 @@
 - [x] Set up editor pane
 - [x] Set up preview pane
 - [x] Add error panel
-- [ ] Add `Export MusicXML`
-- [ ] Add `Export PDF`
+- [x] Add `Export MusicXML`
+- [x] Add `Export PDF`
 - [x] Add staff-style preview tab
 
 ## Immediate Next Tasks
 
-1. Add `Export MusicXML`
-2. Add `Export PDF`
-3. Decide how to handle repeat counts greater than 2 in exported MusicXML
+1. Verify import in MuseScore

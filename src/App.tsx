@@ -27,6 +27,40 @@ const trackLabel: Record<TrackName, string> = {
   ST: "ST",
 };
 
+function downloadTextFile(filename: string, content: string, mimeType: string) {
+  const blob = new Blob([content], { type: mimeType });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = filename;
+  anchor.click();
+  URL.revokeObjectURL(url);
+}
+
+function printStaffMarkup(markup: string) {
+  const printWindow = window.open("", "_blank", "noopener,noreferrer");
+
+  if (!printWindow) {
+    return false;
+  }
+
+  printWindow.document.write(`<!doctype html>
+<html>
+  <head>
+    <title>Drum Notation PDF Export</title>
+    <style>
+      body { margin: 24px; font-family: Georgia, serif; background: white; }
+      svg { max-width: 100%; height: auto; }
+    </style>
+  </head>
+  <body>${markup}</body>
+</html>`);
+  printWindow.document.close();
+  printWindow.focus();
+  printWindow.print();
+  return true;
+}
+
 function modifierLabel(modifier: Modifier): string {
   switch (modifier) {
     case "open":
@@ -193,7 +227,7 @@ function Preview({ score }: { score: NormalizedScore }) {
   );
 }
 
-function StaffPreview({ xml }: { xml: string }) {
+function StaffPreview({ xml, onRendered }: { xml: string; onRendered: (markup: string | null, error: string | null) => void }) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -222,9 +256,12 @@ function StaffPreview({ xml }: { xml: string }) {
         await osmd.load(xml);
         osmd.render();
         setError(null);
+        onRendered(containerRef.current.innerHTML, null);
       } catch (renderError) {
         if (!cancelled) {
-          setError(renderError instanceof Error ? renderError.message : "Could not render staff preview.");
+          const message = renderError instanceof Error ? renderError.message : "Could not render staff preview.";
+          setError(message);
+          onRendered(null, message);
         }
       }
     }
@@ -234,7 +271,7 @@ function StaffPreview({ xml }: { xml: string }) {
     return () => {
       cancelled = true;
     };
-  }, [xml]);
+  }, [onRendered, xml]);
 
   return (
     <div className="staff-preview-shell">
@@ -251,8 +288,40 @@ function StaffPreview({ xml }: { xml: string }) {
 export function App() {
   const [dsl, setDsl] = useState(seedDsl);
   const [previewMode, setPreviewMode] = useState<"grid" | "staff">("grid");
+  const [staffMarkup, setStaffMarkup] = useState<string | null>(null);
+  const [staffRenderError, setStaffRenderError] = useState<string | null>(null);
+  const [pendingPdfExport, setPendingPdfExport] = useState(false);
   const score = useMemo(() => buildNormalizedScore(dsl), [dsl]);
   const staffXml = useMemo(() => buildMusicXml(score), [score]);
+  const canExport = score.errors.length === 0;
+
+  useEffect(() => {
+    if (pendingPdfExport && staffRenderError) {
+      setPendingPdfExport(false);
+      return;
+    }
+
+    if (!pendingPdfExport || !staffMarkup || staffRenderError) {
+      return;
+    }
+
+    if (printStaffMarkup(staffMarkup)) {
+      setPendingPdfExport(false);
+    }
+  }, [pendingPdfExport, staffMarkup, staffRenderError]);
+
+  function handleMusicXmlExport() {
+    downloadTextFile("drum-notation.musicxml", staffXml, "application/vnd.recordare.musicxml+xml");
+  }
+
+  function handlePdfExport() {
+    if (!canExport) {
+      return;
+    }
+
+    setPendingPdfExport(true);
+    setPreviewMode("staff");
+  }
 
   return (
     <main className="app-shell">
@@ -268,24 +337,44 @@ export function App() {
         <section className="pane preview-pane" aria-label="Preview">
           <div className="preview-header">
             <span className="pane-title">Preview</span>
-            <div className="preview-tabs" role="tablist" aria-label="Preview mode">
-              <button
-                className={`preview-tab${previewMode === "grid" ? " active" : ""}`}
-                onClick={() => setPreviewMode("grid")}
-                type="button"
-              >
-                Grid
-              </button>
-              <button
-                className={`preview-tab${previewMode === "staff" ? " active" : ""}`}
-                onClick={() => setPreviewMode("staff")}
-                type="button"
-              >
-                Staff
-              </button>
+            <div className="preview-actions">
+              <div className="preview-tabs" role="tablist" aria-label="Preview mode">
+                <button
+                  className={`preview-tab${previewMode === "grid" ? " active" : ""}`}
+                  onClick={() => setPreviewMode("grid")}
+                  type="button"
+                >
+                  Grid
+                </button>
+                <button
+                  className={`preview-tab${previewMode === "staff" ? " active" : ""}`}
+                  onClick={() => setPreviewMode("staff")}
+                  type="button"
+                >
+                  Staff
+                </button>
+              </div>
+              <div className="export-actions">
+                <button className="export-button" disabled={!canExport} onClick={handleMusicXmlExport} type="button">
+                  Export MusicXML
+                </button>
+                <button className="export-button" disabled={!canExport} onClick={handlePdfExport} type="button">
+                  Export PDF
+                </button>
+              </div>
             </div>
           </div>
-          {previewMode === "grid" ? <Preview score={score} /> : <StaffPreview xml={staffXml} />}
+          {previewMode === "grid" ? (
+            <Preview score={score} />
+          ) : (
+            <StaffPreview
+              xml={staffXml}
+              onRendered={(markup, error) => {
+                setStaffMarkup(markup);
+                setStaffRenderError(error);
+              }}
+            />
+          )}
         </section>
       </section>
       <section className="error-panel" aria-label="Errors">

@@ -23,6 +23,13 @@ type VoiceEntry =
   | { kind: "rest"; start: Fraction; duration: Fraction }
   | { kind: "notes"; start: Fraction; duration: Fraction; events: NormalizedEvent[] };
 
+type ExportMeasure = {
+  measure: NormalizedScore["measures"][number];
+  showRepeatStart: boolean;
+  showRepeatEnd: boolean;
+  outputIndex: number;
+};
+
 function gcd(a: number, b: number): number {
   let x = Math.abs(a);
   let y = Math.abs(b);
@@ -367,8 +374,8 @@ function groupingSegmentIndex(score: NormalizedScore, position: Fraction): numbe
   return Math.max(0, score.ast.headers.grouping.values.length - 1);
 }
 
-function measureXml(score: NormalizedScore, measureIndex: number, divisions: number, forceLineBreak: boolean): string {
-  const measure = score.measures[measureIndex];
+function measureXml(score: NormalizedScore, exportMeasure: ExportMeasure, divisions: number, forceLineBreak: boolean): string {
+  const measure = exportMeasure.measure;
   const measureDuration = {
     numerator: score.ast.headers.time.beats,
     denominator: score.ast.headers.time.beatUnit,
@@ -383,7 +390,7 @@ function measureXml(score: NormalizedScore, measureIndex: number, divisions: num
     ? buildVoiceEntries(groupVoiceEvents(downEvents), measureStart, measureDuration)
     : [];
   const attributes =
-    measureIndex === 0
+    exportMeasure.outputIndex === 0
       ? [
           "<attributes>",
           `<divisions>${divisions}</divisions>`,
@@ -395,14 +402,11 @@ function measureXml(score: NormalizedScore, measureIndex: number, divisions: num
           `<direction placement="above"><direction-type><metronome><beat-unit>quarter</beat-unit><per-minute>${score.ast.headers.tempo.value}</per-minute></metronome></direction-type><sound tempo="${score.ast.headers.tempo.value}"/></direction>`,
         ].join("")
       : "";
-  const repeatStart = score.ast.repeatSpans.some((span) => span.startBar === measure.globalIndex)
+  const repeatStart = exportMeasure.showRepeatStart
     ? "<barline location=\"left\"><repeat direction=\"forward\"/></barline>"
     : "";
-  const repeatEndSpan = score.ast.repeatSpans.find((span) => span.endBar === measure.globalIndex);
-  const repeatEnd = repeatEndSpan
-    ? `<barline location="right"><repeat direction="backward"/>${
-        repeatEndSpan.times > 2 ? `<ending number="1" type="stop"/>` : ""
-      }</barline>`
+  const repeatEnd = exportMeasure.showRepeatEnd
+    ? "<barline location=\"right\"><repeat direction=\"backward\"/></barline>"
     : "";
 
   function processVoiceEntries(entries: VoiceEntry[], voice: VoiceTrack): string[] {
@@ -475,7 +479,7 @@ function measureXml(score: NormalizedScore, measureIndex: number, divisions: num
   }
 
   return [
-    `<measure number="${measure.globalIndex + 1}">`,
+    `<measure number="${exportMeasure.outputIndex + 1}">`,
     forceLineBreak ? "<print new-system=\"yes\"/>" : "",
     attributes,
     repeatStart,
@@ -485,12 +489,47 @@ function measureXml(score: NormalizedScore, measureIndex: number, divisions: num
   ].join("");
 }
 
+function buildExportMeasures(score: NormalizedScore): ExportMeasure[] {
+  const repeatByStart = new Map(score.ast.repeatSpans.map((span) => [span.startBar, span] as const));
+  const expanded: ExportMeasure[] = [];
+
+  for (let index = 0; index < score.measures.length; index += 1) {
+    const measure = score.measures[index];
+    const repeatSpan = repeatByStart.get(measure.globalIndex);
+
+    if (repeatSpan && repeatSpan.times > 2) {
+      for (let repeatIndex = 0; repeatIndex < repeatSpan.times; repeatIndex += 1) {
+        for (let bar = repeatSpan.startBar; bar <= repeatSpan.endBar; bar += 1) {
+          expanded.push({
+            measure: score.measures[bar],
+            showRepeatStart: false,
+            showRepeatEnd: false,
+            outputIndex: expanded.length,
+          });
+        }
+      }
+
+      index = repeatSpan.endBar;
+      continue;
+    }
+
+    expanded.push({
+      measure,
+      showRepeatStart: score.ast.repeatSpans.some((span) => span.startBar === measure.globalIndex && span.times <= 2),
+      showRepeatEnd: score.ast.repeatSpans.some((span) => span.endBar === measure.globalIndex && span.times <= 2),
+      outputIndex: expanded.length,
+    });
+  }
+
+  return expanded;
+}
+
 export function buildMusicXml(score: NormalizedScore): string {
   const divisions = collectDivisions(score);
-  const measures = score.measures.map((_, index) => {
-    const measure = score.measures[index];
-    const forceLineBreak = measure.measureInParagraph === 0 && measure.globalIndex > 0;
-    return measureXml(score, index, divisions, forceLineBreak);
+  const exportMeasures = buildExportMeasures(score);
+  const measures = exportMeasures.map((exportMeasure) => {
+    const forceLineBreak = exportMeasure.measure.measureInParagraph === 0 && exportMeasure.outputIndex > 0;
+    return measureXml(score, exportMeasure, divisions, forceLineBreak);
   }).join("");
 
   return `<?xml version="1.0" encoding="UTF-8"?>

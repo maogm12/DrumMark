@@ -39,97 +39,108 @@ function downloadTextFile(filename: string, content: string, mimeType: string) {
   URL.revokeObjectURL(url);
 }
 
-function printStaffMarkup(markup: string) {
-  const printWindow = window.open("", "_blank");
+function safeExportBasename(title: string | undefined) {
+  const filename = title ? title : "drum-notation";
+  return filename
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}]+/gu, "-")
+    .replace(/^-+|-+$/g, "") || "drum-notation";
+}
 
-  if (!printWindow) {
-    return false;
+function svgSize(svg: SVGSVGElement) {
+  const viewBox = svg.getAttribute("viewBox")?.trim().split(/\s+/).map(Number);
+  const viewBoxWidth = viewBox && viewBox.length === 4 && Number.isFinite(viewBox[2]) ? viewBox[2] : 0;
+  const viewBoxHeight = viewBox && viewBox.length === 4 && Number.isFinite(viewBox[3]) ? viewBox[3] : 0;
+  const attrWidth = Number.parseFloat(svg.getAttribute("width") ?? "");
+  const attrHeight = Number.parseFloat(svg.getAttribute("height") ?? "");
+  const rect = svg.getBoundingClientRect();
+
+  return {
+    width: viewBoxWidth || attrWidth || rect.width || 900,
+    height: viewBoxHeight || attrHeight || rect.height || 240,
+  };
+}
+
+async function downloadStaffPdf(markup: string, filename: string) {
+  const [{ jsPDF }, { svg2pdf }] = await Promise.all([
+    import("jspdf"),
+    import("svg2pdf.js"),
+  ]);
+  const container = document.createElement("div");
+  container.style.position = "absolute";
+  container.style.left = "-10000px";
+  container.style.top = "0";
+  container.style.width = "900px";
+  container.style.background = "white";
+  container.style.color = "black";
+  container.style.visibility = "hidden";
+  container.innerHTML = markup;
+  document.body.appendChild(container);
+
+  try {
+    const pdf = new jsPDF({ orientation: "portrait", unit: "pt", format: "letter" });
+    const pageWidth = 612;
+    const pageHeight = 792;
+    const margin = 36;
+    const contentWidth = pageWidth - margin * 2;
+    const contentBottom = pageHeight - margin;
+    let y = margin;
+
+    const title = container.querySelector<HTMLElement>(".staff-score-title")?.textContent?.trim();
+    const subtitle = container.querySelector<HTMLElement>(".staff-score-subtitle")?.textContent?.trim();
+    const composer = container.querySelector<HTMLElement>(".staff-score-composer")?.textContent?.trim();
+
+    pdf.setProperties({ title: title || "Drum Notation" });
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(22);
+    pdf.text(title || "Drum Notation", pageWidth / 2, y, { align: "center" });
+    y += 22;
+
+    if (subtitle) {
+      pdf.setFont("helvetica", "italic");
+      pdf.setFontSize(13);
+      pdf.text(subtitle, pageWidth / 2, y, { align: "center" });
+      y += 18;
+    }
+
+    if (composer) {
+      pdf.setFont("helvetica", "normal");
+      pdf.setFontSize(11);
+      pdf.text(composer, pageWidth - margin, y, { align: "right" });
+      y += 20;
+    } else {
+      y += 12;
+    }
+
+    const svgs = [...container.querySelectorAll<SVGSVGElement>(".staff-preview svg")];
+    if (svgs.length === 0) {
+      throw new Error("Staff preview is not ready yet.");
+    }
+
+    for (const svg of svgs) {
+      const size = svgSize(svg);
+      const scale = Math.min(contentWidth / size.width, (contentBottom - margin) / size.height);
+      const renderWidth = size.width * scale;
+      const renderHeight = size.height * scale;
+
+      if (y + renderHeight > contentBottom) {
+        pdf.addPage();
+        y = margin;
+      }
+
+      await svg2pdf(svg, pdf, {
+        x: margin + (contentWidth - renderWidth) / 2,
+        y,
+        width: renderWidth,
+        height: renderHeight,
+      });
+      y += renderHeight + 12;
+    }
+
+    pdf.save(filename);
+  } finally {
+    document.body.removeChild(container);
   }
-
-  printWindow.document.write(`<!doctype html>
-<html>
-  <head>
-    <title>Drum Notation PDF Export</title>
-    <style>
-      @page {
-        size: letter;
-        margin: 0.5in;
-      }
-      html, body {
-        height: auto !important;
-        overflow: visible !important;
-        margin: 0;
-        padding: 0;
-        background: white;
-        color: black;
-        font-family: "Georgia", serif;
-      }
-      .staff-score-metadata {
-        text-align: center;
-        margin-bottom: 20px;
-        page-break-inside: avoid;
-        page-break-after: avoid;
-        display: block !important;
-      }
-      .staff-score-title { 
-        margin: 0; 
-        font-size: 24pt; 
-        font-weight: bold; 
-        line-height: 1.2;
-      }
-      .staff-score-subtitle { 
-        margin: 4pt 0 0; 
-        font-size: 14pt; 
-        font-style: italic; 
-      }
-      .staff-score-composer { 
-        margin: 8pt 0 0; 
-        font-size: 12pt; 
-        text-align: right; 
-      }
-
-      .staff-preview, .staff-printable {
-        display: block !important;
-        height: auto !important;
-        overflow: visible !important;
-        width: 100% !important;
-      }
-
-      /* Each system is an SVG. Ensure they don't break in middle. */
-      svg {
-        display: block !important;
-        width: 100% !important;
-        height: auto !important;
-        page-break-inside: avoid !important;
-        break-inside: avoid !important;
-        margin-bottom: 0.2in;
-        overflow: visible !important;
-      }
-
-      /* Clean up any UI artifacts */
-      * {
-        box-sizing: border-box;
-        -webkit-print-color-adjust: exact;
-      }
-
-      /* Force display of elements that might be hidden by UI logic */
-      .staff-score-metadata, .staff-preview {
-        visibility: visible !important;
-        opacity: 1 !important;
-      }
-    </style>
-  </head>
-  <body>${markup}</body>
-</html>`);
-  printWindow.document.close();
-
-  // Use a slightly longer timeout to ensure browser layout engine captures SVG dimensions
-  setTimeout(() => {
-    printWindow.focus();
-    printWindow.print();
-  }, 800);
-
-  return true;
 }
 function parsePreviewMode(value: string | null): PreviewMode {
   return value === "staff" || value === "xml" ? value : "grid";
@@ -651,6 +662,7 @@ export function App() {
 
   useEffect(() => {
     if (pendingPdfExport && staffRenderError) {
+      window.alert(`Could not render PDF: ${staffRenderError}`);
       setPendingPdfExport(false);
       return;
     }
@@ -659,10 +671,29 @@ export function App() {
       return;
     }
 
-    if (printStaffMarkup(staffMarkup)) {
-      setPendingPdfExport(false);
+    let cancelled = false;
+
+    async function exportPdf() {
+      try {
+        await downloadStaffPdf(staffMarkup!, `${safeExportBasename(score.ast.headers.title?.value)}.pdf`);
+      } catch (error) {
+        if (!cancelled) {
+          const message = error instanceof Error ? error.message : "Could not export PDF.";
+          window.alert(message);
+        }
+      } finally {
+        if (!cancelled) {
+          setPendingPdfExport(false);
+        }
+      }
     }
-  }, [pendingPdfExport, staffMarkup, staffRenderError]);
+
+    void exportPdf();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [pendingPdfExport, score.ast.headers.title?.value, staffMarkup, staffRenderError]);
 
   const handleMouseDown = useCallback(() => {
     isResizingRef.current = true;
@@ -691,14 +722,7 @@ export function App() {
   }, []);
 
   function handleMusicXmlExport() {
-    const title = score.ast.headers.title?.value;
-    const filename = title ? title : "drum-notation";
-    // Use Unicode-aware regex to keep letters and numbers from any script (including Chinese)
-    const safeTitle = filename
-      .toLowerCase()
-      .replace(/[^\p{L}\p{N}]+/gu, "-")
-      .replace(/^-+|-+$/g, "");
-    downloadTextFile(`${safeTitle || "drum-notation"}.musicxml`, staffXml, "application/vnd.recordare.musicxml+xml");
+    downloadTextFile(`${safeExportBasename(score.ast.headers.title?.value)}.musicxml`, staffXml, "application/vnd.recordare.musicxml+xml");
   }
 
   function handlePdfExport() {
@@ -706,8 +730,12 @@ export function App() {
       return;
     }
 
+    setStaffRenderError(null);
+    if (previewMode !== "staff") {
+      setStaffMarkup(null);
+      setPreviewMode("staff");
+    }
     setPendingPdfExport(true);
-    setPreviewMode("staff");
   }
 
   const handleStaffRendered = useCallback((markup: string | null, error: string | null) => {
@@ -726,8 +754,8 @@ export function App() {
           <button className="export-button" disabled={!canExport} onClick={handleMusicXmlExport} type="button">
             Export MusicXML
           </button>
-          <button className="export-button primary" disabled={!canExport} onClick={handlePdfExport} type="button">
-            Print / PDF
+          <button className="export-button primary" disabled={!canExport || pendingPdfExport} onClick={handlePdfExport} type="button">
+            {pendingPdfExport ? "Exporting PDF" : "Export PDF"}
           </button>
         </div>
       </header>

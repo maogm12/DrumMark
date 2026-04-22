@@ -11,9 +11,11 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "jspdf": "^4.2.1",
     "opensheetmusicdisplay": "^1.9.7",
     "react": "^19.2.0",
-    "react-dom": "^19.2.0"
+    "react-dom": "^19.2.0",
+    "svg2pdf.js": "^2.7.0"
   },
   "devDependencies": {
     "@types/react": "^19.2.2",

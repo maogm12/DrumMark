@@ -150,6 +150,8 @@ input {
   display: flex;
   align-items: center;
   gap: 16px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 .preview-tabs {
@@ -410,9 +412,22 @@ input {
   padding: 40px;
 }
 
+.staff-preview-shell.paper-width {
+  background: var(--bg-app);
+}
+
 .staff-printable {
   max-width: 900px;
   margin: 0 auto;
+}
+
+.staff-printable.paper-width {
+  width: 900px;
+  max-width: none;
+  padding: 32px;
+  background: white;
+  border: 1px solid var(--border-subtle);
+  box-shadow: var(--shadow-sm);
 }
 
 .staff-score-metadata {
@@ -643,6 +658,10 @@ input {
     padding: 18px;
   }
 
+  .staff-printable.paper-width {
+    padding: 20px;
+  }
+
   .xml-preview pre {
     padding: 14px;
     font-size: 0.76rem;
@@ -689,5 +708,9 @@ input {
   .preview-header-actions {
     width: 100%;
     justify-content: space-between;
+  }
+
+  .preview-setting {
+    font-size: 0.72rem;
   }
 }

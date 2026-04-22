@@ -15,6 +15,7 @@ RC |  - - x:bell - - - - - | - - - - x - - - |
 ST |  [2: R L R] - - -     | R - L - R - L - |`;
 
 type PreviewMode = "grid" | "staff" | "xml";
+const staffPaperWidth = 900;
 
 const trackLabel: Record<TrackName, string> = {
   HH: "HH",
@@ -505,7 +506,17 @@ function StaffScoreMetadata({ score }: { score: NormalizedScore }) {
   );
 }
 
-function StaffPreview({ score, xml, onRendered }: { score: NormalizedScore; xml: string; onRendered: (markup: string | null, error: string | null) => void }) {
+function StaffPreview({
+  score,
+  xml,
+  paperWidth,
+  onRendered,
+}: {
+  score: NormalizedScore;
+  xml: string;
+  paperWidth: boolean;
+  onRendered: (markup: string | null, error: string | null) => void;
+}) {
   const printableRef = useRef<HTMLDivElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const shellRef = useRef<HTMLDivElement | null>(null);
@@ -537,7 +548,8 @@ function StaffPreview({ score, xml, onRendered }: { score: NormalizedScore; xml:
 
         // 1. Create a hidden buffer container to render off-screen
         const buffer = document.createElement("div");
-        buffer.style.width = `${containerRef.current.clientWidth}px`;
+        const renderWidth = paperWidth ? staffPaperWidth : Math.max(containerRef.current.clientWidth, 320);
+        buffer.style.width = `${renderWidth}px`;
         buffer.style.position = "absolute";
         buffer.style.visibility = "hidden";
         buffer.style.pointerEvents = "none";
@@ -549,7 +561,7 @@ function StaffPreview({ score, xml, onRendered }: { score: NormalizedScore; xml:
           drawingParameters: "compacttight",
           newSystemFromXML: true,
           drawTimeSignatures: true,
-          drawMeasureNumbers: false,
+          drawMeasureNumbers: true,
           percussionOneLineCutoff: 0,
         });
 
@@ -594,12 +606,12 @@ function StaffPreview({ score, xml, onRendered }: { score: NormalizedScore; xml:
     return () => {
       cancelled = true;
     };
-  }, [xml]);
+  }, [paperWidth, xml]);
 
   return (
-    <div className="staff-preview-shell" ref={shellRef} onScroll={handleScroll}>
+    <div className={`staff-preview-shell${paperWidth ? " paper-width" : ""}`} ref={shellRef} onScroll={handleScroll}>
       {error ? <div className="staff-error">{error}</div> : null}
-      <div className="staff-printable" ref={printableRef}>
+      <div className={`staff-printable${paperWidth ? " paper-width" : ""}`} ref={printableRef}>
         <StaffScoreMetadata score={score} />
         <div className="staff-preview" ref={containerRef} />
       </div>
@@ -633,6 +645,7 @@ export function App() {
   const [staffRenderError, setStaffRenderError] = useState<string | null>(null);
   const [pendingPdfExport, setPendingPdfExport] = useState(false);
   const [hideVoice2Rests, setHideVoice2Rests] = useState(() => localStorage.getItem("drum-notation-hide-voice2-rests") === "true");
+  const [staffPaperPreview, setStaffPaperPreview] = useState(() => localStorage.getItem("drum-notation-staff-paper-preview") === "true");
   
   const [editorWidth, setEditorWidth] = useState(() => {
     const saved = localStorage.getItem("drum-notation-editor-width");
@@ -655,6 +668,10 @@ export function App() {
   useEffect(() => {
     localStorage.setItem("drum-notation-hide-voice2-rests", String(hideVoice2Rests));
   }, [hideVoice2Rests]);
+
+  useEffect(() => {
+    localStorage.setItem("drum-notation-staff-paper-preview", String(staffPaperPreview));
+  }, [staffPaperPreview]);
 
   useEffect(() => {
     localStorage.setItem("drum-notation-editor-width", String(editorWidth));
@@ -730,12 +747,21 @@ export function App() {
       return;
     }
 
+    setStaffMarkup(null);
     setStaffRenderError(null);
+    if (!staffPaperPreview) {
+      setStaffPaperPreview(true);
+    }
     if (previewMode !== "staff") {
-      setStaffMarkup(null);
       setPreviewMode("staff");
     }
     setPendingPdfExport(true);
+  }
+
+  function handleStaffPaperPreviewChange(value: boolean) {
+    setStaffMarkup(null);
+    setStaffRenderError(null);
+    setStaffPaperPreview(value);
   }
 
   const handleStaffRendered = useCallback((markup: string | null, error: string | null) => {
@@ -782,6 +808,14 @@ export function App() {
                 />
                 Hide V2 Rests
               </label>
+              <label className="preview-setting">
+                <input
+                  type="checkbox"
+                  checked={staffPaperPreview}
+                  onChange={(e) => handleStaffPaperPreviewChange(e.target.checked)}
+                />
+                Paper Width
+              </label>
               <div className="preview-tabs" role="tablist">
                 <button
                   className={`preview-tab${previewMode === "grid" ? " active" : ""}`}
@@ -813,6 +847,7 @@ export function App() {
             <StaffPreview
               score={score}
               xml={staffXml}
+              paperWidth={staffPaperPreview}
               onRendered={handleStaffRendered}
             />
           ) : (

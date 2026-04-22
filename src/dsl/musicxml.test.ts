@@ -55,6 +55,18 @@ HH |: x - x - :|x3`);
     expect(xml).not.toContain("<repeat direction=\"backward\"/>");
   });
 
+  it("requests system-level measure numbers", () => {
+    const score = buildNormalizedScore(`time 4/4
+divisions 4
+
+HH | x - x - |`);
+
+    expect(score.errors).toEqual([]);
+    const xml = buildMusicXml(score);
+
+    expect(xml).toContain("<print><measure-numbering>system</measure-numbering></print>");
+  });
+
   it("can hide voice 2 rests with forward elements", () => {
     const score = buildNormalizedScore(`time 4/4
 divisions 4

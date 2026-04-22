@@ -545,6 +545,11 @@ function measureXml(score: NormalizedScore, exportMeasure: ExportMeasure, divisi
   const repeatEnd = exportMeasure.showRepeatEnd
     ? "<barline location=\"right\"><repeat direction=\"backward\"/></barline>"
     : "";
+  const print = exportMeasure.outputIndex === 0
+    ? "<print><measure-numbering>system</measure-numbering></print>"
+    : forceLineBreak
+      ? "<print new-system=\"yes\"><measure-numbering>system</measure-numbering></print>"
+      : "";
 
   function processVoiceEntries(entries: VoiceEntry[], voice: VoiceTrack): string[] {
     const result: string[] = [];
@@ -647,7 +652,7 @@ function measureXml(score: NormalizedScore, exportMeasure: ExportMeasure, divisi
 
   return [
     `<measure number="${exportMeasure.outputIndex + 1}">`,
-    forceLineBreak ? "<print new-system=\"yes\"/>" : "",
+    print,
     attributes,
     repeatStart,
     ...voiceContent,

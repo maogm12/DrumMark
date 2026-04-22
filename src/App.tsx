@@ -40,7 +40,7 @@ function downloadTextFile(filename: string, content: string, mimeType: string) {
 }
 
 function printStaffMarkup(markup: string) {
-  const printWindow = window.open("", "_blank", "noopener,noreferrer");
+  const printWindow = window.open("", "_blank");
 
   if (!printWindow) {
     return false;
@@ -63,7 +63,10 @@ function printStaffMarkup(markup: string) {
 </html>`);
   printWindow.document.close();
   printWindow.focus();
-  printWindow.print();
+  printWindow.requestAnimationFrame(() => {
+    printWindow.focus();
+    printWindow.print();
+  });
   return true;
 }
 

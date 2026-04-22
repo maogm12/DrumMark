@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode, type UIEvent } from "react";
+import type { jsPDF as JsPdfDocument } from "jspdf";
 import { buildMusicXml, buildNormalizedScore } from "./dsl";
 import { TRACKS, type MeasureToken, type Modifier, type NormalizedScore, type ScoreMeasure, type ScoreTrackParagraph, type TrackName } from "./dsl";
 
@@ -62,6 +63,62 @@ function svgSize(svg: SVGSVGElement) {
   };
 }
 
+function addPdfTextImage(
+  pdf: JsPdfDocument,
+  text: string,
+  {
+    x,
+    y,
+    maxWidth,
+    size,
+    align,
+    weight = 400,
+    italic = false,
+  }: {
+    x: number;
+    y: number;
+    maxWidth: number;
+    size: number;
+    align: CanvasTextAlign;
+    weight?: number;
+    italic?: boolean;
+  },
+) {
+  const lineHeight = size * 1.3;
+  const scale = 3;
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.ceil(maxWidth * scale);
+  canvas.height = Math.ceil(lineHeight * scale);
+  const context = canvas.getContext("2d");
+
+  if (!context) {
+    return lineHeight;
+  }
+
+  function setFont(fontSize: number) {
+    const style = italic ? "italic" : "normal";
+    context!.font = `${style} ${weight} ${fontSize}px Arial, "Noto Sans SC", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif`;
+  }
+
+  context.scale(scale, scale);
+  context.clearRect(0, 0, maxWidth, lineHeight);
+  context.fillStyle = "#000";
+  context.textAlign = align;
+  context.textBaseline = "middle";
+
+  setFont(size);
+  const measuredWidth = context.measureText(text).width;
+  if (measuredWidth > maxWidth) {
+    setFont(Math.max(8, size * (maxWidth / measuredWidth)));
+  }
+
+  const textX = align === "center" ? maxWidth / 2 : align === "right" ? maxWidth : 0;
+  context.fillText(text, textX, lineHeight / 2);
+
+  pdf.addImage(canvas.toDataURL("image/png"), "PNG", x, y, maxWidth, lineHeight);
+  return lineHeight;
+}
+
 async function downloadStaffPdf(markup: string, filename: string) {
   const [{ jsPDF }, { svg2pdf }] = await Promise.all([
     import("jspdf"),
@@ -91,24 +148,37 @@ async function downloadStaffPdf(markup: string, filename: string) {
     const subtitle = container.querySelector<HTMLElement>(".staff-score-subtitle")?.textContent?.trim();
     const composer = container.querySelector<HTMLElement>(".staff-score-composer")?.textContent?.trim();
 
-    pdf.setProperties({ title: title || "Drum Notation" });
-    pdf.setFont("helvetica", "bold");
-    pdf.setFontSize(22);
-    pdf.text(title || "Drum Notation", pageWidth / 2, y, { align: "center" });
-    y += 22;
+    const pdfTitle = title || "Drum Notation";
+    pdf.setProperties({ title: pdfTitle });
+    y += addPdfTextImage(pdf, pdfTitle, {
+      x: margin,
+      y,
+      maxWidth: contentWidth,
+      size: 22,
+      align: "center",
+      weight: 700,
+    });
 
     if (subtitle) {
-      pdf.setFont("helvetica", "italic");
-      pdf.setFontSize(13);
-      pdf.text(subtitle, pageWidth / 2, y, { align: "center" });
-      y += 18;
+      y += addPdfTextImage(pdf, subtitle, {
+        x: margin,
+        y,
+        maxWidth: contentWidth,
+        size: 13,
+        align: "center",
+        italic: true,
+      });
     }
 
     if (composer) {
-      pdf.setFont("helvetica", "normal");
-      pdf.setFontSize(11);
-      pdf.text(composer, pageWidth - margin, y, { align: "right" });
-      y += 20;
+      y += addPdfTextImage(pdf, composer, {
+        x: margin,
+        y,
+        maxWidth: contentWidth,
+        size: 11,
+        align: "right",
+      });
+      y += 8;
     } else {
       y += 12;
     }

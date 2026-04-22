@@ -37,9 +37,9 @@
 - [x] Validate modifier legality
 - [ ] Validate `DR` rejects modifiers
 - [x] Validate group arity
-- [ ] Validate supported group ratios and stretched durations
-- [ ] Reject groups requiring automatic tie splitting
-- [ ] Reject group durations below 64th note
+- [x] Validate supported group ratios and stretched durations
+- [x] Reject groups requiring automatic tie splitting
+- [x] Reject group durations below 64th note
 - [x] Validate measure slot totals against `divisions`
 - [x] Validate `grouping` compatibility against `time` and `divisions`
 - [x] Validate `DR` paragraph exclusivity with explicit drum tracks
@@ -83,12 +83,9 @@
 
 ## Immediate Next Tasks
 
-1. Validate supported group ratios and stretched durations
-2. Reject groups requiring automatic tie splitting
-3. Reject group durations below 64th note
-4. Export supported modifiers with stable MusicXML semantics
-5. Exclude `ST` sticking from MusicXML export
-6. Validate `DR` rejects modifiers
-7. Validate whitespace-equivalent measure syntax
-8. Align normalized event model documentation with v0 implementation
-9. Verify import in MuseScore
+1. Export supported modifiers with stable MusicXML semantics
+2. Exclude `ST` sticking from MusicXML export
+3. Validate `DR` rejects modifiers
+4. Validate whitespace-equivalent measure syntax
+5. Align normalized event model documentation with v0 implementation
+6. Verify import in MuseScore

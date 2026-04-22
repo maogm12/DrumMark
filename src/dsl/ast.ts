@@ -138,6 +138,10 @@ function isSupportedSimpleDuration(numerator: number, denominator: number): bool
   return baseDurations.has(`${n}/${d}`) || dottedDurations.has(`${n}/${d}`);
 }
 
+function isBelowSixtyFourth(numerator: number, denominator: number): boolean {
+  return numerator * 64 < denominator;
+}
+
 function validateGrouping(headers: ScoreAst["headers"], errors: ParseError[]): void {
   const groupingTotal = headers.grouping.values.reduce((total, value) => total + value, 0);
   if (groupingTotal !== headers.time.beats) {
@@ -179,9 +183,19 @@ function validateGroupToken(
     validateGroupToken(item, measureDurationNumerator, measureDurationDenominator, divisions, errors, line);
   }
 
+  const itemNumerator = measureDurationNumerator * token.span;
+  const itemDenominator = measureDurationDenominator * divisions * token.count;
+
+  if (isBelowSixtyFourth(itemNumerator, itemDenominator)) {
+    errors.push({
+      line,
+      column: 1,
+      message: "Group item durations below 64th notes are not supported in v0",
+    });
+    return;
+  }
+
   if (token.count <= token.span) {
-    const itemNumerator = measureDurationNumerator * token.span;
-    const itemDenominator = measureDurationDenominator * divisions * token.count;
     if (!isSupportedSimpleDuration(itemNumerator, itemDenominator)) {
       errors.push({
         line,

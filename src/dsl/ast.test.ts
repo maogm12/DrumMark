@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { buildScoreAst } from "./ast";
 
+const rests = (count: number) => Array.from({ length: count }, () => "-").join(" ");
+
 describe("buildScoreAst", () => {
   it("auto-fills missing known tracks inside later paragraphs", () => {
     const score = buildScoreAst(`time 4/4
@@ -130,6 +132,42 @@ SD | d - - - |`);
         line: 5,
         column: 1,
         message: "Track `DR` cannot be mixed with explicit `SD`, `T1`, `T2`, or `T3` lines in the same paragraph",
+      },
+    ]);
+  });
+
+  it("reports non-exportable group forms", () => {
+    const score = buildScoreAst(`time 4/4
+divisions 16
+
+HH | [2: x x x x x] ${rests(14)} |
+SD | [5: d] ${rests(11)} |`);
+
+    expect(score.errors).toEqual([
+      {
+        line: 4,
+        column: 1,
+        message: "Unsupported compressed group ratio 5 in 2",
+      },
+      {
+        line: 5,
+        column: 1,
+        message: "Stretched group items must map to a supported single note value without tie splitting",
+      },
+    ]);
+  });
+
+  it("rejects group item durations below 64th notes", () => {
+    const score = buildScoreAst(`time 4/4
+divisions 64
+
+HH | [1: x x] ${rests(63)} |`);
+
+    expect(score.errors).toEqual([
+      {
+        line: 4,
+        column: 1,
+        message: "Group item durations below 64th notes are not supported in v0",
       },
     ]);
   });

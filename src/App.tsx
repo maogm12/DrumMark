@@ -16,10 +16,6 @@ ST |  [2: R L R] - - -     | R - L - R - L - |`;
 
 type PreviewMode = "grid" | "staff" | "xml";
 const staffPaperWidth = 900;
-const pdfCjkFontName = "SourceHanSansCN";
-const pdfCjkFontUrl = "https://raw.githubusercontent.com/adobe-fonts/source-han-sans/release/Variable/TTF/Subset/SourceHanSansCN-VF.ttf";
-
-let pdfCjkFontBytes: Uint8Array | null = null;
 
 const trackLabel: Record<TrackName, string> = {
   HH: "HH",
@@ -69,89 +65,66 @@ function svgSize(svg: SVGSVGElement) {
   };
 }
 
-function hasCjkText(value: string | undefined): boolean {
-  return Boolean(value && /[^\u0000-\u00ff]/.test(value));
+function xmlEscape(value: string): string {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;");
 }
 
-async function loadPdfCjkFont() {
-  if (pdfCjkFontBytes) {
-    return pdfCjkFontBytes;
-  }
-
-  const response = await fetch(pdfCjkFontUrl);
-  if (!response.ok) {
-    throw new Error(`Could not load PDF font: ${response.status}`);
-  }
-
-  pdfCjkFontBytes = new Uint8Array(await response.arrayBuffer());
-  return pdfCjkFontBytes;
-}
-
-async function addSubsetCjkMetadata(
-  pdfBytes: ArrayBuffer,
+async function addMetadataSvgImage(
+  pdf: any,
   metadata: { title: string; subtitle?: string; composer?: string },
-  layout: { margin: number; contentWidth: number; pageWidth: number },
+  layout: { x: number; y: number; width: number; height: number },
 ) {
-  const [{ PDFDocument, rgb }, fontkit] = await Promise.all([
-    import("pdf-lib"),
-    import("@pdf-lib/fontkit"),
-  ]);
-  const pdfDoc = await PDFDocument.load(pdfBytes);
-  pdfDoc.registerFontkit(fontkit.default ?? fontkit);
-  pdfDoc.setTitle(metadata.title);
-  const font = await pdfDoc.embedFont(await loadPdfCjkFont(), {
-    subset: true,
-    customName: pdfCjkFontName,
-  });
-  const firstPage = pdfDoc.getPage(0);
-  const { height } = firstPage.getSize();
-  let y = height - layout.margin;
+  const lines = [
+    `<text x="${layout.width / 2}" y="28" text-anchor="middle" font-size="22" font-weight="700">${xmlEscape(metadata.title)}</text>`,
+  ];
+  let y = 49;
 
-  function drawPdfText(
-    text: string,
-    {
-      size,
-      align,
-    }: {
-      size: number;
-      align: "center" | "right";
-    },
-  ) {
-    const lineHeight = size * 1.3;
-    let fontSize = size;
-    let textWidth = font.widthOfTextAtSize(text, fontSize);
-    if (textWidth > layout.contentWidth) {
-      fontSize = Math.max(8, size * (layout.contentWidth / textWidth));
-      textWidth = font.widthOfTextAtSize(text, fontSize);
-    }
-
-    const x = align === "center"
-      ? (layout.pageWidth - textWidth) / 2
-      : layout.pageWidth - layout.margin - textWidth;
-    firstPage.drawText(text, {
-      x,
-      y: y - fontSize,
-      size: fontSize,
-      font,
-      color: rgb(0, 0, 0),
-    });
-    y -= lineHeight;
-  }
-
-  drawPdfText(metadata.title, { size: 22, align: "center" });
   if (metadata.subtitle) {
-    drawPdfText(metadata.subtitle, { size: 13, align: "center" });
-  }
-  if (metadata.composer) {
-    drawPdfText(metadata.composer, { size: 11, align: "right" });
+    lines.push(`<text x="${layout.width / 2}" y="${y}" text-anchor="middle" font-size="13" font-style="italic">${xmlEscape(metadata.subtitle)}</text>`);
+    y += 18;
   }
 
-  return pdfDoc.save({
-    useObjectStreams: true,
-  });
+  if (metadata.composer) {
+    lines.push(`<text x="${layout.width}" y="${y}" text-anchor="end" font-size="11">${xmlEscape(metadata.composer)}</text>`);
+  }
+
+  const svg = [
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${layout.width}" height="${layout.height}" viewBox="0 0 ${layout.width} ${layout.height}">`,
+    `<style>text{font-family:Arial,'Noto Sans SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;fill:#000;dominant-baseline:middle;}</style>`,
+    ...lines,
+    "</svg>",
+  ].join("");
+
+  await pdf.addSvgAsImage(svg, layout.x, layout.y, layout.width, layout.height);
+
+  // Add invisible text layer for selection/searchability
+  pdf.setGState(new pdf.GState({ opacity: 0.0 }));
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(22);
+  const titleX = layout.x + layout.width / 2;
+  pdf.text(metadata.title, titleX, layout.y + 28, { align: "center" });
+
+  let textY = layout.y + 49;
+  if (metadata.subtitle) {
+    pdf.setFont("helvetica", "italic");
+    pdf.setFontSize(13);
+    pdf.text(metadata.subtitle, titleX, textY, { align: "center" });
+    textY += 18;
+  }
+
+  if (metadata.composer) {
+    pdf.setFont("helvetica", "normal");
+    pdf.setFontSize(11);
+    pdf.text(metadata.composer, layout.x + layout.width, textY, { align: "end" });
+  }
+  pdf.setGState(new pdf.GState({ opacity: 1.0 }));
 }
 
-async function downloadStaffPdf(markup: string, filename: string) {
+async function downloadStaffPdf(markup: string, filename: string, tempo: number) {
   const [{ jsPDF }, { svg2pdf }] = await Promise.all([
     import("jspdf"),
     import("svg2pdf.js"),
@@ -175,66 +148,36 @@ async function downloadStaffPdf(markup: string, filename: string) {
     const contentWidth = pageWidth - margin * 2;
     const contentBottom = pageHeight - margin;
     let y = margin;
+    const metadataY = y;
 
     const title = container.querySelector<HTMLElement>(".staff-score-title")?.textContent?.trim();
     const subtitle = container.querySelector<HTMLElement>(".staff-score-subtitle")?.textContent?.trim();
     const composer = container.querySelector<HTMLElement>(".staff-score-composer")?.textContent?.trim();
-    const useCjkFont = hasCjkText(title) || hasCjkText(subtitle) || hasCjkText(composer);
-
-    function addPdfText(
-      text: string,
-      {
-        size,
-        align,
-        style = "normal",
-      }: {
-        size: number;
-        align: "left" | "center" | "right";
-        style?: "normal" | "bold" | "italic";
-      },
-    ) {
-      const lineHeight = size * 1.3;
-      pdf.setFont("helvetica", style);
-      pdf.setFontSize(size);
-
-      let fontSize = size;
-      const textWidth = useCjkFont ? 0 : pdf.getTextWidth(text);
-      if (textWidth > contentWidth) {
-        fontSize = Math.max(8, size * (contentWidth / textWidth));
-        pdf.setFontSize(fontSize);
-      }
-
-      const textX = align === "center" ? pageWidth / 2 : align === "right" ? pageWidth - margin : margin;
-      if (!useCjkFont) {
-        pdf.text(text, textX, y + fontSize, { align });
-      }
-      y += lineHeight;
-    }
 
     const pdfTitle = title || "Drum Notation";
     pdf.setProperties({ title: pdfTitle });
-    addPdfText(pdfTitle, {
-      size: 22,
-      align: "center",
-      style: "bold",
-    });
+    const metadataHeight = 44 + (subtitle ? 18 : 0) + (composer ? 18 : 0);
+    y += metadataHeight + 8;
+    await addMetadataSvgImage(
+      pdf,
+      {
+        title: pdfTitle,
+        subtitle,
+        composer,
+      },
+      {
+        x: margin,
+        y: metadataY,
+        width: contentWidth,
+        height: metadataHeight,
+      },
+    );
 
-    if (subtitle) {
-      addPdfText(subtitle, {
-        size: 13,
-        align: "center",
-        style: "italic",
-      });
-    }
-
-    if (composer) {
-      addPdfText(composer, {
-        size: 11,
-        align: "right",
-      });
-      y += 8;
-    } else {
-      y += 12;
+    if (!markup.includes(`>${tempo}<`) && !markup.includes(`>${tempo}.0<`)) {
+      pdf.setFont("helvetica", "normal");
+      pdf.setFontSize(10);
+      pdf.text(`Tempo ${tempo}`, margin, y);
+      y += 14;
     }
 
     const svgs = [...container.querySelectorAll<SVGSVGElement>(".staff-preview svg")];
@@ -262,28 +205,7 @@ async function downloadStaffPdf(markup: string, filename: string) {
       y += renderHeight + 12;
     }
 
-    if (useCjkFont) {
-      const subsetPdfBytes = await addSubsetCjkMetadata(
-        pdf.output("arraybuffer"),
-        {
-          title: pdfTitle,
-          subtitle,
-          composer,
-        },
-        {
-          margin,
-          contentWidth,
-          pageWidth,
-        },
-      );
-      const subsetPdfBuffer = subsetPdfBytes.buffer.slice(
-        subsetPdfBytes.byteOffset,
-        subsetPdfBytes.byteOffset + subsetPdfBytes.byteLength,
-      ) as ArrayBuffer;
-      downloadBlob(filename, new Blob([subsetPdfBuffer], { type: "application/pdf" }));
-    } else {
-      pdf.save(filename);
-    }
+    pdf.save(filename);
   } finally {
     document.body.removeChild(container);
   }
@@ -837,7 +759,7 @@ export function App() {
 
     async function exportPdf() {
       try {
-        await downloadStaffPdf(staffMarkup!, `${safeExportBasename(score.ast.headers.title?.value)}.pdf`);
+        await downloadStaffPdf(staffMarkup!, `${safeExportBasename(score.ast.headers.title?.value)}.pdf`, score.ast.headers.tempo.value);
       } catch (error) {
         if (!cancelled) {
           const message = error instanceof Error ? error.message : "Could not export PDF.";

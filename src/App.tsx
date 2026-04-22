@@ -101,8 +101,7 @@ async function addMetadataSvgImage(
 
   await pdf.addSvgAsImage(svg, layout.x, layout.y, layout.width, layout.height);
 
-  // Add invisible text layer for selection/searchability
-  pdf.setGState(new pdf.GState({ opacity: 0.0 }));
+  // Add text layer for selection/searchability (on top of SVG, same position)
   pdf.setFont("helvetica", "bold");
   pdf.setFontSize(22);
   const titleX = layout.x + layout.width / 2;
@@ -121,7 +120,6 @@ async function addMetadataSvgImage(
     pdf.setFontSize(11);
     pdf.text(metadata.composer, layout.x + layout.width, textY, { align: "right" });
   }
-  pdf.setGState(new pdf.GState({ opacity: 1.0 }));
 }
 
 async function downloadStaffPdf(markup: string, filename: string, tempo: number) {

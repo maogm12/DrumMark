@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode, type UIEvent } from "react";
-import type { jsPDF as JsPdfDocument } from "jspdf";
 import { buildMusicXml, buildNormalizedScore } from "./dsl";
 import { TRACKS, type MeasureToken, type Modifier, type NormalizedScore, type ScoreMeasure, type ScoreTrackParagraph, type TrackName } from "./dsl";
 
@@ -17,6 +16,10 @@ ST |  [2: R L R] - - -     | R - L - R - L - |`;
 
 type PreviewMode = "grid" | "staff" | "xml";
 const staffPaperWidth = 900;
+const pdfCjkFontName = "SourceHanSansCN";
+const pdfCjkFontUrl = "https://raw.githubusercontent.com/adobe-fonts/source-han-sans/release/Variable/TTF/Subset/SourceHanSansCN-VF.ttf";
+
+let pdfCjkFontBytes: Uint8Array | null = null;
 
 const trackLabel: Record<TrackName, string> = {
   HH: "HH",
@@ -31,14 +34,17 @@ const trackLabel: Record<TrackName, string> = {
   ST: "ST",
 };
 
-function downloadTextFile(filename: string, content: string, mimeType: string) {
-  const blob = new Blob([content], { type: mimeType });
+function downloadBlob(filename: string, blob: Blob) {
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement("a");
   anchor.href = url;
   anchor.download = filename;
   anchor.click();
   URL.revokeObjectURL(url);
+}
+
+function downloadTextFile(filename: string, content: string, mimeType: string) {
+  downloadBlob(filename, new Blob([content], { type: mimeType }));
 }
 
 function safeExportBasename(title: string | undefined) {
@@ -63,60 +69,86 @@ function svgSize(svg: SVGSVGElement) {
   };
 }
 
-function addPdfTextImage(
-  pdf: JsPdfDocument,
-  text: string,
-  {
-    x,
-    y,
-    maxWidth,
-    size,
-    align,
-    weight = 400,
-    italic = false,
-  }: {
-    x: number;
-    y: number;
-    maxWidth: number;
-    size: number;
-    align: CanvasTextAlign;
-    weight?: number;
-    italic?: boolean;
-  },
+function hasCjkText(value: string | undefined): boolean {
+  return Boolean(value && /[^\u0000-\u00ff]/.test(value));
+}
+
+async function loadPdfCjkFont() {
+  if (pdfCjkFontBytes) {
+    return pdfCjkFontBytes;
+  }
+
+  const response = await fetch(pdfCjkFontUrl);
+  if (!response.ok) {
+    throw new Error(`Could not load PDF font: ${response.status}`);
+  }
+
+  pdfCjkFontBytes = new Uint8Array(await response.arrayBuffer());
+  return pdfCjkFontBytes;
+}
+
+async function addSubsetCjkMetadata(
+  pdfBytes: ArrayBuffer,
+  metadata: { title: string; subtitle?: string; composer?: string },
+  layout: { margin: number; contentWidth: number; pageWidth: number },
 ) {
-  const lineHeight = size * 1.3;
-  const scale = 3;
-  const canvas = document.createElement("canvas");
-  canvas.width = Math.ceil(maxWidth * scale);
-  canvas.height = Math.ceil(lineHeight * scale);
-  const context = canvas.getContext("2d");
+  const [{ PDFDocument, rgb }, fontkit] = await Promise.all([
+    import("pdf-lib"),
+    import("@pdf-lib/fontkit"),
+  ]);
+  const pdfDoc = await PDFDocument.load(pdfBytes);
+  pdfDoc.registerFontkit(fontkit.default ?? fontkit);
+  pdfDoc.setTitle(metadata.title);
+  const font = await pdfDoc.embedFont(await loadPdfCjkFont(), {
+    subset: true,
+    customName: pdfCjkFontName,
+  });
+  const firstPage = pdfDoc.getPage(0);
+  const { height } = firstPage.getSize();
+  let y = height - layout.margin;
 
-  if (!context) {
-    return lineHeight;
+  function drawPdfText(
+    text: string,
+    {
+      size,
+      align,
+    }: {
+      size: number;
+      align: "center" | "right";
+    },
+  ) {
+    const lineHeight = size * 1.3;
+    let fontSize = size;
+    let textWidth = font.widthOfTextAtSize(text, fontSize);
+    if (textWidth > layout.contentWidth) {
+      fontSize = Math.max(8, size * (layout.contentWidth / textWidth));
+      textWidth = font.widthOfTextAtSize(text, fontSize);
+    }
+
+    const x = align === "center"
+      ? (layout.pageWidth - textWidth) / 2
+      : layout.pageWidth - layout.margin - textWidth;
+    firstPage.drawText(text, {
+      x,
+      y: y - fontSize,
+      size: fontSize,
+      font,
+      color: rgb(0, 0, 0),
+    });
+    y -= lineHeight;
   }
 
-  function setFont(fontSize: number) {
-    const style = italic ? "italic" : "normal";
-    context!.font = `${style} ${weight} ${fontSize}px Arial, "Noto Sans SC", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif`;
+  drawPdfText(metadata.title, { size: 22, align: "center" });
+  if (metadata.subtitle) {
+    drawPdfText(metadata.subtitle, { size: 13, align: "center" });
+  }
+  if (metadata.composer) {
+    drawPdfText(metadata.composer, { size: 11, align: "right" });
   }
 
-  context.scale(scale, scale);
-  context.clearRect(0, 0, maxWidth, lineHeight);
-  context.fillStyle = "#000";
-  context.textAlign = align;
-  context.textBaseline = "middle";
-
-  setFont(size);
-  const measuredWidth = context.measureText(text).width;
-  if (measuredWidth > maxWidth) {
-    setFont(Math.max(8, size * (maxWidth / measuredWidth)));
-  }
-
-  const textX = align === "center" ? maxWidth / 2 : align === "right" ? maxWidth : 0;
-  context.fillText(text, textX, lineHeight / 2);
-
-  pdf.addImage(canvas.toDataURL("image/png"), "PNG", x, y, maxWidth, lineHeight);
-  return lineHeight;
+  return pdfDoc.save({
+    useObjectStreams: true,
+  });
 }
 
 async function downloadStaffPdf(markup: string, filename: string) {
@@ -136,7 +168,7 @@ async function downloadStaffPdf(markup: string, filename: string) {
   document.body.appendChild(container);
 
   try {
-    const pdf = new jsPDF({ orientation: "portrait", unit: "pt", format: "letter" });
+    const pdf = new jsPDF({ orientation: "portrait", unit: "pt", format: "letter", compress: true, putOnlyUsedFonts: true });
     const pageWidth = 612;
     const pageHeight = 792;
     const margin = 36;
@@ -147,34 +179,56 @@ async function downloadStaffPdf(markup: string, filename: string) {
     const title = container.querySelector<HTMLElement>(".staff-score-title")?.textContent?.trim();
     const subtitle = container.querySelector<HTMLElement>(".staff-score-subtitle")?.textContent?.trim();
     const composer = container.querySelector<HTMLElement>(".staff-score-composer")?.textContent?.trim();
+    const useCjkFont = hasCjkText(title) || hasCjkText(subtitle) || hasCjkText(composer);
+
+    function addPdfText(
+      text: string,
+      {
+        size,
+        align,
+        style = "normal",
+      }: {
+        size: number;
+        align: "left" | "center" | "right";
+        style?: "normal" | "bold" | "italic";
+      },
+    ) {
+      const lineHeight = size * 1.3;
+      pdf.setFont("helvetica", style);
+      pdf.setFontSize(size);
+
+      let fontSize = size;
+      const textWidth = useCjkFont ? 0 : pdf.getTextWidth(text);
+      if (textWidth > contentWidth) {
+        fontSize = Math.max(8, size * (contentWidth / textWidth));
+        pdf.setFontSize(fontSize);
+      }
+
+      const textX = align === "center" ? pageWidth / 2 : align === "right" ? pageWidth - margin : margin;
+      if (!useCjkFont) {
+        pdf.text(text, textX, y + fontSize, { align });
+      }
+      y += lineHeight;
+    }
 
     const pdfTitle = title || "Drum Notation";
     pdf.setProperties({ title: pdfTitle });
-    y += addPdfTextImage(pdf, pdfTitle, {
-      x: margin,
-      y,
-      maxWidth: contentWidth,
+    addPdfText(pdfTitle, {
       size: 22,
       align: "center",
-      weight: 700,
+      style: "bold",
     });
 
     if (subtitle) {
-      y += addPdfTextImage(pdf, subtitle, {
-        x: margin,
-        y,
-        maxWidth: contentWidth,
+      addPdfText(subtitle, {
         size: 13,
         align: "center",
-        italic: true,
+        style: "italic",
       });
     }
 
     if (composer) {
-      y += addPdfTextImage(pdf, composer, {
-        x: margin,
-        y,
-        maxWidth: contentWidth,
+      addPdfText(composer, {
         size: 11,
         align: "right",
       });
@@ -208,7 +262,28 @@ async function downloadStaffPdf(markup: string, filename: string) {
       y += renderHeight + 12;
     }
 
-    pdf.save(filename);
+    if (useCjkFont) {
+      const subsetPdfBytes = await addSubsetCjkMetadata(
+        pdf.output("arraybuffer"),
+        {
+          title: pdfTitle,
+          subtitle,
+          composer,
+        },
+        {
+          margin,
+          contentWidth,
+          pageWidth,
+        },
+      );
+      const subsetPdfBuffer = subsetPdfBytes.buffer.slice(
+        subsetPdfBytes.byteOffset,
+        subsetPdfBytes.byteOffset + subsetPdfBytes.byteLength,
+      ) as ArrayBuffer;
+      downloadBlob(filename, new Blob([subsetPdfBuffer], { type: "application/pdf" }));
+    } else {
+      pdf.save(filename);
+    }
   } finally {
     document.body.removeChild(container);
   }

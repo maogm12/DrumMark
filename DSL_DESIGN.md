@@ -51,24 +51,27 @@ Normalized event is the single source for rendering and export.
 Each event contains:
 
 ```txt
-measureIndex
-slotStart
-slotSpan
 track
-instrument
-glyphType
-accent
-ghost
+paragraphIndex
+measureIndex
+measureInParagraph
+start
+duration
+kind
+glyph
 modifier
 tuplet
-tieStart
-tieEnd
 ```
 
 Notes:
 
-- `track` is where the token came from in DSL
-- `instrument` is the actual sounding instrument (for example HH `c` → crash)
+- `track` is the canonical score track after input sugar is resolved
+- `DR` is expanded before normalization and does not appear as a normalized track
+- `HH` crash sugar `c` remains a glyph on `HH`; MusicXML derives crash instrument semantics during export
+- `kind` is one of hit, accent, ghost, pedal, or sticking
+- `start` and `duration` are rational musical durations, not raw grid slot numbers
+- v0 does not store tie fields; groups that require automatic tie splitting are rejected during validation
+- instrument placement is derived by renderers/exporters from `track`, `glyph`, and `modifier`
 
 ---
 

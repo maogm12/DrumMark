@@ -26,7 +26,7 @@
 - [x] Implement repeat parsing (`|:`, `:|`, `:|xN`)
 - [x] Build AST types
 - [x] Build normalized event model
-- [ ] Align normalized event model documentation with v0 implementation
+- [x] Align normalized event model documentation with v0 implementation
 
 ## Phase 2: Validation
 
@@ -83,5 +83,4 @@
 
 ## Immediate Next Tasks
 
-1. Align normalized event model documentation with v0 implementation
-2. Verify import in MuseScore
+1. Verify import in MuseScore

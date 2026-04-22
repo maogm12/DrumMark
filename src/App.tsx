@@ -461,6 +461,9 @@ function StaffPreview({ score, xml, onRendered }: { score: NormalizedScore; xml:
           drawTitle: false,
           drawingParameters: "compacttight",
           newSystemFromXML: true,
+          drawTimeSignatures: true,
+          drawMeasureNumbers: false,
+          percussionOneLineCutoff: 0,
         });
 
         await osmd.load(xml);

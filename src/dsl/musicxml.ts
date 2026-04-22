@@ -388,15 +388,17 @@ function noteXml(
   beamState: "begin" | "continue" | "end" | null = null,
 ): string {
   const instrument = instrumentForTrack(event.track, event.glyph);
-  const baseDuration = event.tuplet
-    ? multiplyFraction(duration, event.tuplet.normal / event.tuplet.actual)
-    : duration;
+  // For tuplets, baseDuration determines the note type (visual).
+  // The tuplet's time-modification then affects how OSMD interprets the duration.
+  // We use duration directly (not duration * normal/actual) so that the type
+  // reflects the actual note value (e.g., 16th for [ss] where each item is 1/16).
+  const baseDuration = event.tuplet ? duration : duration;
   const shape = noteShapeForFraction(baseDuration);
   const timeModification = event.tuplet
     ? `<time-modification><actual-notes>${event.tuplet.actual}</actual-notes><normal-notes>${event.tuplet.normal}</normal-notes></time-modification>`
     : "";
   const notehead = noteheadXml(event, instrument);
-  const closingNotation = closesTuplet ? `<notations><tuplet type="stop" number="1"/></notations>` : "";
+  const closingNotation = closesTuplet && !isChord ? `<notations><tuplet type="stop" number="1"/></notations>` : "";
   const beam = beamState ? `<beam number="1">${beamState}</beam>` : "";
   const dots = Array.from({ length: shape.dots }, () => "<dot/>").join("");
 

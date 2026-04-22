@@ -207,7 +207,7 @@ function validateGroupToken(
   }
 
   const ratio = `${token.count}:${token.span}`;
-  const supportedCompressed = new Set(["2:1", "3:1", "4:1", "3:2", "5:4", "6:4", "7:4"]);
+  const supportedCompressed = new Set(["2:1", "3:1", "4:1", "3:2", "4:2", "5:4", "6:4", "7:4"]);
   if (!supportedCompressed.has(ratio)) {
     errors.push({
       line,

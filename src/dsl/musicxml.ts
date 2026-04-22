@@ -76,6 +76,13 @@ function multiplyFraction(fraction: Fraction, multiplier: number): Fraction {
   });
 }
 
+function divideFraction(fraction: Fraction, divisor: number): Fraction {
+  return simplify({
+    numerator: fraction.numerator,
+    denominator: fraction.denominator * divisor,
+  });
+}
+
 function fractionsEqual(left: Fraction, right: Fraction): boolean {
   const a = simplify(left);
   const b = simplify(right);
@@ -167,6 +174,14 @@ function noteShapeForFraction(duration: Fraction): { type: string; dots: number 
     default:
       return { type: "16th", dots: 0 };
   }
+}
+
+function visualDurationForEvent(event: NormalizedEvent, duration: Fraction): Fraction {
+  if (!event.tuplet || event.tuplet.actual % event.tuplet.normal === 0) {
+    return duration;
+  }
+
+  return divideFraction(multiplyFraction(duration, event.tuplet.actual), event.tuplet.normal);
 }
 
 function voiceForTrack(track: TrackName): VoiceTrack {
@@ -388,12 +403,7 @@ function noteXml(
   beamState: "begin" | "continue" | "end" | null = null,
 ): string {
   const instrument = instrumentForTrack(event.track, event.glyph);
-  // For tuplets, baseDuration determines the note type (visual).
-  // The tuplet's time-modification then affects how OSMD interprets the duration.
-  // We use duration directly (not duration * normal/actual) so that the type
-  // reflects the actual note value (e.g., 16th for [ss] where each item is 1/16).
-  const baseDuration = event.tuplet ? duration : duration;
-  const shape = noteShapeForFraction(baseDuration);
+  const shape = noteShapeForFraction(visualDurationForEvent(event, duration));
   const timeModification = event.tuplet
     ? `<time-modification><actual-notes>${event.tuplet.actual}</actual-notes><normal-notes>${event.tuplet.normal}</normal-notes></time-modification>`
     : "";

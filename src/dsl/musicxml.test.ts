@@ -26,6 +26,22 @@ HH | x x x x x x x x |`);
     expect(xml).toContain("<beam number=\"1\">begin</beam>");
   });
 
+  it("exports 3:2 groups as eighth-note triplets", () => {
+    const score = buildNormalizedScore(`time 4/4
+grouping 1+1+1+1
+divisions 8
+
+DR | [2:s] ss [ss][ssss] [2:sss] |`);
+
+    expect(score.errors).toEqual([]);
+    const xml = buildMusicXml(score);
+    const tripletNotes = xml.match(
+      /<type>eighth<\/type><time-modification><actual-notes>3<\/actual-notes><normal-notes>2<\/normal-notes><\/time-modification>/g,
+    );
+
+    expect(tripletNotes).toHaveLength(3);
+  });
+
   it("expands repeats when play count is greater than two", () => {
     const score = buildNormalizedScore(`time 4/4
 divisions 4

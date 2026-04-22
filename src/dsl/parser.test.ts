@@ -206,6 +206,36 @@ HH | x - c:choke - x - x - |`);
     });
   });
 
+  it("reports DR modifiers as invalid", () => {
+    const doc = parseDocumentSkeleton(`time 4/4
+divisions 4
+
+DR | s:rim - t1 - |`);
+
+    expect(doc.errors).toContainEqual({
+      line: 4,
+      column: 6,
+      message: "Track `DR` does not support modifiers",
+    });
+  });
+
+  it("parses whitespace-equivalent measure syntax", () => {
+    const spaced = parseDocumentSkeleton(`time 4/4
+divisions 4
+
+HH | x - x - |`);
+    const compact = parseDocumentSkeleton(`time 4/4
+divisions 4
+
+HH |x-x-|`);
+
+    expect(spaced.errors).toEqual([]);
+    expect(compact.errors).toEqual([]);
+    expect(compact.paragraphs[0].lines[0].measures[0].tokens).toEqual(
+      spaced.paragraphs[0].lines[0].measures[0].tokens,
+    );
+  });
+
   it("reports invalid tokens and group mistakes", () => {
     const doc = parseDocumentSkeleton(`time 4/4
 divisions 16

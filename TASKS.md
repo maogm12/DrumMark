@@ -35,7 +35,7 @@
 - [x] Validate known track names
 - [x] Validate per-track token legality
 - [x] Validate modifier legality
-- [ ] Validate `DR` rejects modifiers
+- [x] Validate `DR` rejects modifiers
 - [x] Validate group arity
 - [x] Validate supported group ratios and stretched durations
 - [x] Reject groups requiring automatic tie splitting
@@ -46,7 +46,7 @@
 - [x] Validate paragraph measure-count consistency
 - [x] Validate repeat counts are at least 2
 - [x] Validate repeat boundary consistency across tracks
-- [ ] Validate whitespace-equivalent measure syntax
+- [x] Validate whitespace-equivalent measure syntax
 - [x] Collect structured errors with line/column info
 
 ## Phase 3: Grid Preview
@@ -83,7 +83,5 @@
 
 ## Immediate Next Tasks
 
-1. Validate `DR` rejects modifiers
-2. Validate whitespace-equivalent measure syntax
-3. Align normalized event model documentation with v0 implementation
-4. Verify import in MuseScore
+1. Align normalized event model documentation with v0 implementation
+2. Verify import in MuseScore

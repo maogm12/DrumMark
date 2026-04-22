@@ -79,19 +79,83 @@ Notes:
 
 Supported header fields:
 
+- `title`
+- `subtitle`
+- `composer`
 - `tempo`
 - `time`
 - `divisions`
-- `grouping` (new)
+- `grouping`
 
 Example:
 
 ```txt
+title Funk Study No. 1
+subtitle Verse groove
+composer G. Mao
 tempo 96
 time 4/4
 divisions 16
 grouping 2+2
 ```
+
+### `title`
+
+Syntax:
+
+```txt
+title <text>
+```
+
+Rules:
+
+- Optional
+- Single-line free text
+- Preserved exactly after trimming leading/trailing whitespace
+- If omitted, preview and export may use an app default title
+- Empty title text is invalid
+- At most one `title` header is allowed
+- Used as the score title in preview and MusicXML export
+
+---
+
+### `subtitle`
+
+Syntax:
+
+```txt
+subtitle <text>
+```
+
+Rules:
+
+- Optional
+- Single-line free text
+- Preserved exactly after trimming leading/trailing whitespace
+- Empty subtitle text is invalid
+- At most one `subtitle` header is allowed
+- Used as secondary score text in preview and MusicXML export when present
+
+---
+
+### `composer`
+
+Syntax:
+
+```txt
+composer <text>
+```
+
+Rules:
+
+- Optional
+- Single-line free text
+- Preserved exactly after trimming leading/trailing whitespace
+- Empty composer text is invalid
+- At most one `composer` header is allowed
+- Used as composer/creator metadata in preview and MusicXML export when present
+
+---
 
 ### `tempo`
 
@@ -107,6 +171,7 @@ Rules:
 - Positive integer
 - Default: `120`
 - Interpreted as quarter-note BPM
+- At most one `tempo` header is allowed
 
 ---
 
@@ -847,6 +912,9 @@ Suggested mapping:
 ### Export Rules
 
 - Export from normalized events, not raw DSL
+- `title` exports as the MusicXML work title
+- `subtitle` exports as score-level credit text when present
+- `composer` exports as creator metadata and score-level credit text when present
 - Measures and time signatures come from `time`
 - Tuplets come from groups `[span: ...]` where item count ≠ span
 - `divisions` in MusicXML may be chosen independently as needed for accurate durations

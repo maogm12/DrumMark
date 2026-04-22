@@ -816,12 +816,12 @@ export function App() {
 
     setStaffMarkup(null);
     setStaffRenderError(null);
-    if (!staffPaperPreview) {
-      setStaffPaperPreview(true);
-    }
     if (previewMode !== "staff") {
       setPreviewMode("staff");
     }
+    // Toggle paperWidth to force StaffPreview to re-render
+    setStaffPaperPreview(false);
+    setTimeout(() => setStaffPaperPreview(true), 0);
     setPendingPdfExport(true);
   }
 

@@ -94,17 +94,38 @@ C  | x:choke - - - - - - - |`);
     expect(xml).toContain("<ornaments><tremolo type=\"single\">1</tremolo></ornaments>");
   });
 
-  it("does not export ST sticking events", () => {
+  it("exports ST sticking as fingering above matching notes", () => {
     const score = buildNormalizedScore(`time 4/4
 divisions 4
 
-HH | x - x - |
+HH | x x x x |
 ST | R L R L |`);
 
     expect(score.errors).toEqual([]);
     const xml = buildMusicXml(score);
 
     expect(xml).not.toContain("<display-step>B</display-step>");
+    expect(xml.match(/<direction placement="above">/g)).toHaveLength(1);
+    expect(xml.match(/<fingering placement="above" font-size="14">R<\/fingering>/g)).toHaveLength(2);
+    expect(xml.match(/<fingering placement="above" font-size="14">L<\/fingering>/g)).toHaveLength(2);
+  });
+
+  it("attaches sticking to the highest note when multiple notes share a start", () => {
+    const score = buildNormalizedScore(`time 4/4
+divisions 4
+
+SD | d - - - |
+T1 | d - - - |
+ST | R - - - |`);
+
+    expect(score.errors).toEqual([]);
+    const xml = buildMusicXml(score);
+    const fingeringNote = xml
+      .match(/<note>.*?<\/note>/g)
+      ?.find((note) => note.includes('<fingering placement="above" font-size="14">R</fingering>'));
+
+    expect(fingeringNote).toContain("<display-step>E</display-step>");
+    expect(fingeringNote).not.toContain("<display-step>C</display-step>");
   });
 
   it("exports score metadata headers", () => {

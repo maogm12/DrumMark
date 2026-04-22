@@ -923,7 +923,11 @@ Suggested mapping:
 
 ### Sticking
 
-`ST` is part of the DSL and preview model, but is not exported in v0 MusicXML.
+`ST` sticking is exported as above-staff fingering text at matching note positions.
+
+- `R` and `L` do not export as percussion notes
+- Sticking text does not advance rhythmic time
+- Sticking without a matching note at the same start position is ignored in MusicXML export
 
 ### Modifier Export Priority
 

@@ -222,6 +222,37 @@ function instrumentForTrack(track: TrackName, glyph?: string): InstrumentSpec {
   }
 }
 
+function instrumentPitchRank(instrument: InstrumentSpec): number {
+  const stepRank: Record<string, number> = {
+    C: 0,
+    D: 1,
+    E: 2,
+    F: 3,
+    G: 4,
+    A: 5,
+    B: 6,
+  };
+
+  return instrument.displayOctave * 7 + (stepRank[instrument.displayStep] ?? 0);
+}
+
+function highestEventIndex(events: NormalizedEvent[]): number {
+  let highestIndex = 0;
+  let highestRank = -Infinity;
+
+  for (let index = 0; index < events.length; index += 1) {
+    const event = events[index];
+    const rank = instrumentPitchRank(instrumentForTrack(event.track, event.glyph));
+
+    if (rank > highestRank) {
+      highestIndex = index;
+      highestRank = rank;
+    }
+  }
+
+  return highestIndex;
+}
+
 function collectDivisions(score: NormalizedScore): number {
   let divisions = 1;
 
@@ -306,7 +337,7 @@ function buildVoiceEntries(
   return entries;
 }
 
-function notationsXml(event: NormalizedEvent): string {
+function notationsXml(event: NormalizedEvent, sticking?: string): string {
   const bits: string[] = [];
 
   if (event.modifier === "open") {
@@ -340,6 +371,10 @@ function notationsXml(event: NormalizedEvent): string {
 
   if (event.kind === "accent") {
     bits.push("<articulations><accent/></articulations>");
+  }
+
+  if (sticking) {
+    bits.push(`<technical><fingering placement="above" font-size="14">${xmlEscape(sticking)}</fingering></technical>`);
   }
 
   if (bits.length === 0 && !event.tuplet) {
@@ -400,6 +435,7 @@ function noteXml(
   voice: VoiceTrack,
   isChord: boolean,
   closesTuplet: boolean,
+  sticking?: string,
   beamState: "begin" | "continue" | "end" | null = null,
 ): string {
   const instrument = instrumentForTrack(event.track, event.glyph);
@@ -428,10 +464,30 @@ function noteXml(
     `<stem>${voice.stem}</stem>`,
     beam,
     `<staff>1</staff>`,
-    notationsXml(event),
+    notationsXml(event, sticking),
     closingNotation,
     "</note>",
   ].join("");
+}
+
+function fractionKey(fraction: Fraction): string {
+  const normalized = simplify(fraction);
+  return `${normalized.numerator}/${normalized.denominator}`;
+}
+
+function stickingsByStart(events: NormalizedEvent[]): Map<string, string> {
+  const byStart = new Map<string, string[]>();
+
+  for (const event of events) {
+    if (event.track !== "ST") {
+      continue;
+    }
+
+    const key = fractionKey(event.start);
+    byStart.set(key, [...(byStart.get(key) ?? []), event.glyph]);
+  }
+
+  return new Map([...byStart].map(([key, values]) => [key, values.join(" ")]));
 }
 
 function groupingSegmentIndex(score: NormalizedScore, position: Fraction): number {
@@ -468,6 +524,8 @@ function measureXml(score: NormalizedScore, exportMeasure: ExportMeasure, divisi
   const downEntries = downEvents.length > 0
     ? buildVoiceEntries(groupVoiceEvents(downEvents), measureStart, measureDuration)
     : [];
+  const stickings = stickingsByStart(measure.events);
+  const renderedStickings = new Set<string>();
   const attributes =
     exportMeasure.outputIndex === 0
       ? [
@@ -503,10 +561,26 @@ function measureXml(score: NormalizedScore, exportMeasure: ExportMeasure, divisi
         continue;
       }
 
+      const stickingKey = fractionKey(entry.start);
+      const sticking = stickings.get(stickingKey);
+      const stickingForEntry = sticking && !renderedStickings.has(stickingKey) ? sticking : undefined;
+      if (stickingForEntry) {
+        renderedStickings.add(stickingKey);
+      }
+
       if (!isBeamable(entry.duration)) {
+        const stickingTargetIndex = stickingForEntry ? highestEventIndex(entry.events) : -1;
         result.push(
           ...entry.events.map((event, index) =>
-            noteXml(event, entry.duration, divisions, voice, index > 0, index === entry.events.length - 1 && Boolean(event.tuplet)),
+            noteXml(
+              event,
+              entry.duration,
+              divisions,
+              voice,
+              index > 0,
+              index === entry.events.length - 1 && Boolean(event.tuplet),
+              index === stickingTargetIndex ? stickingForEntry : undefined,
+            ),
           ),
         );
         continue;
@@ -533,9 +607,19 @@ function measureXml(score: NormalizedScore, exportMeasure: ExportMeasure, divisi
         beamState = "end";
       }
 
+      const stickingTargetIndex = stickingForEntry ? highestEventIndex(entry.events) : -1;
       result.push(
         ...entry.events.map((event, index) =>
-          noteXml(event, entry.duration, divisions, voice, index > 0, index === entry.events.length - 1 && Boolean(event.tuplet), beamState),
+          noteXml(
+            event,
+            entry.duration,
+            divisions,
+            voice,
+            index > 0,
+            index === entry.events.length - 1 && Boolean(event.tuplet),
+            index === stickingTargetIndex ? stickingForEntry : undefined,
+            beamState,
+          ),
         ),
       );
     }

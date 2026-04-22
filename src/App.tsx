@@ -75,6 +75,7 @@ function xmlEscape(value: string): string {
 
 async function addMetadataSvgImage(
   pdf: any,
+  svg2pdf: any,
   metadata: { title: string; subtitle?: string; composer?: string },
   layout: { x: number; y: number; width: number; height: number },
 ) {
@@ -92,14 +93,23 @@ async function addMetadataSvgImage(
     lines.push(`<text x="${layout.width}" y="${y}" text-anchor="end" font-size="11">${xmlEscape(metadata.composer)}</text>`);
   }
 
-  const svg = [
+  const svgStr = [
     `<svg xmlns="http://www.w3.org/2000/svg" width="${layout.width}" height="${layout.height}" viewBox="0 0 ${layout.width} ${layout.height}">`,
     `<style>text{font-family:Arial,'Noto Sans SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;fill:#000;dominant-baseline:middle;}</style>`,
     ...lines,
     "</svg>",
   ].join("");
 
-  await pdf.addSvgAsImage(svg, layout.x, layout.y, layout.width, layout.height);
+  // Use svg2pdf directly to render the metadata SVG (better font support than addSvgAsImage)
+  const parser = new DOMParser();
+  const svgDoc = parser.parseFromString(svgStr, "image/svg+xml");
+  const svgEl = svgDoc.documentElement as unknown as SVGSVGElement;
+  await svg2pdf(svgEl, pdf, {
+    x: layout.x,
+    y: layout.y,
+    width: layout.width,
+    height: layout.height,
+  });
 
   // Add text layer for selection/searchability (on top of SVG, same position)
   pdf.setFont("helvetica", "bold");
@@ -158,6 +168,7 @@ async function downloadStaffPdf(markup: string, filename: string, tempo: number)
     y += metadataHeight + 8;
     await addMetadataSvgImage(
       pdf,
+      svg2pdf,
       {
         title: pdfTitle,
         subtitle,

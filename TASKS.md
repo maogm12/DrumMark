@@ -26,19 +26,27 @@
 - [x] Implement repeat parsing (`|:`, `:|`, `:|xN`)
 - [x] Build AST types
 - [x] Build normalized event model
+- [ ] Align normalized event model documentation with v0 implementation
 
 ## Phase 2: Validation
 
 - [x] Validate known headers
+- [ ] Validate supported `time` beat units
 - [x] Validate known track names
 - [x] Validate per-track token legality
 - [x] Validate modifier legality
+- [ ] Validate `DR` rejects modifiers
 - [x] Validate group arity
+- [ ] Validate supported group ratios and stretched durations
+- [ ] Reject groups requiring automatic tie splitting
+- [ ] Reject group durations below 64th note
 - [x] Validate measure slot totals against `divisions`
 - [x] Validate `grouping` compatibility against `time` and `divisions`
 - [x] Validate `DR` paragraph exclusivity with explicit drum tracks
 - [x] Validate paragraph measure-count consistency
+- [ ] Validate repeat counts are at least 2
 - [x] Validate repeat boundary consistency across tracks
+- [ ] Validate whitespace-equivalent measure syntax
 - [x] Collect structured errors with line/column info
 
 ## Phase 3: Grid Preview
@@ -60,6 +68,8 @@
 - [x] Degrade `:|xN` for `N > 2` by expansion if needed
 - [x] Export a single percussion part
 - [x] Keep default beaming within `grouping` boundaries
+- [ ] Exclude `ST` sticking from MusicXML export
+- [ ] Export supported modifiers with stable MusicXML semantics
 - [ ] Verify import in MuseScore
 
 ## Phase 5: App UI
@@ -73,4 +83,14 @@
 
 ## Immediate Next Tasks
 
-1. Verify import in MuseScore
+1. Validate supported `time` beat units
+2. Validate repeat counts are at least 2
+3. Validate supported group ratios and stretched durations
+4. Reject groups requiring automatic tie splitting
+5. Reject group durations below 64th note
+6. Export supported modifiers with stable MusicXML semantics
+7. Exclude `ST` sticking from MusicXML export
+8. Validate `DR` rejects modifiers
+9. Validate whitespace-equivalent measure syntax
+10. Align normalized event model documentation with v0 implementation
+11. Verify import in MuseScore

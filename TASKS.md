@@ -70,7 +70,7 @@
 - [x] Keep default beaming within `grouping` boundaries
 - [x] Exclude `ST` sticking from MusicXML export
 - [x] Export supported modifiers with stable MusicXML semantics
-- [ ] Verify import in MuseScore
+- [x] Verify import in MuseScore
 
 ## Phase 5: App UI
 
@@ -83,4 +83,4 @@
 
 ## Immediate Next Tasks
 
-1. Verify import in MuseScore
+All tracked tasks are complete.

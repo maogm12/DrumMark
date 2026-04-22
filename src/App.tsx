@@ -49,7 +49,7 @@ function printStaffMarkup(markup: string) {
   printWindow.document.write(`<!doctype html>
 <html>
   <head>
-    <title>Drum Notation PDF Export</title>
+    <title>drum notation PDF Export</title>
     <style>
       @page {
         size: letter;
@@ -481,7 +481,7 @@ function Preview({ score }: { score: NormalizedScore }) {
 }
 
 function StaffScoreMetadata({ score }: { score: NormalizedScore }) {
-  const title = score.ast.headers.title?.value ?? "Drum Notation Preview";
+  const title = score.ast.headers.title?.value ?? "drum notation";
   const subtitle = score.ast.headers.subtitle?.value;
   const composer = score.ast.headers.composer?.value;
 
@@ -719,7 +719,7 @@ export function App() {
     <main className="app-shell">
       <header className="app-header">
         <div className="header-branding">
-          <h1>Drum Studio</h1>
+          <h1>drum notation</h1>
           <p>Text-first notation</p>
         </div>
         <div className="header-actions">

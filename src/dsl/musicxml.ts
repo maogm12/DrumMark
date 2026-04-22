@@ -119,7 +119,7 @@ function creditXml(type: string, words: string): string {
 }
 
 function scoreMetadataXml(score: NormalizedScore): string {
-  const title = score.ast.headers.title?.value ?? "Drum Notation Preview";
+  const title = score.ast.headers.title?.value ?? "drum notation";
   const subtitle = score.ast.headers.subtitle?.value;
   const composer = score.ast.headers.composer?.value;
   const identification = composer

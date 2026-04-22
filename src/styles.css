@@ -40,6 +40,7 @@
 body {
   margin: 0;
   overflow: hidden; /* App shell handles scrolling */
+  -webkit-text-size-adjust: 100%;
 }
 
 button,
@@ -50,12 +51,13 @@ input {
 
 .app-shell {
   height: 100vh;
+  height: 100dvh;
   display: flex;
   flex-direction: column;
 }
 
 .app-header {
-  height: 56px;
+  min-height: 56px;
   padding: 0 24px;
   display: flex;
   align-items: center;
@@ -77,7 +79,7 @@ input {
   margin: 0;
   font-size: 1.1rem;
   font-weight: 700;
-  letter-spacing: -0.02em;
+  letter-spacing: 0;
 }
 
 .app-header p {
@@ -302,7 +304,7 @@ input {
 
 .grid-system {
   background: white;
-  border-radius: 12px;
+  border-radius: 8px;
   border: 1px solid var(--border-subtle);
   padding: 20px;
   margin-bottom: 24px;
@@ -503,4 +505,189 @@ input {
 
 @media (max-width: 1024px) {
   .editor-pane { width: 50%; }
+}
+
+@media (max-width: 760px) {
+  .app-header {
+    min-height: 96px;
+    padding: 12px 16px;
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .header-branding {
+    width: 100%;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .app-header p {
+    display: none;
+  }
+
+  .header-actions {
+    width: 100%;
+    gap: 8px;
+  }
+
+  .export-button {
+    flex: 1;
+    min-width: 0;
+    height: 36px;
+    padding: 0 10px;
+    font-size: 0.78rem;
+  }
+
+  .workspace {
+    flex-direction: column;
+  }
+
+  .editor-pane {
+    width: 100% !important;
+    min-width: 0;
+    min-height: 240px;
+    height: 42%;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  .resizer {
+    display: none;
+  }
+
+  .preview-pane {
+    min-height: 0;
+  }
+
+  .pane-header {
+    min-height: 44px;
+    height: auto;
+    padding: 8px 12px;
+    gap: 10px;
+  }
+
+  .preview-header-actions {
+    gap: 8px;
+    justify-content: flex-end;
+  }
+
+  .preview-setting {
+    white-space: nowrap;
+  }
+
+  .preview-tabs {
+    flex-shrink: 0;
+  }
+
+  .preview-tab {
+    padding: 5px 9px;
+  }
+
+  .editor-highlight,
+  .editor-input {
+    padding: 14px;
+    font-size: 0.82rem;
+    line-height: 1.65;
+  }
+
+  .preview-content {
+    padding: 14px;
+  }
+
+  .score-summary {
+    gap: 8px;
+    margin-bottom: 14px;
+    overflow-x: auto;
+    padding-bottom: 2px;
+  }
+
+  .summary-badge {
+    flex: 0 0 auto;
+  }
+
+  .grid-system {
+    padding: 12px;
+    margin-bottom: 14px;
+  }
+
+  .track-row {
+    grid-template-columns: 36px 1fr;
+    gap: 8px;
+  }
+
+  .track-label {
+    height: 30px;
+    font-size: 0.72rem;
+  }
+
+  .track-measures {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 4px;
+  }
+
+  .measure-card {
+    min-width: 118px;
+    padding: 8px;
+  }
+
+  .grid-token {
+    min-width: 24px;
+    height: 24px;
+    padding: 0 6px;
+    font-size: 0.72rem;
+  }
+
+  .staff-preview-shell {
+    padding: 18px;
+  }
+
+  .xml-preview pre {
+    padding: 14px;
+    font-size: 0.76rem;
+  }
+
+  .status-bar {
+    min-height: 36px;
+    height: auto;
+    padding: 6px 12px;
+    gap: 8px;
+  }
+
+  .status-right {
+    text-align: right;
+  }
+
+  .error-list {
+    left: 12px;
+    right: 12px;
+    bottom: 44px;
+    max-width: none;
+  }
+}
+
+@media (max-width: 420px) {
+  .app-header {
+    min-height: 132px;
+  }
+
+  .header-actions {
+    flex-direction: column;
+  }
+
+  .export-button {
+    width: 100%;
+    flex: none;
+  }
+
+  .pane-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .preview-header-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
 }

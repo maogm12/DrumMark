@@ -14,6 +14,8 @@ HF |  - - - - p - - - | - - - - p:close - -                |
 RC |  - - x:bell - - - - - | - - - - x - - - |
 ST |  [2: R L R] - - -     | R - L - R - L - |`;
 
+type PreviewMode = "grid" | "staff" | "xml";
+
 const trackLabel: Record<TrackName, string> = {
   HH: "HH",
   HF: "HF",
@@ -63,6 +65,37 @@ function printStaffMarkup(markup: string) {
   printWindow.focus();
   printWindow.print();
   return true;
+}
+
+function parsePreviewMode(value: string | null): PreviewMode {
+  return value === "staff" || value === "xml" ? value : "grid";
+}
+
+function beautifyXml(xml: string): string {
+  const lines = xml
+    .replace(/>\s*</g, ">\n<")
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean);
+  let depth = 0;
+
+  return lines.map((line) => {
+    if (/^<\/.+>$/.test(line)) {
+      depth = Math.max(depth - 1, 0);
+    }
+
+    const formatted = `${"  ".repeat(depth)}${line}`;
+
+    if (
+      /^<[^!?/][^>]*>$/.test(line) &&
+      !/^<[^>]+\/>$/.test(line) &&
+      !/^<[^>]+>.*<\/[^>]+>$/.test(line)
+    ) {
+      depth += 1;
+    }
+
+    return formatted;
+  }).join("\n");
 }
 
 function modifierLabel(modifier: Modifier): string {
@@ -297,10 +330,6 @@ function StaffPreview({ score, xml, onRendered }: { score: NormalizedScore; xml:
   return (
     <div className="staff-preview-shell">
       {error ? <div className="staff-error">{error}</div> : null}
-      <details className="xml-debug">
-        <summary>MusicXML</summary>
-        <pre>{xml}</pre>
-      </details>
       <div className="staff-printable" ref={printableRef}>
         <StaffScoreMetadata score={score} />
         <div className="staff-preview" ref={containerRef} />
@@ -309,9 +338,19 @@ function StaffPreview({ score, xml, onRendered }: { score: NormalizedScore; xml:
   );
 }
 
+function MusicXmlPreview({ xml }: { xml: string }) {
+  const formattedXml = useMemo(() => beautifyXml(xml), [xml]);
+
+  return (
+    <div className="xml-preview" aria-label="MusicXML preview">
+      <pre>{formattedXml}</pre>
+    </div>
+  );
+}
+
 export function App() {
   const [dsl, setDsl] = useState(() => localStorage.getItem("drum-notation-dsl") ?? seedDsl);
-  const [previewMode, setPreviewMode] = useState<"grid" | "staff">(() => (localStorage.getItem("drum-notation-preview-mode") as "grid" | "staff") ?? "grid");
+  const [previewMode, setPreviewMode] = useState<PreviewMode>(() => parsePreviewMode(localStorage.getItem("drum-notation-preview-mode")));
   const [staffMarkup, setStaffMarkup] = useState<string | null>(null);
   const [staffRenderError, setStaffRenderError] = useState<string | null>(null);
   const [pendingPdfExport, setPendingPdfExport] = useState(false);
@@ -395,6 +434,13 @@ export function App() {
                 >
                   Staff
                 </button>
+                <button
+                  className={`preview-tab${previewMode === "xml" ? " active" : ""}`}
+                  onClick={() => setPreviewMode("xml")}
+                  type="button"
+                >
+                  MusicXML
+                </button>
               </div>
               <label className="preview-setting">
                 <input
@@ -416,12 +462,14 @@ export function App() {
           </div>
           {previewMode === "grid" ? (
             <Preview score={score} />
-          ) : (
+          ) : previewMode === "staff" ? (
             <StaffPreview
               score={score}
               xml={staffXml}
               onRendered={handleStaffRendered}
             />
+          ) : (
+            <MusicXmlPreview xml={staffXml} />
           )}
         </section>
       </section>

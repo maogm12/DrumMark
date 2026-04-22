@@ -201,20 +201,25 @@ textarea {
   color: #9a3f3f;
 }
 
-.xml-debug {
-  margin-bottom: 12px;
-  font-size: 0.75rem;
+.xml-preview {
+  min-height: 0;
+  height: 100%;
+  width: 100%;
+  border: 1px solid #c8d0d7;
+  border-radius: 8px;
+  background: #0f1720;
+  overflow: auto;
 }
 
-.xml-debug pre {
-  max-height: 200px;
-  overflow: auto;
-  background: #f0f0f0;
-  padding: 8px;
-  border-radius: 4px;
-  font-size: 0.7rem;
-  white-space: pre-wrap;
-  word-break: break-all;
+.xml-preview pre {
+  margin: 0;
+  min-width: 720px;
+  padding: 16px;
+  color: #d8e6f3;
+  font-family: "SFMono-Regular", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 0.78rem;
+  line-height: 1.55;
+  white-space: pre;
 }
 
 .score-summary {

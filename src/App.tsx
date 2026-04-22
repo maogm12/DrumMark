@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode, type UIEvent } from "react";
 import { buildMusicXml, buildNormalizedScore } from "./dsl";
 import { TRACKS, type MeasureToken, type Modifier, type NormalizedScore, type ScoreMeasure, type ScoreTrackParagraph, type TrackName } from "./dsl";
 
@@ -101,6 +101,129 @@ function beautifyXml(xml: string): string {
   }).join("\n");
 }
 
+function highlightDsl(source: string): ReactNode[] {
+  const pattern = /(#[^\n]*|\b(?:title|subtitle|composer|tempo|time|divisions|grouping)\b|\b(?:HH|HF|DR|SD|BD|T1|T2|T3|RC|C|ST)\b|:\|x\d+|\|:|:\||[|[\]]|\b(?:open|close|choke|rim|cross|bell|flam)\b|[A-Za-z]\w*|\d+(?:\/\d+|\+\d+)*|-|:)/g;
+  const nodes: ReactNode[] = [];
+  let cursor = 0;
+  let match: RegExpExecArray | null;
+
+  while ((match = pattern.exec(source)) !== null) {
+    if (match.index > cursor) {
+      nodes.push(source.slice(cursor, match.index));
+    }
+
+    const value = match[0];
+    let className = "dsl-token";
+
+    if (value.startsWith("#")) {
+      className += " dsl-comment";
+    } else if (/^(title|subtitle|composer|tempo|time|divisions|grouping)$/.test(value)) {
+      className += " dsl-header";
+    } else if (/^(HH|HF|DR|SD|BD|T1|T2|T3|RC|C|ST)$/.test(value)) {
+      className += " dsl-track";
+    } else if (/^(:\|x\d+|\|:|:\||\|)$/.test(value)) {
+      className += " dsl-barline";
+    } else if (/^[[\]]$/.test(value)) {
+      className += " dsl-group";
+    } else if (/^(open|close|choke|rim|cross|bell|flam)$/.test(value)) {
+      className += " dsl-modifier";
+    } else if (/^\d/.test(value)) {
+      className += " dsl-number";
+    } else if (value === "-") {
+      className += " dsl-rest";
+    } else if (value === ":") {
+      className += " dsl-punctuation";
+    } else {
+      className += " dsl-note";
+    }
+
+    nodes.push(
+      <span className={className} key={`${match.index}-${value}`}>
+        {value}
+      </span>,
+    );
+    cursor = match.index + value.length;
+  }
+
+  if (cursor < source.length) {
+    nodes.push(source.slice(cursor));
+  }
+
+  return nodes;
+}
+
+function highlightXmlLine(line: string, lineIndex: number): ReactNode[] {
+  const pattern = /(<\/?)([A-Za-z_][\w:.-]*)([^>]*?)(\/?>)|(<\?[^>]*\?>|<![^>]*>)|([^<]+)/g;
+  const nodes: ReactNode[] = [];
+  let match: RegExpExecArray | null;
+
+  while ((match = pattern.exec(line)) !== null) {
+    if (match[5]) {
+      nodes.push(
+        <span className="xml-punctuation" key={`${lineIndex}-${match.index}-decl`}>
+          {match[5]}
+        </span>,
+      );
+      continue;
+    }
+
+    if (match[6]) {
+      nodes.push(
+        <span className="xml-text" key={`${lineIndex}-${match.index}-text`}>
+          {match[6]}
+        </span>,
+      );
+      continue;
+    }
+
+    const [, open, tagName, attrs, close] = match;
+    nodes.push(
+      <span className="xml-punctuation" key={`${lineIndex}-${match.index}-open`}>
+        {open}
+      </span>,
+      <span className="xml-tag" key={`${lineIndex}-${match.index}-tag`}>
+        {tagName}
+      </span>,
+    );
+
+    const attrPattern = /(\s+)([A-Za-z_:][\w:.-]*)(=)("[^"]*")/g;
+    let attrCursor = 0;
+    let attrMatch: RegExpExecArray | null;
+
+    while ((attrMatch = attrPattern.exec(attrs)) !== null) {
+      if (attrMatch.index > attrCursor) {
+        nodes.push(attrs.slice(attrCursor, attrMatch.index));
+      }
+
+      nodes.push(
+        attrMatch[1],
+        <span className="xml-attr" key={`${lineIndex}-${match.index}-${attrMatch.index}-attr`}>
+          {attrMatch[2]}
+        </span>,
+        <span className="xml-punctuation" key={`${lineIndex}-${match.index}-${attrMatch.index}-eq`}>
+          {attrMatch[3]}
+        </span>,
+        <span className="xml-string" key={`${lineIndex}-${match.index}-${attrMatch.index}-value`}>
+          {attrMatch[4]}
+        </span>,
+      );
+      attrCursor = attrMatch.index + attrMatch[0].length;
+    }
+
+    if (attrCursor < attrs.length) {
+      nodes.push(attrs.slice(attrCursor));
+    }
+
+    nodes.push(
+      <span className="xml-punctuation" key={`${lineIndex}-${match.index}-close`}>
+        {close}
+      </span>,
+    );
+  }
+
+  return nodes;
+}
+
 function modifierLabel(modifier: Modifier): string {
   switch (modifier) {
     case "open":
@@ -183,6 +306,36 @@ function renderToken(token: MeasureToken, key: string) {
     <span className={tokenClassName(token)} key={key} title={token.kind === "modified" ? modifierLabel(token.modifier) : undefined}>
       {tokenText(token)}
     </span>
+  );
+}
+
+function DslEditor({ value, onChange }: { value: string; onChange: (value: string) => void }) {
+  const highlightRef = useRef<HTMLPreElement | null>(null);
+  const highlightedDsl = useMemo(() => highlightDsl(value), [value]);
+
+  function syncHighlightScroll(event: UIEvent<HTMLTextAreaElement>) {
+    if (!highlightRef.current) {
+      return;
+    }
+
+    highlightRef.current.scrollTop = event.currentTarget.scrollTop;
+    highlightRef.current.scrollLeft = event.currentTarget.scrollLeft;
+  }
+
+  return (
+    <div className="editor-shell">
+      <pre className="editor-highlight" ref={highlightRef} aria-hidden="true">
+        {highlightedDsl}
+        {"\n"}
+      </pre>
+      <textarea
+        className="editor-input"
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        onScroll={syncHighlightScroll}
+        spellCheck={false}
+      />
+    </div>
   );
 }
 
@@ -343,10 +496,19 @@ function StaffPreview({ score, xml, onRendered }: { score: NormalizedScore; xml:
 
 function MusicXmlPreview({ xml }: { xml: string }) {
   const formattedXml = useMemo(() => beautifyXml(xml), [xml]);
+  const highlightedXml = useMemo(
+    () => formattedXml.split("\n").map((line, index) => (
+      <span className="xml-line" key={`${index}-${line}`}>
+        {highlightXmlLine(line, index)}
+        {"\n"}
+      </span>
+    )),
+    [formattedXml],
+  );
 
   return (
     <div className="xml-preview" aria-label="MusicXML preview">
-      <pre>{formattedXml}</pre>
+      <pre>{highlightedXml}</pre>
     </div>
   );
 }
@@ -416,7 +578,7 @@ export function App() {
       <section className="workspace">
         <label className="pane">
           <span className="pane-title">DSL</span>
-          <textarea className="editor" value={dsl} onChange={(event) => setDsl(event.target.value)} spellCheck={false} />
+          <DslEditor value={dsl} onChange={setDsl} />
         </label>
         <section className="pane preview-pane" aria-label="Preview">
           <div className="preview-header">

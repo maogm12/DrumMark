@@ -127,7 +127,7 @@ textarea {
   opacity: 0.55;
 }
 
-.editor,
+.editor-shell,
 .preview-content {
   min-height: 0;
   height: 100%;
@@ -137,12 +137,84 @@ textarea {
   background: #fff;
 }
 
-.editor {
+.editor-shell {
+  position: relative;
+  overflow: hidden;
+}
+
+.editor-highlight,
+.editor-input {
+  position: absolute;
+  inset: 0;
+  margin: 0;
   padding: 16px;
-  resize: none;
   font-family: "SFMono-Regular", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
   font-size: 0.95rem;
   line-height: 1.6;
+  tab-size: 2;
+  white-space: pre-wrap;
+  overflow-wrap: normal;
+}
+
+.editor-highlight {
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.editor-input {
+  width: 100%;
+  height: 100%;
+  resize: none;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: transparent;
+  caret-color: #18212b;
+}
+
+.editor-input::selection {
+  background: rgb(117 173 221 / 35%);
+}
+
+.dsl-header {
+  color: #8b4d00;
+  font-weight: 700;
+}
+
+.dsl-track {
+  color: #145a87;
+  font-weight: 700;
+}
+
+.dsl-barline,
+.dsl-group {
+  color: #a13b55;
+  font-weight: 700;
+}
+
+.dsl-modifier {
+  color: #7b4fb2;
+}
+
+.dsl-number {
+  color: #1e7065;
+}
+
+.dsl-note {
+  color: #24313d;
+}
+
+.dsl-rest {
+  color: #94a0aa;
+}
+
+.dsl-punctuation {
+  color: #61707d;
+}
+
+.dsl-comment {
+  color: #7d8a94;
+  font-style: italic;
 }
 
 .preview-content {
@@ -220,6 +292,26 @@ textarea {
   font-size: 0.78rem;
   line-height: 1.55;
   white-space: pre;
+}
+
+.xml-tag {
+  color: #7dd3fc;
+}
+
+.xml-attr {
+  color: #facc15;
+}
+
+.xml-string {
+  color: #86efac;
+}
+
+.xml-text {
+  color: #e2e8f0;
+}
+
+.xml-punctuation {
+  color: #94a3b8;
 }
 
 .score-summary {

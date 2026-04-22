@@ -119,7 +119,7 @@ async function addMetadataSvgImage(
   if (metadata.composer) {
     pdf.setFont("helvetica", "normal");
     pdf.setFontSize(11);
-    pdf.text(metadata.composer, layout.x + layout.width, textY, { align: "end" });
+    pdf.text(metadata.composer, layout.x + layout.width, textY, { align: "right" });
   }
   pdf.setGState(new pdf.GState({ opacity: 1.0 }));
 }

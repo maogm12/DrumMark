@@ -62,6 +62,18 @@ divisions 16`);
     ]);
   });
 
+  it("reports unsupported beat units", () => {
+    const doc = parseDocumentSkeleton(`time 4/3
+divisions 16
+
+HH | x - x - |`);
+
+    expect(doc.errors).toEqual([
+      { line: 1, column: 6, message: "Beat unit must be one of 2, 4, 8, or 16" },
+      { line: 1, column: 1, message: "Missing required header `time`" },
+    ]);
+  });
+
   it("reports unknown headers and missing explicit grouping for unstable meters", () => {
     const doc = parseDocumentSkeleton(`swing 8
 time 7/8
@@ -107,6 +119,19 @@ HH |: x - x - | x - X - :|x3`);
         repeatTimes: 3,
       },
     ]);
+  });
+
+  it("reports repeat counts below two", () => {
+    const doc = parseDocumentSkeleton(`time 4/4
+divisions 16
+
+HH |: x - x - :|x1`);
+
+    expect(doc.errors).toContainEqual({
+      line: 4,
+      column: 15,
+      message: "Repeat count must be at least 2",
+    });
   });
 
   it("parses modifiers, HH open sugar, and groups into tokens", () => {

@@ -31,7 +31,7 @@
 ## Phase 2: Validation
 
 - [x] Validate known headers
-- [ ] Validate supported `time` beat units
+- [x] Validate supported `time` beat units
 - [x] Validate known track names
 - [x] Validate per-track token legality
 - [x] Validate modifier legality
@@ -44,7 +44,7 @@
 - [x] Validate `grouping` compatibility against `time` and `divisions`
 - [x] Validate `DR` paragraph exclusivity with explicit drum tracks
 - [x] Validate paragraph measure-count consistency
-- [ ] Validate repeat counts are at least 2
+- [x] Validate repeat counts are at least 2
 - [x] Validate repeat boundary consistency across tracks
 - [ ] Validate whitespace-equivalent measure syntax
 - [x] Collect structured errors with line/column info
@@ -83,14 +83,12 @@
 
 ## Immediate Next Tasks
 
-1. Validate supported `time` beat units
-2. Validate repeat counts are at least 2
-3. Validate supported group ratios and stretched durations
-4. Reject groups requiring automatic tie splitting
-5. Reject group durations below 64th note
-6. Export supported modifiers with stable MusicXML semantics
-7. Exclude `ST` sticking from MusicXML export
-8. Validate `DR` rejects modifiers
-9. Validate whitespace-equivalent measure syntax
-10. Align normalized event model documentation with v0 implementation
-11. Verify import in MuseScore
+1. Validate supported group ratios and stretched durations
+2. Reject groups requiring automatic tie splitting
+3. Reject group durations below 64th note
+4. Export supported modifiers with stable MusicXML semantics
+5. Exclude `ST` sticking from MusicXML export
+6. Validate `DR` rejects modifiers
+7. Validate whitespace-equivalent measure syntax
+8. Align normalized event model documentation with v0 implementation
+9. Verify import in MuseScore

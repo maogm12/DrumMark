@@ -19,6 +19,8 @@ import { preprocessSource } from "./preprocess";
 type HeaderAccumulator = Partial<ParsedHeaders>;
 type RawMeasure = Omit<ParsedTrackLine["measures"][number], "tokens">;
 
+const SUPPORTED_BEAT_UNITS = new Set([2, 4, 8, 16]);
+
 function parsePositiveInteger(value: string): number | null {
   if (!/^\d+$/.test(value)) {
     return null;
@@ -113,6 +115,15 @@ function parseHeaderLine(line: PreprocessedLine, headers: HeaderAccumulator, err
           line: line.lineNumber,
           column: line.raw.indexOf(value) + 1,
           message: "Time values must be positive integers",
+        });
+        return true;
+      }
+
+      if (!SUPPORTED_BEAT_UNITS.has(beatUnit)) {
+        errors.push({
+          line: line.lineNumber,
+          column: line.raw.indexOf(value) + 1,
+          message: "Beat unit must be one of 2, 4, 8, or 16",
         });
         return true;
       }
@@ -497,7 +508,17 @@ function parseMeasureTail(remainder: string, line: PreprocessedLine, errors: Par
         return null;
       }
 
-      return { length: match[0].length, kind: "repeat_end", times: Number(match[1]) };
+      const times = Number(match[1]);
+
+      if (times < 2) {
+        errors.push({
+          line: line.lineNumber,
+          column: line.content.indexOf(remainder.slice(index)) + 1,
+          message: "Repeat count must be at least 2",
+        });
+      }
+
+      return { length: match[0].length, kind: "repeat_end", times };
     }
 
     if (remainder.startsWith(":|", index)) {

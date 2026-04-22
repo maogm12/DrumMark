@@ -55,4 +55,39 @@ BD | - - p - |`);
     expect(hiddenXml).toContain("<forward><duration>8</duration><voice>2</voice><staff>1</staff></forward>");
     expect(hiddenXml).not.toContain("<note><forward>");
   });
+
+  it("preserves supported modifiers with MusicXML semantics", () => {
+    const score = buildNormalizedScore(`time 4/4
+divisions 8
+
+HH | x:open x:close - - - - - - |
+SD | g d:rim d:cross d:flam - - - - |
+RC | x:bell - - - - - - - |
+C  | x:choke - - - - - - - |`);
+
+    expect(score.errors).toEqual([]);
+    const xml = buildMusicXml(score);
+
+    expect(xml).toContain("<technical><open-string/></technical>");
+    expect(xml).toContain("<technical><stopped/></technical>");
+    expect(xml).toContain("<notehead parentheses=\"yes\">normal</notehead>");
+    expect(xml).toContain("<technical><other-technical>rim</other-technical></technical>");
+    expect(xml).toContain("<technical><other-technical>cross-stick</other-technical></technical>");
+    expect(xml).toContain("<technical><other-technical>bell</other-technical></technical>");
+    expect(xml).toContain("<technical><other-technical>choke</other-technical></technical>");
+    expect(xml).toContain("<ornaments><tremolo type=\"single\">1</tremolo></ornaments>");
+  });
+
+  it("does not export ST sticking events", () => {
+    const score = buildNormalizedScore(`time 4/4
+divisions 4
+
+HH | x - x - |
+ST | R L R L |`);
+
+    expect(score.errors).toEqual([]);
+    const xml = buildMusicXml(score);
+
+    expect(xml).not.toContain("<display-step>B</display-step>");
+  });
 });

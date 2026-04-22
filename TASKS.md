@@ -68,8 +68,8 @@
 - [x] Degrade `:|xN` for `N > 2` by expansion if needed
 - [x] Export a single percussion part
 - [x] Keep default beaming within `grouping` boundaries
-- [ ] Exclude `ST` sticking from MusicXML export
-- [ ] Export supported modifiers with stable MusicXML semantics
+- [x] Exclude `ST` sticking from MusicXML export
+- [x] Export supported modifiers with stable MusicXML semantics
 - [ ] Verify import in MuseScore
 
 ## Phase 5: App UI
@@ -83,9 +83,7 @@
 
 ## Immediate Next Tasks
 
-1. Export supported modifiers with stable MusicXML semantics
-2. Exclude `ST` sticking from MusicXML export
-3. Validate `DR` rejects modifiers
-4. Validate whitespace-equivalent measure syntax
-5. Align normalized event model documentation with v0 implementation
-6. Verify import in MuseScore
+1. Validate `DR` rejects modifiers
+2. Validate whitespace-equivalent measure syntax
+3. Align normalized event model documentation with v0 implementation
+4. Verify import in MuseScore

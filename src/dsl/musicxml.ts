@@ -276,7 +276,20 @@ function notationsXml(event: NormalizedEvent): string {
   }
 
   if (event.modifier === "choke") {
+    bits.push("<technical><other-technical>choke</other-technical></technical>");
     bits.push("<articulations><staccatissimo/></articulations>");
+  }
+
+  if (event.modifier === "rim") {
+    bits.push("<technical><other-technical>rim</other-technical></technical>");
+  }
+
+  if (event.modifier === "cross") {
+    bits.push("<technical><other-technical>cross-stick</other-technical></technical>");
+  }
+
+  if (event.modifier === "bell") {
+    bits.push("<technical><other-technical>bell</other-technical></technical>");
   }
 
   if (event.kind === "accent") {
@@ -292,6 +305,15 @@ function notationsXml(event: NormalizedEvent): string {
     : "";
 
   return `<notations>${tuplet}${bits.join("")}</notations>`;
+}
+
+function noteheadXml(event: NormalizedEvent, instrument: InstrumentSpec): string {
+  if (event.kind === "ghost") {
+    const notehead = instrument.notehead ?? "normal";
+    return `<notehead parentheses="yes">${notehead}</notehead>`;
+  }
+
+  return instrument.notehead ? `<notehead>${instrument.notehead}</notehead>` : "";
 }
 
 function restXml(duration: Fraction, divisions: number, voice: VoiceTrack): string {
@@ -342,7 +364,7 @@ function noteXml(
   const timeModification = event.tuplet
     ? `<time-modification><actual-notes>${event.tuplet.actual}</actual-notes><normal-notes>${event.tuplet.normal}</normal-notes></time-modification>`
     : "";
-  const notehead = instrument.notehead ? `<notehead>${instrument.notehead}</notehead>` : "";
+  const notehead = noteheadXml(event, instrument);
   const closingNotation = closesTuplet ? `<notations><tuplet type="stop" number="1"/></notations>` : "";
   const beam = beamState ? `<beam number="1">${beamState}</beam>` : "";
   const dots = Array.from({ length: shape.dots }, () => "<dot/>").join("");

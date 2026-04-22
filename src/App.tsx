@@ -50,6 +50,10 @@ function printStaffMarkup(markup: string) {
     <title>Drum Notation PDF Export</title>
     <style>
       body { margin: 24px; font-family: Georgia, serif; background: white; }
+      .staff-score-metadata { margin-bottom: 18px; text-align: center; color: #151515; }
+      .staff-score-title { margin: 0; font-size: 24px; font-weight: 700; }
+      .staff-score-subtitle { margin: 4px 0 0; font-size: 15px; font-style: italic; }
+      .staff-score-composer { margin: 8px 0 0; font-size: 13px; text-align: right; }
       svg { max-width: 100%; height: auto; }
     </style>
   </head>
@@ -227,7 +231,22 @@ function Preview({ score }: { score: NormalizedScore }) {
   );
 }
 
-function StaffPreview({ xml, onRendered }: { xml: string; onRendered: (markup: string | null, error: string | null) => void }) {
+function StaffScoreMetadata({ score }: { score: NormalizedScore }) {
+  const title = score.ast.headers.title?.value ?? "Drum Notation Preview";
+  const subtitle = score.ast.headers.subtitle?.value;
+  const composer = score.ast.headers.composer?.value;
+
+  return (
+    <header className="staff-score-metadata">
+      <h2 className="staff-score-title">{title}</h2>
+      {subtitle ? <p className="staff-score-subtitle">{subtitle}</p> : null}
+      {composer ? <p className="staff-score-composer">{composer}</p> : null}
+    </header>
+  );
+}
+
+function StaffPreview({ score, xml, onRendered }: { score: NormalizedScore; xml: string; onRendered: (markup: string | null, error: string | null) => void }) {
+  const printableRef = useRef<HTMLDivElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -258,7 +277,7 @@ function StaffPreview({ xml, onRendered }: { xml: string; onRendered: (markup: s
         await osmd.load(xml);
         osmd.render();
         setError(null);
-        onRendered(containerRef.current.innerHTML, null);
+        onRendered(printableRef.current?.innerHTML ?? containerRef.current.innerHTML, null);
       } catch (renderError) {
         if (!cancelled) {
           const message = renderError instanceof Error ? renderError.message : "Could not render staff preview.";
@@ -273,7 +292,7 @@ function StaffPreview({ xml, onRendered }: { xml: string; onRendered: (markup: s
     return () => {
       cancelled = true;
     };
-  }, [onRendered, xml]);
+  }, [onRendered, score, xml]);
 
   return (
     <div className="staff-preview-shell">
@@ -282,7 +301,10 @@ function StaffPreview({ xml, onRendered }: { xml: string; onRendered: (markup: s
         <summary>MusicXML</summary>
         <pre>{xml}</pre>
       </details>
-      <div className="staff-preview" ref={containerRef} />
+      <div className="staff-printable" ref={printableRef}>
+        <StaffScoreMetadata score={score} />
+        <div className="staff-preview" ref={containerRef} />
+      </div>
     </div>
   );
 }
@@ -396,6 +418,7 @@ export function App() {
             <Preview score={score} />
           ) : (
             <StaffPreview
+              score={score}
               xml={staffXml}
               onRendered={handleStaffRendered}
             />

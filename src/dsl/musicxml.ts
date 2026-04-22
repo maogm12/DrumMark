@@ -102,6 +102,37 @@ function xmlEscape(value: string): string {
     .replaceAll("'", "&apos;");
 }
 
+function creditXml(type: string, words: string): string {
+  return [
+    "  <credit page=\"1\">",
+    `    <credit-type>${xmlEscape(type)}</credit-type>`,
+    `    <credit-words>${xmlEscape(words)}</credit-words>`,
+    "  </credit>",
+  ].join("\n");
+}
+
+function scoreMetadataXml(score: NormalizedScore): string {
+  const title = score.ast.headers.title?.value ?? "Drum Notation Preview";
+  const subtitle = score.ast.headers.subtitle?.value;
+  const composer = score.ast.headers.composer?.value;
+  const identification = composer
+    ? `  <identification>\n    <creator type="composer">${xmlEscape(composer)}</creator>\n  </identification>`
+    : "";
+  const credits = [
+    score.ast.headers.title ? creditXml("title", title) : "",
+    subtitle ? creditXml("subtitle", subtitle) : "",
+    composer ? creditXml("composer", composer) : "",
+  ].filter(Boolean).join("\n");
+
+  return [
+    "  <work>",
+    `    <work-title>${xmlEscape(title)}</work-title>`,
+    "  </work>",
+    identification,
+    credits,
+  ].filter(Boolean).join("\n");
+}
+
 function noteShapeForFraction(duration: Fraction): { type: string; dots: number } {
   const normalized = simplify(duration);
   const key = `${normalized.numerator}/${normalized.denominator}`;
@@ -577,9 +608,7 @@ export function buildMusicXml(score: NormalizedScore, hideVoice2Rests: boolean =
 <!DOCTYPE score-partwise PUBLIC "-//Recordare//DTD MusicXML 3.1 Partwise//EN"
   "http://www.musicxml.org/dtds/partwise.dtd">
 <score-partwise version="3.1">
-  <work>
-    <work-title>${xmlEscape("Drum Notation Preview")}</work-title>
-  </work>
+${scoreMetadataXml(score)}
   <part-list>
     <score-part id="P1">
       <part-name>Drumset</part-name>

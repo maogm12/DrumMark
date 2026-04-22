@@ -13,6 +13,7 @@ import {
   type SourceTrackName,
   type Modifier,
   type BasicGlyph,
+  type MetadataHeader,
 } from "./types";
 import { preprocessSource } from "./preprocess";
 
@@ -62,15 +63,31 @@ function parseGroupingValue(value: string): number[] | null {
   return values.every((item) => item > 0) ? values : null;
 }
 
+function isMetadataField(field: string): field is MetadataHeader["field"] {
+  return field === "title" || field === "subtitle" || field === "composer";
+}
+
 function parseHeaderLine(line: PreprocessedLine, headers: HeaderAccumulator, errors: ParseError[]): boolean {
-  const parts = line.content.split(/\s+/);
-  const [field, value] = parts;
+  const match = line.content.match(/^(\S+)(?:\s+(.*))?$/);
+  const field = match?.[1] ?? "";
+  const value = match?.[2]?.trim() ?? "";
 
   if (!field || !HEADER_FIELDS.includes(field as (typeof HEADER_FIELDS)[number])) {
     return false;
   }
 
-  if (parts.length !== 2 || !value) {
+  if (!value) {
+    errors.push({
+      line: line.lineNumber,
+      column: 1,
+      message: isMetadataField(field)
+        ? `Header \`${field}\` expects non-empty text`
+        : `Header \`${field}\` expects a single value`,
+    });
+    return true;
+  }
+
+  if (!isMetadataField(field) && /\s/.test(value)) {
     errors.push({
       line: line.lineNumber,
       column: 1,
@@ -80,6 +97,21 @@ function parseHeaderLine(line: PreprocessedLine, headers: HeaderAccumulator, err
   }
 
   switch (field) {
+    case "title":
+    case "subtitle":
+    case "composer": {
+      if (headers[field]) {
+        errors.push({
+          line: line.lineNumber,
+          column: 1,
+          message: `Duplicate header \`${field}\``,
+        });
+        return true;
+      }
+
+      headers[field] = { field, value, line: line.lineNumber };
+      return true;
+    }
     case "tempo": {
       const parsed = parsePositiveInteger(value);
 
@@ -188,6 +220,9 @@ function finalizeHeaders(headers: HeaderAccumulator, errors: ParseError[]): Pars
   const inferredGrouping = inferGrouping(time.beats, time.beatUnit);
 
   return {
+    ...(headers.title ? { title: headers.title } : {}),
+    ...(headers.subtitle ? { subtitle: headers.subtitle } : {}),
+    ...(headers.composer ? { composer: headers.composer } : {}),
     tempo: headers.tempo ?? { field: "tempo", value: 120, line: 0 },
     time,
     divisions:

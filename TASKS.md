@@ -13,7 +13,7 @@
 - [x] Implement line preprocessing
 - [x] Implement comment stripping
 - [x] Implement header parsing (`tempo`, `time`, `divisions`)
-- [ ] Implement metadata header parsing (`title`, `subtitle`, `composer`)
+- [x] Implement metadata header parsing (`title`, `subtitle`, `composer`)
 - [x] Implement `grouping` header parsing and validation
 - [x] Implement paragraph splitting by blank lines
 - [x] Implement track line parsing
@@ -32,8 +32,8 @@
 ## Phase 2: Validation
 
 - [x] Validate known headers
-- [ ] Validate duplicate metadata headers
-- [ ] Validate non-empty metadata header values
+- [x] Validate duplicate metadata headers
+- [x] Validate non-empty metadata header values
 - [x] Validate supported `time` beat units
 - [x] Validate known track names
 - [x] Validate per-track token legality
@@ -70,7 +70,7 @@
 - [x] Export repeats where possible
 - [x] Degrade `:|xN` for `N > 2` by expansion if needed
 - [x] Export a single percussion part
-- [ ] Export title, subtitle, and composer metadata
+- [x] Export title, subtitle, and composer metadata
 - [x] Keep default beaming within `grouping` boundaries
 - [x] Exclude `ST` sticking from MusicXML export
 - [x] Export supported modifiers with stable MusicXML semantics
@@ -87,7 +87,4 @@
 
 ## Immediate Next Tasks
 
-1. Implement metadata header parsing (`title`, `subtitle`, `composer`)
-2. Validate duplicate metadata headers
-3. Validate non-empty metadata header values
-4. Export title, subtitle, and composer metadata
+All tracked tasks are complete.

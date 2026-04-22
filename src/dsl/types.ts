@@ -1,4 +1,4 @@
-export const HEADER_FIELDS = ["tempo", "time", "divisions", "grouping"] as const;
+export const HEADER_FIELDS = ["title", "subtitle", "composer", "tempo", "time", "divisions", "grouping"] as const;
 
 export type HeaderField = (typeof HEADER_FIELDS)[number];
 
@@ -93,6 +93,12 @@ export type TempoHeader = {
   line: number;
 };
 
+export type MetadataHeader = {
+  field: "title" | "subtitle" | "composer";
+  value: string;
+  line: number;
+};
+
 export type TimeHeader = {
   field: "time";
   beats: number;
@@ -113,6 +119,9 @@ export type GroupingHeader = {
 };
 
 export type ParsedHeaders = {
+  title?: MetadataHeader;
+  subtitle?: MetadataHeader;
+  composer?: MetadataHeader;
   tempo: TempoHeader;
   time: TimeHeader;
   divisions: DivisionsHeader;

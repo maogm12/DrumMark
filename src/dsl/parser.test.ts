@@ -3,7 +3,10 @@ import { parseDocumentSkeleton } from "./parser";
 
 describe("parseDocumentSkeleton", () => {
   it("parses headers and paragraphs", () => {
-    const doc = parseDocumentSkeleton(`tempo 96
+    const doc = parseDocumentSkeleton(`title Funk Study No. 1
+subtitle Verse groove
+composer G. Mao
+tempo 96
 time 4/4
 divisions 16
 
@@ -14,13 +17,16 @@ HH | x - X - |
 BD | p - - - |`);
 
     expect(doc.errors).toEqual([]);
+    expect(doc.headers.title?.value).toBe("Funk Study No. 1");
+    expect(doc.headers.subtitle?.value).toBe("Verse groove");
+    expect(doc.headers.composer?.value).toBe("G. Mao");
     expect(doc.headers.tempo.value).toBe(96);
     expect(doc.headers.time).toMatchObject({ beats: 4, beatUnit: 4 });
     expect(doc.headers.divisions.value).toBe(16);
     expect(doc.headers.grouping.values).toEqual([2, 2]);
     expect(doc.paragraphs).toHaveLength(2);
     expect(doc.paragraphs[0]).toMatchObject({
-      startLine: 5,
+      startLine: 8,
     });
     expect(doc.paragraphs[0].lines.map((line) => line.track)).toEqual(["HH", "SD"]);
     expect(doc.paragraphs[0].lines[0].measures).toEqual([
@@ -71,6 +77,25 @@ HH | x - x - |`);
     expect(doc.errors).toEqual([
       { line: 1, column: 6, message: "Beat unit must be one of 2, 4, 8, or 16" },
       { line: 1, column: 1, message: "Missing required header `time`" },
+    ]);
+  });
+
+  it("reports duplicate and empty metadata headers", () => {
+    const doc = parseDocumentSkeleton(`title
+title First
+title Second
+subtitle
+composer
+time 4/4
+divisions 4
+
+HH | x - x - |`);
+
+    expect(doc.errors).toEqual([
+      { line: 1, column: 1, message: "Header `title` expects non-empty text" },
+      { line: 3, column: 1, message: "Duplicate header `title`" },
+      { line: 4, column: 1, message: "Header `subtitle` expects non-empty text" },
+      { line: 5, column: 1, message: "Header `composer` expects non-empty text" },
     ]);
   });
 

@@ -90,4 +90,26 @@ ST | R L R L |`);
 
     expect(xml).not.toContain("<display-step>B</display-step>");
   });
+
+  it("exports score metadata headers", () => {
+    const score = buildNormalizedScore(`title Funk & Flow
+subtitle Verse <A>
+composer G. "Mao"
+time 4/4
+divisions 4
+
+HH | x - x - |`);
+
+    expect(score.errors).toEqual([]);
+    const xml = buildMusicXml(score);
+
+    expect(xml).toContain("<work-title>Funk &amp; Flow</work-title>");
+    expect(xml).toContain("<creator type=\"composer\">G. &quot;Mao&quot;</creator>");
+    expect(xml).toContain("<credit-type>title</credit-type>");
+    expect(xml).toContain("<credit-words>Funk &amp; Flow</credit-words>");
+    expect(xml).toContain("<credit-type>subtitle</credit-type>");
+    expect(xml).toContain("<credit-words>Verse &lt;A&gt;</credit-words>");
+    expect(xml).toContain("<credit-type>composer</credit-type>");
+    expect(xml).toContain("<credit-words>G. &quot;Mao&quot;</credit-words>");
+  });
 });

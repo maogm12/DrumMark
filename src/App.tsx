@@ -51,25 +51,86 @@ function printStaffMarkup(markup: string) {
   <head>
     <title>Drum Notation PDF Export</title>
     <style>
-      body { margin: 24px; font-family: Georgia, serif; background: white; }
-      .staff-score-metadata { margin-bottom: 18px; text-align: center; color: #151515; }
-      .staff-score-title { margin: 0; font-size: 24px; font-weight: 700; }
-      .staff-score-subtitle { margin: 4px 0 0; font-size: 15px; font-style: italic; }
-      .staff-score-composer { margin: 8px 0 0; font-size: 13px; text-align: right; }
-      svg { max-width: 100%; height: auto; }
+      @page {
+        size: letter;
+        margin: 0.5in;
+      }
+      html, body {
+        height: auto !important;
+        overflow: visible !important;
+        margin: 0;
+        padding: 0;
+        background: white;
+        color: black;
+        font-family: "Georgia", serif;
+      }
+      .staff-score-metadata {
+        text-align: center;
+        margin-bottom: 20px;
+        page-break-inside: avoid;
+        page-break-after: avoid;
+        display: block !important;
+      }
+      .staff-score-title { 
+        margin: 0; 
+        font-size: 24pt; 
+        font-weight: bold; 
+        line-height: 1.2;
+      }
+      .staff-score-subtitle { 
+        margin: 4pt 0 0; 
+        font-size: 14pt; 
+        font-style: italic; 
+      }
+      .staff-score-composer { 
+        margin: 8pt 0 0; 
+        font-size: 12pt; 
+        text-align: right; 
+      }
+
+      .staff-preview, .staff-printable {
+        display: block !important;
+        height: auto !important;
+        overflow: visible !important;
+        width: 100% !important;
+      }
+
+      /* Each system is an SVG. Ensure they don't break in middle. */
+      svg {
+        display: block !important;
+        width: 100% !important;
+        height: auto !important;
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+        margin-bottom: 0.2in;
+        overflow: visible !important;
+      }
+
+      /* Clean up any UI artifacts */
+      * {
+        box-sizing: border-box;
+        -webkit-print-color-adjust: exact;
+      }
+
+      /* Force display of elements that might be hidden by UI logic */
+      .staff-score-metadata, .staff-preview {
+        visibility: visible !important;
+        opacity: 1 !important;
+      }
     </style>
   </head>
   <body>${markup}</body>
 </html>`);
   printWindow.document.close();
-  printWindow.focus();
-  printWindow.requestAnimationFrame(() => {
+
+  // Use a slightly longer timeout to ensure browser layout engine captures SVG dimensions
+  setTimeout(() => {
     printWindow.focus();
     printWindow.print();
-  });
+  }, 800);
+
   return true;
 }
-
 function parsePreviewMode(value: string | null): PreviewMode {
   return value === "staff" || value === "xml" ? value : "grid";
 }
@@ -343,12 +404,12 @@ function Preview({ score }: { score: NormalizedScore }) {
   return (
     <div className="preview-content">
       <section className="score-summary" aria-label="Score summary">
-        <span>{score.ast.headers.tempo.value} bpm</span>
-        <span>
+        <span className="summary-badge">{score.ast.headers.tempo.value} BPM</span>
+        <span className="summary-badge">
           {score.ast.headers.time.beats}/{score.ast.headers.time.beatUnit}
         </span>
-        <span>{score.ast.headers.divisions.value} divisions</span>
-        <span>{score.ast.repeatSpans.length} repeat span{score.ast.repeatSpans.length === 1 ? "" : "s"}</span>
+        <span className="summary-badge">{score.ast.headers.divisions.value} DIV</span>
+        <span className="summary-badge">{score.ast.repeatSpans.length} REPEATS</span>
       </section>
       {score.ast.paragraphs.map((paragraph, paragraphIndex) => {
         const tracks = TRACKS.filter((track) => paragraph.tracks.some((entry) => entry.track === track))
@@ -358,8 +419,8 @@ function Preview({ score }: { score: NormalizedScore }) {
         return (
           <section className="grid-system" key={`paragraph-${paragraphIndex}`}>
             <header className="system-header">
-              <span>Line {paragraphIndex + 1}</span>
-              <span>{paragraph.measureCount} bar{paragraph.measureCount === 1 ? "" : "s"}</span>
+              <span className="system-title">Line {paragraphIndex + 1}</span>
+              <span className="system-title">{paragraph.measureCount} bars</span>
             </header>
             <div className="system-body">
               {tracks.map((track) => {
@@ -405,7 +466,6 @@ function Preview({ score }: { score: NormalizedScore }) {
                               </div>
                             ))}
                           </div>,
-                          gi < groups.length - 1 ? <div key={`${groupKey}-break`} className="line-break" /> : null,
                         ];
                       })}
                     </div>
@@ -437,27 +497,43 @@ function StaffScoreMetadata({ score }: { score: NormalizedScore }) {
 function StaffPreview({ score, xml, onRendered }: { score: NormalizedScore; xml: string; onRendered: (markup: string | null, error: string | null) => void }) {
   const printableRef = useRef<HTMLDivElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const shellRef = useRef<HTMLDivElement | null>(null);
+  const scrollPosRef = useRef({ top: 0, left: 0 });
   const [error, setError] = useState<string | null>(null);
+
+  function handleScroll(e: UIEvent<HTMLDivElement>) {
+    scrollPosRef.current = {
+      top: e.currentTarget.scrollTop,
+      left: e.currentTarget.scrollLeft,
+    };
+  }
 
   useEffect(() => {
     let cancelled = false;
 
     async function render() {
-      if (!containerRef.current) {
+      if (!containerRef.current || !shellRef.current) {
         return;
       }
+
+      const targetTop = scrollPosRef.current.top;
+      const targetLeft = scrollPosRef.current.left;
 
       try {
         const { OpenSheetMusicDisplay } = await import("opensheetmusicdisplay");
 
-        if (cancelled || !containerRef.current) {
-          return;
-        }
+        if (cancelled) return;
 
-        containerRef.current.innerHTML = "";
+        // 1. Create a hidden buffer container to render off-screen
+        const buffer = document.createElement("div");
+        buffer.style.width = `${containerRef.current.clientWidth}px`;
+        buffer.style.position = "absolute";
+        buffer.style.visibility = "hidden";
+        buffer.style.pointerEvents = "none";
+        document.body.appendChild(buffer);
 
-        const osmd = new OpenSheetMusicDisplay(containerRef.current, {
-          autoResize: true,
+        const osmd = new OpenSheetMusicDisplay(buffer, {
+          autoResize: false, // Manage resizing manually to avoid flickers
           drawTitle: false,
           drawingParameters: "compacttight",
           newSystemFromXML: true,
@@ -468,8 +544,31 @@ function StaffPreview({ score, xml, onRendered }: { score: NormalizedScore; xml:
 
         await osmd.load(xml);
         osmd.render();
+
+        if (cancelled) {
+          document.body.removeChild(buffer);
+          return;
+        }
+
+        // 2. Atomic swap: Replace content and restore scroll in the same frame
+        const markup = buffer.innerHTML;
+        containerRef.current.innerHTML = markup;
+        
+        // Immediate scroll restoration
+        shellRef.current.scrollTop = targetTop;
+        shellRef.current.scrollLeft = targetLeft;
+
+        document.body.removeChild(buffer);
         setError(null);
         onRendered(printableRef.current?.innerHTML ?? containerRef.current.innerHTML, null);
+
+        // Double check scroll position after DOM settles
+        requestAnimationFrame(() => {
+          if (!cancelled && shellRef.current) {
+            shellRef.current.scrollTop = targetTop;
+            shellRef.current.scrollLeft = targetLeft;
+          }
+        });
       } catch (renderError) {
         if (!cancelled) {
           const message = renderError instanceof Error ? renderError.message : "Could not render staff preview.";
@@ -484,10 +583,10 @@ function StaffPreview({ score, xml, onRendered }: { score: NormalizedScore; xml:
     return () => {
       cancelled = true;
     };
-  }, [onRendered, score, xml]);
+  }, [xml]);
 
   return (
-    <div className="staff-preview-shell">
+    <div className="staff-preview-shell" ref={shellRef} onScroll={handleScroll}>
       {error ? <div className="staff-error">{error}</div> : null}
       <div className="staff-printable" ref={printableRef}>
         <StaffScoreMetadata score={score} />
@@ -523,6 +622,13 @@ export function App() {
   const [staffRenderError, setStaffRenderError] = useState<string | null>(null);
   const [pendingPdfExport, setPendingPdfExport] = useState(false);
   const [hideVoice2Rests, setHideVoice2Rests] = useState(() => localStorage.getItem("drum-notation-hide-voice2-rests") === "true");
+  
+  const [editorWidth, setEditorWidth] = useState(() => {
+    const saved = localStorage.getItem("drum-notation-editor-width");
+    return saved ? parseInt(saved, 10) : 600;
+  });
+  const isResizingRef = useRef(false);
+
   const score = useMemo(() => buildNormalizedScore(dsl), [dsl]);
   const staffXml = useMemo(() => buildMusicXml(score, hideVoice2Rests), [hideVoice2Rests, score]);
   const canExport = score.errors.length === 0;
@@ -540,6 +646,10 @@ export function App() {
   }, [hideVoice2Rests]);
 
   useEffect(() => {
+    localStorage.setItem("drum-notation-editor-width", String(editorWidth));
+  }, [editorWidth]);
+
+  useEffect(() => {
     if (pendingPdfExport && staffRenderError) {
       setPendingPdfExport(false);
       return;
@@ -554,8 +664,41 @@ export function App() {
     }
   }, [pendingPdfExport, staffMarkup, staffRenderError]);
 
+  const handleMouseDown = useCallback(() => {
+    isResizingRef.current = true;
+    document.body.style.cursor = "col-resize";
+    document.body.style.userSelect = "none";
+  }, []);
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isResizingRef.current) return;
+      setEditorWidth(Math.max(320, Math.min(window.innerWidth - 320, e.clientX)));
+    };
+
+    const handleMouseUp = () => {
+      isResizingRef.current = false;
+      document.body.style.cursor = "";
+      document.body.style.userSelect = "";
+    };
+
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", handleMouseUp);
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
+    };
+  }, []);
+
   function handleMusicXmlExport() {
-    downloadTextFile("drum-notation.musicxml", staffXml, "application/vnd.recordare.musicxml+xml");
+    const title = score.ast.headers.title?.value;
+    const filename = title ? title : "drum-notation";
+    // Use Unicode-aware regex to keep letters and numbers from any script (including Chinese)
+    const safeTitle = filename
+      .toLowerCase()
+      .replace(/[^\p{L}\p{N}]+/gu, "-")
+      .replace(/^-+|-+$/g, "");
+    downloadTextFile(`${safeTitle || "drum-notation"}.musicxml`, staffXml, "application/vnd.recordare.musicxml+xml");
   }
 
   function handlePdfExport() {
@@ -575,19 +718,43 @@ export function App() {
   return (
     <main className="app-shell">
       <header className="app-header">
-        <h1>Drum Notation</h1>
-        <p>Text-first drum notation editor</p>
+        <div className="header-branding">
+          <h1>Drum Studio</h1>
+          <p>Text-first notation</p>
+        </div>
+        <div className="header-actions">
+          <button className="export-button" disabled={!canExport} onClick={handleMusicXmlExport} type="button">
+            Export MusicXML
+          </button>
+          <button className="export-button primary" disabled={!canExport} onClick={handlePdfExport} type="button">
+            Print / PDF
+          </button>
+        </div>
       </header>
+      
       <section className="workspace">
-        <label className="pane">
-          <span className="pane-title">DSL</span>
+        <section className="pane editor-pane" style={{ width: editorWidth }}>
+          <header className="pane-header">
+            <span className="pane-title">Editor</span>
+          </header>
           <DslEditor value={dsl} onChange={setDsl} />
-        </label>
+        </section>
+
+        <div className="resizer" onMouseDown={handleMouseDown} />
+
         <section className="pane preview-pane" aria-label="Preview">
-          <div className="preview-header">
+          <header className="pane-header">
             <span className="pane-title">Preview</span>
-            <div className="preview-actions">
-              <div className="preview-tabs" role="tablist" aria-label="Preview mode">
+            <div className="preview-header-actions">
+              <label className="preview-setting">
+                <input
+                  type="checkbox"
+                  checked={hideVoice2Rests}
+                  onChange={(e) => setHideVoice2Rests(e.target.checked)}
+                />
+                Hide V2 Rests
+              </label>
+              <div className="preview-tabs" role="tablist">
                 <button
                   className={`preview-tab${previewMode === "grid" ? " active" : ""}`}
                   onClick={() => setPreviewMode("grid")}
@@ -607,27 +774,11 @@ export function App() {
                   onClick={() => setPreviewMode("xml")}
                   type="button"
                 >
-                  MusicXML
-                </button>
-              </div>
-              <label className="preview-setting">
-                <input
-                  type="checkbox"
-                  checked={hideVoice2Rests}
-                  onChange={(e) => setHideVoice2Rests(e.target.checked)}
-                />
-                Hide voice 2 rests
-              </label>
-              <div className="export-actions">
-                <button className="export-button" disabled={!canExport} onClick={handleMusicXmlExport} type="button">
-                  Export MusicXML
-                </button>
-                <button className="export-button" disabled={!canExport} onClick={handlePdfExport} type="button">
-                  Export PDF
+                  XML
                 </button>
               </div>
             </div>
-          </div>
+          </header>
           {previewMode === "grid" ? (
             <Preview score={score} />
           ) : previewMode === "staff" ? (
@@ -641,25 +792,30 @@ export function App() {
           )}
         </section>
       </section>
-      <section className="error-panel" aria-label="Errors">
-        <div className="error-panel-inner">
-          <h2>Diagnostics</h2>
-          {score.errors.length === 0 ? (
-            <p className="error-empty">No parser or validation errors.</p>
+
+      <footer className="status-bar">
+        <div className="status-left">
+          {score.errors.length > 0 ? (
+            <span className="status-error">{score.errors.length} diagnostic issue{score.errors.length === 1 ? "" : "s"} found</span>
           ) : (
-            <ul className="error-list">
-              {score.errors.map((error, index) => (
-                <li key={`${error.line}-${error.column}-${index}`}>
-                  <span className="error-location">
-                    Line {error.line}, Col {error.column}
-                  </span>
-                  <span>{error.message}</span>
-                </li>
-              ))}
-            </ul>
+            <span className="status-success">✓ DSL Valid</span>
           )}
         </div>
-      </section>
+        <div className="status-right">
+          {score.ast.paragraphs.length} line{score.ast.paragraphs.length === 1 ? "" : "s"} • {score.ast.repeatSpans.length} repeat{score.ast.repeatSpans.length === 1 ? "" : "s"}
+        </div>
+      </footer>
+
+      {score.errors.length > 0 && (
+        <div className="error-list">
+          {score.errors.map((error, index) => (
+            <div className="error-item" key={`${error.line}-${error.column}-${index}`}>
+              <span className="error-loc">[{error.line}:{error.column}]</span>
+              <span>{error.message}</span>
+            </div>
+          ))}
+        </div>
+      )}
     </main>
   );
 }

@@ -309,6 +309,16 @@ function restXml(duration: Fraction, divisions: number, voice: VoiceTrack): stri
   ].join("");
 }
 
+function forwardXml(duration: Fraction, divisions: number, voice: VoiceTrack): string {
+  return [
+    "<forward>",
+    `<duration>${fractionToDivisions(duration, divisions)}</duration>`,
+    `<voice>${voice.voice}</voice>`,
+    `<staff>1</staff>`,
+    "</forward>",
+  ].join("");
+}
+
 function isBeamable(duration: Fraction): boolean {
   const normalized = simplify(duration);
   const denominator = normalized.denominator;
@@ -374,7 +384,7 @@ function groupingSegmentIndex(score: NormalizedScore, position: Fraction): numbe
   return Math.max(0, score.ast.headers.grouping.values.length - 1);
 }
 
-function measureXml(score: NormalizedScore, exportMeasure: ExportMeasure, divisions: number, forceLineBreak: boolean): string {
+function measureXml(score: NormalizedScore, exportMeasure: ExportMeasure, divisions: number, forceLineBreak: boolean, hideVoice2Rests: boolean): string {
   const measure = exportMeasure.measure;
   const measureDuration = {
     numerator: score.ast.headers.time.beats,
@@ -382,7 +392,11 @@ function measureXml(score: NormalizedScore, exportMeasure: ExportMeasure, divisi
   };
   const measureStart = multiplyFraction(measureDuration, measure.globalIndex);
   const upEvents = measure.events.filter((event) => voiceForTrack(event.track).voice === 1 && event.track !== "ST");
-  const downEvents = measure.events.filter((event) => voiceForTrack(event.track).voice === 2 && event.track !== "ST");
+  const downEvents = measure.events.filter((event) => {
+    const isVoice2 = voiceForTrack(event.track).voice === 2 && event.track !== "ST";
+    if (!isVoice2) return false;
+    return true;
+  });
   const upEntries = upEvents.length > 0
     ? buildVoiceEntries(groupVoiceEvents(upEvents), measureStart, measureDuration)
     : [];
@@ -416,7 +430,11 @@ function measureXml(score: NormalizedScore, exportMeasure: ExportMeasure, divisi
       const entry = entries[i];
 
       if (entry.kind === "rest") {
-        result.push(restXml(entry.duration, divisions, voice));
+        if (hideVoice2Rests && voice.voice === 2) {
+          result.push(forwardXml(entry.duration, divisions, voice));
+        } else {
+          result.push(restXml(entry.duration, divisions, voice));
+        }
         continue;
       }
 
@@ -524,12 +542,13 @@ function buildExportMeasures(score: NormalizedScore): ExportMeasure[] {
   return expanded;
 }
 
-export function buildMusicXml(score: NormalizedScore): string {
+export function buildMusicXml(score: NormalizedScore, hideVoice2Rests: boolean = false): string {
   const divisions = collectDivisions(score);
   const exportMeasures = buildExportMeasures(score);
-  const measures = exportMeasures.map((exportMeasure) => {
-    const forceLineBreak = exportMeasure.measure.measureInParagraph === 0 && exportMeasure.outputIndex > 0;
-    return measureXml(score, exportMeasure, divisions, forceLineBreak);
+  const measures = exportMeasures.map((exportMeasure, index) => {
+    const prevExportMeasure = exportMeasures[index - 1];
+    const forceLineBreak = index > 0 && prevExportMeasure?.measure.sourceLine !== exportMeasure.measure.sourceLine;
+    return measureXml(score, exportMeasure, divisions, forceLineBreak, hideVoice2Rests);
   }).join("");
 
   return `<?xml version="1.0" encoding="UTF-8"?>

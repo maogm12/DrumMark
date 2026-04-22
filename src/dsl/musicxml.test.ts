@@ -38,4 +38,21 @@ HH |: x - x - :|x3`);
     expect(xml).not.toContain("<repeat direction=\"forward\"/>");
     expect(xml).not.toContain("<repeat direction=\"backward\"/>");
   });
+
+  it("can hide voice 2 rests with forward elements", () => {
+    const score = buildNormalizedScore(`time 4/4
+divisions 4
+
+HH | x - x - |
+BD | - - p - |`);
+
+    expect(score.errors).toEqual([]);
+    const visibleXml = buildMusicXml(score);
+    const hiddenXml = buildMusicXml(score, true);
+
+    expect(visibleXml).toContain("<rest/><duration>8</duration><voice>2</voice>");
+    expect(hiddenXml).not.toContain("<rest/><duration>8</duration><voice>2</voice>");
+    expect(hiddenXml).toContain("<forward><duration>8</duration><voice>2</voice><staff>1</staff></forward>");
+    expect(hiddenXml).not.toContain("<note><forward>");
+  });
 });

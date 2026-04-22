@@ -246,6 +246,8 @@ function StaffPreview({ xml, onRendered }: { xml: string; onRendered: (markup: s
           return;
         }
 
+        containerRef.current.innerHTML = "";
+
         const osmd = new OpenSheetMusicDisplay(containerRef.current, {
           autoResize: true,
           drawTitle: false,
@@ -286,14 +288,27 @@ function StaffPreview({ xml, onRendered }: { xml: string; onRendered: (markup: s
 }
 
 export function App() {
-  const [dsl, setDsl] = useState(seedDsl);
-  const [previewMode, setPreviewMode] = useState<"grid" | "staff">("grid");
+  const [dsl, setDsl] = useState(() => localStorage.getItem("drum-notation-dsl") ?? seedDsl);
+  const [previewMode, setPreviewMode] = useState<"grid" | "staff">(() => (localStorage.getItem("drum-notation-preview-mode") as "grid" | "staff") ?? "grid");
   const [staffMarkup, setStaffMarkup] = useState<string | null>(null);
   const [staffRenderError, setStaffRenderError] = useState<string | null>(null);
   const [pendingPdfExport, setPendingPdfExport] = useState(false);
+  const [hideVoice2Rests, setHideVoice2Rests] = useState(() => localStorage.getItem("drum-notation-hide-voice2-rests") === "true");
   const score = useMemo(() => buildNormalizedScore(dsl), [dsl]);
-  const staffXml = useMemo(() => buildMusicXml(score), [score]);
+  const staffXml = useMemo(() => buildMusicXml(score, hideVoice2Rests), [hideVoice2Rests, score]);
   const canExport = score.errors.length === 0;
+
+  useEffect(() => {
+    localStorage.setItem("drum-notation-dsl", dsl);
+  }, [dsl]);
+
+  useEffect(() => {
+    localStorage.setItem("drum-notation-preview-mode", previewMode);
+  }, [previewMode]);
+
+  useEffect(() => {
+    localStorage.setItem("drum-notation-hide-voice2-rests", String(hideVoice2Rests));
+  }, [hideVoice2Rests]);
 
   useEffect(() => {
     if (pendingPdfExport && staffRenderError) {
@@ -359,6 +374,14 @@ export function App() {
                   Staff
                 </button>
               </div>
+              <label className="preview-setting">
+                <input
+                  type="checkbox"
+                  checked={hideVoice2Rests}
+                  onChange={(e) => setHideVoice2Rests(e.target.checked)}
+                />
+                Hide voice 2 rests
+              </label>
               <div className="export-actions">
                 <button className="export-button" disabled={!canExport} onClick={handleMusicXmlExport} type="button">
                   Export MusicXML

@@ -195,6 +195,7 @@ export type NormalizedMeasure = {
   globalIndex: number;
   paragraphIndex: number;
   measureInParagraph: number;
+  sourceLine: number;
   events: NormalizedEvent[];
 };
 

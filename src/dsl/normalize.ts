@@ -194,6 +194,7 @@ export function normalizeScoreAst(ast: ScoreAst): NormalizedScore {
         globalIndex,
         paragraphIndex,
         measureInParagraph,
+        sourceLine: paragraph.tracks[0]?.measures[measureInParagraph]?.sourceLine ?? 0,
         events: events.sort((left, right) => {
           const denominator = lcm(left.start.denominator, right.start.denominator);
           const leftValue = left.start.numerator * (denominator / left.start.denominator);

@@ -109,11 +109,17 @@ function xmlEscape(value: string): string {
     .replaceAll("'", "&apos;");
 }
 
-function creditXml(type: string, words: string): string {
+function creditXml(type: "title" | "subtitle" | "composer", words: string): string {
+  const attributes = {
+    title: 'justify="center" font-size="20" font-family="Noto Sans SC, PingFang SC, Microsoft YaHei, Helvetica Neue, Arial, sans-serif" font-weight="bold"',
+    subtitle: 'justify="center" font-size="12" font-family="Noto Sans SC, PingFang SC, Microsoft YaHei, Helvetica Neue, Arial, sans-serif" font-style="italic"',
+    composer: 'justify="right" font-size="10" font-family="Noto Sans SC, PingFang SC, Microsoft YaHei, Helvetica Neue, Arial, sans-serif"',
+  }[type];
+
   return [
     "  <credit page=\"1\">",
     `    <credit-type>${xmlEscape(type)}</credit-type>`,
-    `    <credit-words>${xmlEscape(words)}</credit-words>`,
+    `    <credit-words ${attributes}>${xmlEscape(words)}</credit-words>`,
     "  </credit>",
   ].join("\n");
 }
@@ -126,7 +132,7 @@ function scoreMetadataXml(score: NormalizedScore): string {
     ? `  <identification>\n    <creator type="composer">${xmlEscape(composer)}</creator>\n  </identification>`
     : "";
   const credits = [
-    score.ast.headers.title ? creditXml("title", title) : "",
+    creditXml("title", title),
     subtitle ? creditXml("subtitle", subtitle) : "",
     composer ? creditXml("composer", composer) : "",
   ].filter(Boolean).join("\n");

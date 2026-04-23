@@ -4,4 +4,7 @@ import react from "@vitejs/plugin-react";
 export default defineConfig({
   plugins: [react()],
   base: "/drum_notation/",
+  optimizeDeps: {
+    include: ["woff-lib", "pdf-lib", "@pdf-lib/fontkit"],
+  },
 });

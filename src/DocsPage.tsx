@@ -23,7 +23,7 @@ const docsSections: DocsSection[] = [
         <p>Every score begins with a header section. These fields define the technical foundation and metadata of your music:</p>
         <ul>
           <li><code>title</code>, <code>subtitle</code>, <code>composer</code>: Essential credits that appear at the top of the exported PDF and score.</li>
-          <li><code>tempo</code>: Sets the BPM (Quarter note). If omitted, it defaults to 120.</li>
+          <li><code>tempo</code>: Sets the BPM (Quarter note). If omitted, it defaults to <strong>120</strong>.</li>
           <li><code>time</code>: Defines the meter (e.g., <code>4/4</code>, <code>6/8</code>, <code>7/8</code>). This is required for rhythmic validation.</li>
           <li><code>divisions</code>: Defines the grid resolution for one measure. For example, setting it to 16 allows you to write 16th-note patterns using a 16-slot grid.</li>
         </ul>
@@ -37,11 +37,12 @@ const docsSections: DocsSection[] = [
     summary: "Control beat structures and visual beaming.",
     content: (
       <div className="docs-description">
-        <p>The <code>grouping</code> field is the most powerful tool for creating readable music. It tells the system how to beam notes and where the internal accents fall:</p>
+        <p>The <code>grouping</code> field tells the system how to beam notes and where the internal accents fall. <strong>Common meters have smart defaults:</strong></p>
         <ul>
-          <li>For standard meters like <code>4/4</code>, a grouping of <code>2+2</code> creates two half-note beats.</li>
-          <li>For irregular meters like <code>7/8</code>, you must specify the grouping (e.g., <code>2+2+3</code> or <code>3+2+2</code>) to match your musical phrasing.</li>
-          <li>The sum of the grouping numbers must match the <code>time</code> numerator.</li>
+          <li><code>4/4</code> &rarr; <code>2+2</code> (two half-note beats)</li>
+          <li><code>6/8</code> &rarr; <code>3+3</code> (two dotted-quarter beats)</li>
+          <li><code>2/4</code> &rarr; <code>1+1</code>, <code>3/4</code> &rarr; <code>1+1+1</code></li>
+          <li><strong>Irregular meters:</strong> For <code>5/8</code>, <code>7/8</code>, etc., you must specify the grouping (e.g., <code>2+2+3</code>).</li>
         </ul>
       </div>
     ),
@@ -53,16 +54,15 @@ const docsSections: DocsSection[] = [
     summary: "Map your ideas to specific percussion parts using a wide range of supported tracks.",
     content: (
       <div className="docs-description">
-        <p>Each instrument is represented by a <strong>track</strong>. Start a line with the instrument name followed by a pipe <code>|</code>:</p>
+        <p>Each instrument is represented by a <strong>track</strong>. Once a track is declared in any paragraph, it remains active throughout the score. If omitted in later sections, it is auto-filled with rests.</p>
         <ul>
-          <li><strong>Cymbals:</strong> <code>HH</code> (Hi-Hat), <code>RC</code> (Ride), <code>C</code> (Crash). Use <code>x</code> for hits and <code>X</code> for accents. You can also use <code>c</code> on the <code>HH</code> line as a shortcut for a crash hit.</li>
-          <li><strong>Drums:</strong> <code>SD</code> (Snare), <code>BD</code> (Bass), <code>T1/T2/T3</code> (Toms). Use <code>d</code> for hits, <code>D</code> for accents, and <code>g</code> for ghost notes.</li>
-          <li><strong>Foot & Utility:</strong> <code>HF</code> (Hi-Hat Foot) uses <code>p</code> for pedal hits. <code>ST</code> is for sticking (<code>R</code>/<code>L</code>).</li>
-          <li><strong>Sugar Tracks:</strong> <code>DR</code> lets you write snare (<code>s</code>, <code>S</code>) and toms (<code>t1</code>, <code>t2</code>, <code>t3</code>) on a single line for fast prototyping.</li>
+          <li><strong>Cymbals:</strong> <code>HH</code> (Hi-Hat), <code>RC</code> (Ride), <code>C</code> (Crash). Use <code>x</code>/<code>X</code>.</li>
+          <li><strong>Drums:</strong> <code>SD</code> (Snare), <code>BD</code> (Bass), <code>T1/T2/T3</code> (Toms). Use <code>d</code>/<code>D</code>/<code>g</code>.</li>
+          <li><strong>Sugar Tracks:</strong> <code>DR</code> expands into <code>SD</code> and <code>T1-T3</code>. <code>HH | c</code> acts as a shortcut for a Crash hit.</li>
         </ul>
       </div>
     ),
-    example: `time 4/4\ndivisions 8\n\nC  | x - - - - - - - |                 | x - - - - - - - | |\nHH | - x x x x x x x | x x x x x x x x |                 | |\nRC |                 |                 | - x x x x x x x | |\nT1 |                 |                 |                 | - - d d - - - - |\nT2 |                 |                 |                 | - - - - d d - - |\nSD | - - d - - - d - | - - d - - - d - | - - d - - - d - | d d - - - - - - |\nT3 |                 |                 |                 | - - - - - - d d |\nBD | p - p - p - - - | p - - p - p - - |                 | |\nHF |                 |                 | p - - p - p - - | |\n\nHH | c x x x x x x x | |\nDR |                 | s s t1 t1 t2 t2 t3 t3 |\n\nSD | d d d d d d d d |\nST | R L R L R L R L |`,
+    example: `time 4/4\ndivisions 8\n\n# Paragraph 1\nHH | x x x x x x x x |\nBD | p - - - p - - - |\n\n# Paragraph 2: HH is omitted but persists as rests\nSD | - - d - - - d - |\nBD | p - - - p - - - |`,
   },
   {
     id: "techniques",
@@ -70,16 +70,33 @@ const docsSections: DocsSection[] = [
     summary: "Add detail to your hits with modifiers.",
     content: (
       <div className="docs-description">
-        <p>Refine how a note is played using the <code>:modifier</code> syntax. Each track has a specific set of supported techniques:</p>
+        <p>Refine notes with <code>:modifier</code>. <strong>Strict compatibility rules apply:</strong></p>
         <ul>
-          <li><strong>Snare (SD) & Toms (T1-T3):</strong> <code>:rim</code> (rimshot), <code>:cross</code> (cross-stick, SD only), <code>:flam</code>.</li>
-          <li><strong>Hi-Hat (HH):</strong> <code>:open</code> (or shorthand <code>o</code>), <code>:close</code>.</li>
-          <li><strong>Cymbals (C, RC):</strong> <code>:choke</code> (muted hit), <code>:bell</code> (Ride only).</li>
-          <li><strong>Foot (HF):</strong> <code>:close</code>.</li>
+          <li><code>:rim</code>, <code>:flam</code>: Supported on <code>SD</code> and <code>T1-T3</code>.</li>
+          <li><code>:cross</code>: Only supported on <code>SD</code> (Snare Drum).</li>
+          <li><code>:bell</code>: Only supported on <code>RC</code> (Ride Cymbal).</li>
+          <li><code>:choke</code>: Supported on <code>C</code> and <code>RC</code>.</li>
+          <li><code>:open</code>, <code>:close</code>: Supported on <code>HH</code> and <code>HF</code>.</li>
         </ul>
       </div>
     ),
-    example: `time 4/4\ndivisions 8\ngrouping 1+1+1+1\n\nSD | d D d:rim D:rim d:cross D:cross d:flam D:flam |\n\nHH | x X x:close X:close x:open X:open o o |\n\nC  | x x:choke x x:choke x x:choke x x:choke |\n\nRC | x:bell - x:choke - x:bell - x:choke - |`,
+    example: `time 4/4\ndivisions 8\ngrouping 1+1+1+1\n\nSD | d:cross - d:rim - d:flam - d - |\nRC | x:bell - x:choke - x:bell - x:choke - |`,
+  },
+  {
+    id: "syntax-details",
+    title: "Syntax & Formatting",
+    summary: "Writing clean, maintainable notation code.",
+    content: (
+      <div className="docs-description">
+        <p>The notation language is designed to be human-readable and flexible:</p>
+        <ul>
+          <li><strong>Comments:</strong> Use <code>#</code> to add notes for yourself. Everything after <code>#</code> on a line is ignored.</li>
+          <li><strong>Whitespace:</strong> Spaces and tabs are ignored inside measures. Use them freely to align your tracks for better readability.</li>
+          <li><strong>Barlines:</strong> You can place multiple measures on one line, or even an empty measure <code>| |</code> which defaults to a full-measure rest.</li>
+        </ul>
+      </div>
+    ),
+    example: `# Cleanly aligned code\n# with comments\ntime 4/4\ndivisions 8\n\nHH | x x x x  x x x x | # Verse\nSD | - - d -  - - d - | # Groove\nBD | p - - -  p - - - |`,
   },
   {
     id: "tuplets",

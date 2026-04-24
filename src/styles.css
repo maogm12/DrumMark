@@ -1269,3 +1269,32 @@ input:checked + .toggle-slider:before {
     overflow: visible !important;
   }
 }
+
+/* CodeMirror Linter Styles */
+.cm-diagnostic {
+  padding: 8px 12px !important;
+  font-family: var(--font-sans) !important;
+  font-size: 0.85rem !important;
+  border-radius: 8px !important;
+  box-shadow: var(--shadow-md) !important;
+}
+
+.cm-diagnostic-error {
+  border-left: 4px solid var(--accent-danger) !important;
+  background-color: #fef2f2 !important;
+  color: #991b1b !important;
+}
+
+.cm-lintRange-error {
+  background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="6" height="3"><path d="M0 3 L3 0 L6 3" fill="none" stroke="%23ef4444" stroke-width="0.8"/></svg>') !important;
+  background-position: left bottom !important;
+  background-repeat: repeat-x !important;
+  padding-bottom: 2px !important;
+}
+
+.cm-tooltip-lint {
+  border: 1px solid var(--border-subtle) !important;
+  border-radius: 8px !important;
+  overflow: hidden !important;
+  z-index: 1000 !important;
+}

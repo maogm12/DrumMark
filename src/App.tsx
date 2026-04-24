@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode, type UIEvent } from "react";
-import { EditorState } from "@codemirror/state";
+import { EditorState, Compartment } from "@codemirror/state";
 import { EditorView, highlightActiveLine, highlightActiveLineGutter, lineNumbers } from "@codemirror/view";
+import { linter, type Diagnostic } from "@codemirror/lint";
 import type { PDFDocument as PDFLibDocument } from "pdf-lib";
-import { buildMusicXml, buildNormalizedScore } from "./dsl";
+import { buildMusicXml, buildNormalizedScore, type ParseError } from "./dsl";
 import { type NormalizedScore } from "./dsl";
 import { drumDslEditorTheme, drumDslLanguage, drumDslSyntaxHighlighting } from "./dslLanguage";
 
@@ -511,7 +512,9 @@ function DrumIcon() {
   );
 }
 
-function DslEditor({ value, onChange }: { value: string; onChange: (value: string) => void }) {
+const linterCompartment = new Compartment();
+
+function DslEditor({ value, onChange, errors }: { value: string; onChange: (value: string) => void; errors: ParseError[] }) {
   const hostRef = useRef<HTMLDivElement | null>(null);
   const viewRef = useRef<EditorView | null>(null);
   const onChangeRef = useRef(onChange);
@@ -542,6 +545,21 @@ function DslEditor({ value, onChange }: { value: string; onChange: (value: strin
           drumDslLanguage,
           drumDslSyntaxHighlighting,
           drumDslEditorTheme,
+          linterCompartment.of(
+            linter((v) => {
+              return errors.map((err) => {
+                const lineNum = Math.min(Math.max(1, err.line), v.state.doc.lines);
+                const line = v.state.doc.line(lineNum);
+                const pos = Math.min(line.from + Math.max(0, err.column - 1), line.to);
+                return {
+                  from: pos,
+                  to: Math.min(pos + 1, line.to),
+                  severity: "error",
+                  message: err.message,
+                } as Diagnostic;
+              });
+            }),
+          ),
           EditorView.updateListener.of((update) => {
             if (update.docChanged) {
               onChangeRef.current(update.state.doc.toString());
@@ -559,6 +577,29 @@ function DslEditor({ value, onChange }: { value: string; onChange: (value: strin
       view.destroy();
     };
   }, []);
+
+  useEffect(() => {
+    const view = viewRef.current;
+    if (!view) return;
+
+    view.dispatch({
+      effects: linterCompartment.reconfigure(
+        linter((v) => {
+          return errors.map((err) => {
+            const lineNum = Math.min(Math.max(1, err.line), v.state.doc.lines);
+            const line = v.state.doc.line(lineNum);
+            const pos = Math.min(line.from + Math.max(0, err.column - 1), line.to);
+            return {
+              from: pos,
+              to: Math.min(pos + 1, line.to),
+              severity: "error",
+              message: err.message,
+            } as Diagnostic;
+          });
+        }),
+      ),
+    });
+  }, [errors]);
 
   useEffect(() => {
     const view = viewRef.current;
@@ -1123,7 +1164,7 @@ export function App() {
               </div>
             </div>
           </header>
-          <DslEditor value={dsl} onChange={setDsl} />
+          <DslEditor value={dsl} onChange={setDsl} errors={score.errors} />
         </section>
 
         <div className="resizer" onMouseDown={handleMouseDown} />

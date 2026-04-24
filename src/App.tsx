@@ -1126,11 +1126,26 @@ export function App() {
     }));
   }
 
-  function handlePageSurfaceWheel(event: React.WheelEvent<HTMLDivElement>) {
-    if (!(event.ctrlKey || event.metaKey)) return;
-    event.preventDefault();
-    adjustPageScale(event.deltaY < 0 ? 0.1 : -0.1);
-  }
+  const pageSurfaceBodyRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const handleGlobalWheel = (event: WheelEvent) => {
+      // Intercept all zoom gestures (ctrl/meta + wheel) to disable browser zoom globally
+      if (event.ctrlKey || event.metaKey) {
+        event.preventDefault();
+
+        // Only scale the score if we are on the Page tab and mouse is over the preview area
+        if (settings.activeTab === "page" && pageSurfaceBodyRef.current?.contains(event.target as Node)) {
+          adjustPageScale(event.deltaY < 0 ? 0.1 : -0.1);
+        }
+      }
+    };
+
+    window.addEventListener("wheel", handleGlobalWheel, { passive: false });
+    return () => {
+      window.removeEventListener("wheel", handleGlobalWheel);
+    };
+  }, [settings.activeTab]);
 
   return (
     <main className="app-shell">
@@ -1204,7 +1219,7 @@ export function App() {
                     </div>
                   ) : null}
                 </div>
-                <div className="page-surface-body" onWheel={handlePageSurfaceWheel}>
+                <div className="page-surface-body" ref={pageSurfaceBodyRef}>
                   {settings.activeTab === "page" ? (
                     <StaffPreview
                       xml={hasRenderableScore ? (pagePreviewXml || staffXml) : ""}

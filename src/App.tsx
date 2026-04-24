@@ -1,8 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode, type UIEvent } from "react";
+import { EditorState } from "@codemirror/state";
+import { EditorView, highlightActiveLine, highlightActiveLineGutter, lineNumbers } from "@codemirror/view";
 import { OpenSheetMusicDisplay } from "opensheetmusicdisplay";
 import type { PDFDocument as PDFLibDocument } from "pdf-lib";
 import { buildMusicXml, buildNormalizedScore } from "./dsl";
 import { type NormalizedScore } from "./dsl";
+import { drumDslEditorTheme, drumDslLanguage, drumDslSyntaxHighlighting } from "./dslLanguage";
 
 const seedDsl = `tempo 96
 time 4/4
@@ -26,7 +29,6 @@ const osmdDefaultFontFamily = "\"Noto Sans SC\", \"PingFang SC\", \"Microsoft Ya
 const pdfPageWidth = 612;
 const pdfPageHeight = 792;
 const pdfMargin = 36;
-const pdfStaffRenderWidth = 900;
 const pdfOsmdHeaderReservePx = 150;
 
 function downloadBlob(filename: string, blob: Blob) {
@@ -352,57 +354,6 @@ function beautifyXml(xml: string): string {
   }).join("\n");
 }
 
-function highlightDsl(source: string): ReactNode[] {
-  const pattern = /(#[^\n]*|\b(?:title|subtitle|composer|tempo|time|divisions|grouping)\b|\b(?:HH|HF|DR|SD|BD|T1|T2|T3|RC|C|ST)\b|:\|x\d+|\|:|:\||[|[\]]|\b(?:open|close|choke|rim|cross|bell|flam)\b|[A-Za-z]\w*|\d+(?:\/\d+|\+\d+)*|-|:)/g;
-  const nodes: ReactNode[] = [];
-  let cursor = 0;
-  let match: RegExpExecArray | null;
-
-  while ((match = pattern.exec(source)) !== null) {
-    if (match.index > cursor) {
-      nodes.push(source.slice(cursor, match.index));
-    }
-
-    const value = match[0];
-    let className = "dsl-token";
-
-    if (value.startsWith("#")) {
-      className += " dsl-comment";
-    } else if (/^(title|subtitle|composer|tempo|time|divisions|grouping)$/.test(value)) {
-      className += " dsl-header";
-    } else if (/^(HH|HF|DR|SD|BD|T1|T2|T3|RC|C|ST)$/.test(value)) {
-      className += " dsl-track";
-    } else if (/^(:\|x\d+|\|:|:\||\|)$/.test(value)) {
-      className += " dsl-barline";
-    } else if (/^[[\]]$/.test(value)) {
-      className += " dsl-group";
-    } else if (/^(open|close|choke|rim|cross|bell|flam)$/.test(value)) {
-      className += " dsl-modifier";
-    } else if (/^\d/.test(value)) {
-      className += " dsl-number";
-    } else if (value === "-") {
-      className += " dsl-rest";
-    } else if (value === ":") {
-      className += " dsl-punctuation";
-    } else {
-      className += " dsl-note";
-    }
-
-    nodes.push(
-      <span className={className} key={`${match.index}-${value}`}>
-        {value}
-      </span>,
-    );
-    cursor = match.index + value.length;
-  }
-
-  if (cursor < source.length) {
-    nodes.push(source.slice(cursor));
-  }
-
-  return nodes;
-}
-
 function highlightXmlLine(line: string, lineIndex: number): ReactNode[] {
   const pattern = /(<\/?)([A-Za-z_][\w:.-]*)([^>]*?)(\/?>)|(<\?[^>]*\?>|<![^>]*>)|([^<]+)/g;
   const nodes: ReactNode[] = [];
@@ -506,46 +457,73 @@ function SettingsIcon() {
 }
 
 function DslEditor({ value, onChange }: { value: string; onChange: (value: string) => void }) {
-  const highlightRef = useRef<HTMLPreElement | null>(null);
-  const gutterRef = useRef<HTMLDivElement | null>(null);
-  const highlightedDsl = useMemo(() => highlightDsl(value), [value]);
-  
-  const lineCount = value.split("\n").length;
-  const lineNumbers = useMemo(() => {
-    return Array.from({ length: lineCount }, (_, i) => (
-      <div key={i + 1} className="line-number">{i + 1}</div>
-    ));
-  }, [lineCount]);
+  const hostRef = useRef<HTMLDivElement | null>(null);
+  const viewRef = useRef<EditorView | null>(null);
+  const onChangeRef = useRef(onChange);
 
-  function syncHighlightScroll(event: UIEvent<HTMLTextAreaElement>) {
-    const { scrollTop, scrollLeft } = event.currentTarget;
-    if (highlightRef.current) {
-      highlightRef.current.scrollTop = scrollTop;
-      highlightRef.current.scrollLeft = scrollLeft;
+  useEffect(() => {
+    onChangeRef.current = onChange;
+  }, [onChange]);
+
+  useEffect(() => {
+    if (!hostRef.current) {
+      return;
     }
-    if (gutterRef.current) {
-      gutterRef.current.scrollTop = scrollTop;
+
+    const view = new EditorView({
+      state: EditorState.create({
+        doc: value,
+        extensions: [
+          lineNumbers(),
+          highlightActiveLine(),
+          highlightActiveLineGutter(),
+          EditorState.tabSize.of(2),
+          EditorView.contentAttributes.of({
+            spellcheck: "false",
+            autocorrect: "off",
+            autocapitalize: "off",
+            "data-gramm": "false",
+          }),
+          drumDslLanguage,
+          drumDslSyntaxHighlighting,
+          drumDslEditorTheme,
+          EditorView.updateListener.of((update) => {
+            if (update.docChanged) {
+              onChangeRef.current(update.state.doc.toString());
+            }
+          }),
+        ],
+      }),
+      parent: hostRef.current,
+    });
+
+    viewRef.current = view;
+
+    return () => {
+      viewRef.current = null;
+      view.destroy();
+    };
+  }, []);
+
+  useEffect(() => {
+    const view = viewRef.current;
+    if (!view) {
+      return;
     }
-  }
+
+    const currentValue = view.state.doc.toString();
+    if (currentValue === value) {
+      return;
+    }
+
+    view.dispatch({
+      changes: { from: 0, to: currentValue.length, insert: value },
+    });
+  }, [value]);
 
   return (
     <div className="editor-shell">
-      <div className="editor-gutter" ref={gutterRef} aria-hidden="true">
-        {lineNumbers}
-      </div>
-      <div className="editor-container">
-        <pre className="editor-highlight" ref={highlightRef} aria-hidden="true">
-          {highlightedDsl}
-          {"\n"}
-        </pre>
-        <textarea
-          className="editor-input"
-          value={value}
-          onChange={(event) => onChange(event.target.value)}
-          onScroll={syncHighlightScroll}
-          spellCheck={false}
-        />
-      </div>
+      <div className="editor-container" ref={hostRef} />
     </div>
   );
 }
@@ -846,6 +824,8 @@ export function App() {
   const [settingsVisible, setSettingsVisible] = useState(true);
   const [pageZoomMenuOpen, setPageZoomMenuOpen] = useState(false);
   
+  const [showErrors, setShowErrors] = useState(false);
+  
   const [editorWidth, setEditorWidth] = useState(() => {
     const saved = localStorage.getItem("drum-notation-editor-width");
     return saved ? parseInt(saved, 10) : 600;
@@ -1092,7 +1072,13 @@ export function App() {
       <footer className="status-bar">
         <div className="status-left">
           {score.errors.length > 0 ? (
-            <span className="status-error">{score.errors.length} diagnostic issue{score.errors.length === 1 ? "" : "s"} found</span>
+            <button 
+              className={`status-error-toggle${showErrors ? " active" : ""}`}
+              onClick={() => setShowErrors(!showErrors)}
+              type="button"
+            >
+              {score.errors.length} diagnostic issue{score.errors.length === 1 ? "" : "s"} found
+            </button>
           ) : (
             <span className="status-success">✓ DSL Valid</span>
           )}
@@ -1100,14 +1086,20 @@ export function App() {
         <div className="status-right">{score.ast.paragraphs.length} lines • {score.ast.repeatSpans.length} repeats</div>
       </footer>
 
-      {score.errors.length > 0 && (
+      {score.errors.length > 0 && showErrors && (
         <div className="error-list">
-          {score.errors.map((error, index) => (
-            <div className="error-item" key={`${error.line}-${error.column}-${index}`}>
-              <span className="error-loc">[{error.line}:{error.column}]</span>
-              <span>{error.message}</span>
-            </div>
-          ))}
+          <div className="error-list-header">
+            <span>Errors</span>
+            <button onClick={() => setShowErrors(false)}>Close</button>
+          </div>
+          <div className="error-list-content">
+            {score.errors.map((error, index) => (
+              <div className="error-item" key={`${error.line}-${error.column}-${index}`}>
+                <span className="error-loc">[{error.line}:{error.column}]</span>
+                <span>{error.message}</span>
+              </div>
+            ))}
+          </div>
         </div>
       )}
     </main>

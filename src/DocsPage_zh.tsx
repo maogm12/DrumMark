@@ -16,33 +16,33 @@ const osmdDefaultFontFamily = "Charter, \"Bitstream Charter\", \"Sitka Text\", C
 const docsSections: DocsSection[] = [
   {
     id: "metadata",
-    title: "Document Metadata",
-    summary: "Set up your score's global information and timing.",
+    title: "乐谱元数据",
+    summary: "设置乐谱的全局信息和节奏基础。",
     content: (
       <div className="docs-description">
-        <p>Every score begins with a header section. These fields define the technical foundation and metadata of your music:</p>
+        <p>每一份乐谱都从小节头（Header）开始。这些字段定义了音乐的技术基础和元数据：</p>
         <ul>
-          <li><code>title</code>, <code>subtitle</code>, <code>composer</code>: Essential credits that appear at the top of the exported PDF and score.</li>
-          <li><code>tempo</code>: Sets the BPM (Quarter note). If omitted, it defaults to <strong>120</strong>.</li>
-          <li><code>time</code>: Defines the meter (e.g., <code>4/4</code>, <code>6/8</code>, <code>7/8</code>). This is required for rhythmic validation.</li>
-          <li><code>divisions</code>: Defines the grid resolution for one measure. For example, setting it to 16 allows you to write 16th-note patterns using a 16-slot grid.</li>
+          <li><code>title</code>, <code>subtitle</code>, <code>composer</code>: 必填的乐谱信息，将显示在导出的 PDF 和乐谱顶部。</li>
+          <li><code>tempo</code>: 设置 BPM（四分音符为准）。如果省略，默认为 <strong>120</strong>。</li>
+          <li><code>time</code>: 定义拍号（如 <code>4/4</code>, <code>6/8</code>, <code>7/8</code>）。这是节奏校验的依据。</li>
+          <li><code>divisions</code>: 定义每一小节的网格细分数。例如，设置为 16 可以让你在 16 格的网格中编写 16 分音符。</li>
         </ul>
       </div>
     ),
-    example: `title Funk Study\nsubtitle Groove A\ncomposer G. Mao\ntempo 100\ntime 4/4\ndivisions 8\n\nHH | x - x x x x x - |`,
+    example: `title 灵魂乐研究\nsubtitle 律动 A\ncomposer G. Mao\ntempo 100\ntime 4/4\ndivisions 8\n\nHH | x - x x x x x - |`,
   },
   {
     id: "grouping",
-    title: "Musical Grouping",
-    summary: "Control beat structures and visual beaming.",
+    title: "乐句分组",
+    summary: "控制音符的符杠（Beaming）连接和视觉重音。",
     content: (
       <div className="docs-description">
-        <p>The <code>grouping</code> field tells the system how to beam notes and where the internal accents fall. <strong>Common meters have smart defaults:</strong></p>
+        <p><code>grouping</code> 字段是提高乐谱可读性的最强工具。它告诉系统如何连接符杠，以及内部重音的分布。<strong>常用拍号拥有智能默认值：</strong></p>
         <ul>
-          <li><code>4/4</code> &rarr; <code>2+2</code> (two half-note beats)</li>
-          <li><code>6/8</code> &rarr; <code>3+3</code> (two dotted-quarter beats)</li>
+          <li><code>4/4</code> &rarr; <code>2+2</code> (两个二分音符宽度的重音组)</li>
+          <li><code>6/8</code> &rarr; <code>3+3</code> (两个附点四分音符重音组)</li>
           <li><code>2/4</code> &rarr; <code>1+1</code>, <code>3/4</code> &rarr; <code>1+1+1</code></li>
-          <li><strong>Irregular meters:</strong> For <code>5/8</code>, <code>7/8</code>, etc., you must specify the grouping (e.g., <code>2+2+3</code>).</li>
+          <li><strong>非正规拍号:</strong> 对于 <code>5/8</code>, <code>7/8</code> 等，你必须指定分组（如 <code>2+2+3</code>）。</li>
         </ul>
       </div>
     ),
@@ -50,33 +50,33 @@ const docsSections: DocsSection[] = [
   },
   {
     id: "instruments",
-    title: "Instruments & Tracks",
-    summary: "Map your ideas to specific percussion parts using a wide range of supported tracks.",
+    title: "乐器与轨道",
+    summary: "将你的创意映射到具体的打击乐声部。",
     content: (
       <div className="docs-description">
-        <p>Each instrument is represented by a <strong>track</strong>. Once a track is declared in any paragraph, it remains active throughout the score. If omitted in later sections, it is auto-filled with rests.</p>
+        <p>每种乐器由一个<strong>轨道（Track）</strong>表示。以乐器名称开头，后跟一个竖线 <code>|</code>。一旦轨道在某个段落出现，它将在整个乐谱中持续存在，如果后续省略，系统将自动补齐休止符。</p>
         <ul>
-          <li><strong>Cymbals:</strong> <code>HH</code> (Hi-Hat), <code>RC</code> (Ride), <code>C</code> (Crash). Use <code>x</code>/<code>X</code>.</li>
-          <li><strong>Drums:</strong> <code>SD</code> (Snare), <code>BD</code> (Bass), <code>T1/T2/T3</code> (Toms). Use <code>d</code>/<code>D</code>/<code>g</code>.</li>
-          <li><strong>Sugar Tracks:</strong> <code>DR</code> expands into <code>SD</code> and <code>T1-T3</code>. <code>HH | c</code> acts as a shortcut for a Crash hit.</li>
+          <li><strong>镲片 (Cymbals):</strong> <code>HH</code> (踩镲), <code>RC</code> (叮叮镲), <code>C</code> (吊镲)。使用 <code>x</code>/<code>X</code>。</li>
+          <li><strong>鼓组 (Drums):</strong> <code>SD</code> (军鼓), <code>BD</code> (底鼓), <code>T1/T2/T3</code> (通通鼓)。使用 <code>d</code>/<code>D</code>/<code>g</code> (鬼音)。</li>
+          <li><strong>糖语法 (Shortcuts):</strong> <code>DR</code> 轨道可以让你在同一行快速编写军鼓和通通鼓。<code>HH | c</code> 是在踩镲行快速记录吊镲的快捷方式。</li>
         </ul>
       </div>
     ),
-    example: `time 4/4\ndivisions 8\n\nC  | x - - - - - - - |                 | x - - - - - - - | |\nHH | - x x x x x x x | x x x x x x x x |                 | |\nRC |                 |                 | - x x x x x x x | |\nT1 |                 |                 |                 | - - d d - - - - |\nT2 |                 |                 |                 | - - - - d d - - |\nSD | - - d - - - d - | - - d - - - d - | - - d - - - d - | d d - - - - - - |\nT3 |                 |                 |                 | - - - - - - d d |\nBD | p - p - p - - - | p - - p - p - - |                 | |\nHF |                 |                 | p - - p - p - - | |\n\n# Sugar syntax and Sticking\nHH | c x x x x x x x | |\nDR |                 | s s t1 t1 t2 t2 t3 t3 |\n\nSD | d d d d d d d d |\nST | R L R L R L R L |`,
+    example: `time 4/4\ndivisions 8\n\nC  | x - - - - - - - |                 | x - - - - - - - | |\nHH | - x x x x x x x | x x x x x x x x |                 | |\nRC |                 |                 | - x x x x x x x | |\nT1 |                 |                 |                 | - - d d - - - - |\nT2 |                 |                 |                 | - - - - d d - - |\nSD | - - d - - - d - | - - d - - - d - | - - d - - - d - | d d - - - - - - |\nT3 |                 |                 |                 | - - - - - - d d |\nBD | p - p - p - - - | p - - p - p - - |                 | |\nHF |                 |                 | p - - p - p - - | |\n\n# 糖语法与粘滞标注 (Sticking)\nHH | c x x x x x x x | |\nDR |                 | s s t1 t1 t2 t2 t3 t3 |\n\nSD | d d d d d d d d |\nST | R L R L R L R L |`,
   },
   {
     id: "techniques",
-    title: "Playing Techniques",
-    summary: "Add detail to your hits with modifiers.",
+    title: "演奏技巧",
+    summary: "通过修饰符（Modifiers）丰富打击感。",
     content: (
       <div className="docs-description">
-        <p>Refine notes with <code>:modifier</code>. <strong>Strict compatibility rules apply:</strong></p>
+        <p>使用 <code>:修饰符</code> 语法细化音符的演奏方式。<strong>遵循以下兼容性规则：</strong></p>
         <ul>
-          <li><code>:rim</code>, <code>:flam</code>: Supported on <code>SD</code> and <code>T1-T3</code>.</li>
-          <li><code>:cross</code>: Only supported on <code>SD</code> (Snare Drum).</li>
-          <li><code>:bell</code>: Only supported on <code>RC</code> (Ride Cymbal).</li>
-          <li><code>:choke</code>: Supported on <code>C</code> and <code>RC</code>.</li>
-          <li><code>:open</code>, <code>:close</code>: Supported on <code>HH</code> and <code>HF</code>.</li>
+          <li><code>:rim</code> (边击), <code>:flam</code> (装饰音): 支持 <code>SD</code> 和 <code>T1-T3</code>。</li>
+          <li><code>:cross</code> (横跨): 仅支持 <code>SD</code> (军鼓)。</li>
+          <li><code>:bell</code> (镲帽): 仅支持 <code>RC</code> (叮叮镲)。</li>
+          <li><code>:choke</code> (制音): 支持 <code>C</code> 和 <code>RC</code>。</li>
+          <li><code>:open</code>, <code>:close</code>: 支持 <code>HH</code> 和 <code>HF</code> (脚踏踩镲)。</li>
         </ul>
       </div>
     ),
@@ -84,72 +84,71 @@ const docsSections: DocsSection[] = [
   },
   {
     id: "syntax-details",
-    title: "Syntax & Formatting",
-    summary: "Writing clean, maintainable notation code.",
+    title: "语法与格式细节",
+    summary: "编写整洁、可维护的记谱代码。",
     content: (
       <div className="docs-description">
-        <p>The notation language is designed to be human-readable and flexible:</p>
+        <p>该记谱语言旨在提供极高的可读性和灵活性：</p>
         <ul>
-          <li><strong>Comments:</strong> Use <code>#</code> to add notes for yourself. Everything after <code>#</code> on a line is ignored.</li>
-          <li><strong>Whitespace:</strong> Spaces and tabs are ignored inside measures. Use them freely to align your tracks for better readability.</li>
-          <li><strong>Barlines:</strong> You can place multiple measures on one line, or even an empty measure <code>| |</code> which defaults to a full-measure rest.</li>
+          <li><strong>注释 (Comments):</strong> 使用 <code>#</code> 添加个人备注。该符号之后的所有内容都会被忽略。</li>
+          <li><strong>空格 (Whitespace):</strong> 小节内部的空格和制表符会被忽略。你可以自由使用它们来对齐多个轨道。</li>
+          <li><strong>小节线:</strong> 你可以在一行内放置多个小节，甚至使用空小节 <code>| |</code>，它默认代表全小节休止。</li>
         </ul>
       </div>
     ),
-    example: `# Cleanly aligned code\n# with comments\ntime 4/4\ndivisions 8\n\nHH | x x x x  x x x x | # Verse\nSD | - - d -  - - d - | # Groove\nBD | p - - -  p - - - |`,
+    example: `# 整齐对齐的代码\ntime 4/4\ndivisions 8\n\nHH | x x x x  x x x x | # 主歌\nSD | - - d -  - - d - | # 律动\nBD | p - - -  p - - - |`,
   },
   {
     id: "tuplets",
-    title: "Rhythmic Groups",
-    summary: "Adjust durations and create complex subdivisions using brackets.",
+    title: "连音符与分组",
+    summary: "利用方括号调整时长或创建复杂的细分。",
     content: (
       <div className="docs-description">
-        <p>Groups allow you to deviate from the base grid defined by <code>divisions</code> in two ways:</p>
+        <p>分组允许你以两种方式偏离 <code>divisions</code> 定义的基础网格：</p>
         <ul>
-          <li><strong>Compression (Subdivisions & Tuplets):</strong> Fit more notes into a span. 
+          <li><strong>压缩 (连音符/细分):</strong> 在一个格子内塞入更多音符。 
             <ul>
-              <li><code>[x x]</code>: Fits two 16th notes into a single 8th-note slot (assuming <code>divisions 8</code>).</li>
-              <li><code>[2: d d d]</code>: Fits three notes into the space of two slots, creating a <strong>triplet</strong>.</li>
-              <li><code>[4: x x x x x]</code>: A quintuplet (5 notes in 4 slots).</li>
+              <li><code>[x x]</code>: 在一个格子内塞入两个 16 分音符（假设 <code>divisions 8</code>）。</li>
+              <li><code>[2: d d d]</code>: 在两个格子的空间内塞入三个音符，创建<strong>三连音</strong>。</li>
             </ul>
           </li>
-          <li><strong>Expansion (Longer Notes):</strong> Stretch a note to occupy multiple slots.
+          <li><strong>扩展 (长音符):</strong> 让一个音符跨越多个格子。
             <ul>
-              <li><code>[2: p]</code>: Makes the note last for 2 slots (e.g., a quarter note in an 8th-note grid).</li>
+              <li><code>[2: p]</code>: 让音符持续 2 个格子的时长。</li>
             </ul>
           </li>
-          <li><strong>Shorthand:</strong> The syntax is <code>[span: item1 item2 ...]</code>. If the span is exactly 1 slot, you can omit the <code>1:</code> prefix (e.g., <code>[d d d]</code> is the same as <code>[1: d d d]</code>).</li>
+          <li><strong>简写:</strong> 语法为 <code>[跨度: 音符列表]</code>。如果跨度正好是 1，可以省略 <code>1:</code> 前缀。</li>
         </ul>
       </div>
     ),
-    example: `time 4/4\ndivisions 8\ngrouping 1+1+1+1\n\n# Compression\nSD | [d d] d [2:d d d d] [2: d d d] [2: d d d d d] |\n\n# Expansion\nSD | [2: d] d d [4: d] | [8: d] |`,
+    example: `time 4/4\ndivisions 8\ngrouping 1+1+1+1\n\n# 压缩：32分音符、三连音、五连音\nSD | [d d] d [2:d d d d] [2: d d d] [2: d d d d d] |\n\n# 扩展：四分音符、全音符\nSD | [2: d] d d [4: d] | [8: d] |`,
   },
   {
     id: "repeats",
-    title: "Structure & Flow",
-    summary: "Manage bars, repeats, and sections.",
+    title: "结构与流程",
+    summary: "管理小节、重复和乐段。",
     content: (
       <div className="docs-description">
-        <p>Finalize your score's structure with professional navigation markers:</p>
+        <p>使用专业的导航标记完成乐谱结构：</p>
         <ul>
-          <li><strong>Barlines:</strong> Standard <code>|</code>, repeat start <code>|:</code>, and repeat end <code>:|</code>.</li>
-          <li><strong>Repeat Counts:</strong> Use <code>:|x3</code> or <code>:|x4</code> to specify the total number of times a section should be played. <strong>Note:</strong> When <code>N &gt; 2</code>, the section is automatically expanded in the generated score for better readability.</li>
-          <li><strong>Sections:</strong> Leave a blank line between blocks of text to create paragraphs. This helps organize song parts like Verse or Chorus.</li>
+          <li><strong>小节线:</strong> 标准 <code>|</code>，重复开始 <code>|:</code>，以及重复结束 <code>:|</code>。</li>
+          <li><strong>重复次数:</strong> 使用 <code>:|x3</code> 或 <code>:|x4</code> 指定总播放次数。 <strong>注意：</strong> 当 <code>N &gt; 2</code> 时，生成的乐谱会自动展开，以提高可读性。</li>
+          <li><strong>乐段 (Sections):</strong> 在文本块之间留一个空行来创建段落。这有助于组织“主歌（Verse）”或“副歌（Chorus）”等不同部分。</li>
         </ul>
       </div>
     ),
-    example: `time 4/4\ndivisions 8\n\n# Manual expansion vs. Automatic expansion (x4)\nHH |: x x x x x x x x | x x x x x x x x | x x x x x x x x | x x x x x x x x :|\nSD |  - - d - - - d - | - - d - - - d - | - - d - - - d - | - - d - - - d -  |\nBD |  p - - - p - - - | p - - - p - - - | p - - - p - - - | p - - - p - - -  |\n\nHH |: x x x x x x x x :|x4\nSD |  - - d - - - d -  |\nBD |  p - - - p - - -  |`,
+    example: `time 4/4\ndivisions 8\n\n# 手动展开 vs. 自动展开 (x4)\nHH |: x x x x x x x x | x x x x x x x x | x x x x x x x x | x x x x x x x x :|\nSD |  - - d - - - d - | - - d - - - d - | - - d - - - d - | - - d - - - d -  |\nBD |  p - - - p - - - | p - - - p - - - | p - - - p - - - | p - - - p - - -  |\n\nHH |: x x x x x x x x :|x4\nSD |  - - d - - - d -  |\nBD |  p - - - p - - -  |`,
   },
   {
     id: "full-example",
-    title: "The Master Class",
-    summary: "A complete demonstration using all available features.",
+    title: "大师级全特性示例",
+    summary: "一个综合展示所有可用特性的完整演示。",
     content: (
       <div className="docs-description">
-        <p>This final example showcases the synergy of headers, complex groupings, shortcuts, and multiple paragraphs to create a professional drum sheet. It includes advanced techniques like flams, bell hits, and sticking patterns.</p>
+        <p>这个最终示例展示了头部信息、复杂分组、快捷方式和多段落布局的协同作用，涵盖了装饰音（Flam）、镲帽击打和粘滞标记等高级技巧。</p>
       </div>
     ),
-    example: `title Fusion Grooves\nsubtitle Advanced Study\ncomposer G. Mao\ntempo 128\ntime 4/4\ndivisions 16\ngrouping 2+2\n\n# Section A: Main Groove\nHH |: x - x - o - x - | x:close - X - x - c - :|x2\nSD |  - - d:cross - g - | D:rim - [2: d d:flam] - - -  |\nBD |  p - - - p - - - | p - p - - - p -        |\nHF |  - - - - p - - - | - - - - p:close - -    |\n\n# Section B: Bridge with Subdivisions\nRC |  x:bell - x:bell - x:bell - x:bell - | [4: x:choke] |\nDR |  s - - - [3: s s s] - - - | S - t1 t2 t3 - - -   |\nBD |  p - - - p - - -     | p - - - p - - -      |\nST |  R - - - R L R - - - | R - R L R - - -      |\n\n# Outro: Finale\nC  |  X:choke - - - - - - - | - - - - X - - - |\nBD |  [16: p] |`,
+    example: `title Fusion Grooves\nsubtitle 高级进阶练习\ncomposer G. Mao\ntempo 128\ntime 4/4\ndivisions 16\ngrouping 2+2\n\n# 乐段 A: 主律动\nHH |: x - x - o - x - | x:close - X - x - c - :|x2\nSD |  - - d:cross - g - | D:rim - [2: d d:flam] - - -  |\nBD |  p - - - p - - - | p - p - - - p -        |\nHF |  - - - - p - - - | - - - - p:close - -    |\n\n# 乐段 B: 复杂细分桥接\nRC |  x:bell - x:bell - x:bell - x:bell - | [4: x:choke] |\nDR |  s - - - [3: s s s] - - - | S - t1 t2 t3 - - -   |\nBD |  p - - - p - - -     | p - - - p - - -      |\nST |  R - - - R L R - - - | R - R L R - - -      |\n\n# 结尾: Finale\nC  |  X:choke - - - - - - - | - - - - X - - - |\nBD |  [16: p] |`,
   },
 ];
 
@@ -193,7 +192,6 @@ function configureOsmdRules(osmd: OpenSheetMusicDisplayType) {
   rules.TitleBottomDistance = 1.8;
   rules.MinimumDistanceBetweenSystems = 1.0;
   rules.MinSkyBottomDistBetweenSystems = 1.0;
-  // Use a very large sheet maximum width and let CSS handle scaling
   rules.SheetMaximumWidth = 32767;
 }
 
@@ -204,7 +202,6 @@ function getStaffSvgMarkup(markup: string) {
   return Array.from(host.querySelectorAll("svg"))
     .filter((svg) => !svg.parentElement?.closest("svg"))
     .map((svg) => {
-      // Remove fixed dimensions so it shrinks to content height
       svg.removeAttribute("width");
       svg.removeAttribute("height");
       if (!svg.getAttribute("xmlns")) svg.setAttribute("xmlns", "http://www.w3.org/2000/svg");
@@ -396,11 +393,11 @@ function DocsExampleCard({ section }: { section: DocsSection }) {
       {section.content}
       <div className="docs-section-body">
         <div className="docs-section-pane">
-          <div className="docs-pane-title">Syntax</div>
+          <div className="docs-pane-title">语法示例</div>
           <DslDocsSnippet source={section.example} />
         </div>
         <div className="docs-section-pane">
-          <div className="docs-pane-title">Score Result</div>
+          <div className="docs-pane-title">生成结果</div>
           <StaticScorePreview xml={xml} />
         </div>
       </div>
@@ -433,15 +430,15 @@ export function DocsPage() {
       <aside className="docs-sidebar">
         <div className="docs-sidebar-brand">
           <DrumIcon />
-          <h1>Docs</h1>
+          <h1>文档</h1>
         </div>
         <nav className="docs-nav">
           <div className="docs-nav-group">
-            <span className="docs-nav-group-title">Language</span>
-            <a href="./docs_zh.html" className="docs-nav-link">中文文档</a>
+            <span className="docs-nav-group-title">语言切换</span>
+            <a href="./docs.html" className="docs-nav-link">English Docs</a>
           </div>
           <div className="docs-nav-group">
-            <span className="docs-nav-group-title">Sections</span>
+            <span className="docs-nav-group-title">章节</span>
             {docsSections.map((s) => (
               <a 
                 key={s.id} 
@@ -457,16 +454,16 @@ export function DocsPage() {
 
       <main className="docs-main">
         <div className="docs-floating-action">
-          <a className="export-button primary" href="./">Open Editor</a>
+          <a className="export-button primary" href="./">打开编辑器</a>
         </div>
         
         <section className="docs-page">
           <div className="docs-hero">
-            <span className="docs-kicker">Getting Started</span>
-            <h1>Drum Notation Guide</h1>
+            <span className="docs-kicker">快速入门</span>
+            <h1>鼓谱记谱指南</h1>
             <p>
-              A text-first way to write professional drum scores. 
-              The language is designed to be as fast as typing but as powerful as traditional notation software.
+              为现代鼓手设计的“文本优先”记谱方式。 
+              该语言旨在像打字一样飞快，同时拥有传统打谱软件的强大功能。
             </p>
           </div>
           

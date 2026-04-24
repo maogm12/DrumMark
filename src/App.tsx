@@ -24,7 +24,8 @@ type PagePadding = {
   bottom: number;
   left: number;
 };
-const osmdDefaultFontFamily = "\"Noto Sans SC\", \"PingFang SC\", \"Microsoft YaHei\", \"Helvetica Neue\", Arial, sans-serif";
+const osmdDefaultFontFamily = "Charter, \"Bitstream Charter\", \"Sitka Text\", Cambria, Georgia, \"Times New Roman\", \"PingFang SC\", \"Microsoft YaHei\", \"Noto Sans SC\", sans-serif";
+
 const pdfPageWidth = 612;
 const pdfPageHeight = 792;
 const pdfMargin = 36;

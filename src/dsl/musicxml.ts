@@ -110,10 +110,11 @@ function xmlEscape(value: string): string {
 }
 
 function creditXml(type: "title" | "subtitle" | "composer", words: string): string {
+  const mixedStack = 'Charter, Bitstream Charter, Sitka Text, Cambria, Georgia, Times New Roman, PingFang SC, Microsoft YaHei, Noto Sans SC, sans-serif';
   const attributes = {
-    title: 'justify="center" font-size="20" font-family="Noto Sans SC, PingFang SC, Microsoft YaHei, Helvetica Neue, Arial, sans-serif" font-weight="bold"',
-    subtitle: 'justify="center" font-size="12" font-family="Noto Sans SC, PingFang SC, Microsoft YaHei, Helvetica Neue, Arial, sans-serif" font-style="italic"',
-    composer: 'justify="right" font-size="10" font-family="Noto Sans SC, PingFang SC, Microsoft YaHei, Helvetica Neue, Arial, sans-serif"',
+    title: `justify="center" font-size="20" font-family="${mixedStack}" font-weight="bold"`,
+    subtitle: `justify="center" font-size="12" font-family="${mixedStack}" font-style="italic"`,
+    composer: `justify="right" font-size="10" font-family="${mixedStack}"`,
   }[type];
 
   return [

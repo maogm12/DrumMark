@@ -101,7 +101,7 @@ C  | x:choke - - - - - - - |`);
     expect(xml).toContain("<technical><other-technical>rim</other-technical></technical>");
     expect(xml).toContain("<technical><other-technical>cross-stick</other-technical></technical>");
     expect(xml).toContain("<technical><other-technical>bell</other-technical></technical>");
-    expect(xml).toContain("<technical><other-technical>choke</other-technical></technical>");
+    expect(xml).toContain('<articulations><staccato placement="above"/></articulations>');
   });
 
   it("uses distinct visuals for cross-sticks and rimshots", () => {

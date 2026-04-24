@@ -433,8 +433,10 @@ function noteXml(
   const dots = Array.from({ length: shape.dots }, () => "<dot/>").join("");
 
   // Consolidate all notations into one tag
+  const technical: string[] = [];
+  const articulations: string[] = [];
   const notationsContent: string[] = [];
-  
+
   // Tuplet start/stop
   if (event.tuplet) {
     notationsContent.push('<tuplet type="start" bracket="yes" number="1"/>');
@@ -445,28 +447,35 @@ function noteXml(
 
   // Technical/Articulations from notationsXml logic
   if (event.modifier === "open") {
-    notationsContent.push("<technical><open-string/></technical>");
+    technical.push("<open-string/>");
   }
   if (event.modifier === "close") {
-    notationsContent.push("<technical><stopped/></technical>");
+    technical.push("<stopped/>");
   }
   if (event.modifier === "rim") {
-    notationsContent.push("<technical><other-technical>rim</other-technical></technical>");
+    technical.push("<other-technical>rim</other-technical>");
   }
   if (event.modifier === "cross") {
-    notationsContent.push("<technical><other-technical>cross-stick</other-technical></technical>");
+    technical.push("<other-technical>cross-stick</other-technical>");
   }
   if (event.modifier === "choke") {
-    notationsContent.push("<technical><other-technical>choke</other-technical></technical>");
+    articulations.push('<staccato placement="above"/>');
   }
   if (event.modifier === "bell") {
-    notationsContent.push("<technical><other-technical>bell</other-technical></technical>");
+    technical.push("<other-technical>bell</other-technical>");
   }
   if (event.kind === "accent") {
-    notationsContent.push('<articulations><accent placement="above"/></articulations>');
+    articulations.push('<accent placement="above"/>');
   }
   if (sticking) {
-    notationsContent.push(`<technical><fingering placement="above" font-size="14">${xmlEscape(sticking)}</fingering></technical>`);
+    technical.push(`<fingering placement="above" font-size="14">${xmlEscape(sticking)}</fingering>`);
+  }
+
+  if (technical.length > 0) {
+    notationsContent.push(`<technical>${technical.join("")}</technical>`);
+  }
+  if (articulations.length > 0) {
+    notationsContent.push(`<articulations>${articulations.join("")}</articulations>`);
   }
 
   const notationsTag = notationsContent.length > 0 ? `<notations>${notationsContent.join("")}</notations>` : "";

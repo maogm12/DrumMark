@@ -10,7 +10,7 @@ type VoiceTrack = {
 type InstrumentSpec = {
   displayStep: string;
   displayOctave: number;
-  notehead?: "x" | "slash" | "diamond";
+  notehead?: "x" | "slash" | "diamond" | "circle-x";
 };
 
 type VoiceEventGroup = {
@@ -354,6 +354,10 @@ function noteheadValueForEvent(event: NormalizedEvent, instrument: InstrumentSpe
 
   if (event.track === "RC" && event.modifier === "bell") {
     return "diamond";
+  }
+
+  if (event.track === "HH" && event.modifier === "open") {
+    return "circle-x";
   }
 
   return instrument.notehead;

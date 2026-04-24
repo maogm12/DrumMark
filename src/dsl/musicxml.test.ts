@@ -97,6 +97,7 @@ C  | x:choke - - - - - - - |`);
     const xml = buildMusicXml(score);
 
     expect(xml).toContain("<technical><open-string/></technical>");
+    expect(xml).toContain("<notehead>circle-x</notehead>");
     expect(xml).toContain("<technical><stopped/></technical>");
     expect(xml).toContain("<technical><other-technical>rim</other-technical></technical>");
     expect(xml).toContain("<technical><other-technical>cross-stick</other-technical></technical>");

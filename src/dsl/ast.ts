@@ -57,7 +57,6 @@ function drTokenUsesTrack(token: MeasureToken, track: TrackName): boolean {
   switch (token.value) {
     case "s":
     case "S":
-    case "g":
       return track === "SD";
     case "t1":
     case "T1":
@@ -88,8 +87,6 @@ function expandDrToken(token: MeasureToken, track: TrackName): MeasureToken {
       return { kind: "basic", value: track === "SD" ? "d" : "-" };
     case "S":
       return { kind: "basic", value: track === "SD" ? "D" : "-" };
-    case "g":
-      return { kind: "basic", value: track === "SD" ? "g" : "-" };
     case "t1":
       return { kind: "basic", value: track === "T1" ? "d" : "-" };
     case "T1":

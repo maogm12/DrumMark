@@ -155,7 +155,8 @@ function readTrackToken(stream: StringStream, state: DslState): string | null {
     return "punctuation";
   }
 
-  if (matchWord(stream, modifiers)) {
+  const mod = matchWord(stream, modifiers);
+  if (mod) {
     return "modifier";
   }
 
@@ -183,10 +184,6 @@ function readTrackToken(stream: StringStream, state: DslState): string | null {
     return "cymbal-accent";
   }
 
-  if (stream.match(/^g/)) {
-    return "ghost-note";
-  }
-
   if (stream.match(/^O/)) {
     return "open-accent";
   }
@@ -209,13 +206,18 @@ function readTrackToken(stream: StringStream, state: DslState): string | null {
 
   if (stream.match(/^[xdpP]/)) {
     const glyph = stream.current();
+
     if (glyph === "x") {
       return "cymbal-note";
     }
     if (glyph === "p") {
-      return track === "HF" ? "foot-note" : "kick-note";
+      const type = track === "HF" ? "foot-note" : "kick-note";
+      return type;
     }
-    return glyph === "P" ? "note-accent" : "note";
+    if (glyph === "P") {
+      return "note-accent";
+    }
+    return "note";
   }
 
   if (stream.match(/^[A-Za-z0-9]+/)) {
@@ -294,7 +296,6 @@ const drumDslParser: StreamParser<DslState> = {
     "dr-accent": [tags.atom, tags.strong],
     note: tags.atom,
     "note-accent": [tags.atom, tags.strong],
-    "ghost-note": tags.emphasis,
     "cymbal-note": tags.tagName,
     "cymbal-accent": [tags.tagName, tags.strong],
     "open-accent": [tags.tagName, tags.inserted, tags.strong],
@@ -331,7 +332,6 @@ export const drumDslHighlightStyle = HighlightStyle.define([
   { tag: tags.atom, color: "#1e293b" },
   { tag: tags.tagName, color: "#0369a1" },
   { tag: tags.bool, color: "#0f766e" },
-  { tag: tags.emphasis, color: "#64748b", fontStyle: "italic" },
   { tag: tags.strong, fontWeight: "800" },
   { tag: tags.inserted, color: "#059669" },
   { tag: tags.special(tags.atom), color: "#b91c1c", fontWeight: "700" },

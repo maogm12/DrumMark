@@ -89,7 +89,7 @@ BD | - - p - |`);
 divisions 8
 
 HH | x:open x:close - - - - - - |
-SD | g d:rim d:cross d:flam - - - - |
+SD | d d:rim d:cross d:flam - - - - |
 RC | x:bell - - - - - - - |
 C  | x:choke - - - - - - - |`);
 
@@ -98,7 +98,6 @@ C  | x:choke - - - - - - - |`);
 
     expect(xml).toContain("<technical><open-string/></technical>");
     expect(xml).toContain("<technical><stopped/></technical>");
-    expect(xml).toContain("<notehead parentheses=\"yes\">normal</notehead>");
     expect(xml).toContain("<technical><other-technical>rim</other-technical></technical>");
     expect(xml).toContain("<technical><other-technical>cross-stick</other-technical></technical>");
     expect(xml).toContain("<technical><other-technical>bell</other-technical></technical>");
@@ -183,10 +182,10 @@ HH | x - x - |`);
     expect(xml).toContain("<work-title>Funk &amp; Flow</work-title>");
     expect(xml).toContain("<creator type=\"composer\">G. &quot;Mao&quot;</creator>");
     expect(xml).toContain("<credit-type>title</credit-type>");
-    expect(xml).toContain('<credit-words justify="center" font-size="20" font-family="Noto Sans SC, PingFang SC, Microsoft YaHei, Helvetica Neue, Arial, sans-serif" font-weight="bold">Funk &amp; Flow</credit-words>');
+    expect(xml).toContain('<credit-words justify="center" font-size="20" font-family="Charter, Bitstream Charter, Sitka Text, Cambria, Georgia, Times New Roman, PingFang SC, Microsoft YaHei, Noto Sans SC, sans-serif" font-weight="bold">Funk &amp; Flow</credit-words>');
     expect(xml).toContain("<credit-type>subtitle</credit-type>");
-    expect(xml).toContain('<credit-words justify="center" font-size="12" font-family="Noto Sans SC, PingFang SC, Microsoft YaHei, Helvetica Neue, Arial, sans-serif" font-style="italic">Verse &lt;A&gt;</credit-words>');
+    expect(xml).toContain('<credit-words justify="center" font-size="12" font-family="Charter, Bitstream Charter, Sitka Text, Cambria, Georgia, Times New Roman, PingFang SC, Microsoft YaHei, Noto Sans SC, sans-serif" font-style="italic">Verse &lt;A&gt;</credit-words>');
     expect(xml).toContain("<credit-type>composer</credit-type>");
-    expect(xml).toContain('<credit-words justify="right" font-size="10" font-family="Noto Sans SC, PingFang SC, Microsoft YaHei, Helvetica Neue, Arial, sans-serif">G. &quot;Mao&quot;</credit-words>');
+    expect(xml).toContain('<credit-words justify="right" font-size="10" font-family="Charter, Bitstream Charter, Sitka Text, Cambria, Georgia, Times New Roman, PingFang SC, Microsoft YaHei, Noto Sans SC, sans-serif">G. &quot;Mao&quot;</credit-words>');
   });
 });

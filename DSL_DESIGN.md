@@ -10,13 +10,14 @@ Core goals:
 - Easier to structure than ad hoc ASCII drum tabs
 - Live preview in the browser
 - Exportable to MusicXML
-- Friendly to common drum notation needs like repeats, tuplets, accents, ghost notes, sticking, and basic playing techniques
+- Friendly to common drum notation needs like repeats, tuplets, accents, sticking, and basic playing techniques
 
 Non-goals for v0:
 
 - Full-featured general-purpose notation editor
 - WYSIWYG score editing
 - Complete support for all traditional engraving details
+- Ghost-note parentheses in staff preview/export, which are blocked by current OSMD limitations
 
 ## Product Shape
 
@@ -44,6 +45,12 @@ Outputs:
 - Staff preview
 - MusicXML export
 
+Current rendering constraint:
+
+- All score rendering goes through OSMD
+- Ghost-note parentheses are not part of v0 because OSMD does not currently support this notation reliably
+- Reference: https://github.com/opensheetmusicdisplay/opensheetmusicdisplay/issues/887
+
 ### Normalized Events
 
 Normalized event is the single source for rendering and export.
@@ -68,7 +75,7 @@ Notes:
 - `track` is the canonical score track after input sugar is resolved
 - `DR` is expanded before normalization and does not appear as a normalized track
 - `HH` crash sugar `c` remains a glyph on `HH`; MusicXML derives crash instrument semantics during export
-- `kind` is one of hit, accent, ghost, pedal, or sticking
+- `kind` is one of hit, accent, pedal, or sticking
 - `start` and `duration` are rational musical durations, not raw grid slot numbers
 - v0 does not store tie fields; groups that require automatic tie splitting are rejected during validation
 - instrument placement is derived by renderers/exporters from `track`, `glyph`, and `modifier`
@@ -418,7 +425,6 @@ It is not a real score track. After parsing, `DR` is expanded into standard trac
 
 - `s` -> `SD` normal hit
 - `S` -> `SD` accent hit
-- `g` -> `SD` ghost hit
 - `t1` -> `T1` normal hit
 - `t2` -> `T2` normal hit
 - `t3` -> `T3` normal hit
@@ -452,7 +458,6 @@ DR | s - t1 - t2 - t3 - |
 - `X` cymbal-family accent hit
 - `d` drum-family normal hit
 - `D` drum-family accent hit
-- `g` drum-family ghost hit
 - `p` pedal hit
 - `P` pedal accent hit
 - `R` right hand sticking
@@ -463,7 +468,6 @@ DR | s - t1 - t2 - t3 - |
 - `-`
 - `s`
 - `S`
-- `g`
 - `t1`, `T1`
 - `t2`, `T2`
 - `t3`, `T3`
@@ -475,25 +479,15 @@ DR | s - t1 - t2 - t3 - |
 - `o`, `O` (HH only)
 - `c`, `C` (HH only)
 
-`SD`, `T1`, `T2`, `T3` allow:
+`SD`, `T1`, `T2`, `T3`, `BD` allow:
 
 - `-`
 - `d`, `D`
-- `g`
-
-`BD` allows:
-
-- `-`
-- `p`, `P`
-- `g`
 
 `HF` allows:
 
 - `-`
 - `p`, `P`
-
-- `-`
-- `p`
 
 `ST` allows:
 
@@ -505,7 +499,7 @@ Examples:
 
 ```txt
 HH | x - X - |
-SD | d - g D |
+SD | d - d D |
 HF | - - p - |
 ST | R - L - |
 ```
@@ -581,13 +575,13 @@ Any unknown modifier, or any modifier used on an unsupported track/glyph combina
 ### Additional Constraints
 
 - Modifiers must be valid for both the track and the base glyph
-- `g:flam` is not allowed in v0
+- Ghost-note syntax is intentionally out of scope for v0 until OSMD supports notehead parentheses reliably
 
 Examples:
 
 ```txt
 HH | x - x:open - x:close - x - |
-SD | - - d:cross - g - D:rim - |
+SD | - - d:cross - d - D:rim - |
 RC | - - x:bell - - - x - |
 C  | X:choke - - - - - - - |
 ```
@@ -738,7 +732,7 @@ Examples:
 
 ```txt
 HH |: x - x - x - x - | x - x - X - x - :|
-SD |  - - d - - - D - | - - g - d - - -  |
+SD |  - - d - - - D - | - - d - d - - -  |
 BD |  p - - - p - - - | p - p - - - p -  |
 ```
 
@@ -752,7 +746,7 @@ Two-measure repeat played three times total:
 
 ```txt
 HH |: x - x - x - x - | x - x - X - x - :|x3
-SD |  - - d - - - D - | - - g - d - - -  |
+SD |  - - d - - - D - | - - d - d - - -  |
 BD |  p - - - p - - - | p - p - - - p -  |
 ```
 
@@ -939,7 +933,6 @@ The exporter should preserve the supported modifier set directly.
 Supported export priorities:
 
 - accents
-- ghost notes
 - open/close hi-hat
 - tuplets
 - flam
@@ -953,6 +946,12 @@ Supported when explicitly included in the whitelist:
 
 If a modifier cannot be represented reliably in MusicXML, it is out of scope for v0 and should not be accepted by validation.
 
+Ghost-note rendering/export note:
+
+- Parenthesized ghost-note heads are deferred
+- Reason: OSMD does not currently support this notation reliably
+- Reference: https://github.com/opensheetmusicdisplay/opensheetmusicdisplay/issues/887
+
 ## Example
 
 ```txt
@@ -962,7 +961,7 @@ divisions 16
 grouping 2+2
 
 HH |: x - x - o - x - | x - x:close - X - x - :|x3
-SD |  - - d:cross - g - | D:rim - [2: d d:flam d] - - -  |
+SD |  - - d:cross - d - | D:rim - [2: d d:flam d] - - -  |
 BD |  p - - - p - - - | p - p - - - p -                     |
 HF |  - - - - p - - - | - - - - p:close - -                |
 

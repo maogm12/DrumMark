@@ -56,11 +56,12 @@ const docsSections: DocsSection[] = [
       <div className="docs-description">
         <p>每种乐器由一个<strong>轨道（Track）</strong>表示。以乐器名称开头，后跟一个竖线 <code>|</code>。一旦轨道在某个段落出现，它将在整个乐谱中持续存在，如果后续省略，系统将自动补齐休止符。</p>
         <ul>
-          <li><strong>镲片 (Cymbals):</strong> <code>HH</code> (踩镲), <code>RC</code> (叮叮镲), <code>C</code> (吊镲)。使用 <code>x</code>/<code>X</code>。你也可以在 <code>HH</code> 轨道上使用 <code>c</code>/<code>C</code> (重音) 作为吊镲的快捷方式。</li>
-          <li><strong>鼓组 (Drums):</strong> <code>SD</code> (军鼓), <code>BD</code> (底鼓), <code>T1/T2/T3</code> (通通鼓)。使用 <code>d</code>/<code>D</code>/<code>g</code> (鬼音)。</li>
-          <li><strong>底端与功能:</strong> <code>HF</code> (脚踏踩镲) 使用 <code>p</code>/<code>P</code> (重音) 表示踏击。<code>ST</code> 用于粘滞标注 (<code>R</code>/<code>L</code>)。</li>
-          <li><strong>糖语法 (Shortcuts):</strong> <code>DR</code> 轨道可以让你在同一行快速编写军鼓和通通鼓，支持重音标记如 <code>S</code>, <code>T1</code>, <code>T2</code>, <code>T3</code>。</li>
+          <li><strong>镲片 (Cymbals):</strong> <code>HH</code> (踩镲), <code>RC</code> (叮叮镲), <code>C</code> (吊镲)。使用 <code>x</code>/<code>X</code> 表示击打。</li>
+          <li><strong>鼓组 (Drums):</strong> <code>SD</code> (军鼓), <code>BD</code> (底鼓), <code>T1/T2/T3</code> (通通鼓)。使用 <code>d</code>/<code>D</code>。</li>
+          <li><strong>底端与功能:</strong> <code>HF</code> (脚踏踩镲) 使用 <code>p</code>/<code>P</code> 表示踏击。<code>ST</code> 用于粘滞标注 (<code>R</code>/<code>L</code>)。</li>
+          <li><strong>糖语法 (Shortcuts):</strong> <code>DR</code> 轨道可以让你在同一行快速编写军鼓和通通鼓，支持重音 (<code>S</code>, <code>T1-T3</code>)。</li>
         </ul>
+
       </div>
     ),
     example: `time 4/4\ndivisions 8\n\nC  | x - - - - - - - |                 | x - - - - - - - | |\nHH | - x x x x x x x | x x x x x x x x |                 | |\nRC |                 |                 | - x x x x x x x | |\nT1 |                 |                 |                 | - - d d - - - - |\nT2 |                 |                 |                 | - - - - d d - - |\nSD | - - d - - - d - | - - d - - - d - | - - d - - - d - | d d - - - - - - |\nT3 |                 |                 |                 | - - - - - - d d |\nBD | p - p - p - - - | p - - p - p - - |                 | |\nHF |                 |                 | p - - p - p - - | |\n\n# 糖语法与粘滞标注 (Sticking)\nHH | c x x x x x x x | |\nDR |                 | s s t1 t1 t2 t2 t3 t3 |\n\nSD | d d d d d d d d |\nST | R L R L R L R L |`,
@@ -73,11 +74,11 @@ const docsSections: DocsSection[] = [
       <div className="docs-description">
         <p>使用 <code>:修饰符</code> 语法细化音符的演奏方式。<strong>遵循以下兼容性规则：</strong></p>
         <ul>
-          <li><code>:rim</code> (边击), <code>:flam</code> (装饰音): 支持 <code>SD</code> 和 <code>T1-T3</code>。</li>
-          <li><code>:cross</code> (横跨): 仅支持 <code>SD</code> (军鼓)。</li>
-          <li><code>:bell</code> (镲帽): 仅支持 <code>RC</code> (叮叮镲)。</li>
-          <li><code>:choke</code> (制音): 支持 <code>C</code> 和 <code>RC</code>。</li>
-          <li><code>:open</code>, <code>:close</code>: 支持 <code>HH</code> 和 <code>HF</code> (脚踏踩镲)。在 <code>HH</code> 上也支持 <code>o</code> (开启) 和 <code>O</code> (重音开启) 的简写。</li>
+          <li><strong>军鼓 (SD) 与通通鼓 (T1-T3):</strong> <code>:rim</code> (边击), <code>:cross</code> (横跨), <code>:flam</code> (装饰音)。</li>
+          <li><strong>踩镲 (HH):</strong> <code>:open</code> (简写 <code>o</code>/<code>O</code>), <code>:close</code>。</li>
+          <li><strong>镲片 (C, RC):</strong> <code>:choke</code> (制音), <code>:bell</code> (镲帽)。</li>
+          <li><strong>足部 (HF) 与底鼓 (BD):</strong> <code>:close</code> (仅 HF)。</li>
+          <li><strong>鬼音:</strong> 目前暂缓支持，因为 OSMD 还不能稳定渲染带括号的 notehead。</li>
         </ul>
       </div>
     ),
@@ -149,7 +150,7 @@ const docsSections: DocsSection[] = [
         <p>这个最终示例展示了头部信息、复杂分组、快捷方式和多段落布局的协同作用，涵盖了装饰音（Flam）、镲帽击打和粘滞标记等高级技巧。</p>
       </div>
     ),
-    example: `title Fusion Grooves\nsubtitle 高级进阶练习\ncomposer G. Mao\ntempo 128\ntime 4/4\ndivisions 16\ngrouping 2+2\n\n# 乐段 A: 主律动\nHH |: x - x - o - x - | x:close - X - x - c - :|x2\nSD |  - - d:cross - g - | D:rim - [2: d d:flam] - - -  |\nBD |  p - - - p - - - | p - p - - - p -        |\nHF |  - - - - p - - - | - - - - p:close - -    |\n\n# 乐段 B: 复杂细分桥接\nRC |  x:bell - x:bell - x:bell - x:bell - | [4: x:choke] |\nDR |  s - - - [3: s s s] - - - | S - t1 t2 t3 - - -   |\nBD |  p - - - p - - -     | p - - - p - - -      |\nST |  R - - - R L R - - - | R - R L R - - -      |\n\n# 结尾: Finale\nC  |  X:choke - - - - - - - | - - - - X - - - |\nBD |  [16: p] |`,
+    example: `title Fusion Grooves\nsubtitle 高级进阶练习\ncomposer G. Mao\ntempo 128\ntime 4/4\ndivisions 16\ngrouping 2+2\n\n# 乐段 A: 主律动\nHH |: x - x - o - x - | x:close - X - x - c - :|x2\nSD |  - - d:cross - d - | D:rim - [2: d d:flam] - - -  |\nBD |  p - - - p - - - | p - p - - - p -        |\nHF |  - - - - p - - - | - - - - p:close - -    |\n\n# 乐段 B: 复杂细分桥接\nRC |  x:bell - x:bell - x:bell - x:bell - | [4: x:choke] |\nDR |  s - - - [3: s s s] - - - | S - t1 t2 t3 - - -   |\nBD |  p - - - p - - -     | p - - - p - - -      |\nST |  R - - - R L R - - - | R - R L R - - -      |\n\n# 结尾: Finale\nC  |  X:choke - - - - - - - | - - - - X - - - |\nBD |  [16: p] |`,
   },
 ];
 
@@ -283,7 +284,7 @@ async function getStaticPreviewRenderer() {
 }
 
 function highlightDslSnippet(source: string): ReactNode[] {
-  const pattern = /(#[^\n]*|\b(?:title|subtitle|composer|tempo|time|divisions|grouping)\b|\b(?:HH|HF|DR|SD|BD|T1|T2|T3|RC|C|ST)\b|:\|x\d+|\|:|:\||[|[\]]|\b(?:open|close|choke|rim|cross|bell|flam)\b|(?:t1|t2|t3)\b|\d+(?:\/\d+|\+\d+)*|-|:|[RLSXDgxopcdbp]+)/g;
+  const pattern = /(#[^\n]*|\b(?:title|subtitle|composer|tempo|time|divisions|grouping)\b|\b(?:HH|HF|DR|SD|BD|T1|T2|T3|RC|C|ST)\b|:\|x\d+|\|:|:\||[|[\]]|\b(?:open|close|choke|rim|cross|bell|flam)\b|(?:t1|t2|t3)\b|\d+(?:\/\d+|\+\d+)*|-|:|[RLSXDxopcdbp]+)/g;
   const nodes: ReactNode[] = [];
   let cursor = 0;
   let match: RegExpExecArray | null;

@@ -74,10 +74,6 @@ function classifyEventKind(track: TrackName, glyph: Exclude<NormalizedEvent["gly
     return glyph === "P" ? "accent" : "pedal";
   }
 
-  if (glyph === "g") {
-    return "ghost";
-  }
-
   if (glyph === "X" || glyph === "D" || glyph === "P" || glyph === "C") {
     return "accent";
   }

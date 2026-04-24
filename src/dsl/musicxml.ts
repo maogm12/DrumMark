@@ -344,63 +344,7 @@ function buildVoiceEntries(
   return entries;
 }
 
-function notationsXml(event: NormalizedEvent, sticking?: string): string {
-  const bits: string[] = [];
-
-  if (event.modifier === "open") {
-    bits.push("<technical><open-string/></technical>");
-  }
-
-  if (event.modifier === "close") {
-    bits.push("<technical><stopped/></technical>");
-  }
-
-  if (event.modifier === "flam") {
-    bits.push("<ornaments><tremolo type=\"single\">1</tremolo></ornaments>");
-  }
-
-  if (event.modifier === "choke") {
-    bits.push("<technical><other-technical>choke</other-technical></technical>");
-    bits.push("<articulations><staccatissimo/></articulations>");
-  }
-
-  if (event.modifier === "rim") {
-    bits.push("<technical><other-technical>rim</other-technical></technical>");
-  }
-
-  if (event.modifier === "cross") {
-    bits.push("<technical><other-technical>cross-stick</other-technical></technical>");
-  }
-
-  if (event.modifier === "bell") {
-    bits.push("<technical><other-technical>bell</other-technical></technical>");
-  }
-
-  if (event.kind === "accent") {
-    bits.push('<articulations><accent placement="above"/></articulations>');
-  }
-
-  if (sticking) {
-    bits.push(`<technical><fingering placement="above" font-size="14">${xmlEscape(sticking)}</fingering></technical>`);
-  }
-
-  if (bits.length === 0 && !event.tuplet) {
-    return "";
-  }
-
-  const tuplet = event.tuplet
-    ? `<tuplet type="start" bracket="yes" number="1"/>`
-    : "";
-
-  return `<notations>${tuplet}${bits.join("")}</notations>`;
-}
-
-function noteheadXml(event: NormalizedEvent, instrument: InstrumentSpec): string {
-  if (event.kind === "ghost") {
-    const notehead = instrument.notehead ?? "normal";
-    return `<notehead parentheses="yes">${notehead}</notehead>`;
-  }
-
+function noteheadXml(_event: NormalizedEvent, instrument: InstrumentSpec): string {
   return instrument.notehead ? `<notehead>${instrument.notehead}</notehead>` : "";
 }
 
@@ -451,9 +395,50 @@ function noteXml(
     ? `<time-modification><actual-notes>${event.tuplet.actual}</actual-notes><normal-notes>${event.tuplet.normal}</normal-notes></time-modification>`
     : "";
   const notehead = noteheadXml(event, instrument);
-  const closingNotation = closesTuplet && !isChord ? `<notations><tuplet type="stop" number="1"/></notations>` : "";
   const beam = beamState ? `<beam number="1">${beamState}</beam>` : "";
   const dots = Array.from({ length: shape.dots }, () => "<dot/>").join("");
+
+  // Consolidate all notations into one tag
+  const notationsContent: string[] = [];
+  
+  // Tuplet start/stop
+  if (event.tuplet) {
+    notationsContent.push('<tuplet type="start" bracket="yes" number="1"/>');
+  }
+  if (closesTuplet && !isChord) {
+    notationsContent.push('<tuplet type="stop" number="1"/>');
+  }
+
+  // Technical/Articulations from notationsXml logic
+  if (event.modifier === "open") {
+    notationsContent.push("<technical><open-string/></technical>");
+  }
+  if (event.modifier === "close") {
+    notationsContent.push("<technical><stopped/></technical>");
+  }
+  if (event.modifier === "rim") {
+    notationsContent.push("<technical><other-technical>rim</other-technical></technical>");
+  }
+  if (event.modifier === "cross") {
+    notationsContent.push("<technical><other-technical>cross-stick</other-technical></technical>");
+  }
+  if (event.modifier === "flam") {
+    notationsContent.push('<ornaments><tremolo type="single">1</tremolo></ornaments>');
+  }
+  if (event.modifier === "choke") {
+    notationsContent.push("<technical><other-technical>choke</other-technical></technical>");
+  }
+  if (event.modifier === "bell") {
+    notationsContent.push("<technical><other-technical>bell</other-technical></technical>");
+  }
+  if (event.kind === "accent") {
+    notationsContent.push('<articulations><accent placement="above"/></articulations>');
+  }
+  if (sticking) {
+    notationsContent.push(`<technical><fingering placement="above" font-size="14">${xmlEscape(sticking)}</fingering></technical>`);
+  }
+
+  const notationsTag = notationsContent.length > 0 ? `<notations>${notationsContent.join("")}</notations>` : "";
 
   return [
     "<note>",
@@ -463,16 +448,16 @@ function noteXml(
     `<display-octave>${instrument.displayOctave}</display-octave>`,
     "</unpitched>",
     `<duration>${fractionToDivisions(duration, divisions)}</duration>`,
+    `<instrument id="P1-I1"/>`,
     `<voice>${voice.voice}</voice>`,
     `<type>${shape.type}</type>`,
     dots,
     timeModification,
-    notehead,
     `<stem>${voice.stem}</stem>`,
-    beam,
+    notehead,
     `<staff>1</staff>`,
-    notationsXml(event, sticking),
-    closingNotation,
+    beam,
+    notationsTag,
     "</note>",
   ].join("");
 }
@@ -725,6 +710,9 @@ ${scoreMetadataXml(score)}
   <part-list>
     <score-part id="P1">
       <part-name>Drumset</part-name>
+      <score-instrument id="P1-I1">
+        <instrument-name>Drumset</instrument-name>
+      </score-instrument>
     </score-part>
   </part-list>
   <part id="P1">

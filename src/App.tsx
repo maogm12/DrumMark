@@ -11,7 +11,7 @@ time 4/4
 divisions 16
 
 HH |: x - x - o - x - | x - x:close - X - x - :|x3
-SD |  - - d:cross - g - | D:rim - [2: d d:flam d] - - -  |
+SD |  - - d:cross - d - | D:rim - [2: d d:flam d] - - -  |
 BD |  p - - - p - - - | p - p - - - p -                     |
 HF |  - - - - p - - - | - - - - p:close - -                |
 

@@ -164,7 +164,7 @@ HH |: x - x - :|x1`);
 divisions 16
 
 HH | x o x:close [2: x o X] |
-SD | d g D:rim [2: d d:flam D] |`);
+SD | d d D:rim [2: d d:flam D] |`);
 
     expect(doc.errors).toEqual([]);
     expect(doc.paragraphs[0].lines[0].measures[0].tokens).toEqual([
@@ -184,7 +184,7 @@ SD | d g D:rim [2: d d:flam D] |`);
     ]);
     expect(doc.paragraphs[0].lines[1].measures[0].tokens).toEqual([
       { kind: "basic", value: "d" },
-      { kind: "basic", value: "g" },
+      { kind: "basic", value: "d" },
       { kind: "modified", value: "D", modifier: "rim" },
       {
         kind: "group",
@@ -213,6 +213,17 @@ SD | d g D:rim [2: d d:flam D] |`);
 
     const bdMeasures = doc.paragraphs[0].lines[1].measures;
     expect(bdMeasures[0].tokens[0]).toEqual({ kind: "basic", value: "P" });
+  });
+
+  it("rejects `g` ghost sugar on all tracks", () => {
+    const doc = parseDocumentSkeleton(`time 4/4\ndivisions 4\n\nHH | g |\nSD | g |\nHF | g |\nBD | g |`);
+
+    expect(doc.errors).toEqual([
+      { line: 4, column: 6, message: "Unknown token `g` on track HH" },
+      { line: 5, column: 6, message: "Unknown token `g` on track SD" },
+      { line: 6, column: 6, message: "Unknown token `g` on track HF" },
+      { line: 7, column: 6, message: "Unknown token `g` on track BD" },
+    ]);
   });
 
   it("parses accented tom tokens in DR track", () => {
@@ -292,11 +303,13 @@ HH |x-x-|`);
     const doc = parseDocumentSkeleton(`time 4/4
 divisions 16
 
-HH | d x:bell [2: x] |`);
+HH | d x:bell [2: x] |
+SD | d:open |`);
 
     expect(doc.errors).toEqual([
       { line: 4, column: 6, message: "Token `d` is invalid on track HH" },
       { line: 4, column: 8, message: "Token `x:bell` is invalid on track HH" },
+      { line: 5, column: 6, message: "Token `d:open` is invalid on track SD" },
     ]);
   });
 });

@@ -56,10 +56,10 @@ const docsSections: DocsSection[] = [
       <div className="docs-description">
         <p>Each instrument is represented by a <strong>track</strong>. Once a track is declared in any paragraph, it remains active throughout the score. If omitted in later sections, it is auto-filled with rests.</p>
         <ul>
-          <li><strong>Cymbals:</strong> <code>HH</code> (Hi-Hat), <code>RC</code> (Ride), <code>C</code> (Crash). Use <code>x</code>/<code>X</code>. You can also use <code>c</code>/<code>C</code> (accented) on the <code>HH</code> line as a shortcut for a Crash hit.</li>
-          <li><strong>Drums:</strong> <code>SD</code> (Snare), <code>BD</code> (Bass), <code>T1/T2/T3</code> (Toms). Use <code>d</code>/<code>D</code>/<code>g</code>.</li>
-          <li><strong>Foot & Utility:</strong> <code>HF</code> (Hi-Hat Foot) uses <code>p</code>/<code>P</code> (accented) for pedal hits. <code>ST</code> is for sticking (<code>R</code>/<code>L</code>).</li>
-          <li><strong>Sugar Tracks:</strong> <code>DR</code> expands into <code>SD</code> and <code>T1-T3</code>. It supports accents like <code>S</code>, <code>T1</code>, <code>T2</code>, and <code>T3</code>.</li>
+          <li><strong>Cymbals:</strong> <code>HH</code> (Hi-Hat), <code>RC</code> (Ride), <code>C</code> (Crash). Use <code>x</code>/<code>X</code>.</li>
+          <li><strong>Drums:</strong> <code>SD</code> (Snare), <code>BD</code> (Bass), <code>T1/T2/T3</code> (Toms). Use <code>d</code>/<code>D</code>.</li>
+          <li><strong>Foot & Utility:</strong> <code>HF</code> (Hi-Hat Foot) uses <code>p</code>/<code>P</code> for pedal hits. <code>ST</code> is for sticking (<code>R</code>/<code>L</code>).</li>
+          <li><strong>Sugar Tracks:</strong> <code>DR</code> expands into <code>SD</code> and <code>T1-T3</code>. It supports accents (<code>S</code>, <code>T1-T3</code>).</li>
         </ul>
       </div>
     ),
@@ -73,11 +73,11 @@ const docsSections: DocsSection[] = [
       <div className="docs-description">
         <p>Refine notes with <code>:modifier</code>. <strong>Strict compatibility rules apply:</strong></p>
         <ul>
-          <li><code>:rim</code>, <code>:flam</code>: Supported on <code>SD</code> and <code>T1-T3</code>.</li>
-          <li><code>:cross</code>: Only supported on <code>SD</code> (Snare Drum).</li>
-          <li><code>:bell</code>: Only supported on <code>RC</code> (Ride Cymbal).</li>
-          <li><code>:choke</code>: Supported on <code>C</code> and <code>RC</code>.</li>
-          <li><code>:open</code>, <code>:close</code>: Supported on <code>HH</code> and <code>HF</code>. Shorthand <code>o</code> (open) and <code>O</code> (accented open) are also supported on <code>HH</code>.</li>
+          <li><strong>Snare (SD) & Toms (T1-T3):</strong> <code>:rim</code>, <code>:cross</code>, <code>:flam</code>.</li>
+          <li><strong>Hi-Hat (HH):</strong> <code>:open</code> (shorthand <code>o</code>/<code>O</code>), <code>:close</code>.</li>
+          <li><strong>Cymbals (C, RC):</strong> <code>:choke</code>, <code>:bell</code> (Ride only).</li>
+          <li><strong>Foot (HF) & Bass (BD):</strong> <code>:close</code> (HF only).</li>
+          <li><strong>Ghost Notes:</strong> Deferred for now because OSMD does not support notehead parentheses reliably yet.</li>
         </ul>
       </div>
     ),
@@ -150,7 +150,7 @@ const docsSections: DocsSection[] = [
         <p>This final example showcases the synergy of headers, complex groupings, shortcuts, and multiple paragraphs to create a professional drum sheet. It includes advanced techniques like flams, bell hits, and sticking patterns.</p>
       </div>
     ),
-    example: `title Fusion Grooves\nsubtitle Advanced Study\ncomposer G. Mao\ntempo 128\ntime 4/4\ndivisions 16\ngrouping 2+2\n\n# Section A: Main Groove\nHH |: x - x - o - x - | x:close - X - x - c - :|x2\nSD |  - - d:cross - g - | D:rim - [2: d d:flam] - - -  |\nBD |  p - - - p - - - | p - p - - - p -        |\nHF |  - - - - p - - - | - - - - p:close - -    |\n\n# Section B: Bridge with Subdivisions\nRC |  x:bell - x:bell - x:bell - x:bell - | [4: x:choke] |\nDR |  s - - - [3: s s s] - - - | S - t1 t2 t3 - - -   |\nBD |  p - - - p - - -     | p - - - p - - -      |\nST |  R - - - R L R - - - | R - R L R - - -      |\n\n# Outro: Finale\nC  |  X:choke - - - - - - - | - - - - X - - - |\nBD |  [16: p] |`,
+    example: `title Fusion Grooves\nsubtitle Advanced Study\ncomposer G. Mao\ntempo 128\ntime 4/4\ndivisions 16\ngrouping 2+2\n\n# Section A: Main Groove\nHH |: x - x - o - x - | x:close - X - x - c - :|x2\nSD |  - - d:cross - d - | D:rim - [2: d d:flam] - - -  |\nBD |  p - - - p - - - | p - p - - - p -        |\nHF |  - - - - p - - - | - - - - p:close - -    |\n\n# Section B: Bridge with Subdivisions\nRC |  x:bell - x:bell - x:bell - x:bell - | [4: x:choke] |\nDR |  s - - - [3: s s s] - - - | S - t1 t2 t3 - - -   |\nBD |  p - - - p - - -     | p - - - p - - -      |\nST |  R - - - R L R - - - | R - R L R - - -      |\n\n# Outro: Finale\nC  |  X:choke - - - - - - - | - - - - X - - - |\nBD |  [16: p] |`,
   },
 ];
 
@@ -286,7 +286,7 @@ async function getStaticPreviewRenderer() {
 }
 
 function highlightDslSnippet(source: string): ReactNode[] {
-  const pattern = /(#[^\n]*|\b(?:title|subtitle|composer|tempo|time|divisions|grouping)\b|\b(?:HH|HF|DR|SD|BD|T1|T2|T3|RC|C|ST)\b|:\|x\d+|\|:|:\||[|[\]]|\b(?:open|close|choke|rim|cross|bell|flam)\b|(?:t1|t2|t3)\b|\d+(?:\/\d+|\+\d+)*|-|:|[RLSXDgxopcdbp]+)/g;
+  const pattern = /(#[^\n]*|\b(?:title|subtitle|composer|tempo|time|divisions|grouping)\b|\b(?:HH|HF|DR|SD|BD|T1|T2|T3|RC|C|ST)\b|:\|x\d+|\|:|:\||[|[\]]|\b(?:open|close|choke|rim|cross|bell|flam)\b|(?:t1|t2|t3)\b|\d+(?:\/\d+|\+\d+)*|-|:|[RLSXDxopcdbp]+)/g;
   const nodes: ReactNode[] = [];
   let cursor = 0;
   let match: RegExpExecArray | null;

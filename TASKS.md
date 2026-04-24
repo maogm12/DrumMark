@@ -87,4 +87,5 @@
 
 ## Immediate Next Tasks
 
-All tracked tasks are complete.
+- [ ] Support ghost notes after OSMD can render notehead parentheses reliably
+- [ ] Revisit MusicXML encoding for ghost notes after OSMD issue #887 is resolved

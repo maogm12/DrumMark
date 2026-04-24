@@ -379,6 +379,28 @@ function isBeamable(duration: Fraction): boolean {
   return denominator >= 8;
 }
 
+function graceNoteXml(event: NormalizedEvent, voice: VoiceTrack, slash?: boolean): string {
+  const instrument = instrumentForTrack(event.track, event.glyph);
+  const slashAttr = slash ? ' slash="yes"' : "";
+  const notehead = instrument.notehead ? `<notehead>${instrument.notehead}</notehead>` : "";
+
+  return [
+    "<note>",
+    `<grace${slashAttr}/>`,
+    "<unpitched>",
+    `<display-step>${instrument.displayStep}</display-step>`,
+    `<display-octave>${instrument.displayOctave}</display-octave>`,
+    "</unpitched>",
+    `<instrument id="P1-I1"/>`,
+    `<voice>${voice.voice}</voice>`,
+    "<type>16th</type>",
+    `<stem>${voice.stem}</stem>`,
+    notehead,
+    `<staff>1</staff>`,
+    "</note>",
+  ].join("");
+}
+
 function noteXml(
   event: NormalizedEvent,
   duration: Fraction,
@@ -421,9 +443,6 @@ function noteXml(
   }
   if (event.modifier === "cross") {
     notationsContent.push("<technical><other-technical>cross-stick</other-technical></technical>");
-  }
-  if (event.modifier === "flam") {
-    notationsContent.push('<ornaments><tremolo type="single">1</tremolo></ornaments>');
   }
   if (event.modifier === "choke") {
     notationsContent.push("<technical><other-technical>choke</other-technical></technical>");
@@ -573,8 +592,8 @@ function measureXml(score: NormalizedScore, exportMeasure: ExportMeasure, divisi
       if (!isBeamable(entry.duration)) {
         const stickingTargetIndex = stickingForEntry ? highestEventIndex(entry.events) : -1;
         result.push(
-          ...entry.events.map((event, index) =>
-            noteXml(
+          ...entry.events.flatMap((event, index) => {
+            const note = noteXml(
               event,
               entry.duration,
               divisions,
@@ -582,8 +601,12 @@ function measureXml(score: NormalizedScore, exportMeasure: ExportMeasure, divisi
               index > 0,
               index === entry.events.length - 1 && Boolean(event.tuplet),
               index === stickingTargetIndex ? stickingForEntry : undefined,
-            ),
-          ),
+            );
+
+            return event.modifier === "flam"
+              ? [graceNoteXml(event, voice, true), note]
+              : [note];
+          }),
         );
         continue;
       }
@@ -611,8 +634,8 @@ function measureXml(score: NormalizedScore, exportMeasure: ExportMeasure, divisi
 
       const stickingTargetIndex = stickingForEntry ? highestEventIndex(entry.events) : -1;
       result.push(
-        ...entry.events.map((event, index) =>
-          noteXml(
+        ...entry.events.flatMap((event, index) => {
+          const note = noteXml(
             event,
             entry.duration,
             divisions,
@@ -621,8 +644,12 @@ function measureXml(score: NormalizedScore, exportMeasure: ExportMeasure, divisi
             index === entry.events.length - 1 && Boolean(event.tuplet),
             index === stickingTargetIndex ? stickingForEntry : undefined,
             beamState,
-          ),
-        ),
+          );
+
+          return event.modifier === "flam"
+            ? [graceNoteXml(event, voice, true), note]
+            : [note];
+        }),
       );
     }
 

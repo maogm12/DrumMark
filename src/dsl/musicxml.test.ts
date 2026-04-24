@@ -102,7 +102,26 @@ C  | x:choke - - - - - - - |`);
     expect(xml).toContain("<technical><other-technical>cross-stick</other-technical></technical>");
     expect(xml).toContain("<technical><other-technical>bell</other-technical></technical>");
     expect(xml).toContain("<technical><other-technical>choke</other-technical></technical>");
-    expect(xml).toContain("<ornaments><tremolo type=\"single\">1</tremolo></ornaments>");
+  });
+
+  it("exports flam as a slashed grace note before the main note", () => {
+    const score = buildNormalizedScore(`time 4/4
+divisions 4
+
+SD | d:flam - - - |`);
+
+    expect(score.errors).toEqual([]);
+    const xml = buildMusicXml(score);
+    const notes = xml.match(/<note>.*?<\/note>/gs) || [];
+
+    expect(notes.length).toBeGreaterThanOrEqual(2);
+    expect(notes[0]).toContain('<grace slash="yes"/>');
+    expect(notes[0]).not.toContain("<duration>");
+    expect(notes[0]).toContain("<type>16th</type>");
+    expect(notes[1]).toContain("<duration>4</duration>");
+    expect(notes[1]).toContain("<type>quarter</type>");
+    expect(notes[1]).not.toContain("<grace");
+    expect(notes[1]).not.toContain("<tremolo");
   });
 
   it("exports ST sticking as fingering above matching notes", () => {

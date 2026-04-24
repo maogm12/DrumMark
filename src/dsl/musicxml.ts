@@ -10,7 +10,7 @@ type VoiceTrack = {
 type InstrumentSpec = {
   displayStep: string;
   displayOctave: number;
-  notehead?: "x" | "slash";
+  notehead?: "x" | "slash" | "diamond";
 };
 
 type VoiceEventGroup = {
@@ -350,6 +350,10 @@ function noteheadValueForEvent(event: NormalizedEvent, instrument: InstrumentSpe
       return "x";
     }
     // Rimshot uses standard notehead but with a tremolo slash added in notations
+  }
+
+  if (event.track === "RC" && event.modifier === "bell") {
+    return "diamond";
   }
 
   return instrument.notehead;

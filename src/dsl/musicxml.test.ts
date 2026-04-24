@@ -101,6 +101,7 @@ C  | x:choke - - - - - - - |`);
     expect(xml).toContain("<technical><other-technical>rim</other-technical></technical>");
     expect(xml).toContain("<technical><other-technical>cross-stick</other-technical></technical>");
     expect(xml).toContain("<technical><other-technical>bell</other-technical></technical>");
+    expect(xml).toContain("<notehead>diamond</notehead>");
     expect(xml).toContain('<articulations><staccato placement="above"/></articulations>');
   });
 

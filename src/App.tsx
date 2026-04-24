@@ -493,6 +493,23 @@ function SettingsIcon() {
   );
 }
 
+function DrumIcon() {
+  return (
+    <svg aria-hidden="true" className="app-logo" width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M19 22V6C19 6 24 7 24 12" stroke="var(--accent-primary)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+      <circle cx="12" cy="22" r="7" stroke="var(--text-main)" strokeWidth="2"/>
+      <circle cx="12" cy="22" r="8.5" stroke="var(--text-main)" strokeWidth="0.5" strokeOpacity="0.4"/>
+      <circle cx="12" cy="13.5" r="1" fill="var(--text-main)"/>
+      <circle cx="12" cy="30.5" r="1" fill="var(--text-main)"/>
+      <circle cx="3.5" cy="22" r="1" fill="var(--text-main)"/>
+      <circle cx="20.5" cy="22" r="1" fill="var(--text-main)"/>
+      <line x1="7" y1="20" x2="17" y2="20" stroke="var(--text-main)" strokeWidth="0.5" strokeOpacity="0.6"/>
+      <line x1="7" y1="22" x2="17" y2="22" stroke="var(--text-main)" strokeWidth="0.5" strokeOpacity="0.6"/>
+      <line x1="7" y1="24" x2="17" y2="24" stroke="var(--text-main)" strokeWidth="0.5" strokeOpacity="0.6"/>
+    </svg>
+  );
+}
+
 function DslEditor({ value, onChange }: { value: string; onChange: (value: string) => void }) {
   const hostRef = useRef<HTMLDivElement | null>(null);
   const viewRef = useRef<EditorView | null>(null);
@@ -1077,19 +1094,24 @@ export function App() {
     <main className="app-shell">
       <header className="app-header">
         <div className="header-branding">
-          <h1>Drum Notation</h1>
-          <p>Text-first notation</p>
+          <DrumIcon />
+          <div>
+            <h1>Drum Notation</h1>
+            <p>Text-first notation</p>
+          </div>
         </div>
         <div className="header-actions">
+          <a className="export-button" href="./docs.html">Docs</a>
           <button className="export-button" disabled={!canExport} onClick={handleMusicXmlExport} type="button">Export MusicXML</button>
           <button className="export-button primary" disabled={!canExport || pendingPdfExport} onClick={handlePdfExport} type="button">
             {pendingPdfExport ? "Exporting PDF..." : "Export PDF"}
           </button>
         </div>
       </header>
-      
+
+      <>
       <section className="workspace">
-        <section className={`pane editor-pane${settings.activeTab === "editor" ? " active" : ""}`} style={{ width: editorWidth }}>
+          <section className={`pane editor-pane${settings.activeTab === "editor" ? " active" : ""}`} style={{ width: editorWidth }}>
           <header className="pane-header">
             <span className="pane-title">Editor</span>
             <div className="preview-header-actions mobile-only-actions">
@@ -1209,42 +1231,43 @@ export function App() {
               </aside>
             )}
           </div>
+          </section>
         </section>
-      </section>
 
-      <footer className="status-bar">
-        <div className="status-left">
-          {score.errors.length > 0 ? (
-            <button 
-              className={`status-error-toggle${showErrors ? " active" : ""}`}
-              onClick={() => setShowErrors(!showErrors)}
-              type="button"
-            >
-              {score.errors.length} diagnostic issue{score.errors.length === 1 ? "" : "s"} found
-            </button>
-          ) : (
-            <span className="status-success">✓ DSL Valid</span>
-          )}
-        </div>
-        <div className="status-right">{score.ast.paragraphs.length} lines • {score.ast.repeatSpans.length} repeats</div>
-      </footer>
+        <footer className="status-bar">
+          <div className="status-left">
+            {score.errors.length > 0 ? (
+              <button 
+                className={`status-error-toggle${showErrors ? " active" : ""}`}
+                onClick={() => setShowErrors(!showErrors)}
+                type="button"
+              >
+                {score.errors.length} diagnostic issue{score.errors.length === 1 ? "" : "s"} found
+              </button>
+            ) : (
+              <span className="status-success">✓ DSL Valid</span>
+            )}
+          </div>
+          <div className="status-right">{score.ast.paragraphs.length} lines • {score.ast.repeatSpans.length} repeats</div>
+        </footer>
 
-      {score.errors.length > 0 && showErrors && (
-        <div className="error-list">
-          <div className="error-list-header">
-            <span>Errors</span>
-            <button onClick={() => setShowErrors(false)}>Close</button>
+        {score.errors.length > 0 && showErrors && (
+          <div className="error-list">
+            <div className="error-list-header">
+              <span>Errors</span>
+              <button onClick={() => setShowErrors(false)}>Close</button>
+            </div>
+            <div className="error-list-content">
+              {score.errors.map((error, index) => (
+                <div className="error-item" key={`${error.line}-${error.column}-${index}`}>
+                  <span className="error-loc">[{error.line}:{error.column}]</span>
+                  <span>{error.message}</span>
+                </div>
+              ))}
+            </div>
           </div>
-          <div className="error-list-content">
-            {score.errors.map((error, index) => (
-              <div className="error-item" key={`${error.line}-${error.column}-${index}`}>
-                <span className="error-loc">[{error.line}:{error.column}]</span>
-                <span>{error.message}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+        )}
+      </>
     </main>
   );
 }

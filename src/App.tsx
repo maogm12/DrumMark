@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode, type UIEvent } from "react";
 import { EditorState } from "@codemirror/state";
 import { EditorView, highlightActiveLine, highlightActiveLineGutter, lineNumbers } from "@codemirror/view";
-import { OpenSheetMusicDisplay } from "opensheetmusicdisplay";
 import type { PDFDocument as PDFLibDocument } from "pdf-lib";
 import { buildMusicXml, buildNormalizedScore } from "./dsl";
 import { type NormalizedScore } from "./dsl";
@@ -30,6 +29,9 @@ const pdfPageWidth = 612;
 const pdfPageHeight = 792;
 const pdfMargin = 36;
 const pdfOsmdHeaderReservePx = 150;
+type OpenSheetMusicDisplayType = import("opensheetmusicdisplay").OpenSheetMusicDisplay;
+
+let osmdModulePromise: Promise<typeof import("opensheetmusicdisplay")> | null = null;
 
 function downloadBlob(filename: string, blob: Blob) {
   const url = URL.createObjectURL(blob);
@@ -233,8 +235,29 @@ function applyPdfMetadata(
   pdf.catalog.set(PDFName.of("Metadata"), metadataRef);
 }
 
-function configureOsmdRules(osmd: OpenSheetMusicDisplay, mode: "preview" | "pdf") {
-  const rules = osmd.EngravingRules as OpenSheetMusicDisplay["EngravingRules"] & {
+async function loadOsmdModule() {
+  osmdModulePromise ??= import("opensheetmusicdisplay");
+  return osmdModulePromise;
+}
+
+function useDebouncedValue<T>(value: T, delayMs: number) {
+  const [debouncedValue, setDebouncedValue] = useState(value);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setDebouncedValue(value);
+    }, delayMs);
+
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, [delayMs, value]);
+
+  return debouncedValue;
+}
+
+function configureOsmdRules(osmd: OpenSheetMusicDisplayType, mode: "preview" | "pdf") {
+  const rules = osmd.EngravingRules as OpenSheetMusicDisplayType["EngravingRules"] & {
     RenderTitle?: boolean;
     RenderSubtitle?: boolean;
     RenderComposer?: boolean;
@@ -311,8 +334,8 @@ function readMusicXmlCredit(xml: string, type: "title" | "subtitle" | "composer"
   return "";
 }
 
-function applyOsmdHeaderMetadata(osmd: OpenSheetMusicDisplay, xml: string) {
-  const sheet = osmd.Sheet as OpenSheetMusicDisplay["Sheet"] & {
+function applyOsmdHeaderMetadata(osmd: OpenSheetMusicDisplayType, xml: string) {
+  const sheet = osmd.Sheet as OpenSheetMusicDisplayType["Sheet"] & {
     TitleString?: string;
     SubtitleString?: string;
     ComposerString?: string;
@@ -325,6 +348,20 @@ function applyOsmdHeaderMetadata(osmd: OpenSheetMusicDisplay, xml: string) {
   if (title) sheet.TitleString = title;
   if (subtitle) sheet.SubtitleString = subtitle;
   if (composer) sheet.ComposerString = composer;
+}
+
+function buildBlankPreviewMarkup(pageCount: number) {
+  return Array.from({ length: Math.max(1, pageCount) }, (_, pageIndex) =>
+    `<section class="staff-preview-page" data-page="${pageIndex + 1}"></section>`,
+  ).join("");
+}
+
+function isRecoverablePreviewError(error: unknown) {
+  const message = error instanceof Error ? error.message : String(error);
+  return (
+    message.includes("Invalid number of staves") ||
+    message.includes("given music sheet was incomplete or could not be loaded")
+  );
 }
 
 function beautifyXml(xml: string): string {
@@ -537,7 +574,6 @@ function StaffPreview({
   titleStaffGap,
   systemSpacing,
   active,
-  onRendered,
 }: {
   xml: string;
   pagePadding: PagePadding;
@@ -547,10 +583,12 @@ function StaffPreview({
   titleStaffGap: number;
   systemSpacing: number;
   active: boolean;
-  onRendered: (markup: string | null, error: string | null) => void;
 }) {
   const shellRef = useRef<HTMLDivElement | null>(null);
   const scrollPosRef = useRef({ top: 0, left: 0 });
+  const bufferRef = useRef<HTMLDivElement | null>(null);
+  const osmdRef = useRef<OpenSheetMusicDisplayType | null>(null);
+  const pageCountRef = useRef(1);
   const [error, setError] = useState<string | null>(null);
   const [renderedMarkup, setRenderedMarkup] = useState("");
 
@@ -560,6 +598,16 @@ function StaffPreview({
       left: e.currentTarget.scrollLeft,
     };
   }
+
+  useEffect(() => {
+    return () => {
+      if (bufferRef.current) {
+        bufferRef.current.remove();
+        bufferRef.current = null;
+      }
+      osmdRef.current = null;
+    };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -572,28 +620,37 @@ function StaffPreview({
 
       try {
         if (cancelled) return;
+        const { OpenSheetMusicDisplay } = await loadOsmdModule();
+        let buffer = bufferRef.current;
+        if (!buffer) {
+          buffer = document.createElement("div");
+          buffer.style.width = "900px";
+          buffer.style.position = "absolute";
+          buffer.style.visibility = "hidden";
+          buffer.style.pointerEvents = "none";
+          document.body.appendChild(buffer);
+          bufferRef.current = buffer;
+        }
 
-        const buffer = document.createElement("div");
-        buffer.style.width = "900px";
-        buffer.style.position = "absolute";
-        buffer.style.visibility = "hidden";
-        buffer.style.pointerEvents = "none";
-        document.body.appendChild(buffer);
+        let osmd = osmdRef.current;
+        if (!osmd) {
+          osmd = new OpenSheetMusicDisplay(buffer, {
+            autoResize: false,
+            drawTitle: true,
+            drawSubtitle: true,
+            drawComposer: true,
+            defaultFontFamily: osmdDefaultFontFamily,
+            drawingParameters: "compacttight",
+            newSystemFromXML: true,
+            pageFormat: "Letter_P",
+            drawTimeSignatures: true,
+            drawMeasureNumbers: true,
+            percussionOneLineCutoff: 0,
+          });
+          osmd.setOptions({ defaultColorTitle: "#111111" });
+          osmdRef.current = osmd;
+        }
 
-        const osmd = new OpenSheetMusicDisplay(buffer, {
-          autoResize: false,
-          drawTitle: true,
-          drawSubtitle: true,
-          drawComposer: true,
-          defaultFontFamily: osmdDefaultFontFamily,
-          drawingParameters: "compacttight",
-          newSystemFromXML: true,
-          pageFormat: "Letter_P",
-          drawTimeSignatures: true,
-          drawMeasureNumbers: true,
-          percussionOneLineCutoff: 0,
-        });
-        osmd.setOptions({ defaultColorTitle: "#111111" });
         configureOsmdRules(osmd, "preview");
         osmd.EngravingRules.MinimumDistanceBetweenSystems = systemSpacing;
         osmd.EngravingRules.MinSkyBottomDistBetweenSystems = systemSpacing;
@@ -606,13 +663,14 @@ function StaffPreview({
         osmd.render();
 
         if (cancelled) {
-          document.body.removeChild(buffer);
           return;
         }
 
-        const markup = getStaffSvgMarkup(buffer.innerHTML)
+        const pageSvgs = getStaffSvgMarkup(buffer.innerHTML);
+        const markup = pageSvgs
           .map((svg, pageIndex) => `<section class="staff-preview-page" data-page="${pageIndex + 1}">${svg}</section>`)
           .join("");
+        pageCountRef.current = Math.max(1, pageSvgs.length);
         setRenderedMarkup(markup);
         
         if (shellRef.current) {
@@ -620,11 +678,14 @@ function StaffPreview({
           shellRef.current.scrollLeft = targetLeft;
         }
 
-        document.body.removeChild(buffer);
         setError(null);
-        onRendered(`<div class="staff-preview page-view">${markup}</div>`, null);
       } catch (renderError) {
         if (!cancelled) {
+          if (isRecoverablePreviewError(renderError)) {
+            setRenderedMarkup(buildBlankPreviewMarkup(pageCountRef.current));
+            setError(null);
+            return;
+          }
           setError(renderError instanceof Error ? renderError.message : "Could not render staff preview.");
         }
       }
@@ -641,6 +702,20 @@ function StaffPreview({
     "--page-padding-bottom": `${pagePadding.bottom}px`,
     "--page-padding-left": `${pagePadding.left}px`,
   } as CSSProperties;
+
+  if (!xml.trim()) {
+    return (
+      <div className="staff-preview-shell" ref={shellRef} onScroll={handleScroll}>
+        <div className="staff-printable-frame" style={printableStyle}>
+          <div className="staff-printable">
+            <div className="staff-preview page-view">
+              <section className="staff-preview-page" data-page="1" />
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="staff-preview-shell" ref={shellRef} onScroll={handleScroll}>
@@ -682,6 +757,7 @@ async function renderPdfPageSvgs(
     systemSpacing?: number;
   },
 ) {
+  const { OpenSheetMusicDisplay } = await loadOsmdModule();
   const buffer = document.createElement("div");
   buffer.style.width = "900px";
   buffer.style.position = "absolute";
@@ -831,10 +907,77 @@ export function App() {
     return saved ? parseInt(saved, 10) : 600;
   });
   const isResizingRef = useRef(false);
+  const workerRef = useRef<Worker | null>(null);
+  const requestIdRef = useRef(0);
+  const latestHandledRequestIdRef = useRef(0);
+  const [isScorePending, setIsScorePending] = useState(false);
+  const [analysis, setAnalysis] = useState(() => {
+    const initialScore = buildNormalizedScore(dsl);
+    return {
+      score: initialScore,
+      xml: buildMusicXml(initialScore, settings.hideVoice2Rests),
+    };
+  });
 
-  const score = useMemo(() => buildNormalizedScore(dsl), [dsl]);
-  const staffXml = useMemo(() => buildMusicXml(score, settings.hideVoice2Rests), [settings.hideVoice2Rests, score]);
-  const canExport = score.errors.length === 0;
+  const score = analysis.score;
+  const staffXml = analysis.xml;
+  const hasRenderableScore = useMemo(
+    () => score.ast.paragraphs.some((paragraph) => paragraph.measureCount > 0 && paragraph.tracks.length > 0),
+    [score],
+  );
+  const analysisInput = useMemo(
+    () => ({
+      dsl,
+      hideVoice2Rests: settings.hideVoice2Rests,
+    }),
+    [dsl, settings.hideVoice2Rests],
+  );
+  const debouncedAnalysisInput = useDebouncedValue(
+    analysisInput,
+    120,
+  );
+  const pagePreviewXml = useDebouncedValue(
+    settings.activeTab === "page" && hasRenderableScore ? staffXml : "",
+    250,
+  );
+  const canExport = !isScorePending && hasRenderableScore && score.errors.length === 0;
+
+  useEffect(() => {
+    const worker = new Worker(new URL("./scoreWorker.ts", import.meta.url), { type: "module" });
+    workerRef.current = worker;
+
+    worker.onmessage = (event: MessageEvent<{ id: number; score: NormalizedScore; xml: string }>) => {
+      const { id, score: nextScore, xml: nextXml } = event.data;
+      if (id < latestHandledRequestIdRef.current) {
+        return;
+      }
+
+      latestHandledRequestIdRef.current = id;
+      setAnalysis({ score: nextScore, xml: nextXml });
+      setIsScorePending(id !== requestIdRef.current);
+    };
+
+    return () => {
+      worker.terminate();
+      workerRef.current = null;
+    };
+  }, []);
+
+  useEffect(() => {
+    const worker = workerRef.current;
+    if (!worker) {
+      return;
+    }
+
+    const nextId = requestIdRef.current + 1;
+    requestIdRef.current = nextId;
+    setIsScorePending(true);
+    worker.postMessage({
+      id: nextId,
+      dsl: debouncedAnalysisInput.dsl,
+      hideVoice2Rests: debouncedAnalysisInput.hideVoice2Rests,
+    });
+  }, [debouncedAnalysisInput]);
 
   useEffect(() => {
     localStorage.setItem("drum-notation-dsl", dsl);
@@ -914,7 +1057,6 @@ export function App() {
     }
   }
 
-  const handleStaffRendered = useCallback((_markup: string | null, _error: string | null) => {}, []);
   const isPageZoomed = Math.abs(settings.pageScale - 1) > 0.001;
   const pageZoomPercent = Math.round(settings.pageScale * 100);
 
@@ -999,21 +1141,22 @@ export function App() {
                   ) : null}
                 </div>
                 <div className="page-surface-body" onWheel={handlePageSurfaceWheel}>
-                  <StaffPreview
-                    xml={staffXml}
-                    pagePadding={settings.pagePadding}
-                    pageScale={settings.pageScale}
-                    titleTopPadding={settings.titleTopPadding}
-                    titleSubtitleGap={settings.titleSubtitleGap}
-                    titleStaffGap={settings.titleStaffGap}
-                    systemSpacing={settings.systemSpacing}
-                    active={settings.activeTab === "page"}
-                    onRendered={handleStaffRendered}
-                  />
+                  {settings.activeTab === "page" ? (
+                    <StaffPreview
+                      xml={hasRenderableScore ? (pagePreviewXml || staffXml) : ""}
+                      pagePadding={settings.pagePadding}
+                      pageScale={settings.pageScale}
+                      titleTopPadding={settings.titleTopPadding}
+                      titleSubtitleGap={settings.titleSubtitleGap}
+                      titleStaffGap={settings.titleStaffGap}
+                      systemSpacing={settings.systemSpacing}
+                      active={true}
+                    />
+                  ) : null}
                 </div>
               </div>
               <div className={`preview-surface${settings.activeTab === "xml" ? " active" : ""}`} aria-hidden={settings.activeTab !== "xml"}>
-                <MusicXmlPreview xml={staffXml} />
+                {settings.activeTab === "xml" ? <MusicXmlPreview xml={staffXml} /> : null}
               </div>
             </div>
 

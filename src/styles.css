@@ -554,6 +554,7 @@ input:checked + .toggle-slider:before {
 
 .staff-preview-page {
   width: 100%;
+  min-height: 1100px;
   background: white;
   border: 1px solid var(--border-subtle);
   box-shadow: var(--shadow-sm);

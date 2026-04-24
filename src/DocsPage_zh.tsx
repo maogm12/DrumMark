@@ -257,7 +257,9 @@ async function getStaticPreviewRenderer() {
   if (!staticPreviewBuffer) {
     staticPreviewBuffer = document.createElement("div");
     staticPreviewBuffer.style.width = "900px";
-    staticPreviewBuffer.style.position = "absolute";
+    staticPreviewBuffer.style.position = "fixed";
+    staticPreviewBuffer.style.left = "-9999px";
+    staticPreviewBuffer.style.top = "0";
     staticPreviewBuffer.style.visibility = "hidden";
     staticPreviewBuffer.style.pointerEvents = "none";
     document.body.appendChild(staticPreviewBuffer);
@@ -409,6 +411,7 @@ function DocsExampleCard({ section }: { section: DocsSection }) {
 
 export function DocsPage() {
   const [activeId, setActiveId] = useState("");
+  const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -427,9 +430,52 @@ export function DocsPage() {
     return () => observer.disconnect();
   }, []);
 
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth > 760) {
+        setMenuOpen(false);
+      }
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  useEffect(() => {
+    const { body, documentElement } = document;
+
+    if (window.innerWidth <= 760) {
+      body.style.overflowX = "hidden";
+      documentElement.style.overflowX = "hidden";
+      body.style.overflowY = menuOpen ? "hidden" : "auto";
+    } else {
+      body.style.removeProperty("overflow");
+      body.style.removeProperty("overflow-x");
+      body.style.removeProperty("overflow-y");
+      documentElement.style.removeProperty("overflow-x");
+    }
+
+    return () => {
+      body.style.removeProperty("overflow");
+      body.style.removeProperty("overflow-x");
+      body.style.removeProperty("overflow-y");
+      documentElement.style.removeProperty("overflow-x");
+    };
+  }, [menuOpen]);
+
+  function closeMenu() {
+    setMenuOpen(false);
+  }
+
   return (
     <div className="docs-layout">
-      <aside className="docs-sidebar">
+      <div
+        className={`docs-mobile-overlay${menuOpen ? " open" : ""}`}
+        onClick={closeMenu}
+        aria-hidden={menuOpen ? "false" : "true"}
+      />
+
+      <aside className={`docs-sidebar${menuOpen ? " open" : ""}`}>
         <div className="docs-sidebar-brand">
           <DrumIcon />
           <h1>文档</h1>
@@ -437,7 +483,7 @@ export function DocsPage() {
         <nav className="docs-nav">
           <div className="docs-nav-group">
             <span className="docs-nav-group-title">语言切换</span>
-            <a href="./docs.html" className="docs-nav-link">English Docs</a>
+            <a href="./docs.html" className="docs-nav-link" onClick={closeMenu}>English Docs</a>
           </div>
           <div className="docs-nav-group">
             <span className="docs-nav-group-title">章节</span>
@@ -446,6 +492,7 @@ export function DocsPage() {
                 key={s.id} 
                 href={`#${s.id}`} 
                 className={`docs-nav-link${activeId === s.id ? " active" : ""}`}
+                onClick={closeMenu}
               >
                 {s.title}
               </a>
@@ -455,6 +502,21 @@ export function DocsPage() {
       </aside>
 
       <main className="docs-main">
+        <div className="docs-mobile-bar">
+          <button
+            type="button"
+            className="docs-menu-button"
+            onClick={() => setMenuOpen((open) => !open)}
+            aria-label={menuOpen ? "关闭导航菜单" : "打开导航菜单"}
+            aria-expanded={menuOpen}
+          >
+            <span />
+            <span />
+            <span />
+          </button>
+          <div className="docs-mobile-title">文档</div>
+        </div>
+
         <div className="docs-floating-action">
           <a className="export-button primary" href="./">打开编辑器</a>
         </div>

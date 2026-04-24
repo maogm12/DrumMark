@@ -557,6 +557,43 @@ input:checked + .toggle-slider:before {
   display: flex;
   flex-direction: column;
   gap: 24px;
+  z-index: 30;
+}
+
+.docs-mobile-overlay {
+  display: none;
+}
+
+.docs-mobile-bar {
+  display: none;
+}
+
+.docs-menu-button {
+  display: inline-flex;
+  width: 42px;
+  height: 42px;
+  padding: 0;
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  background: white;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 4px;
+  box-shadow: var(--shadow-sm);
+}
+
+.docs-menu-button span {
+  width: 18px;
+  height: 2px;
+  border-radius: 999px;
+  background: var(--text-main);
+}
+
+.docs-mobile-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-main);
 }
 
 .docs-sidebar-brand {
@@ -595,7 +632,6 @@ input:checked + .toggle-slider:before {
 }
 
 .docs-nav-link {
-...
   display: block;
   padding: 8px 12px;
   font-size: 0.85rem;
@@ -736,7 +772,7 @@ input:checked + .toggle-slider:before {
   background: white;
   border-radius: 12px;
   border: 1px solid var(--border-strong);
-  overflow: hidden;
+  overflow: auto;
   box-shadow: var(--shadow-sm);
 }
 
@@ -749,9 +785,9 @@ input:checked + .toggle-slider:before {
 }
 
 .docs-preview-shell {
-  background: var(--bg-sidebar);
+  background: white;
   border-radius: 12px;
-  border: 1px solid var(--border-subtle);
+  border: 1px solid var(--border-strong);
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -767,10 +803,11 @@ input:checked + .toggle-slider:before {
 }
 
 .docs-preview-frame .staff-preview-page {
-  padding: 16px !important;
-  min-height: auto;
-  border: 0;
-  box-shadow: none;
+  padding: 8px 16px !important;
+  min-height: 0 !important;
+  height: auto !important;
+  border: 0 !important;
+  box-shadow: none !important;
 }
 
 .docs-code-line {
@@ -818,29 +855,6 @@ input:checked + .toggle-slider:before {
   font-family: var(--font-mono);
   font-size: 0.85em;
   color: var(--accent-primary);
-}
-
-.docs-section-body {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.docs-preview-shell {
-  background: white;
-  border-radius: 12px;
-  border: 1px solid var(--border-strong);
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-}
-
-.docs-preview-frame .staff-preview-page {
-  padding: 8px 16px !important;
-  min-height: 0 !important;
-  height: auto !important;
-  border: 0 !important;
-  box-shadow: none !important;
 }
 
 .staff-preview-shell {
@@ -1009,6 +1023,75 @@ input:checked + .toggle-slider:before {
 }
 
 @media (max-width: 760px) {
+  html,
+  body {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
+  .docs-layout {
+    display: block;
+    height: auto;
+    min-height: 100vh;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
+  .docs-sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: min(84vw, 320px);
+    max-width: 320px;
+    transform: translateX(-100%);
+    transition: transform 0.22s ease;
+    box-shadow: 0 24px 80px rgba(15, 23, 42, 0.18);
+  }
+
+  .docs-sidebar.open {
+    transform: translateX(0);
+  }
+
+  .docs-mobile-overlay {
+    position: fixed;
+    inset: 0;
+    display: block;
+    background: rgba(15, 23, 42, 0.28);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.22s ease;
+    z-index: 20;
+  }
+
+  .docs-mobile-overlay.open {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .docs-main {
+    min-height: 100vh;
+    overflow-y: visible;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
+  .docs-mobile-bar {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
   .mobile-only-actions {
     display: flex;
   }
@@ -1043,15 +1126,36 @@ input:checked + .toggle-slider:before {
 
   .docs-page {
     padding: 20px 12px 40px;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
   }
 
   .docs-section-card {
     padding: 16px;
     border-radius: 14px;
+    min-width: 0;
   }
 
   .docs-section-body {
     grid-template-columns: 1fr;
+    min-width: 0;
+  }
+
+  .docs-section-pane,
+  .docs-code-block,
+  .docs-preview-shell,
+  .docs-preview-frame,
+  .staff-preview,
+  .staff-preview-page {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .docs-code-block pre {
+    white-space: pre;
+    overflow-wrap: normal;
+    word-break: normal;
   }
 
   .pane {

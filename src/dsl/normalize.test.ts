@@ -12,13 +12,46 @@ HH | x - x |`);
       {
         line: 4,
         column: 1,
-        message: "Measure 1 on track HH uses 3 slots, expected 4",
+        message: "Track `HH` measure 1 has invalid duration: used 3 slots, expected 4",
       },
     ]);
   });
 
+  it("reports notes crossing grouping boundaries", () => {
+    const score = buildNormalizedScore(`time 4/4
+grouping 2+2
+divisions 4
+
+HH | x x. x |`);
+
+    expect(score.errors).toEqual([
+      {
+        line: 5,
+        column: 1,
+        message: "Token `x` crosses grouping boundary at 2 in track HH",
+      },
+      {
+        line: 5,
+        column: 1,
+        message: "Track `HH` measure 1 has invalid duration: used 3.5 slots, expected 4",
+      },
+    ]);
+  });
+
+  it("allows dotted notes that fit within boundaries", () => {
+    const score = buildNormalizedScore(`time 4/4
+grouping 2+2
+divisions 4
+
+HH | x. -/ x x |`);
+
+    expect(score.errors).toEqual([]);
+    expect(score.measures[0].events[0].duration).toEqual({ numerator: 3, denominator: 8 }); // 1.5 * 1/4 = 3/8
+  });
+
   it("normalizes events with measure-relative timing and tuplets", () => {
     const score = buildNormalizedScore(`time 4/4
+grouping 4
 divisions 4
 
 HH | x [2: x o X] - |

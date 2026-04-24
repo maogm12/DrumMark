@@ -5,7 +5,7 @@ const DR_TARGET_TRACKS: TrackName[] = ["SD", "T1", "T2", "T3"];
 type CanonicalParsedTrackLine = ParsedTrackLine & { track: TrackName };
 
 function makeRestTokens(divisions: number): MeasureToken[] {
-  return Array.from({ length: divisions }, () => ({ kind: "basic", value: "-" as const }));
+  return Array.from({ length: divisions }, () => ({ kind: "basic", value: "-" as const, dots: 0, halves: 0 }));
 }
 
 function makeRestMeasure(globalIndex: number, divisions: number): ScoreMeasure {
@@ -33,7 +33,8 @@ function countMeasureSlots(tokens: MeasureToken[]): number {
       return total + token.span;
     }
 
-    return total + 1;
+    const baseWeight = 2 - Math.pow(0.5, token.dots);
+    return total + (baseWeight / Math.pow(2, token.halves));
   }, 0);
 }
 
@@ -84,23 +85,24 @@ function expandDrToken(token: MeasureToken, track: TrackName): MeasureToken {
 
   switch (token.value) {
     case "s":
-      return { kind: "basic", value: track === "SD" ? "d" : "-" };
+      return { kind: "basic", value: track === "SD" ? ("d" as const) : ("-" as const), dots: token.dots, halves: token.halves };
     case "S":
-      return { kind: "basic", value: track === "SD" ? "D" : "-" };
+      return { kind: "basic", value: track === "SD" ? ("D" as const) : ("-" as const), dots: token.dots, halves: token.halves };
     case "t1":
-      return { kind: "basic", value: track === "T1" ? "d" : "-" };
+      return { kind: "basic", value: track === "T1" ? ("d" as const) : ("-" as const), dots: token.dots, halves: token.halves };
     case "T1":
-      return { kind: "basic", value: track === "T1" ? "D" : "-" };
+      return { kind: "basic", value: track === "T1" ? ("D" as const) : ("-" as const), dots: token.dots, halves: token.halves };
     case "t2":
-      return { kind: "basic", value: track === "T2" ? "d" : "-" };
+      return { kind: "basic", value: track === "T2" ? ("d" as const) : ("-" as const), dots: token.dots, halves: token.halves };
     case "T2":
-      return { kind: "basic", value: track === "T2" ? "D" : "-" };
+      return { kind: "basic", value: track === "T2" ? ("D" as const) : ("-" as const), dots: token.dots, halves: token.halves };
     case "t3":
-      return { kind: "basic", value: track === "T3" ? "d" : "-" };
+      return { kind: "basic", value: track === "T3" ? ("d" as const) : ("-" as const), dots: token.dots, halves: token.halves };
     case "T3":
-      return { kind: "basic", value: track === "T3" ? "D" : "-" };
+      return { kind: "basic", value: track === "T3" ? ("D" as const) : ("-" as const), dots: token.dots, halves: token.halves };
     default:
-      return token;
+      // Preserved token should already have dots and halves
+      return { ...token };
   }
 }
 
@@ -347,6 +349,19 @@ export function buildScoreAst(source: string): ScoreAst {
       if (!knownTracks.includes(line.track)) {
         knownTracks.push(line.track);
       }
+
+      for (const measure of line.measures) {
+        for (const token of measure.tokens) {
+          validateGroupToken(
+            token,
+            skeleton.headers.time.beats,
+            skeleton.headers.time.beatUnit,
+            skeleton.headers.divisions.value,
+            errors,
+            line.lineNumber,
+          );
+        }
+      }
     }
 
     const paragraphTracks = knownTracks
@@ -384,37 +399,6 @@ export function buildScoreAst(source: string): ScoreAst {
     });
 
     globalBarIndex += measureCount;
-  }
-
-  for (const paragraph of paragraphs) {
-    for (const track of paragraph.tracks) {
-      if (track.generated) {
-        continue;
-      }
-
-      for (const measure of track.measures) {
-        const slotCount = countMeasureSlots(measure.tokens);
-
-        if (slotCount !== skeleton.headers.divisions.value) {
-          errors.push({
-            line: track.lineNumber ?? paragraph.startLine,
-            column: 1,
-            message: `Measure ${measure.globalIndex + 1} on track ${track.track} uses ${slotCount} slots, expected ${skeleton.headers.divisions.value}`,
-          });
-        }
-
-        for (const token of measure.tokens) {
-          validateGroupToken(
-            token,
-            skeleton.headers.time.beats,
-            skeleton.headers.time.beatUnit,
-            skeleton.headers.divisions.value,
-            errors,
-            track.lineNumber ?? paragraph.startLine,
-          );
-        }
-      }
-    }
   }
 
   return {

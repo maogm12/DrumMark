@@ -126,6 +126,35 @@ const docsSections: DocsSection[] = [
     example: `time 4/4\ndivisions 8\ngrouping 1+1+1+1\n\n# 压缩：32分音符、三连音、五连音\nSD | [d d] d [2:d d d d] [2: d d d] [2: d d d d d] |\n\n# 扩展：四分音符、全音符\nSD | [2: d] d d [4: d] | [8: d] |`,
   },
   {
+    id: "durations",
+    title: "时长修饰符",
+    summary: "快速调整音符时长，无需使用括号。",
+    content: (
+      <div className="docs-description">
+        <p>你可以直接在音符后面添加后缀来微调其长度。这对于常见的附点节奏非常高效：</p>
+        <ul>
+          <li><strong>附点 (<code>.</code>):</strong> 将时长延长为原来的 1.5 倍。
+            <ul>
+              <li><code>d.</code>: 附点音符。支持多个附点（如 <code>d..</code>）。</li>
+            </ul>
+          </li>
+          <li><strong>减半 (<code>/</code>):</strong> 将时长缩短为原来的一半。
+            <ul>
+              <li><code>d/</code>: 半值音符。常与附点配合使用，如 <code>d. d/</code> 组成一个完整的节拍。</li>
+            </ul>
+          </li>
+          <li><strong>严格规则:</strong> 
+            <ul>
+              <li><strong>不得跨越分组边界:</strong> 例如在 4/4 拍 2+2 分组中，第 2 拍的附点音符 <code>d.</code> 会因为跨越第 3 拍的重拍边界而报错。</li>
+              <li><strong>必须填满小节:</strong> 所有的附点和减半计算后的总时长必须精确等于 <code>divisions</code> 设定的格子数。</li>
+            </ul>
+          </li>
+        </ul>
+      </div>
+    ),
+    example: `time 4/4\ndivisions 4\ngrouping 1+1+1+1\n\n# 附点与半值的完美组合\nHH | x. x/ x. x/ | x. / x. / |\nSD | - - d. d/ | d. / d d/ / |`,
+  },
+  {
     id: "repeats",
     title: "结构与流程",
     summary: "管理小节、重复和乐段。",
@@ -286,7 +315,7 @@ async function getStaticPreviewRenderer() {
 }
 
 function highlightDslSnippet(source: string): ReactNode[] {
-  const pattern = /(#[^\n]*|\b(?:title|subtitle|composer|tempo|time|divisions|grouping)\b|\b(?:HH|HF|DR|SD|BD|T1|T2|T3|RC|C|ST)\b|:\|x\d+|\|:|:\||[|[\]]|\b(?:open|close|choke|rim|cross|bell|flam)\b|(?:t1|t2|t3)\b|\d+(?:\/\d+|\+\d+)*|-|:|[RLSXDxopcdbp]+)/g;
+  const pattern = /(#[^\n]*|\b(?:title|subtitle|composer|tempo|time|divisions|grouping)\b|\b(?:HH|HF|DR|SD|BD|T1|T2|T3|RC|C|ST)\b|:\|x\d+|\|:|:\||[|[\]]|\b(?:open|close|choke|rim|cross|bell|flam)\b|(?:t1|t2|t3)\b|\d+(?:\/\d+|\+\d+)*|-|:|[./]+|[RLSXDxopcdbp]+)/g;
   const nodes: ReactNode[] = [];
   let cursor = 0;
   let match: RegExpExecArray | null;
@@ -302,6 +331,7 @@ function highlightDslSnippet(source: string): ReactNode[] {
     else if (/^[[\]]$/.test(value)) className += " dsl-group";
     else if (/^(open|close|choke|rim|cross|bell|flam)$/.test(value)) className += " dsl-modifier";
     else if (/^\d/.test(value)) className += " dsl-number";
+    else if (/^[./]+$/.test(value)) className += " dsl-operator";
     else if (value === "-") className += " dsl-rest";
     else if (value === ":") className += " dsl-punctuation";
     else className += " dsl-note";

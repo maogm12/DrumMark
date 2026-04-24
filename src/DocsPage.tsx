@@ -126,6 +126,35 @@ const docsSections: DocsSection[] = [
     example: `time 4/4\ndivisions 8\ngrouping 1+1+1+1\n\n# Compression\nSD | [d d] d [2:d d d d] [2: d d d] [2: d d d d d] |\n\n# Expansion\nSD | [2: d] d d [4: d] | [8: d] |`,
   },
   {
+    id: "durations",
+    title: "Duration Modifiers",
+    summary: "Quickly adjust note lengths without using brackets.",
+    content: (
+      <div className="docs-description">
+        <p>You can append suffixes directly to notes to fine-tune their length. This is highly efficient for common rhythmic patterns like dotted notes:</p>
+        <ul>
+          <li><strong>Dots (<code>.</code>):</strong> Multiplies the duration by 1.5.
+            <ul>
+              <li><code>d.</code>: A dotted note. Multiple dots (e.g., <code>d..</code>) are supported.</li>
+            </ul>
+          </li>
+          <li><strong>Halves (<code>/</code>):</strong> Cuts the duration in half.
+            <ul>
+              <li><code>d/</code>: A half-length note. Often used with dots, e.g., <code>d. d/</code> to complete a beat.</li>
+            </ul>
+          </li>
+          <li><strong>Strict Rules:</strong> 
+            <ul>
+              <li><strong>No Crossing Boundaries:</strong> A note with modifiers cannot cross a <code>grouping</code> boundary. For example, in a 4/4 meter with 2+2 grouping, a dotted note <code>d.</code> starting on beat 2 will error because it overlaps the beat 3 boundary.</li>
+              <li><strong>Must Fill Measure:</strong> The total calculated weight of all notes must exactly match the <code>divisions</code> setting.</li>
+            </ul>
+          </li>
+        </ul>
+      </div>
+    ),
+    example: `time 4/4\ndivisions 4\ngrouping 1+1+1+1\n\n# Perfect combination of dots and halves\nHH | x. x/ x. x/ | x. / x. / |\nSD | - - d. d/ | d. / d d/ / |`,
+  },
+  {
     id: "repeats",
     title: "Structure & Flow",
     summary: "Manage bars, repeats, and sections.",
@@ -288,7 +317,7 @@ async function getStaticPreviewRenderer() {
 }
 
 function highlightDslSnippet(source: string): ReactNode[] {
-  const pattern = /(#[^\n]*|\b(?:title|subtitle|composer|tempo|time|divisions|grouping)\b|\b(?:HH|HF|DR|SD|BD|T1|T2|T3|RC|C|ST)\b|:\|x\d+|\|:|:\||[|[\]]|\b(?:open|close|choke|rim|cross|bell|flam)\b|(?:t1|t2|t3)\b|\d+(?:\/\d+|\+\d+)*|-|:|[RLSXDxopcdbp]+)/g;
+  const pattern = /(#[^\n]*|\b(?:title|subtitle|composer|tempo|time|divisions|grouping)\b|\b(?:HH|HF|DR|SD|BD|T1|T2|T3|RC|C|ST)\b|:\|x\d+|\|:|:\||[|[\]]|\b(?:open|close|choke|rim|cross|bell|flam)\b|(?:t1|t2|t3)\b|\d+(?:\/\d+|\+\d+)*|-|:|[./]+|[RLSXDxopcdbp]+)/g;
   const nodes: ReactNode[] = [];
   let cursor = 0;
   let match: RegExpExecArray | null;
@@ -304,6 +333,7 @@ function highlightDslSnippet(source: string): ReactNode[] {
     else if (/^[[\]]$/.test(value)) className += " dsl-group";
     else if (/^(open|close|choke|rim|cross|bell|flam)$/.test(value)) className += " dsl-modifier";
     else if (/^\d/.test(value)) className += " dsl-number";
+    else if (/^[./]+$/.test(value)) className += " dsl-operator";
     else if (value === "-") className += " dsl-rest";
     else if (value === ":") className += " dsl-punctuation";
     else className += " dsl-note";

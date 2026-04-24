@@ -462,7 +462,18 @@ DR | s - t1 - t2 - t3 - |
 - `P` pedal accent hit
 - `R` right hand sticking
 - `L` left hand sticking
-...
+
+### Duration Suffixes
+
+Any hit or rest can be followed by duration suffixes to adjust its relative weight:
+
+- `.` (Dot): Multiplies duration by 1.5. Multiple dots are cumulative (e.g., `..` is 1.75x).
+- `/` (Half): Divides duration by 2. Multiple halves are cumulative (e.g., `//` is 0.25x).
+
+Combinations are allowed: `d./` is 0.75x duration.
+
+---
+
 `DR` allows:
 
 - `-`
@@ -782,22 +793,24 @@ Practical guidance:
 Within a measure:
 
 - An ordinary token counts as `1` slot
+- A token with suffixes has its weight calculated as: `(2 - 0.5^dots) / (2^halves)`
 - A group `[span: ...]` counts as `span` slots
 
-For each explicitly written measure on a track:
+Validation Rules:
 
-- Total occupied slots must equal `divisions`
+1. **Total Duration Match**: For each measure, the sum of all token weights must exactly equal the `divisions` header value. Any mismatch results in a hard error.
+2. **Grouping Boundary Alignment**: No token or group is allowed to cross a boundary defined by the `grouping` header. If a token's duration would cause it to overlap a boundary, a hard error is reported.
 
 Example:
 
 ```txt
 time 4/4
-divisions 16
+grouping 2+2
+divisions 4
 
-HH | x - x - [2: x x x] - x - x - |
+HH | x. x/ x x |  # Error: 'x.' crosses boundary at slot 2
+HH | x. / x x |   # Correct: 'x.' ends at 1.5, followed by half-rest '/' at 1.5-2.0
 ```
-
-The total slot count must equal `16`.
 
 ## Whitespace and Comments
 

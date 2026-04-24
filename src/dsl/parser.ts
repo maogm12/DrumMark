@@ -414,35 +414,50 @@ function parseMeasureTokens(
     }
 
     const glyph = parsedGlyph.glyph;
-
-    if (!isTrackGlyphAllowed(track, glyph)) {
-      errors.push({
-        line: lineNumber,
-        column: columnOffset + cursor,
-        message: `Token \`${glyph}\` is invalid on track ${track}`,
-      });
-      cursor += 1;
-      continue;
-    }
+    let cursorAfterGlyph = parsedGlyph.next;
 
     if (glyph === "o" || glyph === "O") {
+      if (!isTrackGlyphAllowed(track, glyph)) {
+        errors.push({
+          line: lineNumber,
+          column: columnOffset + cursor,
+          message: `Token \`${glyph}\` is invalid on track ${track}`,
+        });
+      }
+
+      let dots = 0;
+      let halves = 0;
+      while (cursorAfterGlyph < content.length) {
+        if (content[cursorAfterGlyph] === ".") {
+          dots += 1;
+          cursorAfterGlyph += 1;
+        } else if (content[cursorAfterGlyph] === "/") {
+          halves += 1;
+          cursorAfterGlyph += 1;
+        } else {
+          break;
+        }
+      }
+
       tokens.push({
         kind: "modified",
         value: glyph === "o" ? "x" : "X",
         modifier: "open",
+        dots,
+        halves,
       });
-      cursor += 1;
+      cursor = cursorAfterGlyph;
       continue;
     }
 
-    if (content[parsedGlyph.next] === ":") {
+    if (content[cursorAfterGlyph] === ":") {
       if (track === "DR") {
         errors.push({
           line: lineNumber,
           column: columnOffset + cursor,
           message: "Track `DR` does not support modifiers",
         });
-        cursor = parsedGlyph.next + 1;
+        cursor = cursorAfterGlyph + 1;
         continue;
       }
 
@@ -452,23 +467,29 @@ function parseMeasureTokens(
           column: columnOffset + cursor,
           message: "Rests cannot have modifiers",
         });
-        cursor += 2;
+        cursor = cursorAfterGlyph + 1;
         continue;
       }
 
-      const parsedModifier = readModifier(content, parsedGlyph.next + 1);
+      const parsedModifier = readModifier(content, cursorAfterGlyph + 1);
 
       if (!parsedModifier) {
         errors.push({
           line: lineNumber,
-          column: columnOffset + parsedGlyph.next + 1,
+          column: columnOffset + cursorAfterGlyph + 1,
           message: "Unknown modifier",
         });
-        cursor = parsedGlyph.next + 1;
+        cursor = cursorAfterGlyph + 1;
         continue;
       }
 
-      if (!isModifierAllowed(track, glyph, parsedModifier.modifier)) {
+      if (!isTrackGlyphAllowed(track, glyph)) {
+        errors.push({
+          line: lineNumber,
+          column: columnOffset + cursor,
+          message: `Token \`${glyph}\` is invalid on track ${track}`,
+        });
+      } else if (!isModifierAllowed(track, glyph, parsedModifier.modifier)) {
         errors.push({
           line: lineNumber,
           column: columnOffset + cursor,
@@ -476,20 +497,62 @@ function parseMeasureTokens(
         });
       }
 
+      let dots = 0;
+      let halves = 0;
+      let suffixCursor = parsedModifier.next;
+      while (suffixCursor < content.length) {
+        if (content[suffixCursor] === ".") {
+          dots += 1;
+          suffixCursor += 1;
+        } else if (content[suffixCursor] === "/") {
+          halves += 1;
+          suffixCursor += 1;
+        } else {
+          break;
+        }
+      }
+
       tokens.push({
         kind: "modified",
         value: glyph,
         modifier: parsedModifier.modifier,
+        dots,
+        halves,
       });
-      cursor = parsedModifier.next;
+      cursor = suffixCursor;
       continue;
+    }
+
+    if (!isTrackGlyphAllowed(track, glyph)) {
+      errors.push({
+        line: lineNumber,
+        column: columnOffset + cursor,
+        message: `Token \`${glyph}\` is invalid on track ${track}`,
+      });
+    }
+
+    let dots = 0;
+    let halves = 0;
+    let suffixCursor = cursorAfterGlyph;
+    while (suffixCursor < content.length) {
+      if (content[suffixCursor] === ".") {
+        dots += 1;
+        suffixCursor += 1;
+      } else if (content[suffixCursor] === "/") {
+        halves += 1;
+        suffixCursor += 1;
+      } else {
+        break;
+      }
     }
 
     tokens.push({
       kind: "basic",
       value: glyph,
+      dots,
+      halves,
     });
-    cursor = parsedGlyph.next;
+    cursor = suffixCursor;
   }
 
   return tokens;

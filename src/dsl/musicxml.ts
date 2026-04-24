@@ -156,22 +156,32 @@ function noteShapeForFraction(duration: Fraction): { type: string; dots: number 
       return { type: "whole", dots: 0 };
     case "3/2":
       return { type: "whole", dots: 1 };
+    case "7/4":
+      return { type: "whole", dots: 2 };
     case "1/2":
       return { type: "half", dots: 0 };
     case "3/4":
       return { type: "half", dots: 1 };
+    case "7/8":
+      return { type: "half", dots: 2 };
     case "1/4":
       return { type: "quarter", dots: 0 };
     case "3/8":
       return { type: "quarter", dots: 1 };
+    case "7/16":
+      return { type: "quarter", dots: 2 };
     case "1/8":
       return { type: "eighth", dots: 0 };
     case "3/16":
       return { type: "eighth", dots: 1 };
+    case "7/32":
+      return { type: "eighth", dots: 2 };
     case "1/16":
       return { type: "16th", dots: 0 };
     case "3/32":
       return { type: "16th", dots: 1 };
+    case "7/64":
+      return { type: "16th", dots: 2 };
     case "1/32":
       return { type: "32nd", dots: 0 };
     case "3/64":

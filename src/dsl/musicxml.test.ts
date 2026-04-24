@@ -4,6 +4,7 @@ import { buildMusicXml, buildNormalizedScore } from "./index";
 describe("buildMusicXml", () => {
   it("emits dotted note markup for stretched groups", () => {
     const score = buildNormalizedScore(`time 4/4
+grouping 4
 divisions 8
 
 HH | [3: x] - - - - - |`);
@@ -28,7 +29,7 @@ HH | x x x x x x x x |`);
 
   it("exports 3:2 groups as eighth-note triplets", () => {
     const score = buildNormalizedScore(`time 4/4
-grouping 1+1+1+1
+grouping 2+2
 divisions 8
 
 DR | [2:s] ss [ss][ssss] [2:sss] |`);

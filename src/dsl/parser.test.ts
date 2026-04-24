@@ -33,10 +33,10 @@ BD | p - - - |`);
       {
         content: "x - x -",
         tokens: [
-          { kind: "basic", value: "x" },
-          { kind: "basic", value: "-" },
-          { kind: "basic", value: "x" },
-          { kind: "basic", value: "-" },
+          { kind: "basic", value: "x", dots: 0, halves: 0 },
+          { kind: "basic", value: "-", dots: 0, halves: 0 },
+          { kind: "basic", value: "x", dots: 0, halves: 0 },
+          { kind: "basic", value: "-", dots: 0, halves: 0 },
         ],
         repeatStart: false,
         repeatEnd: false,
@@ -123,10 +123,10 @@ HH |: x - x - | x - X - :|x3`);
       {
         content: "x - x -",
         tokens: [
-          { kind: "basic", value: "x" },
-          { kind: "basic", value: "-" },
-          { kind: "basic", value: "x" },
-          { kind: "basic", value: "-" },
+          { kind: "basic", value: "x", dots: 0, halves: 0 },
+          { kind: "basic", value: "-", dots: 0, halves: 0 },
+          { kind: "basic", value: "x", dots: 0, halves: 0 },
+          { kind: "basic", value: "-", dots: 0, halves: 0 },
         ],
         repeatStart: true,
         repeatEnd: false,
@@ -134,10 +134,10 @@ HH |: x - x - | x - X - :|x3`);
       {
         content: "x - X -",
         tokens: [
-          { kind: "basic", value: "x" },
-          { kind: "basic", value: "-" },
-          { kind: "basic", value: "X" },
-          { kind: "basic", value: "-" },
+          { kind: "basic", value: "x", dots: 0, halves: 0 },
+          { kind: "basic", value: "-", dots: 0, halves: 0 },
+          { kind: "basic", value: "X", dots: 0, halves: 0 },
+          { kind: "basic", value: "-", dots: 0, halves: 0 },
         ],
         repeatStart: false,
         repeatEnd: true,
@@ -168,32 +168,32 @@ SD | d d D:rim [2: d d:flam D] |`);
 
     expect(doc.errors).toEqual([]);
     expect(doc.paragraphs[0].lines[0].measures[0].tokens).toEqual([
-      { kind: "basic", value: "x" },
-      { kind: "modified", value: "x", modifier: "open" },
-      { kind: "modified", value: "x", modifier: "close" },
+      { kind: "basic", value: "x", dots: 0, halves: 0 },
+      { kind: "modified", value: "x", modifier: "open", dots: 0, halves: 0 },
+      { kind: "modified", value: "x", modifier: "close", dots: 0, halves: 0 },
       {
         kind: "group",
         count: 3,
         span: 2,
         items: [
-          { kind: "basic", value: "x" },
-          { kind: "modified", value: "x", modifier: "open" },
-          { kind: "basic", value: "X" },
+          { kind: "basic", value: "x", dots: 0, halves: 0 },
+          { kind: "modified", value: "x", modifier: "open", dots: 0, halves: 0 },
+          { kind: "basic", value: "X", dots: 0, halves: 0 },
         ],
       },
     ]);
     expect(doc.paragraphs[0].lines[1].measures[0].tokens).toEqual([
-      { kind: "basic", value: "d" },
-      { kind: "basic", value: "d" },
-      { kind: "modified", value: "D", modifier: "rim" },
+      { kind: "basic", value: "d", dots: 0, halves: 0 },
+      { kind: "basic", value: "d", dots: 0, halves: 0 },
+      { kind: "modified", value: "D", modifier: "rim", dots: 0, halves: 0 },
       {
         kind: "group",
         count: 3,
         span: 2,
         items: [
-          { kind: "basic", value: "d" },
-          { kind: "modified", value: "d", modifier: "flam" },
-          { kind: "basic", value: "D" },
+          { kind: "basic", value: "d", dots: 0, halves: 0 },
+          { kind: "modified", value: "d", modifier: "flam", dots: 0, halves: 0 },
+          { kind: "basic", value: "D", dots: 0, halves: 0 },
         ],
       },
     ]);
@@ -205,14 +205,28 @@ SD | d d D:rim [2: d d:flam D] |`);
     
     const hhMeasures = doc.paragraphs[0].lines[0].measures;
     expect(hhMeasures[0].tokens).toEqual([
-      { kind: "modified", value: "X", modifier: "open" },
-      { kind: "basic", value: "C" },
-      { kind: "basic", value: "-" },
-      { kind: "basic", value: "-" },
+      { kind: "modified", value: "X", modifier: "open", dots: 0, halves: 0 },
+      { kind: "basic", value: "C", dots: 0, halves: 0 },
+      { kind: "basic", value: "-", dots: 0, halves: 0 },
+      { kind: "basic", value: "-", dots: 0, halves: 0 },
     ]);
 
     const bdMeasures = doc.paragraphs[0].lines[1].measures;
-    expect(bdMeasures[0].tokens[0]).toEqual({ kind: "basic", value: "P" });
+    expect(bdMeasures[0].tokens[0]).toEqual({ kind: "basic", value: "P", dots: 0, halves: 0 });
+  });
+
+  it("parses dotted notes and modified notes", () => {
+    const doc = parseDocumentSkeleton(`time 4/4
+divisions 8
+HH | x. o. x:open. x:close.. |`);
+
+    expect(doc.errors).toEqual([]);
+    expect(doc.paragraphs[0].lines[0].measures[0].tokens).toEqual([
+      { kind: "basic", value: "x", dots: 1, halves: 0 },
+      { kind: "modified", value: "x", modifier: "open", dots: 1, halves: 0 },
+      { kind: "modified", value: "x", modifier: "open", dots: 1, halves: 0 },
+      { kind: "modified", value: "x", modifier: "close", dots: 2, halves: 0 },
+    ]);
   });
 
   it("rejects `g` ghost sugar on all tracks", () => {
@@ -230,10 +244,10 @@ SD | d d D:rim [2: d d:flam D] |`);
     const doc = parseDocumentSkeleton(`time 4/4\ndivisions 4\n\nDR | T1 T2 T3 S |`);
     expect(doc.errors).toEqual([]);
     expect(doc.paragraphs[0].lines[0].measures[0].tokens).toEqual([
-      { kind: "basic", value: "T1" },
-      { kind: "basic", value: "T2" },
-      { kind: "basic", value: "T3" },
-      { kind: "basic", value: "S" },
+      { kind: "basic", value: "T1", dots: 0, halves: 0 },
+      { kind: "basic", value: "T2", dots: 0, halves: 0 },
+      { kind: "basic", value: "T3", dots: 0, halves: 0 },
+      { kind: "basic", value: "S", dots: 0, halves: 0 },
     ]);
   });
 
@@ -247,25 +261,27 @@ HH | x - c:choke - x - x - |`);
     expect(doc.errors).toEqual([]);
     expect(doc.paragraphs[0].lines[0].track).toBe("DR");
     expect(doc.paragraphs[0].lines[0].measures[0].tokens).toEqual([
-      { kind: "basic", value: "s" },
-      { kind: "basic", value: "-" },
+      { kind: "basic", value: "s", dots: 0, halves: 0 },
+      { kind: "basic", value: "-", dots: 0, halves: 0 },
       {
         kind: "group",
         count: 3,
         span: 2,
         items: [
-          { kind: "basic", value: "t1" },
-          { kind: "basic", value: "s" },
-          { kind: "basic", value: "t2" },
+          { kind: "basic", value: "t1", dots: 0, halves: 0 },
+          { kind: "basic", value: "s", dots: 0, halves: 0 },
+          { kind: "basic", value: "t2", dots: 0, halves: 0 },
         ],
       },
-      { kind: "basic", value: "-" },
+      { kind: "basic", value: "-", dots: 0, halves: 0 },
     ]);
     expect(doc.paragraphs[0].lines[0].measures[1].tokens).toEqual([]);
     expect(doc.paragraphs[0].lines[1].measures[0].tokens[2]).toEqual({
       kind: "modified",
       value: "c",
       modifier: "choke",
+      dots: 0,
+      halves: 0,
     });
   });
 

@@ -304,7 +304,58 @@ function groupVoiceEvents(events: NormalizedEvent[]): VoiceEventGroup[] {
   return groups;
 }
 
+function splitRestByGrouping(
+  score: NormalizedScore,
+  start: Fraction, // Absolute
+  duration: Fraction,
+  measureStart: Fraction
+): VoiceEntry[] {
+  const result: VoiceEntry[] = [];
+  const grouping = score.ast.headers.grouping.values;
+  const time = score.ast.headers.time;
+  
+  const relStart = subtractFractions(start, measureStart);
+  const relEnd = addFractions(relStart, duration);
+  
+  // Calculate boundary positions in fractions relative to measure start
+  const boundaries: Fraction[] = [];
+  let currentAccumulated = 0;
+  for (let i = 0; i < grouping.length - 1; i++) {
+    currentAccumulated += grouping[i];
+    boundaries.push(simplify({
+      numerator: currentAccumulated,
+      denominator: time.beatUnit
+    }));
+  }
+  
+  let currentRelStart = relStart;
+  for (const boundary of boundaries) {
+    if (compareFractions(boundary, currentRelStart) > 0 && compareFractions(boundary, relEnd) < 0) {
+      // Split here
+      result.push({
+        kind: "rest",
+        start: addFractions(measureStart, currentRelStart),
+        duration: subtractFractions(boundary, currentRelStart),
+      });
+      currentRelStart = boundary;
+    }
+  }
+  
+  // Last segment
+  const finalDuration = subtractFractions(relEnd, currentRelStart);
+  if (finalDuration.numerator > 0) {
+    result.push({
+      kind: "rest",
+      start: addFractions(measureStart, currentRelStart),
+      duration: finalDuration,
+    });
+  }
+  
+  return result;
+}
+
 function buildVoiceEntries(
+  score: NormalizedScore,
   groups: VoiceEventGroup[],
   measureStart: Fraction,
   measureDuration: Fraction,
@@ -314,11 +365,8 @@ function buildVoiceEntries(
 
   for (const group of groups) {
     if (compareFractions(group.start, cursor) > 0) {
-      entries.push({
-        kind: "rest",
-        start: cursor,
-        duration: subtractFractions(group.start, cursor),
-      });
+      const gapDuration = subtractFractions(group.start, cursor);
+      entries.push(...splitRestByGrouping(score, cursor, gapDuration, measureStart));
     }
 
     entries.push({
@@ -334,11 +382,8 @@ function buildVoiceEntries(
   const measureEnd = addFractions(measureStart, measureDuration);
 
   if (compareFractions(cursor, measureEnd) < 0) {
-    entries.push({
-      kind: "rest",
-      start: cursor,
-      duration: subtractFractions(measureEnd, cursor),
-    });
+    const endGapDuration = subtractFractions(measureEnd, cursor);
+    entries.push(...splitRestByGrouping(score, cursor, endGapDuration, measureStart));
   }
 
   return entries;
@@ -427,6 +472,7 @@ function noteXml(
   divisions: number,
   voice: VoiceTrack,
   isChord: boolean,
+  startsTuplet: boolean,
   closesTuplet: boolean,
   sticking?: string,
   beamState: "begin" | "continue" | "end" | null = null,
@@ -448,10 +494,15 @@ function noteXml(
 
   // Tuplet start/stop
   if (event.tuplet) {
-    notationsContent.push('<tuplet type="start" bracket="yes" number="1"/>');
-  }
-  if (closesTuplet && !isChord) {
-    notationsContent.push('<tuplet type="stop" number="1"/>');
+    if (startsTuplet) {
+      const showNumber = (event.tuplet.actual === 3 || event.tuplet.actual === 5) ? ' show-number="actual"' : ' show-number="none"';
+      const tupletActual = `<tuplet-actual><number-of-notes>${event.tuplet.actual}</number-of-notes><tuple-type>${shape.type}</tuple-type></tuplet-actual>`;
+      const tupletNormal = `<tuplet-normal><number-of-notes>${event.tuplet.normal}</number-of-notes><tuple-type>${shape.type}</tuple-type></tuplet-normal>`;
+      notationsContent.push(`<tuplet type="start" number="1"${showNumber}>${tupletActual}${tupletNormal}</tuplet>`);
+    }
+    if (closesTuplet) {
+      notationsContent.push('<tuplet type="stop" number="1"/>');
+    }
   }
 
   // Technical/Articulations from notationsXml logic
@@ -565,10 +616,10 @@ function measureXml(score: NormalizedScore, exportMeasure: ExportMeasure, divisi
     return true;
   });
   const upEntries = upEvents.length > 0
-    ? buildVoiceEntries(groupVoiceEvents(upEvents), measureStart, measureDuration)
+    ? buildVoiceEntries(score, groupVoiceEvents(upEvents), measureStart, measureDuration)
     : [];
   const downEntries = downEvents.length > 0
-    ? buildVoiceEntries(groupVoiceEvents(downEvents), measureStart, measureDuration)
+    ? buildVoiceEntries(score, groupVoiceEvents(downEvents), measureStart, measureDuration)
     : [];
   const stickings = stickingsByStart(measure.events);
   const renderedStickings = new Set<string>();
@@ -619,6 +670,18 @@ function measureXml(score: NormalizedScore, exportMeasure: ExportMeasure, divisi
         renderedStickings.add(stickingKey);
       }
 
+      const nextEntry = entries[i + 1];
+      const prevEntry = entries[i - 1];
+
+      const currentTuplet = entry.events[0]?.tuplet;
+      const prevTuplet = prevEntry?.kind === "notes" ? prevEntry.events[0]?.tuplet : undefined;
+      const nextTuplet = nextEntry?.kind === "notes" ? nextEntry.events[0]?.tuplet : undefined;
+
+      // A tuplet starts if the current event has a tuplet and the previous one doesn't (or it's a different tuplet)
+      const startsTuplet = currentTuplet !== undefined && currentTuplet !== prevTuplet;
+      // A tuplet closes if the current event has a tuplet and the next one doesn't (or it's a different tuplet)
+      const closesTuplet = currentTuplet !== undefined && currentTuplet !== nextTuplet;
+
       if (!isBeamable(entry.duration)) {
         const stickingTargetIndex = stickingForEntry ? highestEventIndex(entry.events) : -1;
         result.push(
@@ -629,7 +692,8 @@ function measureXml(score: NormalizedScore, exportMeasure: ExportMeasure, divisi
               divisions,
               voice,
               index > 0,
-              index === entry.events.length - 1 && Boolean(event.tuplet),
+              startsTuplet && index === 0,
+              closesTuplet && index === entry.events.length - 1,
               index === stickingTargetIndex ? stickingForEntry : undefined,
             );
 
@@ -640,9 +704,6 @@ function measureXml(score: NormalizedScore, exportMeasure: ExportMeasure, divisi
         );
         continue;
       }
-
-      const nextEntry = entries[i + 1];
-      const prevEntry = entries[i - 1];
 
       const prevGroup = prevEntry?.kind === "notes" && isBeamable(prevEntry.duration);
       const nextGroup = nextEntry?.kind === "notes" && isBeamable(nextEntry.duration);
@@ -671,7 +732,8 @@ function measureXml(score: NormalizedScore, exportMeasure: ExportMeasure, divisi
             divisions,
             voice,
             index > 0,
-            index === entry.events.length - 1 && Boolean(event.tuplet),
+            startsTuplet && index === 0,
+            closesTuplet && index === entry.events.length - 1,
             index === stickingTargetIndex ? stickingForEntry : undefined,
             beamState,
           );

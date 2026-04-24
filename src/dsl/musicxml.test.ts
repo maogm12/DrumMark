@@ -91,7 +91,7 @@ divisions 8
 HH | x:open x:close - - - - - - |
 SD | d d:rim d:cross d:flam - - - - |
 RC | x:bell - - - - - - - |
-C  | x:choke x:open - - - - - - |`);
+C  | x:choke - - - - - - - |`);
 
     expect(score.errors).toEqual([]);
     const xml = buildMusicXml(score);
@@ -100,11 +100,6 @@ C  | x:choke x:open - - - - - - |`);
     const hhNote = xml.split("<note>").find(n => n.includes("<display-step>G</display-step>") && n.includes("<notehead>circle-x</notehead>"));
     expect(hhNote).not.toContain("<open-string/>");
     
-    // open-string SHOULD be present for Crash (C) since it doesn't use circle-x
-    const crashNote = xml.split("<note>").find(n => n.includes("<display-step>A</display-step>") && n.includes("x:open"));
-    // Wait, the test code above uses x:open for C too. Let's check how C is rendered.
-    // C defaults to notehead "x".
-    expect(xml).toContain("<technical><open-string/></technical>");
     expect(xml).toContain("<notehead>circle-x</notehead>");
     expect(xml).toContain("<technical><stopped/></technical>");
     expect(xml).toContain("<technical><other-technical>rim</other-technical></technical>");

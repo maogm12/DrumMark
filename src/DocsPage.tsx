@@ -399,7 +399,7 @@ function DocsExampleCard({ section }: { section: DocsSection }) {
       {section.content}
       <div className="docs-section-body">
         <div className="docs-section-pane">
-          <div className="docs-pane-title">Syntax</div>
+          <div className="docs-pane-title">Example</div>
           <DslDocsSnippet source={section.example} />
         </div>
         <div className="docs-section-pane">

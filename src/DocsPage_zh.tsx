@@ -397,7 +397,7 @@ function DocsExampleCard({ section }: { section: DocsSection }) {
       {section.content}
       <div className="docs-section-body">
         <div className="docs-section-pane">
-          <div className="docs-pane-title">语法示例</div>
+          <div className="docs-pane-title">示例</div>
           <DslDocsSnippet source={section.example} />
         </div>
         <div className="docs-section-pane">

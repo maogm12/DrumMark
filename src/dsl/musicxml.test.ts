@@ -119,10 +119,10 @@ SD | d:cross d:rim - - |`);
     expect(notes[0]).toContain("<notehead>x</notehead>");
     expect(notes[0]).toContain("<technical><other-technical>cross-stick</other-technical></technical>");
 
-    // Rimshot uses standard notehead (no notehead tag) and tremolo
+    // Rimshot uses standard notehead (no notehead tag)
     expect(notes[1]).toContain("<display-step>C</display-step>");
     expect(notes[1]).not.toContain("<notehead>");
-    expect(notes[1]).toContain("<ornaments><tremolo type=\"single\">1</tremolo></ornaments>");
+    expect(notes[1]).not.toContain("<tremolo");
     expect(notes[1]).toContain("<technical><other-technical>rim</other-technical></technical>");
   });
 

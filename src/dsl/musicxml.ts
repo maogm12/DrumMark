@@ -451,7 +451,6 @@ function noteXml(
     notationsContent.push("<technical><stopped/></technical>");
   }
   if (event.modifier === "rim") {
-    notationsContent.push("<ornaments><tremolo type=\"single\">1</tremolo></ornaments>");
     notationsContent.push("<technical><other-technical>rim</other-technical></technical>");
   }
   if (event.modifier === "cross") {

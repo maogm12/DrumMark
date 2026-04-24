@@ -497,18 +497,23 @@ function stickingsByStart(events: NormalizedEvent[]): Map<string, string> {
 }
 
 function groupingSegmentIndex(score: NormalizedScore, position: Fraction): number {
-  let segment = 0;
-  let boundaryNumerator = 0;
-
-  for (let index = 0; index < score.ast.headers.grouping.values.length; index += 1) {
-    boundaryNumerator += score.ast.headers.grouping.values[index];
-    if (position.numerator * score.ast.headers.time.beats < boundaryNumerator * position.denominator) {
-      return segment;
+  const grouping = score.ast.headers.grouping.values;
+  const time = score.ast.headers.time;
+  
+  // Convert position to a value in units of the time signature's denominator
+  // Example: in 7/8, position 0/1 -> 0, position 1/8 -> 1, position 1/4 -> 2
+  const posInUnits = (position.numerator * time.beatUnit) / position.denominator;
+  
+  let accumulated = 0;
+  for (let i = 0; i < grouping.length; i++) {
+    accumulated += grouping[i];
+    // If the note starts before this boundary, it belongs to this segment
+    if (posInUnits < accumulated - 0.0001) { // small epsilon for float precision
+      return i;
     }
-    segment += 1;
   }
-
-  return Math.max(0, score.ast.headers.grouping.values.length - 1);
+  
+  return Math.max(0, grouping.length - 1);
 }
 
 function measureXml(score: NormalizedScore, exportMeasure: ExportMeasure, divisions: number, forceLineBreak: boolean, hideVoice2Rests: boolean): string {

@@ -140,6 +140,34 @@ ST | R - - - |`);
     expect(fingeringNote).not.toContain("<display-step>C</display-step>");
   });
 
+  it("supports complex grouping like 2+2+3 in 7/8 time", () => {
+    const score = buildNormalizedScore(`time 7/8
+divisions 7
+grouping 2+2+3
+
+HH | x x x x x x x |`);
+
+    expect(score.errors).toEqual([]);
+    const xml = buildMusicXml(score);
+    
+    // Split into individual notes to inspect beams
+    const notes = xml.match(/<note>.*?<\/note>/gs) || [];
+    expect(notes).toHaveLength(7);
+
+    // Note 1 & 2 (Group 1: size 2)
+    expect(notes[0]).toContain('<beam number="1">begin</beam>');
+    expect(notes[1]).toContain('<beam number="1">end</beam>');
+
+    // Note 3 & 4 (Group 2: size 2)
+    expect(notes[2]).toContain('<beam number="1">begin</beam>');
+    expect(notes[3]).toContain('<beam number="1">end</beam>');
+
+    // Note 5, 6 & 7 (Group 3: size 3)
+    expect(notes[4]).toContain('<beam number="1">begin</beam>');
+    expect(notes[5]).toContain('<beam number="1">continue</beam>');
+    expect(notes[6]).toContain('<beam number="1">end</beam>');
+  });
+
   it("exports score metadata headers", () => {
     const score = buildNormalizedScore(`title Funk & Flow
 subtitle Verse <A>

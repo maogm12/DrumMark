@@ -10,7 +10,7 @@ type VoiceTrack = {
 type InstrumentSpec = {
   displayStep: string;
   displayOctave: number;
-  notehead?: "x" | "slash";
+  notehead?: "x" | "slash" | "slashed";
 };
 
 type VoiceEventGroup = {
@@ -350,7 +350,7 @@ function noteheadValueForEvent(event: NormalizedEvent, instrument: InstrumentSpe
       return "x";
     }
     if (event.modifier === "rim") {
-      return "slash";
+      return "slashed";
     }
   }
 

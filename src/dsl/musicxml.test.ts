@@ -119,7 +119,7 @@ SD | d:cross d:rim - - |`);
     expect(notes[0]).toContain("<technical><other-technical>cross-stick</other-technical></technical>");
 
     expect(notes[1]).toContain("<display-step>C</display-step>");
-    expect(notes[1]).toContain("<notehead>slash</notehead>");
+    expect(notes[1]).toContain("<notehead>slashed</notehead>");
     expect(notes[1]).toContain("<technical><other-technical>rim</other-technical></technical>");
   });
 

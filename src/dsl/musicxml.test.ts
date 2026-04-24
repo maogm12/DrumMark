@@ -104,6 +104,25 @@ C  | x:choke - - - - - - - |`);
     expect(xml).toContain("<technical><other-technical>choke</other-technical></technical>");
   });
 
+  it("uses distinct snare noteheads for cross-sticks and rimshots", () => {
+    const score = buildNormalizedScore(`time 4/4
+divisions 4
+
+SD | d:cross d:rim - - |`);
+
+    expect(score.errors).toEqual([]);
+    const xml = buildMusicXml(score);
+    const notes = xml.match(/<note>.*?<\/note>/gs) || [];
+
+    expect(notes[0]).toContain("<display-step>C</display-step>");
+    expect(notes[0]).toContain("<notehead>x</notehead>");
+    expect(notes[0]).toContain("<technical><other-technical>cross-stick</other-technical></technical>");
+
+    expect(notes[1]).toContain("<display-step>C</display-step>");
+    expect(notes[1]).toContain("<notehead>slash</notehead>");
+    expect(notes[1]).toContain("<technical><other-technical>rim</other-technical></technical>");
+  });
+
   it("exports flam as a slashed grace note before the main note", () => {
     const score = buildNormalizedScore(`time 4/4
 divisions 4

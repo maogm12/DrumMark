@@ -10,7 +10,7 @@ type VoiceTrack = {
 type InstrumentSpec = {
   displayStep: string;
   displayOctave: number;
-  notehead?: "x";
+  notehead?: "x" | "slash";
 };
 
 type VoiceEventGroup = {
@@ -344,8 +344,22 @@ function buildVoiceEntries(
   return entries;
 }
 
-function noteheadXml(_event: NormalizedEvent, instrument: InstrumentSpec): string {
-  return instrument.notehead ? `<notehead>${instrument.notehead}</notehead>` : "";
+function noteheadValueForEvent(event: NormalizedEvent, instrument: InstrumentSpec): InstrumentSpec["notehead"] | undefined {
+  if (event.track === "SD") {
+    if (event.modifier === "cross") {
+      return "x";
+    }
+    if (event.modifier === "rim") {
+      return "slash";
+    }
+  }
+
+  return instrument.notehead;
+}
+
+function noteheadXml(event: NormalizedEvent, instrument: InstrumentSpec): string {
+  const notehead = noteheadValueForEvent(event, instrument);
+  return notehead ? `<notehead>${notehead}</notehead>` : "";
 }
 
 function restXml(duration: Fraction, divisions: number, voice: VoiceTrack): string {
@@ -382,7 +396,7 @@ function isBeamable(duration: Fraction): boolean {
 function graceNoteXml(event: NormalizedEvent, voice: VoiceTrack, slash?: boolean): string {
   const instrument = instrumentForTrack(event.track, event.glyph);
   const slashAttr = slash ? ' slash="yes"' : "";
-  const notehead = instrument.notehead ? `<notehead>${instrument.notehead}</notehead>` : "";
+  const notehead = noteheadXml(event, instrument);
 
   return [
     "<note>",

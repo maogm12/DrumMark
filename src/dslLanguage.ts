@@ -163,7 +163,11 @@ function readTrackToken(stream: StringStream, state: DslState): string | null {
     return "rest";
   }
 
-  if (stream.match(/^(?:t1|t2|t3)/)) {
+  if (stream.match(/^(?:t1|T1|t2|T2|t3|T3)/)) {
+    const val = stream.current();
+    if (track === "DR" && /^[T123]/.test(val)) {
+      return "dr-accent";
+    }
     return "dr-tom";
   }
 
@@ -171,12 +175,8 @@ function readTrackToken(stream: StringStream, state: DslState): string | null {
     return "sticking-note";
   }
 
-  if (stream.match(/^S/)) {
+  if (stream.match(/^[SD]/)) {
     return track === "DR" ? "dr-accent" : "note-accent";
-  }
-
-  if (stream.match(/^D/)) {
-    return "note-accent";
   }
 
   if (stream.match(/^X/)) {
@@ -187,8 +187,16 @@ function readTrackToken(stream: StringStream, state: DslState): string | null {
     return "ghost-note";
   }
 
+  if (stream.match(/^O/)) {
+    return "open-accent";
+  }
+
   if (stream.match(/^o/)) {
     return "open-sugar";
+  }
+
+  if (stream.match(/^C/)) {
+    return "crash-accent";
   }
 
   if (stream.match(/^c/)) {
@@ -199,7 +207,7 @@ function readTrackToken(stream: StringStream, state: DslState): string | null {
     return track === "DR" ? "dr-note" : "note";
   }
 
-  if (stream.match(/^[xdp]/)) {
+  if (stream.match(/^[xdpP]/)) {
     const glyph = stream.current();
     if (glyph === "x") {
       return "cymbal-note";
@@ -207,7 +215,7 @@ function readTrackToken(stream: StringStream, state: DslState): string | null {
     if (glyph === "p") {
       return track === "HF" ? "foot-note" : "kick-note";
     }
-    return "note";
+    return glyph === "P" ? "note-accent" : "note";
   }
 
   if (stream.match(/^[A-Za-z0-9]+/)) {
@@ -289,7 +297,9 @@ const drumDslParser: StreamParser<DslState> = {
     "ghost-note": tags.emphasis,
     "cymbal-note": tags.tagName,
     "cymbal-accent": [tags.tagName, tags.strong],
+    "open-accent": [tags.tagName, tags.inserted, tags.strong],
     "open-sugar": [tags.tagName, tags.inserted],
+    "crash-accent": [tags.tagName, tags.special(tags.atom), tags.strong],
     "crash-sugar": [tags.tagName, tags.special(tags.atom)],
     "foot-note": tags.bool,
     "kick-note": tags.bool,

@@ -446,50 +446,51 @@ DR | s - t1 - t2 - t3 - |
 - `-` rest
 - `s` snare normal hit (`DR` only)
 - `S` snare accent hit (`DR` only)
-- `t1` high tom hit (`DR` only)
-- `t2` mid tom hit (`DR` only)
-- `t3` floor tom hit (`DR` only)
+- `t1`, `t2`, `t3` tom normal hits (`DR` only)
+- `T1`, `T2`, `T3` tom accent hits (`DR` only)
 - `x` cymbal-family normal hit
 - `X` cymbal-family accent hit
 - `d` drum-family normal hit
 - `D` drum-family accent hit
 - `g` drum-family ghost hit
 - `p` pedal hit
+- `P` pedal accent hit
 - `R` right hand sticking
 - `L` left hand sticking
-
-### Per-Track Token Rules
-
+...
 `DR` allows:
 
 - `-`
 - `s`
 - `S`
 - `g`
-- `t1`
-- `t2`
-- `t3`
+- `t1`, `T1`
+- `t2`, `T2`
+- `t3`, `T3`
 
 `HH`, `RC`, `C` allow:
 
 - `-`
-- `x`
-- `X`
+- `x`, `X`
+- `o`, `O` (HH only)
+- `c`, `C` (HH only)
 
 `SD`, `T1`, `T2`, `T3` allow:
 
 - `-`
-- `d`
-- `D`
+- `d`, `D`
 - `g`
 
 `BD` allows:
 
 - `-`
-- `p`
+- `p`, `P`
 - `g`
 
 `HF` allows:
+
+- `-`
+- `p`, `P`
 
 - `-`
 - `p`

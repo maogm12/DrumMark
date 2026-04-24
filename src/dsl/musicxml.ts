@@ -377,7 +377,7 @@ function notationsXml(event: NormalizedEvent, sticking?: string): string {
   }
 
   if (event.kind === "accent") {
-    bits.push("<articulations><accent/></articulations>");
+    bits.push('<articulations><accent placement="above"/></articulations>');
   }
 
   if (sticking) {

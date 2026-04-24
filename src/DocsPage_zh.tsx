@@ -56,9 +56,10 @@ const docsSections: DocsSection[] = [
       <div className="docs-description">
         <p>每种乐器由一个<strong>轨道（Track）</strong>表示。以乐器名称开头，后跟一个竖线 <code>|</code>。一旦轨道在某个段落出现，它将在整个乐谱中持续存在，如果后续省略，系统将自动补齐休止符。</p>
         <ul>
-          <li><strong>镲片 (Cymbals):</strong> <code>HH</code> (踩镲), <code>RC</code> (叮叮镲), <code>C</code> (吊镲)。使用 <code>x</code>/<code>X</code>。</li>
+          <li><strong>镲片 (Cymbals):</strong> <code>HH</code> (踩镲), <code>RC</code> (叮叮镲), <code>C</code> (吊镲)。使用 <code>x</code>/<code>X</code>。你也可以在 <code>HH</code> 轨道上使用 <code>c</code>/<code>C</code> (重音) 作为吊镲的快捷方式。</li>
           <li><strong>鼓组 (Drums):</strong> <code>SD</code> (军鼓), <code>BD</code> (底鼓), <code>T1/T2/T3</code> (通通鼓)。使用 <code>d</code>/<code>D</code>/<code>g</code> (鬼音)。</li>
-          <li><strong>糖语法 (Shortcuts):</strong> <code>DR</code> 轨道可以让你在同一行快速编写军鼓和通通鼓。<code>HH | c</code> 是在踩镲行快速记录吊镲的快捷方式。</li>
+          <li><strong>底端与功能:</strong> <code>HF</code> (脚踏踩镲) 使用 <code>p</code>/<code>P</code> (重音) 表示踏击。<code>ST</code> 用于粘滞标注 (<code>R</code>/<code>L</code>)。</li>
+          <li><strong>糖语法 (Shortcuts):</strong> <code>DR</code> 轨道可以让你在同一行快速编写军鼓和通通鼓，支持重音标记如 <code>S</code>, <code>T1</code>, <code>T2</code>, <code>T3</code>。</li>
         </ul>
       </div>
     ),
@@ -76,7 +77,7 @@ const docsSections: DocsSection[] = [
           <li><code>:cross</code> (横跨): 仅支持 <code>SD</code> (军鼓)。</li>
           <li><code>:bell</code> (镲帽): 仅支持 <code>RC</code> (叮叮镲)。</li>
           <li><code>:choke</code> (制音): 支持 <code>C</code> 和 <code>RC</code>。</li>
-          <li><code>:open</code>, <code>:close</code>: 支持 <code>HH</code> 和 <code>HF</code> (脚踏踩镲)。</li>
+          <li><code>:open</code>, <code>:close</code>: 支持 <code>HH</code> 和 <code>HF</code> (脚踏踩镲)。在 <code>HH</code> 上也支持 <code>o</code> (开启) 和 <code>O</code> (重音开启) 的简写。</li>
         </ul>
       </div>
     ),

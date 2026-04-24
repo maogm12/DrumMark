@@ -114,6 +114,24 @@ HH | x - x - x - x - | |`);
     expect(score.paragraphs[0].tracks[1].measures[1].tokens).toHaveLength(8);
   });
 
+  it("expands DR sugar line into multiple tracks with accents", () => {
+    const score = buildScoreAst(`time 4/4
+divisions 4
+
+DR | s T1 T2 T3 |`);
+
+    expect(score.errors).toEqual([]);
+    const sdTrack = score.paragraphs[0].tracks.find((t) => t.track === "SD");
+    const t1Track = score.paragraphs[0].tracks.find((t) => t.track === "T1");
+    const t2Track = score.paragraphs[0].tracks.find((t) => t.track === "T2");
+    const t3Track = score.paragraphs[0].tracks.find((t) => t.track === "T3");
+
+    expect(sdTrack?.measures[0].tokens[0]).toEqual({ kind: "basic", value: "d" });
+    expect(t1Track?.measures[0].tokens[1]).toEqual({ kind: "basic", value: "D" });
+    expect(t2Track?.measures[0].tokens[2]).toEqual({ kind: "basic", value: "D" });
+    expect(t3Track?.measures[0].tokens[3]).toEqual({ kind: "basic", value: "D" });
+  });
+
   it("reports grouping compatibility and DR mixing errors", () => {
     const score = buildScoreAst(`time 7/8
 divisions 16

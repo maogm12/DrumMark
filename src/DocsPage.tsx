@@ -56,9 +56,10 @@ const docsSections: DocsSection[] = [
       <div className="docs-description">
         <p>Each instrument is represented by a <strong>track</strong>. Once a track is declared in any paragraph, it remains active throughout the score. If omitted in later sections, it is auto-filled with rests.</p>
         <ul>
-          <li><strong>Cymbals:</strong> <code>HH</code> (Hi-Hat), <code>RC</code> (Ride), <code>C</code> (Crash). Use <code>x</code>/<code>X</code>.</li>
+          <li><strong>Cymbals:</strong> <code>HH</code> (Hi-Hat), <code>RC</code> (Ride), <code>C</code> (Crash). Use <code>x</code>/<code>X</code>. You can also use <code>c</code>/<code>C</code> (accented) on the <code>HH</code> line as a shortcut for a Crash hit.</li>
           <li><strong>Drums:</strong> <code>SD</code> (Snare), <code>BD</code> (Bass), <code>T1/T2/T3</code> (Toms). Use <code>d</code>/<code>D</code>/<code>g</code>.</li>
-          <li><strong>Sugar Tracks:</strong> <code>DR</code> expands into <code>SD</code> and <code>T1-T3</code>. <code>HH | c</code> acts as a shortcut for a Crash hit.</li>
+          <li><strong>Foot & Utility:</strong> <code>HF</code> (Hi-Hat Foot) uses <code>p</code>/<code>P</code> (accented) for pedal hits. <code>ST</code> is for sticking (<code>R</code>/<code>L</code>).</li>
+          <li><strong>Sugar Tracks:</strong> <code>DR</code> expands into <code>SD</code> and <code>T1-T3</code>. It supports accents like <code>S</code>, <code>T1</code>, <code>T2</code>, and <code>T3</code>.</li>
         </ul>
       </div>
     ),
@@ -76,7 +77,7 @@ const docsSections: DocsSection[] = [
           <li><code>:cross</code>: Only supported on <code>SD</code> (Snare Drum).</li>
           <li><code>:bell</code>: Only supported on <code>RC</code> (Ride Cymbal).</li>
           <li><code>:choke</code>: Supported on <code>C</code> and <code>RC</code>.</li>
-          <li><code>:open</code>, <code>:close</code>: Supported on <code>HH</code> and <code>HF</code>.</li>
+          <li><code>:open</code>, <code>:close</code>: Supported on <code>HH</code> and <code>HF</code>. Shorthand <code>o</code> (open) and <code>O</code> (accented open) are also supported on <code>HH</code>.</li>
         </ul>
       </div>
     ),

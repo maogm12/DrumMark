@@ -60,10 +60,13 @@ function drTokenUsesTrack(token: MeasureToken, track: TrackName): boolean {
     case "g":
       return track === "SD";
     case "t1":
+    case "T1":
       return track === "T1";
     case "t2":
+    case "T2":
       return track === "T2";
     case "t3":
+    case "T3":
       return track === "T3";
     default:
       return false;
@@ -89,10 +92,16 @@ function expandDrToken(token: MeasureToken, track: TrackName): MeasureToken {
       return { kind: "basic", value: track === "SD" ? "g" : "-" };
     case "t1":
       return { kind: "basic", value: track === "T1" ? "d" : "-" };
+    case "T1":
+      return { kind: "basic", value: track === "T1" ? "D" : "-" };
     case "t2":
       return { kind: "basic", value: track === "T2" ? "d" : "-" };
+    case "T2":
+      return { kind: "basic", value: track === "T2" ? "D" : "-" };
     case "t3":
       return { kind: "basic", value: track === "T3" ? "d" : "-" };
+    case "T3":
+      return { kind: "basic", value: track === "T3" ? "D" : "-" };
     default:
       return token;
   }

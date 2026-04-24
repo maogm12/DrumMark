@@ -199,6 +199,33 @@ SD | d g D:rim [2: d d:flam D] |`);
     ]);
   });
 
+  it("parses accented sugar tokens (O, C, P)", () => {
+    const doc = parseDocumentSkeleton(`time 4/4\ndivisions 4\n\nHH | O C - - |\nBD | P - - - |`);
+    expect(doc.errors).toEqual([]);
+    
+    const hhMeasures = doc.paragraphs[0].lines[0].measures;
+    expect(hhMeasures[0].tokens).toEqual([
+      { kind: "modified", value: "X", modifier: "open" },
+      { kind: "basic", value: "C" },
+      { kind: "basic", value: "-" },
+      { kind: "basic", value: "-" },
+    ]);
+
+    const bdMeasures = doc.paragraphs[0].lines[1].measures;
+    expect(bdMeasures[0].tokens[0]).toEqual({ kind: "basic", value: "P" });
+  });
+
+  it("parses accented tom tokens in DR track", () => {
+    const doc = parseDocumentSkeleton(`time 4/4\ndivisions 4\n\nDR | T1 T2 T3 S |`);
+    expect(doc.errors).toEqual([]);
+    expect(doc.paragraphs[0].lines[0].measures[0].tokens).toEqual([
+      { kind: "basic", value: "T1" },
+      { kind: "basic", value: "T2" },
+      { kind: "basic", value: "T3" },
+      { kind: "basic", value: "S" },
+    ]);
+  });
+
   it("parses DR tokens and allows empty measures", () => {
     const doc = parseDocumentSkeleton(`time 4/4
 divisions 8

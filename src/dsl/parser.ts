@@ -257,18 +257,18 @@ function isTrackGlyphAllowed(track: SourceTrackName, glyph: BasicGlyph): boolean
     case "HH":
     case "RC":
     case "C":
-      return glyph === "-" || glyph === "x" || glyph === "X" || glyph === "o" || glyph === "c";
+      return glyph === "-" || glyph === "x" || glyph === "X" || glyph === "o" || glyph === "O" || glyph === "c" || glyph === "C";
     case "DR":
-      return glyph === "-" || glyph === "s" || glyph === "S" || glyph === "g" || glyph === "t1" || glyph === "t2" || glyph === "t3";
+      return glyph === "-" || glyph === "s" || glyph === "S" || glyph === "g" || glyph === "t1" || glyph === "T1" || glyph === "t2" || glyph === "T2" || glyph === "t3" || glyph === "T3";
     case "SD":
     case "T1":
     case "T2":
     case "T3":
       return glyph === "-" || glyph === "d" || glyph === "D" || glyph === "g";
     case "BD":
-      return glyph === "-" || glyph === "p" || glyph === "g";
+      return glyph === "-" || glyph === "p" || glyph === "P" || glyph === "g";
     case "HF":
-      return glyph === "-" || glyph === "p";
+      return glyph === "-" || glyph === "p" || glyph === "P";
     case "ST":
       return glyph === "-" || glyph === "R" || glyph === "L";
   }
@@ -279,9 +279,9 @@ function isModifierAllowed(track: SourceTrackName, glyph: Exclude<BasicGlyph, "-
     case "open":
       return track === "HH" && (glyph === "x" || glyph === "X");
     case "close":
-      return (track === "HH" && (glyph === "x" || glyph === "X")) || (track === "HF" && glyph === "p");
+      return (track === "HH" && (glyph === "x" || glyph === "X")) || (track === "HF" && (glyph === "p" || glyph === "P"));
     case "choke":
-      return ((track === "C" || track === "RC") && (glyph === "x" || glyph === "X")) || (track === "HH" && glyph === "c");
+      return ((track === "C" || track === "RC") && (glyph === "x" || glyph === "X")) || (track === "HH" && (glyph === "c" || glyph === "C"));
     case "rim":
     case "cross":
       return track === "SD" && (glyph === "d" || glyph === "D");
@@ -293,12 +293,12 @@ function isModifierAllowed(track: SourceTrackName, glyph: Exclude<BasicGlyph, "-
 }
 
 function isBasicGlyph(value: string): value is BasicGlyph {
-  return ["-", "x", "X", "d", "D", "g", "p", "R", "L", "o", "c", "s", "S", "t1", "t2", "t3"].includes(value);
+  return ["-", "x", "X", "d", "D", "g", "p", "P", "R", "L", "o", "O", "c", "C", "s", "S", "t1", "T1", "t2", "T2", "t3", "T3"].includes(value);
 }
 
 function readBasicGlyph(track: SourceTrackName, input: string, cursor: number): { glyph: BasicGlyph; next: number } | null {
   if (track === "DR") {
-    const multiChar = ["t1", "t2", "t3"] as const;
+    const multiChar = ["t1", "T1", "t2", "T2", "t3", "T3"] as const;
     for (const glyph of multiChar) {
       if (input.startsWith(glyph, cursor)) {
         return { glyph, next: cursor + glyph.length };
@@ -425,10 +425,10 @@ function parseMeasureTokens(
       continue;
     }
 
-    if (glyph === "o") {
+    if (glyph === "o" || glyph === "O") {
       tokens.push({
         kind: "modified",
-        value: "x",
+        value: glyph === "o" ? "x" : "X",
         modifier: "open",
       });
       cursor += 1;

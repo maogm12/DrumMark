@@ -40,7 +40,7 @@ export type MeasureBoundary =
   | { kind: "repeat_start" }
   | RepeatEnd;
 
-export type BasicGlyph = "-" | "x" | "X" | "d" | "D" | "g" | "p" | "R" | "L" | "o" | "c" | "s" | "S" | "t1" | "t2" | "t3";
+export type BasicGlyph = "-" | "x" | "X" | "d" | "D" | "g" | "p" | "P" | "R" | "L" | "o" | "O" | "c" | "C" | "s" | "S" | "t1" | "T1" | "t2" | "T2" | "t3" | "T3";
 
 export type TokenGlyph =
   | { kind: "basic"; value: BasicGlyph }

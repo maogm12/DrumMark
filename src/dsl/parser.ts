@@ -276,7 +276,7 @@ function isTrackGlyphAllowed(track: SourceTrackName, glyph: BasicGlyph): boolean
 function isModifierAllowed(track: SourceTrackName, glyph: Exclude<BasicGlyph, "-">, modifier: Modifier): boolean {
   switch (modifier) {
     case "open":
-      return track === "HH" && (glyph === "x" || glyph === "X");
+      return (track === "HH" || track === "C" || track === "RC") && (glyph === "x" || glyph === "X");
     case "close":
       return (track === "HH" && (glyph === "x" || glyph === "X")) || (track === "HF" && (glyph === "p" || glyph === "P"));
     case "choke":

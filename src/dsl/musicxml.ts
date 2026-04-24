@@ -436,7 +436,8 @@ function noteXml(
   const timeModification = event.tuplet
     ? `<time-modification><actual-notes>${event.tuplet.actual}</actual-notes><normal-notes>${event.tuplet.normal}</normal-notes></time-modification>`
     : "";
-  const notehead = noteheadXml(event, instrument);
+  const nhValue = noteheadValueForEvent(event, instrument);
+  const notehead = nhValue ? `<notehead>${nhValue}</notehead>` : "";
   const beam = beamState ? `<beam number="1">${beamState}</beam>` : "";
   const dots = Array.from({ length: shape.dots }, () => "<dot/>").join("");
 
@@ -454,7 +455,7 @@ function noteXml(
   }
 
   // Technical/Articulations from notationsXml logic
-  if (event.modifier === "open") {
+  if (event.modifier === "open" && nhValue !== "circle-x") {
     technical.push("<open-string/>");
   }
   if (event.modifier === "close") {

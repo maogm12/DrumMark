@@ -312,4 +312,18 @@ SD | d:open |`);
       { line: 5, column: 6, message: "Token `d:open` is invalid on track SD" },
     ]);
   });
+
+  it("blocks :open and shorthand sugar on tracks other than HH", () => {
+    const doc = parseDocumentSkeleton(`time 4/4
+divisions 4
+C  | x:open |
+RC | o |
+RC | c |`);
+
+    expect(doc.errors).toEqual([
+      { line: 3, column: 6, message: "Token `x:open` is invalid on track C" },
+      { line: 4, column: 6, message: "Token `o` is invalid on track RC" },
+      { line: 5, column: 6, message: "Token `c` is invalid on track RC" },
+    ]);
+  });
 });

@@ -546,7 +546,7 @@ Any unknown modifier, or any modifier used on an unsupported track/glyph combina
 
 `open`
 
-- Allowed on `HH`
+- Allowed on `HH` ONLY
 
 `close`
 

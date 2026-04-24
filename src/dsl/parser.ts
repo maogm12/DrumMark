@@ -255,9 +255,10 @@ function finalizeHeaders(headers: HeaderAccumulator, errors: ParseError[]): Pars
 function isTrackGlyphAllowed(track: SourceTrackName, glyph: BasicGlyph): boolean {
   switch (track) {
     case "HH":
+      return glyph === "-" || glyph === "x" || glyph === "X" || glyph === "o" || glyph === "O" || glyph === "c" || glyph === "C";
     case "RC":
     case "C":
-      return glyph === "-" || glyph === "x" || glyph === "X" || glyph === "o" || glyph === "O" || glyph === "c" || glyph === "C";
+      return glyph === "-" || glyph === "x" || glyph === "X";
     case "DR":
       return glyph === "-" || glyph === "s" || glyph === "S" || glyph === "t1" || glyph === "T1" || glyph === "t2" || glyph === "T2" || glyph === "t3" || glyph === "T3";
     case "SD":

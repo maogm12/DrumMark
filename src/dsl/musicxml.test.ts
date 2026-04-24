@@ -104,7 +104,7 @@ C  | x:choke - - - - - - - |`);
     expect(xml).toContain("<technical><other-technical>choke</other-technical></technical>");
   });
 
-  it("uses distinct snare noteheads for cross-sticks and rimshots", () => {
+  it("uses distinct visuals for cross-sticks and rimshots", () => {
     const score = buildNormalizedScore(`time 4/4
 divisions 4
 
@@ -114,12 +114,15 @@ SD | d:cross d:rim - - |`);
     const xml = buildMusicXml(score);
     const notes = xml.match(/<note>.*?<\/note>/gs) || [];
 
+    // Cross-stick uses 'x' notehead
     expect(notes[0]).toContain("<display-step>C</display-step>");
     expect(notes[0]).toContain("<notehead>x</notehead>");
     expect(notes[0]).toContain("<technical><other-technical>cross-stick</other-technical></technical>");
 
+    // Rimshot uses standard notehead (no notehead tag) and tremolo
     expect(notes[1]).toContain("<display-step>C</display-step>");
-    expect(notes[1]).toContain("<notehead>slashed</notehead>");
+    expect(notes[1]).not.toContain("<notehead>");
+    expect(notes[1]).toContain("<ornaments><tremolo type=\"single\">1</tremolo></ornaments>");
     expect(notes[1]).toContain("<technical><other-technical>rim</other-technical></technical>");
   });
 

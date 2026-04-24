@@ -10,7 +10,7 @@ type VoiceTrack = {
 type InstrumentSpec = {
   displayStep: string;
   displayOctave: number;
-  notehead?: "x" | "slash" | "slashed";
+  notehead?: "x" | "slash";
 };
 
 type VoiceEventGroup = {
@@ -349,9 +349,7 @@ function noteheadValueForEvent(event: NormalizedEvent, instrument: InstrumentSpe
     if (event.modifier === "cross") {
       return "x";
     }
-    if (event.modifier === "rim") {
-      return "slashed";
-    }
+    // Rimshot uses standard notehead but with a tremolo slash added in notations
   }
 
   return instrument.notehead;
@@ -453,6 +451,7 @@ function noteXml(
     notationsContent.push("<technical><stopped/></technical>");
   }
   if (event.modifier === "rim") {
+    notationsContent.push("<ornaments><tremolo type=\"single\">1</tremolo></ornaments>");
     notationsContent.push("<technical><other-technical>rim</other-technical></technical>");
   }
   if (event.modifier === "cross") {

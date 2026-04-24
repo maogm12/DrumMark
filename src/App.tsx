@@ -22,12 +22,11 @@ type PagePadding = {
   bottom: number;
   left: number;
 };
-const staffPaperWidth = 900;
 const osmdDefaultFontFamily = "\"Noto Sans SC\", \"PingFang SC\", \"Microsoft YaHei\", \"Helvetica Neue\", Arial, sans-serif";
 const pdfPageWidth = 612;
 const pdfPageHeight = 792;
 const pdfMargin = 36;
-const pdfStaffRenderWidth = 900; // Updated to match staffPaperWidth
+const pdfStaffRenderWidth = 900;
 const pdfOsmdHeaderReservePx = 150;
 
 function downloadBlob(filename: string, blob: Blob) {
@@ -82,8 +81,8 @@ function parseSvgSize(svgMarkup: string) {
   };
 
   return {
-    width: parseLength(svg.getAttribute("width")) || staffPaperWidth,
-    height: parseLength(svg.getAttribute("height")) || staffPaperWidth,
+    width: parseLength(svg.getAttribute("width")) || 900,
+    height: parseLength(svg.getAttribute("height")) || 900,
   };
 }
 
@@ -247,8 +246,8 @@ function configureOsmdRules(osmd: OpenSheetMusicDisplay, mode: "preview" | "pdf"
 
   rules.PageTopMargin = 0;
   rules.PageBottomMargin = 5;
-  rules.PageLeftMargin = 2; // Symmetric small margins
-  rules.PageRightMargin = 2; 
+  rules.PageLeftMargin = 2;
+  rules.PageRightMargin = 2;
   rules.SystemLeftMargin = 0;
   rules.SystemRightMargin = 0;
   rules.RenderTitle = true;
@@ -262,10 +261,8 @@ function configureOsmdRules(osmd: OpenSheetMusicDisplay, mode: "preview" | "pdf"
   rules.TitleBottomDistance = 2.4;
 
   if (mode === "pdf") {
-    // Reserve header space during pagination so the rendered SVG already fits
-    // the PDF page without needing to shift the first page image afterward.
     rules.PageTopMargin = pdfOsmdHeaderReservePx;
-    rules.MinimumDistanceBetweenSystems = 1.0; // Minimal gap
+    rules.MinimumDistanceBetweenSystems = 1.0;
     rules.MinSkyBottomDistBetweenSystems = 1.0;
     rules.StaffDistance = 4;
     rules.BetweenStaffDistance = 2;
@@ -292,7 +289,6 @@ function readMusicXmlCredit(xml: string, type: "title" | "subtitle" | "composer"
       continue;
     }
 
-    // FIX: querySelectorAll must be on 'credit', not 'document'!
     const words = Array.from(credit.querySelectorAll("credit-words"))
       .map((node) => node.textContent?.trim() ?? "")
       .filter(Boolean)
@@ -324,8 +320,6 @@ function applyOsmdHeaderMetadata(osmd: OpenSheetMusicDisplay, xml: string) {
   const subtitle = readMusicXmlCredit(xml, "subtitle");
   const composer = readMusicXmlCredit(xml, "composer");
 
-  // Only set if not already set by OSMD's automatic parsing to avoid conflict
-  // but explicitly setting ensures visibility if automatic parsing fails.
   if (title) sheet.TitleString = title;
   if (subtitle) sheet.SubtitleString = subtitle;
   if (composer) sheet.ComposerString = composer;
@@ -513,30 +507,45 @@ function SettingsIcon() {
 
 function DslEditor({ value, onChange }: { value: string; onChange: (value: string) => void }) {
   const highlightRef = useRef<HTMLPreElement | null>(null);
+  const gutterRef = useRef<HTMLDivElement | null>(null);
   const highlightedDsl = useMemo(() => highlightDsl(value), [value]);
+  
+  const lineCount = value.split("\n").length;
+  const lineNumbers = useMemo(() => {
+    return Array.from({ length: lineCount }, (_, i) => (
+      <div key={i + 1} className="line-number">{i + 1}</div>
+    ));
+  }, [lineCount]);
 
   function syncHighlightScroll(event: UIEvent<HTMLTextAreaElement>) {
-    if (!highlightRef.current) {
-      return;
+    const { scrollTop, scrollLeft } = event.currentTarget;
+    if (highlightRef.current) {
+      highlightRef.current.scrollTop = scrollTop;
+      highlightRef.current.scrollLeft = scrollLeft;
     }
-
-    highlightRef.current.scrollTop = event.currentTarget.scrollTop;
-    highlightRef.current.scrollLeft = event.currentTarget.scrollLeft;
+    if (gutterRef.current) {
+      gutterRef.current.scrollTop = scrollTop;
+    }
   }
 
   return (
     <div className="editor-shell">
-      <pre className="editor-highlight" ref={highlightRef} aria-hidden="true">
-        {highlightedDsl}
-        {"\n"}
-      </pre>
-      <textarea
-        className="editor-input"
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        onScroll={syncHighlightScroll}
-        spellCheck={false}
-      />
+      <div className="editor-gutter" ref={gutterRef} aria-hidden="true">
+        {lineNumbers}
+      </div>
+      <div className="editor-container">
+        <pre className="editor-highlight" ref={highlightRef} aria-hidden="true">
+          {highlightedDsl}
+          {"\n"}
+        </pre>
+        <textarea
+          className="editor-input"
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+          onScroll={syncHighlightScroll}
+          spellCheck={false}
+        />
+      </div>
     </div>
   );
 }
@@ -562,18 +571,10 @@ function StaffPreview({
   active: boolean;
   onRendered: (markup: string | null, error: string | null) => void;
 }) {
-  const printableRef = useRef<HTMLDivElement | null>(null);
-  const containerRef = useRef<HTMLDivElement | null>(null);
   const shellRef = useRef<HTMLDivElement | null>(null);
   const scrollPosRef = useRef({ top: 0, left: 0 });
-  const activeRef = useRef(active);
-  const resizeTimerRef = useRef<number | null>(null);
-  const observedShellSizeRef = useRef<{ width: number; height: number } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [renderedMarkup, setRenderedMarkup] = useState("");
-  const [previewScale, setPreviewScale] = useState(1);
-  const [previewHeight, setPreviewHeight] = useState<number | null>(null);
-  const [resizeRenderVersion, setResizeRenderVersion] = useState(0);
 
   function handleScroll(e: UIEvent<HTMLDivElement>) {
     scrollPosRef.current = {
@@ -583,89 +584,39 @@ function StaffPreview({
   }
 
   useEffect(() => {
-    activeRef.current = active;
-  }, [active]);
-
-  useEffect(() => {
-    const shell = shellRef.current;
-    if (!shell) {
-      return;
-    }
-
-    const observer = new ResizeObserver(([entry]) => {
-      const width = Math.round(entry.contentRect.width);
-      const height = Math.round(entry.contentRect.height);
-      if (width <= 0 || height <= 0) {
-        return;
-      }
-
-      const previous = observedShellSizeRef.current;
-      observedShellSizeRef.current = { width, height };
-      if (!previous || (previous.width === width && previous.height === height)) {
-        return;
-      }
-
-      if (resizeTimerRef.current !== null) {
-        window.clearTimeout(resizeTimerRef.current);
-      }
-
-      resizeTimerRef.current = window.setTimeout(() => {
-        resizeTimerRef.current = null;
-        if (activeRef.current) {
-          setResizeRenderVersion((current) => current + 1);
-        }
-      }, 260);
-    });
-
-    observer.observe(shell);
-
-    return () => {
-      observer.disconnect();
-      if (resizeTimerRef.current !== null) {
-        window.clearTimeout(resizeTimerRef.current);
-        resizeTimerRef.current = null;
-      }
-    };
-  }, []);
-
-  useEffect(() => {
     let cancelled = false;
 
     async function render() {
-      if (!shellRef.current) {
-        return;
-      }
-
+      if (!active) return;
+      
       const targetTop = scrollPosRef.current.top;
       const targetLeft = scrollPosRef.current.left;
 
       try {
         if (cancelled) return;
 
-        // 1. Create a hidden buffer container to render off-screen
         const buffer = document.createElement("div");
-        const renderWidth = pdfStaffRenderWidth;
-        buffer.style.width = `${renderWidth}px`;
+        buffer.style.width = "900px";
         buffer.style.position = "absolute";
         buffer.style.visibility = "hidden";
         buffer.style.pointerEvents = "none";
         document.body.appendChild(buffer);
 
         const osmd = new OpenSheetMusicDisplay(buffer, {
-          autoResize: false, // Manage resizing manually to avoid flickers
+          autoResize: false,
           drawTitle: true,
           drawSubtitle: true,
           drawComposer: true,
           defaultFontFamily: osmdDefaultFontFamily,
           drawingParameters: "compacttight",
           newSystemFromXML: true,
-          pageFormat: "Letter_P" as const,
+          pageFormat: "Letter_P",
           drawTimeSignatures: true,
           drawMeasureNumbers: true,
           percussionOneLineCutoff: 0,
         });
         osmd.setOptions({ defaultColorTitle: "#111111" });
-        configureOsmdRules(osmd, "pdf");
+        configureOsmdRules(osmd, "preview");
         osmd.EngravingRules.MinimumDistanceBetweenSystems = systemSpacing;
         osmd.EngravingRules.MinSkyBottomDistBetweenSystems = systemSpacing;
         osmd.EngravingRules.TitleTopDistance = titleTopPadding;
@@ -681,78 +632,32 @@ function StaffPreview({
           return;
         }
 
-        // 2. Atomic swap: Replace content and restore scroll in the same frame
         const markup = getStaffSvgMarkup(buffer.innerHTML)
           .map((svg, pageIndex) => `<section class="staff-preview-page" data-page="${pageIndex + 1}">${svg}</section>`)
           .join("");
         setRenderedMarkup(markup);
         
-        // Immediate scroll restoration
-        shellRef.current.scrollTop = targetTop;
-        shellRef.current.scrollLeft = targetLeft;
+        if (shellRef.current) {
+          shellRef.current.scrollTop = targetTop;
+          shellRef.current.scrollLeft = targetLeft;
+        }
 
         document.body.removeChild(buffer);
         setError(null);
         onRendered(`<div class="staff-preview page-view">${markup}</div>`, null);
-
-        // Double check scroll position after DOM settles
-        requestAnimationFrame(() => {
-          if (!cancelled && shellRef.current) {
-            shellRef.current.scrollTop = targetTop;
-            shellRef.current.scrollLeft = targetLeft;
-          }
-        });
       } catch (renderError) {
         if (!cancelled) {
-          const message = renderError instanceof Error ? renderError.message : "Could not render staff preview.";
-          setError(message);
-          onRendered(null, message);
+          setError(renderError instanceof Error ? renderError.message : "Could not render staff preview.");
         }
       }
     }
 
     void render();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [pageScale, pagePadding.bottom, pagePadding.left, pagePadding.right, pagePadding.top, resizeRenderVersion, systemSpacing, titleStaffGap, titleSubtitleGap, titleTopPadding, xml]);
-
-  useEffect(() => {
-    const shell = shellRef.current;
-    const printable = printableRef.current;
-    if (!shell || !printable) {
-      return;
-    }
-    const observedShell: HTMLDivElement = shell;
-    const observedPrintable: HTMLDivElement = printable;
-
-    function updatePreviewScale() {
-      const styles = window.getComputedStyle(observedShell);
-      const horizontalPadding = parseFloat(styles.paddingLeft) + parseFloat(styles.paddingRight);
-      const availableWidth = Math.max(observedShell.clientWidth - horizontalPadding, 1);
-      const paperOuterWidth = staffPaperWidth;
-      if (paperOuterWidth <= 0) return;
-      const nextScale = Math.min(1, availableWidth / paperOuterWidth) * pageScale;
-      setPreviewScale((current) => (Math.abs(current - nextScale) < 0.001 ? current : nextScale));
-      setPreviewHeight(observedPrintable.offsetHeight * nextScale);
-    }
-
-    updatePreviewScale();
-    const observer = new ResizeObserver(updatePreviewScale);
-    observer.observe(observedShell);
-    observer.observe(observedPrintable);
-    window.addEventListener("resize", updatePreviewScale);
-
-    return () => {
-      observer.disconnect();
-      window.removeEventListener("resize", updatePreviewScale);
-    };
-  }, [pageScale, renderedMarkup]);
+    return () => { cancelled = true; };
+  }, [systemSpacing, titleStaffGap, titleSubtitleGap, titleTopPadding, xml, active]);
 
   const printableStyle = {
-    "--staff-preview-scale": previewScale,
-    "--staff-preview-height": `${previewHeight ?? 0}px`,
+    "--staff-zoom-width": `${pageScale * 100}%`,
     "--page-padding-top": `${pagePadding.top}px`,
     "--page-padding-right": `${pagePadding.right}px`,
     "--page-padding-bottom": `${pagePadding.bottom}px`,
@@ -760,11 +665,11 @@ function StaffPreview({
   } as CSSProperties;
 
   return (
-    <div className="staff-preview-shell paper-width" ref={shellRef} onScroll={handleScroll}>
+    <div className="staff-preview-shell" ref={shellRef} onScroll={handleScroll}>
       {error ? <div className="staff-error">{error}</div> : null}
-      <div className="staff-printable-frame paper-width" style={printableStyle}>
-        <div className="staff-printable paper-width page-view-layout" ref={printableRef}>
-          <div className="staff-preview page-view" dangerouslySetInnerHTML={{ __html: renderedMarkup }} ref={containerRef} />
+      <div className="staff-printable-frame" style={printableStyle}>
+        <div className="staff-printable">
+          <div className="staff-preview page-view" dangerouslySetInnerHTML={{ __html: renderedMarkup }} />
         </div>
       </div>
     </div>
@@ -800,7 +705,7 @@ async function renderPdfPageSvgs(
   },
 ) {
   const buffer = document.createElement("div");
-  buffer.style.width = `${pdfStaffRenderWidth}px`;
+  buffer.style.width = "900px";
   buffer.style.position = "absolute";
   buffer.style.visibility = "hidden";
   buffer.style.pointerEvents = "none";
@@ -854,10 +759,7 @@ async function buildPdf(
     systemSpacing?: number;
   },
 ) {
-  console.log("[PDF] Starting buildPdf...");
-  const [{ PDFDocument, PDFHexString, PDFName }] = await Promise.all([
-    import("pdf-lib"),
-  ]);
+  const [{ PDFDocument, PDFHexString, PDFName }] = await Promise.all([import("pdf-lib")]);
   const title = score.ast.headers.title?.value ?? "Drum Notation";
   const subtitle = score.ast.headers.subtitle?.value;
   const composer = score.ast.headers.composer?.value;
@@ -867,8 +769,6 @@ async function buildPdf(
   const createdAt = new Date();
   const pageSvgs = await renderPdfPageSvgs(xml, layout);
 
-  console.log(`[PDF] All fonts ready and ${pageSvgs.length} pages rendered.`);
-
   if (pageSvgs.length === 0) {
     throw new Error("Could not render staff pages for PDF.");
   }
@@ -876,8 +776,7 @@ async function buildPdf(
   const pdf = await PDFDocument.create();
   applyPdfMetadata(pdf, { PDFHexString, PDFName }, { title, author, composer, subject, keywords, createdAt });
 
-  for (const [pageIndex, svg] of pageSvgs.entries()) {
-    console.log(`[PDF] Processing page ${pageIndex + 1}...`);
+  for (const svg of pageSvgs) {
     const page = pdf.addPage([pdfPageWidth, pdfPageHeight]);
     const imageData = await svgToPngBytes(svg);
     const image = await pdf.embedPng(imageData.bytes);
@@ -896,9 +795,7 @@ async function buildPdf(
     });
   }
 
-  const bytes = await pdf.save();
-  console.log(`[PDF] Export complete. Final size: ${(bytes.byteLength / 1024).toFixed(1)} KB`);
-  return bytes;
+  return await pdf.save();
 }
 
 type MainTab = "editor" | "page" | "xml";
@@ -932,7 +829,10 @@ export function App() {
     if (!saved) return defaultSettings;
     try {
       const parsed = JSON.parse(saved);
-      // Migrate old previewMode to activeTab
+      // Migration: Ensure pageScale is 1.0 if not defined or coming from old system
+      if (parsed.pageScale === undefined || parsed.pageScale < 0.2 || parsed.pageScale > 5) {
+        parsed.pageScale = 1.0;
+      }
       if (parsed.previewMode && !parsed.activeTab) {
         parsed.activeTab = parsed.previewMode === "xml" ? "xml" : "page";
       }
@@ -965,7 +865,7 @@ export function App() {
   }, [settings]);
 
   useEffect(() => {
-    if (settings.activeTab === "editor" || Math.abs(settings.pageScale - 1) <= 0.001) {
+    if (settings.activeTab !== "page" || Math.abs(settings.pageScale - 1) < 0.001) {
       setPageZoomMenuOpen(false);
     }
   }, [settings.pageScale, settings.activeTab]);
@@ -1016,10 +916,7 @@ export function App() {
   }
 
   async function handlePdfExport() {
-    if (!canExport) {
-      return;
-    }
-
+    if (!canExport) return;
     setPendingPdfExport(true);
     try {
       const pdfBytes = await buildPdf(score, staffXml, {
@@ -1031,8 +928,7 @@ export function App() {
       const pdfBuffer = pdfBytes.buffer.slice(pdfBytes.byteOffset, pdfBytes.byteOffset + pdfBytes.byteLength) as ArrayBuffer;
       downloadBlob(`${safeExportBasename(score.ast.headers.title?.value)}.pdf`, new Blob([pdfBuffer], { type: "application/pdf" }));
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Could not export PDF.";
-      window.alert(message);
+      window.alert(error instanceof Error ? error.message : "Could not export PDF.");
     } finally {
       setPendingPdfExport(false);
     }
@@ -1045,14 +941,12 @@ export function App() {
   function adjustPageScale(delta: number) {
     setSettings((prev) => ({
       ...prev,
-      pageScale: Math.max(0.6, Math.min(1.4, Math.round((prev.pageScale + delta) * 100) / 100)),
+      pageScale: Math.max(0.6, Math.min(3.0, Math.round((prev.pageScale + delta) * 100) / 100)),
     }));
   }
 
   function handlePageSurfaceWheel(event: React.WheelEvent<HTMLDivElement>) {
-    if (!(event.ctrlKey || event.metaKey)) {
-      return;
-    }
+    if (!(event.ctrlKey || event.metaKey)) return;
     event.preventDefault();
     adjustPageScale(event.deltaY < 0 ? 0.1 : -0.1);
   }
@@ -1065,20 +959,8 @@ export function App() {
           <p>Text-first notation</p>
         </div>
         <div className="header-actions">
-          <button
-            className="export-button"
-            disabled={!canExport}
-            onClick={handleMusicXmlExport}
-            type="button"
-          >
-            Export MusicXML
-          </button>
-          <button
-            className="export-button primary"
-            disabled={!canExport || pendingPdfExport}
-            onClick={handlePdfExport}
-            type="button"
-          >
+          <button className="export-button" disabled={!canExport} onClick={handleMusicXmlExport} type="button">Export MusicXML</button>
+          <button className="export-button primary" disabled={!canExport || pendingPdfExport} onClick={handlePdfExport} type="button">
             {pendingPdfExport ? "Exporting PDF..." : "Export PDF"}
           </button>
         </div>
@@ -1090,27 +972,9 @@ export function App() {
             <span className="pane-title">Editor</span>
             <div className="preview-header-actions mobile-only-actions">
               <div className="preview-tabs" role="tablist">
-                <button
-                  className={`preview-tab tab-editor${settings.activeTab === "editor" ? " active" : ""}`}
-                  onClick={() => updateSetting("activeTab", "editor")}
-                  type="button"
-                >
-                  Editor
-                </button>
-                <button
-                  className={`preview-tab${settings.activeTab === "page" ? " active" : ""}`}
-                  onClick={() => updateSetting("activeTab", "page")}
-                  type="button"
-                >
-                  Page
-                </button>
-                <button
-                  className={`preview-tab${settings.activeTab === "xml" ? " active" : ""}`}
-                  onClick={() => updateSetting("activeTab", "xml")}
-                  type="button"
-                >
-                  XML
-                </button>
+                <button className={`preview-tab tab-editor${settings.activeTab === "editor" ? " active" : ""}`} onClick={() => updateSetting("activeTab", "editor")} type="button">Editor</button>
+                <button className={`preview-tab${settings.activeTab === "page" ? " active" : ""}`} onClick={() => updateSetting("activeTab", "page")} type="button">Page</button>
+                <button className={`preview-tab${settings.activeTab === "xml" ? " active" : ""}`} onClick={() => updateSetting("activeTab", "xml")} type="button">XML</button>
               </div>
             </div>
           </header>
@@ -1124,36 +988,11 @@ export function App() {
             <span className="pane-title">Preview</span>
             <div className="preview-header-actions">
               <div className="preview-tabs" role="tablist">
-                <button
-                  className={`preview-tab tab-editor${settings.activeTab === "editor" ? " active" : ""}`}
-                  onClick={() => updateSetting("activeTab", "editor")}
-                  type="button"
-                >
-                  Editor
-                </button>
-                <button
-                  className={`preview-tab${settings.activeTab === "page" ? " active" : ""}`}
-                  onClick={() => updateSetting("activeTab", "page")}
-                  type="button"
-                >
-                  Page
-                </button>
-                <button
-                  className={`preview-tab${settings.activeTab === "xml" ? " active" : ""}`}
-                  onClick={() => updateSetting("activeTab", "xml")}
-                  type="button"
-                >
-                  XML
-                </button>
+                <button className={`preview-tab tab-editor${settings.activeTab === "editor" ? " active" : ""}`} onClick={() => updateSetting("activeTab", "editor")} type="button">Editor</button>
+                <button className={`preview-tab${settings.activeTab === "page" ? " active" : ""}`} onClick={() => updateSetting("activeTab", "page")} type="button">Page</button>
+                <button className={`preview-tab${settings.activeTab === "xml" ? " active" : ""}`} onClick={() => updateSetting("activeTab", "xml")} type="button">XML</button>
               </div>
-              <button
-                className={`settings-toggle${settingsVisible ? " active" : ""}`}
-                onClick={() => setSettingsVisible(!settingsVisible)}
-                type="button"
-                title="Toggle Settings"
-              >
-                <SettingsIcon />
-              </button>
+              <button className={`settings-toggle${settingsVisible ? " active" : ""}`} onClick={() => setSettingsVisible(!settingsVisible)} type="button" title="Toggle Settings"><SettingsIcon /></button>
             </div>
           </header>
           
@@ -1163,13 +1002,7 @@ export function App() {
                 <div className="surface-toolbar page-surface-toolbar">
                   {isPageZoomed ? (
                     <div className="page-zoom-menu">
-                      <button
-                        aria-label="Zoom"
-                        className="surface-icon-button"
-                        onClick={() => setPageZoomMenuOpen((current) => !current)}
-                        type="button"
-                        title={`Zoom ${pageZoomPercent}%`}
-                      >
+                      <button aria-label="Zoom" className="surface-icon-button" onClick={() => setPageZoomMenuOpen((current) => !current)} type="button" title={`Zoom ${pageZoomPercent}%`}>
                         {settings.pageScale < 1 ? <SearchMinusIcon /> : <SearchPlusIcon />}
                       </button>
                       {pageZoomMenuOpen ? (
@@ -1178,7 +1011,7 @@ export function App() {
                           <div className="page-zoom-buttons">
                             <button className="page-zoom-action" onClick={() => adjustPageScale(-0.1)} type="button">-</button>
                             <button className="page-zoom-action" onClick={() => adjustPageScale(0.1)} type="button">+</button>
-                            <button className="page-zoom-reset" onClick={() => { updateSetting("pageScale", 1); setPageZoomMenuOpen(false); }} type="button">Reset</button>
+                            <button className="page-zoom-reset" onClick={() => { updateSetting("pageScale", 1.0); setPageZoomMenuOpen(false); }} type="button">Reset</button>
                           </div>
                         </div>
                       ) : null}
@@ -1211,111 +1044,43 @@ export function App() {
                   <label className="setting-row toggle">
                     <span>Hide Voice 2 Rests</span>
                     <div className="toggle-switch">
-                      <input
-                        type="checkbox"
-                        checked={settings.hideVoice2Rests}
-                        onChange={(e) => updateSetting("hideVoice2Rests", e.target.checked)}
-                      />
+                      <input type="checkbox" checked={settings.hideVoice2Rests} onChange={(e) => updateSetting("hideVoice2Rests", e.target.checked)} />
                       <span className="toggle-slider"></span>
                     </div>
                   </label>
                 </div>
-
                 <div className="settings-section">
                   <h3 className="settings-section-title">Page Layout</h3>
                   <div className="setting-row">
-                    <div className="setting-label">
-                      <span>Page Zoom</span>
-                      <span className="setting-value">{Math.round(settings.pageScale * 100)}%</span>
-                    </div>
-                    <input
-                      type="range"
-                      min="0.6"
-                      max="1.4"
-                      step="0.05"
-                      value={settings.pageScale}
-                      onChange={(e) => updateSetting("pageScale", parseFloat(e.target.value))}
-                    />
+                    <div className="setting-label"><span>Page Zoom</span><span className="setting-value">{Math.round(settings.pageScale * 100)}%</span></div>
+                    <input type="range" min="0.6" max="3.0" step="0.05" value={settings.pageScale} onChange={(e) => updateSetting("pageScale", parseFloat(e.target.value))} />
                   </div>
                   <div className="setting-row">
-                    <div className="setting-label">
-                      <span>System Spacing</span>
-                      <span className="setting-value">{settings.systemSpacing.toFixed(1)}</span>
-                    </div>
-                    <input
-                      type="range"
-                      min="0.6"
-                      max="6"
-                      step="0.2"
-                      value={settings.systemSpacing}
-                      onChange={(e) => updateSetting("systemSpacing", parseFloat(e.target.value))}
-                    />
+                    <div className="setting-label"><span>System Spacing</span><span className="setting-value">{settings.systemSpacing.toFixed(1)}</span></div>
+                    <input type="range" min="0.6" max="6" step="0.2" value={settings.systemSpacing} onChange={(e) => updateSetting("systemSpacing", parseFloat(e.target.value))} />
                   </div>
                   <div className="padding-grid-container">
                     <span className="setting-label-small">Margins (px)</span>
                     <div className="padding-grid">
-                      {([
-                        ["Top", "top"],
-                        ["Right", "right"],
-                        ["Bottom", "bottom"],
-                        ["Left", "left"],
-                      ] as const).map(([label, key]) => (
-                        <div className="padding-input" key={key}>
-                          <span>{label}</span>
-                          <input
-                            type="number"
-                            value={settings.pagePadding[key]}
-                            onChange={(e) => updatePagePadding(key, parseInt(e.target.value, 10) || 0)}
-                          />
-                        </div>
+                      {([["Top", "top"], ["Right", "right"], ["Bottom", "bottom"], ["Left", "left"]] as const).map(([label, key]) => (
+                        <div className="padding-input" key={key}><span>{label}</span><input type="number" value={settings.pagePadding[key]} onChange={(e) => updatePagePadding(key, parseInt(e.target.value, 10) || 0)} /></div>
                       ))}
                     </div>
                   </div>
                 </div>
-
                 <div className="settings-section">
                   <h3 className="settings-section-title">Header Spacing</h3>
                   <div className="setting-row">
-                    <div className="setting-label">
-                      <span>Title Top</span>
-                      <span className="setting-value">{settings.titleTopPadding.toFixed(1)}</span>
-                    </div>
-                    <input
-                      type="range"
-                      min="0"
-                      max="10"
-                      step="0.2"
-                      value={settings.titleTopPadding}
-                      onChange={(e) => updateSetting("titleTopPadding", parseFloat(e.target.value))}
-                    />
+                    <div className="setting-label"><span>Title Top</span><span className="setting-value">{settings.titleTopPadding.toFixed(1)}</span></div>
+                    <input type="range" min="0" max="10" step="0.2" value={settings.titleTopPadding} onChange={(e) => updateSetting("titleTopPadding", parseFloat(e.target.value))} />
                   </div>
                   <div className="setting-row">
-                    <div className="setting-label">
-                      <span>Subtitle Gap</span>
-                      <span className="setting-value">{settings.titleSubtitleGap.toFixed(1)}</span>
-                    </div>
-                    <input
-                      type="range"
-                      min="0"
-                      max="6"
-                      step="0.2"
-                      value={settings.titleSubtitleGap}
-                      onChange={(e) => updateSetting("titleSubtitleGap", parseFloat(e.target.value))}
-                    />
+                    <div className="setting-label"><span>Subtitle Gap</span><span className="setting-value">{settings.titleSubtitleGap.toFixed(1)}</span></div>
+                    <input type="range" min="0" max="6" step="0.2" value={settings.titleSubtitleGap} onChange={(e) => updateSetting("titleSubtitleGap", parseFloat(e.target.value))} />
                   </div>
                   <div className="setting-row">
-                    <div className="setting-label">
-                      <span>Header to Staff</span>
-                      <span className="setting-value">{settings.titleStaffGap.toFixed(1)}</span>
-                    </div>
-                    <input
-                      type="range"
-                      min="1"
-                      max="8"
-                      step="0.2"
-                      value={settings.titleStaffGap}
-                      onChange={(e) => updateSetting("titleStaffGap", parseFloat(e.target.value))}
-                    />
+                    <div className="setting-label"><span>Header to Staff</span><span className="setting-value">{settings.titleStaffGap.toFixed(1)}</span></div>
+                    <input type="range" min="1" max="8" step="0.2" value={settings.titleStaffGap} onChange={(e) => updateSetting("titleStaffGap", parseFloat(e.target.value))} />
                   </div>
                 </div>
               </aside>
@@ -1332,9 +1097,7 @@ export function App() {
             <span className="status-success">✓ DSL Valid</span>
           )}
         </div>
-        <div className="status-right">
-          {score.ast.paragraphs.length} line{score.ast.paragraphs.length === 1 ? "" : "s"} • {score.ast.repeatSpans.length} repeat{score.ast.repeatSpans.length === 1 ? "" : "s"}
-        </div>
+        <div className="status-right">{score.ast.paragraphs.length} lines • {score.ast.repeatSpans.length} repeats</div>
       </footer>
 
       {score.errors.length > 0 && (

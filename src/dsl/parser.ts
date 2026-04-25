@@ -19,7 +19,7 @@ import {
 import { preprocessSource } from "./preprocess";
 
 type HeaderAccumulator = Partial<ParsedHeaders>;
-type RawMeasure = Omit<ParsedTrackLine["measures"][number], "tokens">;
+type RawMeasure = Omit<ParsedTrackLine["measures"][number], "tokens"> & { tokens?: MeasureToken[] };
 
 const SUPPORTED_BEAT_UNITS = new Set([2, 4, 8, 16]);
 
@@ -451,6 +451,71 @@ function parseMeasureTokens(
       continue;
     }
 
+    // DR combined glyph: s+t3 means play s and t3 simultaneously
+    if (track === "DR" && content[cursorAfterGlyph] === "+") {
+      const combinedItems: { value: string; dots: number; halves: number }[] = [];
+      let cursorAfterPlus = cursorAfterGlyph + 1;
+
+      while (cursorAfterPlus < content.length) {
+        if (/\s/.test(content[cursorAfterPlus])) {
+          cursorAfterPlus += 1;
+          continue;
+        }
+
+        if (content[cursorAfterPlus] === "+") {
+          cursorAfterPlus += 1;
+          continue;
+        }
+
+        const parsedPart = readBasicGlyph(track, content, cursorAfterPlus);
+        if (!parsedPart) {
+          errors.push({
+            line: lineNumber,
+            column: columnOffset + cursorAfterPlus,
+            message: `Unknown token \`${content[cursorAfterPlus]}\` in combined glyph`,
+          });
+          break;
+        }
+
+        let dots = 0;
+        let halves = 0;
+        let dotCursor = parsedPart.next;
+        while (dotCursor < content.length) {
+          if (content[dotCursor] === ".") {
+            dots += 1;
+            dotCursor += 1;
+          } else if (content[dotCursor] === "/") {
+            halves += 1;
+            dotCursor += 1;
+          } else {
+            break;
+          }
+        }
+
+        combinedItems.push({ value: parsedPart.glyph, dots, halves });
+        cursorAfterPlus = dotCursor;
+
+        // Check if there's another + or if we're done
+        if (content[cursorAfterPlus] !== "+") {
+          break;
+        }
+        cursorAfterPlus += 1;
+      }
+
+      if (combinedItems.length >= 2) {
+        tokens.push({
+          kind: "combined",
+          items: combinedItems as { value: BasicGlyph; dots: number; halves: number }[],
+        });
+        cursor = cursorAfterPlus;
+        continue;
+      }
+
+      // If combinedItems.length < 2, consume the + and fall through
+      // (fallthrough without advancing cursor would cause the + to be re-parsed as unknown token)
+      cursor = cursorAfterPlus;
+    }
+
     // x/X on SD/T1/T2/T3/BD is sugar for d:cross/D:cross
     if ((track === "SD" || track === "T1" || track === "T2" || track === "T3" || track === "BD") && (glyph === "x" || glyph === "X")) {
       let dots = 0;
@@ -800,7 +865,7 @@ function parseTrackLine(line: PreprocessedLine, errors: ParseError[]): ParsedTra
   return {
     track: parsed.track,
     lineNumber: line.lineNumber,
-    measures: measures.flatMap((measure, measureIndex) => {
+    measures: measures.flatMap((measure, _measureIndex) => {
       // Check for *N inline repeat: "xxxx *3" means repeat "xxxx" 3 times
       const inlineRepeatMatch = measure.content.match(/^(.*?)\s*\*\s*(\d+)\s*$/);
       if (inlineRepeatMatch && inlineRepeatMatch[1].trim() !== "") {

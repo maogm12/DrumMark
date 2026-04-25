@@ -430,6 +430,11 @@ It is not a real score track. After parsing, `DR` is expanded into standard trac
 - `t2` -> `T2` normal hit
 - `t3` -> `T3` normal hit
 
+**Combined hits:** Use `+` to play multiple drums simultaneously. `s+t3` plays SD and T3 at the same time.
+
+- `s+S` -> SD with both normal and accent (produces accent)
+- `s+t1+t2` -> three drums simultaneously
+
 Rules:
 
 - `DR` exists only as source syntax sugar
@@ -444,6 +449,7 @@ Example:
 
 ```txt
 DR | s - t1 - t2 - t3 - |
+DR | s+t3 - s+S - |     # SD+T3 simultaneous, then SD+SD(accent)
 ```
 
 ## Base Tokens

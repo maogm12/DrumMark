@@ -45,7 +45,8 @@ export type BasicGlyph = "-" | "x" | "X" | "d" | "D" | "p" | "P" | "R" | "L" | "
 export type TokenGlyph =
   | { kind: "basic"; value: BasicGlyph; dots: number; halves: number }
   | { kind: "modified"; value: Exclude<BasicGlyph, "-">; modifier: Modifier; dots: number; halves: number }
-  | { kind: "group"; count: number; span: number; items: TokenGlyph[] };
+  | { kind: "group"; count: number; span: number; items: TokenGlyph[] }
+  | { kind: "combined"; items: { value: BasicGlyph; dots: number; halves: number }[] };
 
 export type MeasureToken = TokenGlyph;
 
@@ -79,6 +80,7 @@ export type ParsedMeasure = {
   repeatEnd: boolean;
   repeatTimes?: number;
   repeatCount?: number;
+  multiRestCount?: number;
 };
 
 export type ParsedTrackLine = {
@@ -207,6 +209,7 @@ export type NormalizedMeasure = {
   sourceLine: number;
   events: NormalizedEvent[];
   generated?: boolean;
+  multiRestCount?: number;
 };
 
 export type NormalizedScore = {

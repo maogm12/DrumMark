@@ -159,13 +159,13 @@ const docsSections: DocsSection[] = [
     title: "结构与流程",
     summary: "管理小节、重复和乐段。",
     content: (
-      <div className=”docs-description”>
+      <div className="docs-description">
         <p>使用专业的导航标记完成乐谱结构：</p>
         <ul>
           <li><strong>小节线:</strong> 标准 <code>|</code>，重复开始 <code>|:</code>，以及重复结束 <code>:|</code>。</li>
           <li><strong>多小节休止:</strong> 使用 <code>| --N-- |</code> 语法（例如 <code>| --8-- |</code>）显示带数字 N 的多小节休止条。</li>
           <li><strong>内联重复:</strong> 在小节末尾使用 <code>*N</code> 将该小节重复 N 次（例如 <code>| xxxx *2 |</code> 重复 xxxx 两次，<code>| - *3 |</code> 重复空白小节 3 次）。</li>
-          <li><strong>乐段 (Sections):</strong> 在文本块之间留一个空行来创建段落。这有助于组织”主歌（Verse）”或”副歌（Chorus）”等不同部分。</li>
+          <li><strong>乐段 (Sections):</strong> 在文本块之间留一个空行来创建段落。这有助于组织"主歌（Verse）"或"副歌（Chorus）"等不同部分。</li>
         </ul>
       </div>
     ),
@@ -557,7 +557,7 @@ export function DocsPage() {
             <span className="docs-kicker">快速入门</span>
             <h1>鼓谱记谱指南</h1>
             <p>
-              为现代鼓手设计的“文本优先”记谱方式。 
+              为现代鼓手设计的"文本优先"记谱方式。 
               该语言旨在像打字一样飞快，同时拥有传统打谱软件的强大功能。
             </p>
           </div>

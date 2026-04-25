@@ -27,17 +27,6 @@ function pushError(errors: ParseError[], line: number, message: string): void {
   });
 }
 
-function countMeasureSlots(tokens: MeasureToken[]): number {
-  return tokens.reduce((total, token) => {
-    if (token.kind === "group") {
-      return total + token.span;
-    }
-
-    const baseWeight = 2 - Math.pow(0.5, token.dots);
-    return total + (baseWeight / Math.pow(2, token.halves));
-  }, 0);
-}
-
 function normalizeExplicitMeasure(measure: ParsedMeasure, globalIndex: number, lineNumber: number, divisions: number): ScoreMeasure {
   // For multi-measure rests, keep tokens empty so MusicXML generator outputs a single
   // <multiple-rest> measure. For regular empty measures, fill with rest tokens.
@@ -58,7 +47,16 @@ function drTokenUsesTrack(token: MeasureToken, track: TrackName): boolean {
     return token.items.some((item) => drTokenUsesTrack(item, track));
   }
 
-  switch (token.value) {
+  if (token.kind === "combined") {
+    // Combined token uses track if any of its items match
+    return token.items.some((item) => drGlyphMatchesTrack(item.value, track));
+  }
+
+  return drGlyphMatchesTrack(token.value, track);
+}
+
+function drGlyphMatchesTrack(glyph: string, track: TrackName): boolean {
+  switch (glyph) {
     case "s":
     case "S":
       return track === "SD";
@@ -84,6 +82,25 @@ function expandDrToken(token: MeasureToken, track: TrackName): MeasureToken {
       span: token.span,
       items: token.items.map((item) => expandDrToken(item, track)),
     };
+  }
+
+  if (token.kind === "combined") {
+    // Find the matching item for this track
+    const matchingItem = token.items.find((item) => drGlyphMatchesTrack(item.value, track));
+    if (matchingItem) {
+      const isUppercase = matchingItem.value === matchingItem.value.toUpperCase();
+      const baseGlyph = matchingItem.value.toLowerCase();
+      let value: "d" | "D" | "-";
+      if (baseGlyph === "s") {
+        value = isUppercase ? "D" : "d";
+      } else if (["t1", "t2", "t3"].includes(baseGlyph)) {
+        value = isUppercase ? "D" : "d";
+      } else {
+        value = "-";
+      }
+      return { kind: "basic", value, dots: matchingItem.dots, halves: matchingItem.halves };
+    }
+    return { kind: "basic", value: "-", dots: 0, halves: 0 };
   }
 
   switch (token.value) {

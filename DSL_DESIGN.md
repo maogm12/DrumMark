@@ -507,11 +507,13 @@ Combinations are allowed: `d./` is 0.75x duration.
 - `R`
 - `L`
 
+`SD`, `T1`, `T2`, `T3`, `BD` allow `x` and `X` as sugar for `d:cross` and `D:cross`.
+
 Examples:
 
 ```txt
 HH | x - X - |
-SD | d - d D |
+SD | x - X - |    # equivalent to SD | d:cross - D:cross - |
 HF | - - p - |
 ST | R - L - |
 ```

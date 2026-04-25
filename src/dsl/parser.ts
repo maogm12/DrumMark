@@ -267,7 +267,7 @@ function isTrackGlyphAllowed(track: SourceTrackName, glyph: BasicGlyph): boolean
     case "T2":
     case "T3":
     case "BD":
-      return glyph === "-" || glyph === "d" || glyph === "D" || glyph === "p" || glyph === "P";
+      return glyph === "-" || glyph === "d" || glyph === "D" || glyph === "p" || glyph === "P" || glyph === "x" || glyph === "X";
     case "HF":
       return glyph === "-" || glyph === "p" || glyph === "P";
     case "ST":
@@ -444,6 +444,33 @@ function parseMeasureTokens(
         kind: "modified",
         value: glyph === "o" ? "x" : "X",
         modifier: "open",
+        dots,
+        halves,
+      });
+      cursor = cursorAfterGlyph;
+      continue;
+    }
+
+    // x/X on SD/T1/T2/T3/BD is sugar for d:cross/D:cross
+    if ((track === "SD" || track === "T1" || track === "T2" || track === "T3" || track === "BD") && (glyph === "x" || glyph === "X")) {
+      let dots = 0;
+      let halves = 0;
+      while (cursorAfterGlyph < content.length) {
+        if (content[cursorAfterGlyph] === ".") {
+          dots += 1;
+          cursorAfterGlyph += 1;
+        } else if (content[cursorAfterGlyph] === "/") {
+          halves += 1;
+          cursorAfterGlyph += 1;
+        } else {
+          break;
+        }
+      }
+
+      tokens.push({
+        kind: "modified",
+        value: glyph === "x" ? "d" : "D",
+        modifier: "cross",
         dots,
         halves,
       });

@@ -163,12 +163,13 @@ const docsSections: DocsSection[] = [
         <p>Finalize your score's structure with professional navigation markers:</p>
         <ul>
           <li><strong>Barlines:</strong> Standard <code>|</code>, repeat start <code>|:</code>, and repeat end <code>:|</code>.</li>
-          <li><strong>Repeat Counts:</strong> Use <code>:|x3</code> or <code>:|x4</code> to specify the total number of times a section should be played. <strong>Note:</strong> When <code>N &gt; 2</code>, the section is automatically expanded in the generated score for better readability.</li>
+          <li><strong>Multi-Measure Rests:</strong> Use the <code>| --N-- |</code> syntax (e.g., <code>| --8-- |</code>) to display a multi-measure rest bar with the number N.</li>
+          <li><strong>Inline Repeat:</strong> Use <code>*N</code> at the end of a measure to repeat that measure N times (e.g., <code>| xxxx *2 |</code> repeats "xxxx" twice, <code>| - *3 |</code> repeats the blank measure 3 times).</li>
           <li><strong>Sections:</strong> Leave a blank line between blocks of text to create paragraphs. This helps organize song parts like Verse or Chorus.</li>
         </ul>
       </div>
     ),
-    example: `time 4/4\ndivisions 8\n\n# Manual expansion vs. Automatic expansion (x4)\nHH |: x x x x x x x x | x x x x x x x x | x x x x x x x x | x x x x x x x x :|\nSD |  - - d - - - d - | - - d - - - d - | - - d - - - d - | - - d - - - d -  |\nBD |  p - - - p - - - | p - - - p - - - | p - - - p - - - | p - - - p - - -  |\n\nHH |: x x x x x x x x :|x4\nSD |  - - d - - - d -  |\nBD |  p - - - p - - -  |`,
+    example: `time 4/4\ndivisions 8\n\n# Repeats\nHH |: xx   xx xx    xx :|\nSD |  --   d- --    d- |\nBD | [2:p] -p [2:p] -- |\n\n# Multi-measure rests\nHH | --8-- | -2- |\n\n# Inline repeat\nHH | [2:x]xx xxxx | *2 | xxxo xxxo *2 |`,
   },
   {
     id: "full-example",
@@ -179,7 +180,7 @@ const docsSections: DocsSection[] = [
         <p>This final example showcases the synergy of headers, complex groupings, shortcuts, and multiple paragraphs to create a professional drum sheet. It includes advanced techniques like flams, bell hits, and sticking patterns.</p>
       </div>
     ),
-    example: `title Fusion Grooves\nsubtitle Advanced Study\ncomposer G. Mao\ntempo 128\ntime 4/4\ndivisions 16\ngrouping 2+2\n\n# Section A: Main Groove\nHH |: x - x - o - x - | x:close - X - x - c - :|x2\nSD |  - - d:cross - d - | D:rim - [2: d d:flam] - - -  |\nBD |  p - - - p - - - | p - p - - - p -        |\nHF |  - - - - p - - - | - - - - p:close - -    |\n\n# Section B: Bridge with Subdivisions\nRC |  x:bell - x:bell - x:bell - x:bell - | [4: x:choke] |\nDR |  s - - - [3: s s s] - - - | S - t1 t2 t3 - - -   |\nBD |  p - - - p - - -     | p - - - p - - -      |\nST |  R - - - R L R - - - | R - R L R - - -      |\n\n# Outro: Finale\nC  |  X:choke - - - - - - - | - - - - X - - - |\nBD |  [16: p] |`,
+    example: `title Fusion Grooves\nsubtitle Advanced Study\ncomposer G. Mao\ntempo 128\ntime 4/4\ndivisions 16\ngrouping 2+2\n\n# Section A: Main Groove\nHH |: x - x - o - x - | x:close - X - x - c - :|\nSD |  - - d:cross - d - | D:rim - [2: d d:flam] - - -  |\nBD |  p - - - p - - - | p - p - - - p -        |\nHF |  - - - - p - - - | - - - - p:close - -    |\n\n# Section B: Bridge with Subdivisions\nRC |  x:bell - x:bell - x:bell - x:bell - | [4: x:choke] |\nDR |  s - - - [3: s s s] - - - | S - t1 t2 t3 - - -   |\nBD |  p - - - p - - -     | p - - - p - - -      |\nST |  R - - - R L R - - - | R - R L R - - -      |\n\n# Outro: Finale\nC  |  X:choke - - - - - - - | - - - - X - - - |\nBD |  [16: p] |`,
   },
 ];
 
@@ -310,7 +311,7 @@ async function getStaticPreviewRenderer() {
       drawMeasureNumbers: true,
       percussionOneLineCutoff: 0,
     });
-    staticPreviewOsmd.setOptions({ defaultColorTitle: "#111111" });
+    staticPreviewOsmd.setOptions({ defaultColorTitle: "#111111", autoGenerateMultipleRestMeasuresFromRestMeasures: false });
   }
 
   return { buffer: staticPreviewBuffer, osmd: staticPreviewOsmd };

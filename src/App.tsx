@@ -11,7 +11,7 @@ const seedDsl = `tempo 96
 time 4/4
 divisions 16
 
-HH |: x - x - o - x - | x - x:close - X - x - :|x3
+HH |: x - x - o - x - | x - x:close - X - x - :|
 SD |  - - d:cross - d - | D:rim - [2: d d:flam d] - - -  |
 BD |  p - - - p - - - | p - p - - - p -                     |
 HF |  - - - - p - - - | - - - - p:close - -                |
@@ -706,7 +706,7 @@ function StaffPreview({
             drawMeasureNumbers: true,
             percussionOneLineCutoff: 0,
           });
-          osmd.setOptions({ defaultColorTitle: "#111111" });
+          osmd.setOptions({ defaultColorTitle: "#111111", autoGenerateMultipleRestMeasuresFromRestMeasures: false });
           osmdRef.current = osmd;
         }
 

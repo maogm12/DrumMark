@@ -39,12 +39,15 @@ function countMeasureSlots(tokens: MeasureToken[]): number {
 }
 
 function normalizeExplicitMeasure(measure: ParsedMeasure, globalIndex: number, lineNumber: number, divisions: number): ScoreMeasure {
-  const tokens = measure.tokens.length === 0 ? makeRestTokens(divisions) : measure.tokens;
+  // For multi-measure rests, keep tokens empty so MusicXML generator outputs a single
+  // <multiple-rest> measure. For regular empty measures, fill with rest tokens.
+  const needsRestFill = measure.tokens.length === 0 && measure.multiRestCount === undefined;
+  const tokens = needsRestFill ? makeRestTokens(divisions) : measure.tokens;
 
   return {
     ...measure,
     tokens,
-    generated: false,
+    generated: measure.tokens.length === 0 && measure.multiRestCount === undefined,
     globalIndex,
     sourceLine: lineNumber,
   };

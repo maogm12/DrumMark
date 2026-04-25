@@ -633,29 +633,34 @@ function measureXml(score: NormalizedScore, exportMeasure: ExportMeasure, divisi
     : [];
   const stickings = stickingsByStart(measure.events);
   const renderedStickings = new Set<string>();
-  const attributes =
-    exportMeasure.outputIndex === 0
+  const showAttributes = exportMeasure.outputIndex === 0 || measure.multiRestCount !== undefined;
+  const attributes = showAttributes
       ? [
           "<attributes>",
-          `<divisions>${divisions}</divisions>`,
-          "<key><fifths>0</fifths></key>",
-          `<time><beats>${score.ast.headers.time.beats}</beats><beat-type>${score.ast.headers.time.beatUnit}</beat-type></time>`,
-          "<staves>1</staves>",
-          "<clef number=\"1\"><sign>percussion</sign><line>2</line></clef>",
+          exportMeasure.outputIndex === 0 ? `<divisions>${divisions}</divisions>` : "",
+          exportMeasure.outputIndex === 0 ? "<key><fifths>0</fifths></key>" : "",
+          exportMeasure.outputIndex === 0 ? `<time><beats>${score.ast.headers.time.beats}</beats><beat-type>${score.ast.headers.time.beatUnit}</beat-type></time>` : "",
+          exportMeasure.outputIndex === 0 ? "<staves>1</staves>" : "",
+          exportMeasure.outputIndex === 0 ? '<clef number="1"><sign>percussion</sign><line>2</line></clef>' : "",
+          measure.multiRestCount !== undefined
+            ? `<measure-style><multiple-rest>${measure.multiRestCount}</multiple-rest></measure-style>`
+            : "",
           "</attributes>",
-          `<direction placement="above"><direction-type><metronome><beat-unit>quarter</beat-unit><per-minute>${score.ast.headers.tempo.value}</per-minute></metronome></direction-type><sound tempo="${score.ast.headers.tempo.value}"/></direction>`,
-        ].join("")
+          exportMeasure.outputIndex === 0
+            ? `<direction placement="above"><direction-type><metronome><beat-unit>quarter</beat-unit><per-minute>${score.ast.headers.tempo.value}</per-minute></metronome></direction-type><sound tempo="${score.ast.headers.tempo.value}"/></direction>`
+            : "",
+        ].filter(Boolean).join("")
       : "";
   const repeatStart = exportMeasure.showRepeatStart
-    ? "<barline location=\"left\"><repeat direction=\"forward\"/></barline>"
+    ? '<barline location="left"><repeat direction="forward"/></barline>'
     : "";
   const repeatEnd = exportMeasure.showRepeatEnd
-    ? "<barline location=\"right\"><repeat direction=\"backward\"/></barline>"
+    ? '<barline location="right"><repeat direction="backward"/></barline>'
     : "";
   const print = exportMeasure.outputIndex === 0
     ? "<print><measure-numbering>system</measure-numbering></print>"
     : forceLineBreak
-      ? "<print new-system=\"yes\"><measure-numbering>system</measure-numbering></print>"
+      ? '<print new-system="yes"><measure-numbering>system</measure-numbering></print>'
       : "";
 
   function processVoiceEntries(entries: VoiceEntry[], voice: VoiceTrack): string[] {
@@ -776,12 +781,31 @@ function measureXml(score: NormalizedScore, exportMeasure: ExportMeasure, divisi
     voiceContent.push(...downNotes);
   }
 
+  // If a measure is entirely empty, output a 'Whole Measure Rest'.
+  // This is required for OSMD's auto-merge logic.
+  const isPurelyEmpty = measure.generated || measure.multiRestCount !== undefined || (
+    upEntries.every(e => e.kind === "rest") &&
+    downEntries.every(e => e.kind === "rest")
+  );
+
+  const emptyMeasureContent = [
+    "<note>",
+    '<rest measure="yes"/>',
+    `<duration>${fractionToDivisions(measureDuration, divisions)}</duration>`,
+    "<voice>1</voice>",
+    "<type>whole</type>",
+    "<staff>1</staff>",
+    "</note>",
+  ].join("");
+
+  const content = isPurelyEmpty ? [emptyMeasureContent] : voiceContent;
+
   return [
-    `<measure number="${exportMeasure.outputIndex + 1}">`,
+    `<measure number="${measure.globalIndex + 1}">`,
     print,
     attributes,
     repeatStart,
-    ...voiceContent,
+    ...content,
     repeatEnd,
     "</measure>",
   ].join("");
@@ -793,6 +817,23 @@ function buildExportMeasures(score: NormalizedScore): ExportMeasure[] {
 
   for (let index = 0; index < score.measures.length; index += 1) {
     const measure = score.measures[index];
+
+    // Handle multi-measure rests - output N measures with <multiple-rest> on first
+    if (measure.multiRestCount && measure.multiRestCount > 1) {
+      for (let i = 0; i < measure.multiRestCount; i++) {
+        expanded.push({
+          measure: {
+            ...measure,
+            multiRestCount: i === 0 ? measure.multiRestCount : undefined,
+          },
+          showRepeatStart: false,
+          showRepeatEnd: false,
+          outputIndex: expanded.length,
+        });
+      }
+      continue;
+    }
+
     const repeatSpan = repeatByStart.get(measure.globalIndex);
 
     if (repeatSpan && repeatSpan.times > 2) {
@@ -807,7 +848,7 @@ function buildExportMeasures(score: NormalizedScore): ExportMeasure[] {
         }
       }
 
-      index = repeatSpan.endBar;
+      index = repeatSpan.endBar + 1;
       continue;
     }
 

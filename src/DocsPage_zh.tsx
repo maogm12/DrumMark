@@ -159,16 +159,17 @@ const docsSections: DocsSection[] = [
     title: "结构与流程",
     summary: "管理小节、重复和乐段。",
     content: (
-      <div className="docs-description">
+      <div className=”docs-description”>
         <p>使用专业的导航标记完成乐谱结构：</p>
         <ul>
           <li><strong>小节线:</strong> 标准 <code>|</code>，重复开始 <code>|:</code>，以及重复结束 <code>:|</code>。</li>
-          <li><strong>重复次数:</strong> 使用 <code>:|x3</code> 或 <code>:|x4</code> 指定总播放次数。 <strong>注意：</strong> 当 <code>N &gt; 2</code> 时，生成的乐谱会自动展开，以提高可读性。</li>
-          <li><strong>乐段 (Sections):</strong> 在文本块之间留一个空行来创建段落。这有助于组织“主歌（Verse）”或“副歌（Chorus）”等不同部分。</li>
+          <li><strong>多小节休止:</strong> 使用 <code>| --N-- |</code> 语法（例如 <code>| --8-- |</code>）显示带数字 N 的多小节休止条。</li>
+          <li><strong>内联重复:</strong> 在小节末尾使用 <code>*N</code> 将该小节重复 N 次（例如 <code>| xxxx *2 |</code> 重复 xxxx 两次，<code>| - *3 |</code> 重复空白小节 3 次）。</li>
+          <li><strong>乐段 (Sections):</strong> 在文本块之间留一个空行来创建段落。这有助于组织”主歌（Verse）”或”副歌（Chorus）”等不同部分。</li>
         </ul>
       </div>
     ),
-    example: `time 4/4\ndivisions 8\n\n# 手动展开 vs. 自动展开 (x4)\nHH |: x x x x x x x x | x x x x x x x x | x x x x x x x x | x x x x x x x x :|\nSD |  - - d - - - d - | - - d - - - d - | - - d - - - d - | - - d - - - d -  |\nBD |  p - - - p - - - | p - - - p - - - | p - - - p - - - | p - - - p - - -  |\n\nHH |: x x x x x x x x :|x4\nSD |  - - d - - - d -  |\nBD |  p - - - p - - -  |`,
+    example: `time 4/4\ndivisions 8\n\n# 重复\nHH |: xx   xx xx    xx :|\nSD |  --   d- --    d- |\nBD | [2:p] -p [2:p] -- |\n\n# 多小节休止\nHH | --8-- | -2- |\n\n# 内联重复\nHH | [2:x]xx xxxx | *2 | xxxo xxxo *2 |`,
   },
   {
     id: "full-example",
@@ -179,7 +180,7 @@ const docsSections: DocsSection[] = [
         <p>这个最终示例展示了头部信息、复杂分组、快捷方式和多段落布局的协同作用，涵盖了装饰音（Flam）、镲帽击打和粘滞标记等高级技巧。</p>
       </div>
     ),
-    example: `title Fusion Grooves\nsubtitle 高级进阶练习\ncomposer G. Mao\ntempo 128\ntime 4/4\ndivisions 16\ngrouping 2+2\n\n# 乐段 A: 主律动\nHH |: x - x - o - x - | x:close - X - x - c - :|x2\nSD |  - - d:cross - d - | D:rim - [2: d d:flam] - - -  |\nBD |  p - - - p - - - | p - p - - - p -        |\nHF |  - - - - p - - - | - - - - p:close - -    |\n\n# 乐段 B: 复杂细分桥接\nRC |  x:bell - x:bell - x:bell - x:bell - | [4: x:choke] |\nDR |  s - - - [3: s s s] - - - | S - t1 t2 t3 - - -   |\nBD |  p - - - p - - -     | p - - - p - - -      |\nST |  R - - - R L R - - - | R - R L R - - -      |\n\n# 结尾: Finale\nC  |  X:choke - - - - - - - | - - - - X - - - |\nBD |  [16: p] |`,
+    example: `title Fusion Grooves\nsubtitle 高级进阶练习\ncomposer G. Mao\ntempo 128\ntime 4/4\ndivisions 16\ngrouping 2+2\n\n# 乐段 A: 主律动\nHH |: x - x - o - x - | x:close - X - x - c - :|\nSD |  - - d:cross - d - | D:rim - [2: d d:flam] - - -  |\nBD |  p - - - p - - - | p - p - - - p -        |\nHF |  - - - - p - - - | - - - - p:close - -    |\n\n# 乐段 B: 复杂细分桥接\nRC |  x:bell - x:bell - x:bell - x:bell - | [4: x:choke] |\nDR |  s - - - [3: s s s] - - - | S - t1 t2 t3 - - -   |\nBD |  p - - - p - - -     | p - - - p - - -      |\nST |  R - - - R L R - - - | R - R L R - - -      |\n\n# 结尾: Finale\nC  |  X:choke - - - - - - - | - - - - X - - - |\nBD |  [16: p] |`,
   },
 ];
 
@@ -308,7 +309,7 @@ async function getStaticPreviewRenderer() {
       drawMeasureNumbers: true,
       percussionOneLineCutoff: 0,
     });
-    staticPreviewOsmd.setOptions({ defaultColorTitle: "#111111" });
+    staticPreviewOsmd.setOptions({ defaultColorTitle: "#111111", autoGenerateMultipleRestMeasuresFromRestMeasures: false });
   }
 
   return { buffer: staticPreviewBuffer, osmd: staticPreviewOsmd };

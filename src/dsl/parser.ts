@@ -6,6 +6,7 @@ import {
   type MeasureToken,
   type ParseError,
   type ParsedHeaders,
+  type ParsedMeasure,
   type ParsedTrackLine,
   type PreprocessedLine,
   type TrackParagraph,
@@ -599,26 +600,6 @@ function parseMeasureTail(remainder: string, line: PreprocessedLine, errors: Par
       return { length: 2, kind: "repeat_start" };
     }
 
-    if (remainder.startsWith(":|x", index)) {
-      const match = remainder.slice(index).match(/^:\|x(\d+)/);
-
-      if (!match) {
-        return null;
-      }
-
-      const times = Number(match[1]);
-
-      if (times < 2) {
-        errors.push({
-          line: line.lineNumber,
-          column: line.content.indexOf(remainder.slice(index)) + 1,
-          message: "Repeat count must be at least 2",
-        });
-      }
-
-      return { length: match[0].length, kind: "repeat_end", times };
-    }
-
     if (remainder.startsWith(":|", index)) {
       return { length: 2, kind: "repeat_end", times: 2 };
     }
@@ -655,7 +636,7 @@ function parseMeasureTail(remainder: string, line: PreprocessedLine, errors: Par
       cursor += startBoundary.length;
     }
 
-    const endBoundaryMatch = remainder.slice(cursor).match(/(?:\|:|:\|x\d+|:\||\|)/);
+    const endBoundaryMatch = remainder.slice(cursor).match(/\|:|:\|x\d+|:\||\|/);
 
     if (!endBoundaryMatch || endBoundaryMatch.index === undefined) {
       errors.push({
@@ -680,6 +661,83 @@ function parseMeasureTail(remainder: string, line: PreprocessedLine, errors: Par
 
     const content = remainder.slice(cursor, endIndex).trim();
 
+    // Check for inline repeat: "xxxx *3" (content with *N)
+    const inlineRepeatMatch = content.match(/^(.*?)\s*\*\s*(\d+)\s*$/);
+    if (inlineRepeatMatch) {
+      const measureContent = inlineRepeatMatch[1].trim();
+      const repeatCount = parseInt(inlineRepeatMatch[2], 10);
+      if (repeatCount >= 2 && measureContent !== "") {
+        // Valid inline repeat: content *N
+        measures.push({
+          content: measureContent,
+          repeatStart: currentLeftBoundary === "repeat_start",
+          repeatEnd: endBoundary.kind === "repeat_end",
+          repeatTimes: endBoundary.kind === "repeat_end" ? endBoundary.times : undefined,
+          repeatCount,
+        });
+        currentLeftBoundary = endBoundary.kind === "repeat_start" ? "repeat_start" : "barline";
+        cursor = endIndex + endBoundary.length;
+        continue;
+      }
+      // repeatCount < 2 or empty content - invalid, fall through to error
+    }
+
+    // Check for bare *N macro: "*2" expands to 2 empty measures
+    // Only matches when content is EXACTLY *N (whitespace allowed around N)
+    const bareStarMatch = content.match(/^\s*\*\s*(\d+)\s*$/);
+    if (bareStarMatch) {
+      const count = parseInt(bareStarMatch[1], 10);
+      if (count >= 1) {
+        for (let i = 0; i < count; i++) {
+          measures.push({
+            content: "",
+            repeatStart: i === 0 ? currentLeftBoundary === "repeat_start" : false,
+            repeatEnd: i === count - 1 ? endBoundary.kind === "repeat_end" : false,
+            repeatTimes: i === count - 1 && endBoundary.kind === "repeat_end" ? endBoundary.times : undefined,
+          });
+        }
+        currentLeftBoundary = endBoundary.kind === "repeat_start" ? "repeat_start" : "barline";
+        cursor = endIndex + endBoundary.length;
+        continue;
+      }
+      errors.push({
+        line: line.lineNumber,
+        column: line.content.indexOf(content) + 1,
+        message: "Macro expansion count must be at least 1",
+      });
+      currentLeftBoundary = endBoundary.kind === "repeat_start" ? "repeat_start" : "barline";
+      cursor = endIndex + endBoundary.length;
+      continue;
+    }
+
+    // Check for multi-rest visual shorthand: |- 8 -| or |-8-
+    // Dashes on both sides required, spaces around number allowed.
+    const multiRestMatch = content.match(/^-+ *(\d+) *-+$/);
+    if (multiRestMatch) {
+      const count = parseInt(multiRestMatch[1], 10);
+      if (count < 1) {
+        errors.push({
+          line: line.lineNumber,
+          column: line.content.indexOf(content) + 1,
+          message: "Multi-rest count must be at least 1",
+        });
+        currentLeftBoundary = endBoundary.kind === "repeat_start" ? "repeat_start" : "barline";
+        cursor = endIndex + endBoundary.length;
+        continue;
+      }
+      measures.push({
+        content: "",
+        tokens: [],
+        repeatStart: false,
+        repeatEnd: false,
+        multiRestCount: count,
+      });
+      currentLeftBoundary = "barline";
+      cursor = endIndex + endBoundary.length;
+      continue;
+    }
+
+    // Regular measure (no special shorthand)
     measures.push({
       content,
       repeatStart: currentLeftBoundary === "repeat_start",
@@ -715,19 +773,94 @@ function parseTrackLine(line: PreprocessedLine, errors: ParseError[]): ParsedTra
   return {
     track: parsed.track,
     lineNumber: line.lineNumber,
-    measures: measures.map((measure) => {
+    measures: measures.flatMap((measure, measureIndex) => {
+      // Check for *N inline repeat: "xxxx *3" means repeat "xxxx" 3 times
+      const inlineRepeatMatch = measure.content.match(/^(.*?)\s*\*\s*(\d+)\s*$/);
+      if (inlineRepeatMatch && inlineRepeatMatch[1].trim() !== "") {
+        const repeatCount = parseInt(inlineRepeatMatch[2], 10);
+        if (repeatCount >= 2) {
+          const measureContent = inlineRepeatMatch[1].trim();
+          const parsedTokens = parseMeasureTokens(
+            measureContent,
+            parsed.track,
+            line.lineNumber,
+            1,
+            errors,
+            true,
+          );
+          const expanded: ParsedMeasure[] = [];
+          for (let i = 0; i < repeatCount; i++) {
+            expanded.push({
+              content: measureContent,
+              tokens: parsedTokens,
+              repeatStart: i === 0 ? measure.repeatStart : false,
+              repeatEnd: i === repeatCount - 1 ? measure.repeatEnd : false,
+              repeatTimes: i === repeatCount - 1 ? measure.repeatTimes : undefined,
+            });
+          }
+          return expanded;
+        }
+      }
+
+      // Check for bare *N repeat marker - repeat this measure N times
+      // | *2 | means repeat this (blank) measure 2 times = 2 blank measures
+      const bareRepeatMatch = measure.content.match(/^\*(\d+)$/);
+      if (bareRepeatMatch) {
+        const count = parseInt(bareRepeatMatch[1], 10);
+        if (count < 1) {
+          errors.push({
+            line: line.lineNumber,
+            column: 1,
+            message: "Repeat count must be at least 1",
+          });
+          return [];
+        }
+        const expanded: ParsedMeasure[] = [];
+        for (let i = 0; i < count; i++) {
+          expanded.push({
+            content: "",
+            tokens: [],
+            repeatStart: i === 0 ? measure.repeatStart : false,
+            repeatEnd: i === count - 1 ? measure.repeatEnd : false,
+            repeatTimes: i === count - 1 ? measure.repeatTimes : undefined,
+          });
+        }
+        return expanded;
+      }
+
       const measureStart = line.content.indexOf(measure.content);
-      return {
-        ...measure,
-        tokens: parseMeasureTokens(
-          measure.content,
-          parsed.track,
-          line.lineNumber,
-          (measureStart === -1 ? 1 : measureStart + 1),
-          errors,
-          true,
-        ),
-      };
+      const parsedTokens = parseMeasureTokens(
+        measure.content,
+        parsed.track,
+        line.lineNumber,
+        measureStart === -1 ? 1 : measureStart + 1,
+        errors,
+        true,
+      );
+
+      // Inline repeat: replicate this measure N times (e.g., "xxxx *3" → 3 measures with same notes)
+      if (measure.repeatCount !== undefined && measure.repeatCount > 1) {
+        const expanded: ParsedMeasure[] = [];
+        for (let i = 0; i < measure.repeatCount; i++) {
+          expanded.push({
+            content: measure.content,
+            tokens: parsedTokens,
+            repeatStart: i === 0 ? measure.repeatStart : false,
+            repeatEnd: i === measure.repeatCount - 1 ? measure.repeatEnd : false,
+            repeatTimes: i === measure.repeatCount - 1 ? measure.repeatTimes : undefined,
+          });
+        }
+        return expanded;
+      }
+
+      return [{
+        content: measure.content,
+        tokens: parsedTokens,
+        repeatStart: measure.repeatStart,
+        repeatEnd: measure.repeatEnd,
+        repeatTimes: measure.repeatTimes,
+        multiRestCount: measure.multiRestCount,
+      }];
     }),
     source: line,
   };

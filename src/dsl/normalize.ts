@@ -218,7 +218,8 @@ export function normalizeScoreAst(ast: ScoreAst): NormalizedScore {
         }
 
         // Final measure length validation
-        if (Math.abs(currentSlotOffset - expectedSlots) > 0.0001) {
+        // Multi-rest measures span multiple bars and don't need to fill a single measure
+        if (measure.multiRestCount === undefined && Math.abs(currentSlotOffset - expectedSlots) > 0.0001) {
           errors.push({
             line: measure.sourceLine ?? track.lineNumber ?? paragraph.startLine,
             column: 1,
@@ -227,11 +228,22 @@ export function normalizeScoreAst(ast: ScoreAst): NormalizedScore {
         }
       }
 
+      let multiRestCount: number | undefined = undefined;
+      for (const track of paragraph.tracks) {
+        const m = track.measures[measureInParagraph];
+        if (m?.multiRestCount !== undefined) {
+          if (multiRestCount === undefined || m.multiRestCount < multiRestCount) {
+            multiRestCount = m.multiRestCount;
+          }
+        }
+      }
+
       measures.push({
         globalIndex,
         paragraphIndex,
         measureInParagraph,
         sourceLine: paragraph.tracks[0]?.measures[measureInParagraph]?.sourceLine ?? 0,
+        multiRestCount,
         events: events.sort((left, right) => {
           const denominator = lcm(left.start.denominator, right.start.denominator);
           const leftValue = left.start.numerator * (denominator / left.start.denominator);

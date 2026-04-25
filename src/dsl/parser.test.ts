@@ -116,7 +116,7 @@ HH | x - x - x - x |`);
     const doc = parseDocumentSkeleton(`time 4/4
 divisions 16
 
-HH |: x - x - | x - X - :|x3`);
+HH |: x - x - | x - X - :|`);
 
     expect(doc.errors).toEqual([]);
     expect(doc.paragraphs[0].lines[0].measures).toEqual([
@@ -141,22 +141,9 @@ HH |: x - x - | x - X - :|x3`);
         ],
         repeatStart: false,
         repeatEnd: true,
-        repeatTimes: 3,
+        repeatTimes: 2,
       },
     ]);
-  });
-
-  it("reports repeat counts below two", () => {
-    const doc = parseDocumentSkeleton(`time 4/4
-divisions 16
-
-HH |: x - x - :|x1`);
-
-    expect(doc.errors).toContainEqual({
-      line: 4,
-      column: 15,
-      message: "Repeat count must be at least 2",
-    });
   });
 
   it("parses modifiers, HH open sugar, and groups into tokens", () => {

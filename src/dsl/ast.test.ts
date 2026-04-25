@@ -44,27 +44,21 @@ SD | d - D - | d - d - |`);
     ]);
   });
 
-  it("builds repeat spans and reports repeat conflicts", () => {
+  it("builds repeat spans", () => {
     const score = buildScoreAst(`time 4/4
 divisions 4
 
 HH |: x - x - | x - x - :|
 SD |  d - D - | d - d -   |
 
-HH |: x - x - :|x3
-SD |  d - d - :|x2`);
+HH |: x - x - | x - x - :|
+SD |  d - d - | d - d -   |`);
 
     expect(score.repeatSpans).toEqual([
       { startBar: 0, endBar: 1, times: 2 },
-      { startBar: 2, endBar: 2, times: 3 },
+      { startBar: 2, endBar: 3, times: 2 },
     ]);
-    expect(score.errors).toEqual([
-      {
-        line: 7,
-        column: 1,
-        message: "Conflicting repeat count at bar 3",
-      },
-    ]);
+    expect(score.errors).toEqual([]);
   });
 
   it("reports unmatched repeat boundaries", () => {

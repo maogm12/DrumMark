@@ -78,6 +78,7 @@ export type ParsedMeasure = {
   repeatStart: boolean;
   repeatEnd: boolean;
   repeatTimes?: number;
+  repeatCount?: number;
 };
 
 export type ParsedTrackLine = {
@@ -205,6 +206,7 @@ export type NormalizedMeasure = {
   measureInParagraph: number;
   sourceLine: number;
   events: NormalizedEvent[];
+  generated?: boolean;
 };
 
 export type NormalizedScore = {

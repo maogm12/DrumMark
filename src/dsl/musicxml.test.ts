@@ -43,17 +43,16 @@ DR | [2:s] ss [ss][ssss] [2:sss] |`);
     expect(tripletNotes).toHaveLength(3);
   });
 
-  it("expands repeats when play count is greater than two", () => {
+  it("generates repeat barlines for repeat spans", () => {
     const score = buildNormalizedScore(`time 4/4
 divisions 4
 
-HH |: x - x - :|x3`);
+HH |: x - x - :|`);
 
     expect(score.errors).toEqual([]);
     const xml = buildMusicXml(score);
-    expect(xml.match(/<measure number=/g)).toHaveLength(3);
-    expect(xml).not.toContain("<repeat direction=\"forward\"/>");
-    expect(xml).not.toContain("<repeat direction=\"backward\"/>");
+    expect(xml).toContain('<repeat direction="forward"/>');
+    expect(xml).toContain('<repeat direction="backward"/>');
   });
 
   it("requests system-level measure numbers", () => {

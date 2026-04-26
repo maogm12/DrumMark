@@ -37,10 +37,11 @@ async function prerender(url, outputPath) {
 
   let content = await page.content();
   
-  // 4. 在 </body> 结束前重新插入原始的 vanilla 脚本 (使用绝对路径或相对路径)
-  // 这样在开发模式下依然能正常运行交互逻辑，且不会有代理冲突
-  const scriptTag = '<script type="module" src="/drum_notation/src/docsVanilla.ts"></script>';
+  // 4. 在 </body> 结束前重新插入原始的 vanilla 脚本
+  // 使用相对于 Vite 根目录的路径
+  const scriptTag = '<script type="module" src="/src/docsVanilla.ts"></script>';
   content = content.replace('</body>', `${scriptTag}\n</body>`);
+
 
   // 修复换行符转义问题
   const cleanContent = content.replace(/\\n/g, '\n');

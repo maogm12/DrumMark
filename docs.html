@@ -1,46 +1,28 @@
-<!DOCTYPE html><html lang="en"><head>
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-    
-
-    
-
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>Drum Notation Guide</title>
-    <link rel="stylesheet" href="./src/styles.css">
+    <link rel="stylesheet" href="/src/styles.css">
   </head>
   <body class="docs-body">
     <div class="docs-layout">
       <header class="docs-header-bar">
         <div class="docs-header-left">
-          <button id="menu-toggle" class="docs-menu-button">
-            <span></span>
-            <span></span>
-            <span></span>
-          </button>
+          <button id="menu-toggle" class="docs-menu-button"><span></span><span></span><span></span></button>
           <div class="docs-sidebar-brand" style="margin-bottom: 0; padding: 0;">
             <svg aria-hidden="true" class="app-logo" width="24" height="24" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M19 22V6C19 6 24 7 24 12" stroke="var(--accent-primary)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"></path>
-              <circle cx="12" cy="22" r="7" stroke="var(--text-main)" stroke-width="2"></circle>
-              <circle cx="12" cy="22" r="8.5" stroke="var(--text-main)" stroke-width="0.5" stroke-opacity="0.4"></circle>
-              <circle cx="12" cy="13.5" r="1" fill="var(--text-main)"></circle>
-              <circle cx="12" cy="30.5" r="1" fill="var(--text-main)"></circle>
-              <circle cx="3.5" cy="22" r="1" fill="var(--text-main)"></circle>
-              <circle cx="20.5" cy="22" r="1" fill="var(--text-main)"></circle>
-              <line x1="7" y1="20" x2="17" y2="20" stroke="var(--text-main)" stroke-width="0.5" stroke-opacity="0.6"></line>
-              <line x1="7" y1="22" x2="17" y2="22" stroke="var(--text-main)" stroke-width="0.5" stroke-opacity="0.6"></line>
-              <line x1="7" y1="24" x2="17" y2="24" stroke="var(--text-main)" stroke-width="0.5" stroke-opacity="0.6"></line>
+              <path d="M19 22V6C19 6 24 7 24 12" stroke="var(--accent-primary)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+              <circle cx="12" cy="22" r="7" stroke="var(--text-main)" stroke-width="2"/>
+              <circle cx="12" cy="22" r="8.5" stroke="var(--text-main)" stroke-width="0.5" stroke-opacity="0.4"/>
+              <circle cx="12" cy="13.5" r="1" fill="var(--text-main)"/>
+              <circle cx="12" cy="30.5" r="1" fill="var(--text-main)"/>
+              <circle cx="3.5" cy="22" r="1" fill="var(--text-main)"/>
+              <circle cx="20.5" cy="22" r="1" fill="var(--text-main)"/>
+              <line x1="7" y1="20" x2="17" y2="20" stroke="var(--text-main)" stroke-width="0.5" stroke-opacity="0.6"/>
+              <line x1="7" y1="22" x2="17" y2="22" stroke="var(--text-main)" stroke-width="0.5" stroke-opacity="0.6"/>
+              <line x1="7" y1="24" x2="17" y2="24" stroke="var(--text-main)" stroke-width="0.5" stroke-opacity="0.6"/>
             </svg>
             <h1 style="font-size: 1.1rem;">Drum Notation</h1>
           </div>
@@ -49,7 +31,6 @@
           <a class="export-button primary" href="./">Open Editor</a>
         </div>
       </header>
-
       <div class="docs-container">
         <div id="mobile-overlay" class="docs-mobile-overlay"></div>
         <aside id="sidebar" class="docs-sidebar">
@@ -62,153 +43,207 @@
               <span class="docs-nav-group-title">Sections</span>
               <a href="#metadata" class="docs-nav-link">Document Metadata</a>
               <a href="#grouping" class="docs-nav-link">Musical Grouping</a>
-              <a href="#instruments" class="docs-nav-link">Instruments &amp; Tracks</a>
+              <a href="#instruments" class="docs-nav-link">Instruments & Tracks</a>
               <a href="#techniques" class="docs-nav-link">Playing Techniques</a>
-              <a href="#syntax-details" class="docs-nav-link">Syntax &amp; Formatting</a>
+              <a href="#syntax-details" class="docs-nav-link">Syntax & Formatting</a>
               <a href="#tuplets" class="docs-nav-link">Rhythmic Groups</a>
               <a href="#suffixes" class="docs-nav-link">Duration Suffixes</a>
-              <a href="#repeats" class="docs-nav-link">Structure &amp; Flow</a>
+              <a href="#repeats" class="docs-nav-link">Structure & Flow</a>
               <a href="#full-example" class="docs-nav-link">The Master Class</a>
             </div>
           </nav>
         </aside>
-
         <main class="docs-main">
           <section class="docs-page">
             <div class="docs-hero">
               <span class="docs-kicker">Getting Started</span>
               <h1>Drum Notation Guide</h1>
-              <p>
-                A text-first way to write professional drum scores. 
-                The language is designed to be as fast as typing but as powerful as traditional notation software.
-              </p>
+              <p>A text-first way to write professional drum scores. The language is designed to be as fast as typing but as powerful as traditional notation software.</p>
             </div>
-            
-            <div class="docs-sections" id="inject-point">
-              <article class="docs-section-card" id="metadata">
-                <div class="docs-section-header"><h2>Document Metadata</h2><p>Global information and timing.</p></div>
-                <div class="docs-description"><p>Set up credits, tempo, and time signature.</p></div>
-                <div class="docs-section-body">
-                  <div class="docs-section-pane"><div class="docs-pane-title">Example</div><div class="docs-code-block"><pre class="dsl-code-block">title Funk Study
+            <div class="docs-sections">
+              <article class='docs-section-card' id='metadata'>
+                <div class='docs-section-header'><h2>Document Metadata</h2><p>Set up your score's global information and timing.</p></div>
+                <div class='docs-description'>
+                  <p>Every score begins with a header section. These fields define the technical foundation and metadata of your music:</p>
+                  <ul>
+                    <li><code>title</code>, <code>subtitle</code>, <code>composer</code>: Essential credits that appear at the top of the exported PDF and score.</li>
+                    <li><code>tempo</code>: Sets the BPM (Quarter note). If omitted, it defaults to <strong>120</strong>.</li>
+                    <li><code>time</code>: Defines the meter (e.g., <code>4/4</code>, <code>6/8</code>, <code>7/8</code>). This is required for rhythmic validation.</li>
+                    <li><code>divisions</code>: Defines the grid resolution for one measure. For example, setting it to 16 allows you to write 16th-note patterns using a 16-slot grid.</li>
+                  </ul>
+                </div>
+                <div class='docs-section-body'>
+                  <div class='docs-section-pane'><div class='docs-pane-title'>Example</div><div class='docs-code-block'><pre class='dsl-code-block'>title Funk Study
+subtitle Groove A
+composer G. Mao
 tempo 100
 time 4/4
 divisions 8
 
 HH | x - x x x x x - |</pre></div></div>
-                  <div class="docs-section-pane"><div class="docs-pane-title">Score Result</div><div class="docs-preview-shell"><div class="docs-preview-frame"><div class="staff-preview-container"><div class="staff-preview"><svg pointer-events="none" stroke-width="1" stroke-dasharray="none" fill="black" stroke="black" shadowcolor="black" font-family="Bravura,Academico" font-size="10pt" font-weight="normal" font-style="normal" width="900" height="200" viewBox="0 0 900 200" style="width: 900px; height: 200px;"><text fill="#333" stroke="none" font-family="Arial" font-size="24pt" font-weight="bold" x="-70.187" y="40">Funk Study
-tempo 100
-time 4/4
-divisions 8
-
-HH | x - x x x x x - |</text></svg></div></div></div></div></div>
+                  <div class='docs-section-pane'><div class='docs-pane-title'>Score Result</div><div class='docs-preview-shell'><div class='docs-preview-frame'><div class='staff-preview-container'></div></div></div></div>
                 </div>
               </article>
-              <article class="docs-section-card" id="grouping">
-                <div class="docs-section-header"><h2>Musical Grouping</h2><p>Control visual beaming.</p></div>
-                <div class="docs-description"><p>Defines how notes are grouped and beamed.</p></div>
-                <div class="docs-section-body">
-                  <div class="docs-section-pane"><div class="docs-pane-title">Example</div><div class="docs-code-block"><pre class="dsl-code-block">time 7/8
+              <article class='docs-section-card' id='grouping'>
+                <div class='docs-section-header'><h2>Musical Grouping</h2><p>Control beat structures and visual beaming.</p></div>
+                <div class='docs-description'>
+                  <p>The <code>grouping</code> field tells the system how to beam notes and where the internal accents fall. <strong>Common meters have smart defaults:</strong></p>
+                  <ul>
+                    <li><code>4/4</code> &rarr; <code>2+2</code> (two half-note beats)</li>
+                    <li><code>6/8</code> &rarr; <code>3+3</code> (two dotted-quarter beats)</li>
+                    <li><strong>Irregular meters:</strong> For <code>5/8</code>, <code>7/8</code>, etc., you must specify the grouping (e.g., <code>2+2+3</code>).</li>
+                  </ul>
+                </div>
+                <div class='docs-section-body'>
+                  <div class='docs-section-pane'><div class='docs-pane-title'>Example</div><div class='docs-code-block'><pre class='dsl-code-block'>time 7/8
 divisions 7
 grouping 2+2+3
 
 HH | x x x x x x x |</pre></div></div>
-                  <div class="docs-section-pane"><div class="docs-pane-title">Score Result</div><div class="docs-preview-shell"><div class="docs-preview-frame"><div class="staff-preview-container"><div class="staff-preview"><svg pointer-events="none" stroke-width="1" stroke-dasharray="none" fill="black" stroke="black" shadowcolor="black" font-family="Bravura,Academico" font-size="10pt" font-weight="normal" font-style="normal" width="900" height="200" viewBox="0 0 900 200" style="width: 900px; height: 200px;"></svg></div></div></div></div></div>
+                  <div class='docs-section-pane'><div class='docs-pane-title'>Score Result</div><div class='docs-preview-shell'><div class='docs-preview-frame'><div class='staff-preview-container'></div></div></div></div>
                 </div>
               </article>
-              <article class="docs-section-card" id="instruments">
-                <div class="docs-section-header"><h2>Instruments &amp; Tracks</h2><p>Mapping percussion parts.</p></div>
-                <div class="docs-description"><p>Supports HH, RC, C, SD, BD, T1-T3, HF, ST.</p></div>
-                <div class="docs-section-body">
-                  <div class="docs-section-pane"><div class="docs-pane-title">Example</div><div class="docs-code-block"><pre class="dsl-code-block">time 4/4
-divisions 8
+              <article class='docs-section-card' id='instruments'>
+                <div class='docs-section-header'><h2>Instruments & Tracks</h2><p>Map your ideas to specific percussion parts using a wide range of supported tracks.</p></div>
+                <div class='docs-description'>
+                  <p>Each instrument is represented by a <strong>track</strong>. Once a track is declared in any paragraph, it remains active throughout the score. If omitted in later sections, it is auto-filled with rests.</p>
+                  <ul>
+                    <li><strong>Cymbals:</strong> <code>HH</code> (Hi-Hat), <code>RC</code> (Ride), <code>C</code> (Crash). Use <code>x</code>/<code>X</code>.</li>
+                    <li><strong>Drums:</strong> <code>SD</code> (Snare), <code>BD</code> (Bass), <code>T1/T2/T3</code> (Toms). Use <code>d</code>/<code>D</code>.</li>
+                    <li><strong>Foot & Utility:</strong> <code>HF</code> (Hi-Hat Foot) uses <code>p</code>/<code>P</code> for pedal hits. <code>ST</code> is for sticking (<code>R</code>/<code>L</code>).</li>
+                    <li><strong>Sugar Tracks:</strong> <code>DR</code> expands into <code>SD</code> and <code>T1-T3</code>. It supports accents (<code>S</code>, <code>T1-T3</code>).</li>
+                  </ul>
+                </div>
+                <div class='docs-section-body'>
+                  <div class='docs-section-pane'><div class='docs-pane-title'>Example</div><div class='docs-code-block'><pre class='dsl-code-block'>time 4/4
+divisions 16
 
-HH | x - x x x x x x |
-SD | - - d - - - d - |
-BD | p - p - p - - - |</pre></div></div>
-                  <div class="docs-section-pane"><div class="docs-pane-title">Score Result</div><div class="docs-preview-shell"><div class="docs-preview-frame"><div class="staff-preview-container"><div class="staff-preview"><svg pointer-events="none" stroke-width="1" stroke-dasharray="none" fill="black" stroke="black" shadowcolor="black" font-family="Bravura,Academico" font-size="10pt" font-weight="normal" font-style="normal" width="900" height="200" viewBox="0 0 900 200" style="width: 900px; height: 200px;"></svg></div></div></div></div></div>
+HH | x - x - x - x - | x - x - x - x - |
+SD |  - - - - d - - - | - - - - d - - - |
+BD | p - - - - - - - | p - - - - - - - |</pre></div></div>
+                  <div class='docs-section-pane'><div class='docs-pane-title'>Score Result</div><div class='docs-preview-shell'><div class='docs-preview-frame'><div class='staff-preview-container'></div></div></div></div>
                 </div>
               </article>
-              <article class="docs-section-card" id="techniques">
-                <div class="docs-section-header"><h2>Playing Techniques</h2><p>Adding detail with modifiers.</p></div>
-                <div class="docs-description"><p>Use :rim, :cross, :flam, :ghost.</p></div>
-                <div class="docs-section-body">
-                  <div class="docs-section-pane"><div class="docs-pane-title">Example</div><div class="docs-code-block"><pre class="dsl-code-block">time 4/4
+              <article class='docs-section-card' id='techniques'>
+                <div class='docs-section-header'><h2>Playing Techniques</h2><p>Add detail to your hits with modifiers.</p></div>
+                <div class='docs-description'>
+                  <p>Refine notes with <code>:modifier</code>. <strong>Strict compatibility rules apply:</strong></p>
+                  <ul>
+                    <li><strong>Snare (SD) & Toms (T1-T3):</strong> <code>:rim</code>, <code>:cross</code>, <code>:flam</code>.</li>
+                    <li><strong>Hi-Hat (HH):</strong> <code>:open</code> (shorthand <code>o</code>/<code>O</code>), <code>:close</code>.</li>
+                    <li><strong>Cymbals (C, RC):</strong> <code>:choke</code>, <code>:bell</code> (Ride only).</li>
+                    <li><strong>Foot (HF) & Bass (BD):</strong> <code>:close</code> (HF only).</li>
+                    <li><strong>Ghost Notes:</strong> Use the <code>:ghost</code> modifier to render noteheads with parentheses.</li>
+                  </ul>
+                </div>
+                <div class='docs-section-body'>
+                  <div class='docs-section-pane'><div class='docs-pane-title'>Example</div><div class='docs-code-block'><pre class='dsl-code-block'>time 4/4
 divisions 8
+grouping 1+1+1+1
 
 SD | d:cross - d:rim - d:flam - d:ghost - |
 RC | x:bell - x:choke - x:bell - x:choke - |</pre></div></div>
-                  <div class="docs-section-pane"><div class="docs-pane-title">Score Result</div><div class="docs-preview-shell"><div class="docs-preview-frame"><div class="staff-preview-container"><div class="staff-preview"><svg pointer-events="none" stroke-width="1" stroke-dasharray="none" fill="black" stroke="black" shadowcolor="black" font-family="Bravura,Academico" font-size="10pt" font-weight="normal" font-style="normal" width="900" height="200" viewBox="0 0 900 200" style="width: 900px; height: 200px;"></svg></div></div></div></div></div>
+                  <div class='docs-section-pane'><div class='docs-pane-title'>Score Result</div><div class='docs-preview-shell'><div class='docs-preview-frame'><div class='staff-preview-container'></div></div></div></div>
                 </div>
               </article>
-              <article class="docs-section-card" id="syntax-details">
-                <div class="docs-section-header"><h2>Syntax &amp; Formatting</h2><p>Clean notation code.</p></div>
-                <div class="docs-description"><p>Flexible whitespace and comments.</p></div>
-                <div class="docs-section-body">
-                  <div class="docs-section-pane"><div class="docs-pane-title">Example</div><div class="docs-code-block"><pre class="dsl-code-block"># Cleanly aligned
+              <article class='docs-section-card' id='syntax-details'>
+                <div class='docs-section-header'><h2>Syntax & Formatting</h2><p>Writing clean, maintainable notation code.</p></div>
+                <div class='docs-description'>
+                  <p>The notation language is designed to be human-readable and flexible:</p>
+                  <ul>
+                    <li><strong>Comments:</strong> Use <code>#</code> to add notes for yourself.</li>
+                    <li><strong>Whitespace:</strong> Spaces and tabs are ignored inside measures.</li>
+                    <li><strong>Barlines:</strong> You can place multiple measures on one line.</li>
+                  </ul>
+                </div>
+                <div class='docs-section-body'>
+                  <div class='docs-section-pane'><div class='docs-pane-title'>Example</div><div class='docs-code-block'><pre class='dsl-code-block'># Cleanly aligned code
 time 4/4
 divisions 8
 
 HH | x x x x  x x x x |
-SD | - - d -  - - d - |</pre></div></div>
-                  <div class="docs-section-pane"><div class="docs-pane-title">Score Result</div><div class="docs-preview-shell"><div class="docs-preview-frame"><div class="staff-preview-container"><div class="staff-preview"><svg pointer-events="none" stroke-width="1" stroke-dasharray="none" fill="black" stroke="black" shadowcolor="black" font-family="Bravura,Academico" font-size="10pt" font-weight="normal" font-style="normal" width="900" height="200" viewBox="0 0 900 200" style="width: 900px; height: 200px;"></svg></div></div></div></div></div>
+SD | - - d -  - - d - |
+BD | p - - -  p - - - |</pre></div></div>
+                  <div class='docs-section-pane'><div class='docs-pane-title'>Score Result</div><div class='docs-preview-shell'><div class='docs-preview-frame'><div class='staff-preview-container'></div></div></div></div>
                 </div>
               </article>
-              <article class="docs-section-card" id="tuplets">
-                <div class="docs-section-header"><h2>Rhythmic Groups</h2><p>Adjust durations with brackets.</p></div>
-                <div class="docs-description"><p>Supports subdivisions and tuplets.</p></div>
-                <div class="docs-section-body">
-                  <div class="docs-section-pane"><div class="docs-pane-title">Example</div><div class="docs-code-block"><pre class="dsl-code-block">time 4/4
+              <article class='docs-section-card' id='tuplets'>
+                <div class='docs-section-header'><h2>Rhythmic Groups</h2><p>Adjust durations and create complex subdivisions using brackets.</p></div>
+                <div class='docs-description'>
+                  <p>Groups allow you to deviate from the base grid defined by <code>divisions</code>:</p>
+                  <ul>
+                    <li><strong>Compression (Tuplets):</strong> <code>[2: d d d]</code> creates a <strong>triplet</strong>.</li>
+                    <li><strong>Expansion (Longer Notes):</strong> <code>[2: p]</code> makes the note last for 2 slots.</li>
+                  </ul>
+                </div>
+                <div class='docs-section-body'>
+                  <div class='docs-section-pane'><div class='docs-pane-title'>Example</div><div class='docs-code-block'><pre class='dsl-code-block'>time 4/4
 divisions 8
+grouping 1+1+1+1
 
-SD | [d d] d [2:d d d d] [2: d d d] |</pre></div></div>
-                  <div class="docs-section-pane"><div class="docs-pane-title">Score Result</div><div class="docs-preview-shell"><div class="docs-preview-frame"><div class="staff-preview-container"><div class="staff-preview"><svg pointer-events="none" stroke-width="1" stroke-dasharray="none" fill="black" stroke="black" shadowcolor="black" font-family="Bravura,Academico" font-size="10pt" font-weight="normal" font-style="normal" width="900" height="200" viewBox="0 0 900 200" style="width: 900px; height: 200px;"></svg></div></div></div></div></div>
+# Compression
+SD | [d d] d [2:d d d d] [2: d d d] [2: d d d d d] |
+
+# Expansion
+SD | [2: d] d d [4: d] | [8: d] |</pre></div></div>
+                  <div class='docs-section-pane'><div class='docs-pane-title'>Score Result</div><div class='docs-preview-shell'><div class='docs-preview-frame'><div class='staff-preview-container'></div></div></div></div>
                 </div>
               </article>
-              <article class="docs-section-card" id="suffixes">
-                <div class="docs-section-header"><h2>Duration Suffixes</h2><p>Fine-tune note lengths.</p></div>
-                <div class="docs-description"><p>Dotted (.) and halved (/) suffixes.</p></div>
-                <div class="docs-section-body">
-                  <div class="docs-section-pane"><div class="docs-pane-title">Example</div><div class="docs-code-block"><pre class="dsl-code-block">time 4/4
+              <article class='docs-section-card' id='suffixes'>
+                <div class='docs-section-header'><h2>Duration Suffixes</h2><p>Fine-tune note lengths without brackets.</p></div>
+                <div class='docs-description'>
+                  <p>You can append suffixes directly to notes to adjust their length:</p>
+                  <ul>
+                    <li><code>d.</code>: A dotted note (1.5x length).</li>
+                    <li><code>d/</code>: A halved note (0.5x length).</li>
+                  </ul>
+                </div>
+                <div class='docs-section-body'>
+                  <div class='docs-section-pane'><div class='docs-pane-title'>Example</div><div class='docs-code-block'><pre class='dsl-code-block'>time 4/4
 divisions 4
+grouping 1+1+1+1
 
-HH | x. x/ x. x/ | x. / x. / |</pre></div></div>
-                  <div class="docs-section-pane"><div class="docs-pane-title">Score Result</div><div class="docs-preview-shell"><div class="docs-preview-frame"><div class="staff-preview-container"><div class="staff-preview"><svg pointer-events="none" stroke-width="1" stroke-dasharray="none" fill="black" stroke="black" shadowcolor="black" font-family="Bravura,Academico" font-size="10pt" font-weight="normal" font-style="normal" width="900" height="200" viewBox="0 0 900 200" style="width: 900px; height: 200px;"></svg></div></div></div></div></div>
+# Perfect combination
+HH | x. x/ x. x/ | x. / x. / |
+SD | - - d. d/ | d. / d d/ / |</pre></div></div>
+                  <div class='docs-section-pane'><div class='docs-pane-title'>Score Result</div><div class='docs-preview-shell'><div class='docs-preview-frame'><div class='staff-preview-container'></div></div></div></div>
                 </div>
               </article>
-              <article class="docs-section-card" id="repeats">
-                <div class="docs-section-header"><h2>Structure &amp; Flow</h2><p>Bars and repeats.</p></div>
-                <div class="docs-description"><p>Repeat counts and sections.</p></div>
-                <div class="docs-section-body">
-                  <div class="docs-section-pane"><div class="docs-pane-title">Example</div><div class="docs-code-block"><pre class="dsl-code-block">time 4/4
+              <article class='docs-section-card' id='repeats'>
+                <div class='docs-section-header'><h2>Structure & Flow</h2><p>Manage bars, repeats, and sections.</p></div>
+                <div class='docs-description'>
+                  <p>Use <code>|:</code> and <code>:|</code> for repeats. <code>:|x3</code> specifies total plays.</p>
+                </div>
+                <div class='docs-section-body'>
+                  <div class='docs-section-pane'><div class='docs-pane-title'>Example</div><div class='docs-code-block'><pre class='dsl-code-block'>time 4/4
 divisions 8
 
 HH |: x x x x x x x x :|x4
-SD |  - - d - - - d -  |</pre></div></div>
-                  <div class="docs-section-pane"><div class="docs-pane-title">Score Result</div><div class="docs-preview-shell"><div class="docs-preview-frame"><div class="staff-preview-container"><div class="staff-preview"><svg pointer-events="none" stroke-width="1" stroke-dasharray="none" fill="black" stroke="black" shadowcolor="black" font-family="Bravura,Academico" font-size="10pt" font-weight="normal" font-style="normal" width="900" height="200" viewBox="0 0 900 200" style="width: 900px; height: 200px;"></svg></div></div></div></div></div>
+SD |  - - d - - - d -  |
+BD |  p - - - p - - -  |</pre></div></div>
+                  <div class='docs-section-pane'><div class='docs-pane-title'>Score Result</div><div class='docs-preview-shell'><div class='docs-preview-frame'><div class='staff-preview-container'></div></div></div></div>
                 </div>
               </article>
-              <article class="docs-section-card" id="full-example">
-                <div class="docs-section-header"><h2>The Master Class</h2><p>Full demonstration.</p></div>
-                <div class="docs-description"><p>Fusion Grooves with complex subdivisions.</p></div>
-                <div class="docs-section-body">
-                  <div class="docs-section-pane"><div class="docs-pane-title">Example</div><div class="docs-code-block"><pre class="dsl-code-block">title Fusion Grooves
+              <article class='docs-section-card' id='full-example'>
+                <div class='docs-section-header'><h2>The Master Class</h2><p>A complete demonstration using all available features.</p></div>
+                <div class='docs-description'>
+                  <p>This final example showcases the synergy of headers, complex groupings, shortcuts, and multiple paragraphs.</p>
+                </div>
+                <div class='docs-section-body'>
+                  <div class='docs-section-pane'><div class='docs-pane-title'>Example</div><div class='docs-code-block'><pre class='dsl-code-block'>title Fusion Grooves
+subtitle Advanced Study
+composer G. Mao
 tempo 128
 time 4/4
 divisions 16
 grouping 2+2
 
-# Main Groove
+# Section A
 HH |: x - x - o - x - | x:close - X - x - c - :|x2
 SD |  - - d:cross - d - | D:rim - [2: d d:flam] - - -  |
 BD |  p - - - p - - - | p - p - - - p -        |
 HF |  - - - - p - - - | - - - - p:close - -    |</pre></div></div>
-                  <div class="docs-section-pane"><div class="docs-pane-title">Score Result</div><div class="docs-preview-shell"><div class="docs-preview-frame"><div class="staff-preview-container"><div class="staff-preview"><svg pointer-events="none" stroke-width="1" stroke-dasharray="none" fill="black" stroke="black" shadowcolor="black" font-family="Bravura,Academico" font-size="10pt" font-weight="normal" font-style="normal" width="900" height="200" viewBox="0 0 900 200" style="width: 900px; height: 200px;"><text fill="#333" stroke="none" font-family="Arial" font-size="24pt" font-weight="bold" x="-88.328" y="40">Fusion Grooves
-tempo 128
-time 4/4
-divisions 16
-grouping 2+2
-
-</text></svg></div></div></div></div></div>
+                  <div class='docs-section-pane'><div class='docs-pane-title'>Score Result</div><div class='docs-preview-shell'><div class='docs-preview-frame'><div class='staff-preview-container'></div></div></div></div>
                 </div>
               </article>
             </div>
@@ -216,9 +251,6 @@ grouping 2+2
         </main>
       </div>
     </div>
-    
-  
-
-<vite-error-overlay></vite-error-overlay>
-<script type="module" src="/src/docsVanilla.ts"></script>
-</body></html>
+    <script type='module' src='/src/docsVanilla.ts'></script>
+  </body>
+</html>

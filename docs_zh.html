@@ -1,46 +1,28 @@
-<!DOCTYPE html><html lang="zh-CN"><head>
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-    
-
-    
-
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>鼓谱记谱指南</title>
-    <link rel="stylesheet" href="./src/styles.css">
+    <link rel="stylesheet" href="/src/styles.css">
   </head>
   <body class="docs-body">
     <div class="docs-layout">
       <header class="docs-header-bar">
         <div class="docs-header-left">
-          <button id="menu-toggle" class="docs-menu-button">
-            <span></span>
-            <span></span>
-            <span></span>
-          </button>
+          <button id="menu-toggle" class="docs-menu-button"><span></span><span></span><span></span></button>
           <div class="docs-sidebar-brand" style="margin-bottom: 0; padding: 0;">
             <svg aria-hidden="true" class="app-logo" width="24" height="24" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M19 22V6C19 6 24 7 24 12" stroke="var(--accent-primary)" strokewidth="2.5" strokelinecap="round" strokelinejoin="round"></path>
-              <circle cx="12" cy="22" r="7" stroke="var(--text-main)" strokewidth="2"></circle>
-              <circle cx="12" cy="22" r="8.5" stroke="var(--text-main)" stroke-width="0.5" strokeopacity="0.4"></circle>
-              <circle cx="12" cy="13.5" r="1" fill="var(--text-main)"></circle>
-              <circle cx="12" cy="30.5" r="1" fill="var(--text-main)"></circle>
-              <circle cx="3.5" cy="22" r="1" fill="var(--text-main)"></circle>
-              <circle cx="20.5" cy="22" r="1" fill="var(--text-main)"></circle>
-              <line x1="7" y1="20" x2="17" y2="20" stroke="var(--text-main)" strokewidth="0.5" strokeopacity="0.6"></line>
-              <line x1="7" y1="22" x2="17" y2="22" stroke="var(--text-main)" strokewidth="0.5" strokeopacity="0.6"></line>
-              <line x1="7" y1="24" x2="17" y2="24" stroke="var(--text-main)" strokewidth="0.5" strokeopacity="0.6"></line>
+              <path d="M19 22V6C19 6 24 7 24 12" stroke="var(--accent-primary)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+              <circle cx="12" cy="22" r="7" stroke="var(--text-main)" stroke-width="2"/>
+              <circle cx="12" cy="22" r="8.5" stroke="var(--text-main)" stroke-width="0.5" stroke-opacity="0.4"/>
+              <circle cx="12" cy="13.5" r="1" fill="var(--text-main)"/>
+              <circle cx="12" cy="30.5" r="1" fill="var(--text-main)"/>
+              <circle cx="3.5" cy="22" r="1" fill="var(--text-main)"/>
+              <circle cx="20.5" cy="22" r="1" fill="var(--text-main)"/>
+              <line x1="7" y1="20" x2="17" y2="20" stroke="var(--text-main)" stroke-width="0.5" stroke-opacity="0.6"/>
+              <line x1="7" y1="22" x2="17" y2="22" stroke="var(--text-main)" stroke-width="0.5" stroke-opacity="0.6"/>
+              <line x1="7" y1="24" x2="17" y2="24" stroke="var(--text-main)" stroke-width="0.5" stroke-opacity="0.6"/>
             </svg>
             <h1 style="font-size: 1.1rem;">文档</h1>
           </div>
@@ -49,7 +31,6 @@
           <a class="export-button primary" href="./">打开编辑器</a>
         </div>
       </header>
-
       <div class="docs-container">
         <div id="mobile-overlay" class="docs-mobile-overlay"></div>
         <aside id="sidebar" class="docs-sidebar">
@@ -72,122 +53,163 @@
             </div>
           </nav>
         </aside>
-
         <main class="docs-main">
           <section class="docs-page">
             <div class="docs-hero">
               <span class="docs-kicker">快速入门</span>
               <h1>鼓谱记谱指南</h1>
-              <p>为现代鼓手设计的“文本优先”记谱方式。</p>
+              <p>为现代鼓手设计的“文本优先”记谱方式。该语言旨在像打字一样飞快，同时拥有传统打谱软件的强大功能。</p>
             </div>
-            <div class="docs-sections" id="inject-point">
-              <article class="docs-section-card" id="metadata">
-                <div class="docs-section-header"><h2>乐谱元数据</h2><p>设置乐谱的全局信息和节奏基础。</p></div>
-                <div class="docs-description"><p>包含标题、作者、速度（BPM）、拍号和细分数。</p></div>
-                <div class="docs-section-body">
-                  <div class="docs-section-pane"><div class="docs-pane-title">示例</div><div class="docs-code-block"><pre class="dsl-code-block">title 灵魂乐研究
+            <div class="docs-sections">
+              <article class='docs-section-card' id='metadata'>
+                <div class='docs-section-header'><h2>乐谱元数据</h2><p>设置乐谱的全局信息和节奏基础。</p></div>
+                <div class='docs-description'>
+                  <p>每一份乐谱都从小节头（Header）开始。这些字段定义了音乐的技术基础和元数据：</p>
+                  <ul>
+                    <li><code>title</code>, <code>subtitle</code>, <code>composer</code>: 必填的乐谱信息，将显示在导出的 PDF 和乐谱顶部。</li>
+                    <li><code>tempo</code>: 设置 BPM（四分音符为准）。如果省略，默认为 <strong>120</strong>。</li>
+                    <li><code>time</code>: 定义拍号（如 <code>4/4</code>, <code>6/8</code>, <code>7/8</code>）。这是节奏校验的依据。</li>
+                    <li><code>divisions</code>: 定义每一小节的网格细分数。例如，设置为 16 可以让你在 16 格的网格中编写 16 分音符。</li>
+                  </ul>
+                </div>
+                <div class='docs-section-body'>
+                  <div class='docs-section-pane'><div class='docs-pane-title'>示例</div><div class='docs-code-block'><pre class='dsl-code-block'>title 灵魂乐研究
+subtitle 律动 A
+composer G. Mao
 tempo 100
 time 4/4
 divisions 8
 
 HH | x - x x x x x - |</pre></div></div>
-                  <div class="docs-section-pane"><div class="docs-pane-title">生成结果</div><div class="docs-preview-shell"><div class="docs-preview-frame"><div class="staff-preview-container"><div class="staff-preview"><svg pointer-events="none" stroke-width="1" stroke-dasharray="none" fill="black" stroke="black" shadowcolor="black" font-family="Bravura,Academico" font-size="10pt" font-weight="normal" font-style="normal" width="900" height="200" viewBox="0 0 900 200" style="width: 900px; height: 200px;"><text fill="#333" stroke="none" font-family="Arial" font-size="24pt" font-weight="bold" x="-63.078" y="40">灵魂乐研究
-tempo 100
-time 4/4
-divisions 8
-
-HH | x - x x x x x - |</text></svg></div></div></div></div></div>
+                  <div class='docs-section-pane'><div class='docs-pane-title'>生成结果</div><div class='docs-preview-shell'><div class='docs-preview-frame'><div class='staff-preview-container'></div></div></div></div>
                 </div>
               </article>
-              <article class="docs-section-card" id="grouping">
-                <div class="docs-section-header"><h2>乐句分组</h2><p>控制符杠连接逻辑。</p></div>
-                <div class="docs-description"><p>定义内部重音和视觉分组。</p></div>
-                <div class="docs-section-body">
-                  <div class="docs-section-pane"><div class="docs-pane-title">示例</div><div class="docs-code-block"><pre class="dsl-code-block">time 7/8
+              <article class='docs-section-card' id='grouping'>
+                <div class='docs-section-header'><h2>乐句分组</h2><p>控制音符的符杠连接和视觉重音。</p></div>
+                <div class='docs-description'>
+                  <p><code>grouping</code> 字段是提高乐谱可读性的最强工具。它告诉系统如何连接符杠。<strong>常用拍号拥有智能默认值：</strong></p>
+                  <ul>
+                    <li><code>4/4</code> &rarr; <code>2+2</code></li>
+                    <li><code>6/8</code> &rarr; <code>3+3</code></li>
+                    <li><strong>非正规拍号:</strong> 对于 <code>5/8</code>, <code>7/8</code> 等，你必须指定分组（如 <code>2+2+3</code>）。</li>
+                  </ul>
+                </div>
+                <div class='docs-section-body'>
+                  <div class='docs-section-pane'><div class='docs-pane-title'>示例</div><div class='docs-code-block'><pre class='dsl-code-block'>time 7/8
 divisions 7
 grouping 2+2+3
 
 HH | x x x x x x x |</pre></div></div>
-                  <div class="docs-section-pane"><div class="docs-pane-title">生成结果</div><div class="docs-preview-shell"><div class="docs-preview-frame"><div class="staff-preview-container"><div class="staff-preview"><svg pointer-events="none" stroke-width="1" stroke-dasharray="none" fill="black" stroke="black" shadowcolor="black" font-family="Bravura,Academico" font-size="10pt" font-weight="normal" font-style="normal" width="900" height="200" viewBox="0 0 900 200" style="width: 900px; height: 200px;"></svg></div></div></div></div></div>
+                  <div class='docs-section-pane'><div class='docs-pane-title'>生成结果</div><div class='docs-preview-shell'><div class='docs-preview-frame'><div class='staff-preview-container'></div></div></div></div>
                 </div>
               </article>
-              <article class="docs-section-card" id="instruments">
-                <div class="docs-section-header"><h2>乐器与轨道</h2><p>将创意映射到声部。</p></div>
-                <div class="docs-description"><p>支持 HH, RC, C, SD, BD, T1-T3, HF, ST 等标准轨道。</p></div>
-                <div class="docs-section-body">
-                  <div class="docs-section-pane"><div class="docs-pane-title">示例</div><div class="docs-code-block"><pre class="dsl-code-block">time 4/4
+              <article class='docs-section-card' id='instruments'>
+                <div class='docs-section-header'><h2>乐器与轨道</h2><p>将你的创意映射到具体的打击乐声部。</p></div>
+                <div class='docs-description'>
+                  <p>每种乐器由一个<strong>轨道（Track）</strong>表示。一旦轨道在某个段落出现，它将在整个乐谱中持续存在。</p>
+                  <ul>
+                    <li><strong>镲片 (Cymbals):</strong> <code>HH</code> (踩镲), <code>RC</code> (叮叮镲), <code>C</code> (吊镲)。</li>
+                    <li><strong>鼓组 (Drums):</strong> <code>SD</code> (军鼓), <code>BD</code> (底鼓), <code>T1/T2/T3</code> (通通鼓)。</li>
+                    <li><strong>底端与功能:</strong> <code>HF</code> (脚踏踩镲), <code>ST</code> (粘滞标注 R/L)。</li>
+                  </ul>
+                </div>
+                <div class='docs-section-body'>
+                  <div class='docs-section-pane'><div class='docs-pane-title'>示例</div><div class='docs-code-block'><pre class='dsl-code-block'>time 4/4
 divisions 8
 
-HH | x - x x x x x x |
+C  | x - - - - - - - |
+HH | - x x x x x x x |
 SD | - - d - - - d - |
 BD | p - p - p - - - |</pre></div></div>
-                  <div class="docs-section-pane"><div class="docs-pane-title">生成结果</div><div class="docs-preview-shell"><div class="docs-preview-frame"><div class="staff-preview-container"><div class="staff-preview"><svg pointer-events="none" stroke-width="1" stroke-dasharray="none" fill="black" stroke="black" shadowcolor="black" font-family="Bravura,Academico" font-size="10pt" font-weight="normal" font-style="normal" width="900" height="200" viewBox="0 0 900 200" style="width: 900px; height: 200px;"></svg></div></div></div></div></div>
+                  <div class='docs-section-pane'><div class='docs-pane-title'>生成结果</div><div class='docs-preview-shell'><div class='docs-preview-frame'><div class='staff-preview-container'></div></div></div></div>
                 </div>
               </article>
-              <article class="docs-section-card" id="techniques">
-                <div class="docs-section-header"><h2>演奏技巧</h2><p>通过修饰符丰富细节。</p></div>
-                <div class="docs-description"><p>支持 :rim, :cross, :flam, :ghost 等。</p></div>
-                <div class="docs-section-body">
-                  <div class="docs-section-pane"><div class="docs-pane-title">示例</div><div class="docs-code-block"><pre class="dsl-code-block">time 4/4
+              <article class='docs-section-card' id='techniques'>
+                <div class='docs-section-header'><h2>演奏技巧</h2><p>通过修饰符丰富打击感。</p></div>
+                <div class='docs-description'>
+                  <p>使用 <code>:修饰符</code> 语法。支持：<code>:rim</code> (边击), <code>:cross</code> (横跨), <code>:flam</code> (装饰音), <code>:ghost</code> (虚音)。</p>
+                </div>
+                <div class='docs-section-body'>
+                  <div class='docs-section-pane'><div class='docs-pane-title'>示例</div><div class='docs-code-block'><pre class='dsl-code-block'>time 4/4
 divisions 8
+grouping 1+1+1+1
 
 SD | d:cross - d:rim - d:flam - d:ghost - |
 RC | x:bell - x:choke - x:bell - x:choke - |</pre></div></div>
-                  <div class="docs-section-pane"><div class="docs-pane-title">生成结果</div><div class="docs-preview-shell"><div class="docs-preview-frame"><div class="staff-preview-container"><div class="staff-preview"><svg pointer-events="none" stroke-width="1" stroke-dasharray="none" fill="black" stroke="black" shadowcolor="black" font-family="Bravura,Academico" font-size="10pt" font-weight="normal" font-style="normal" width="900" height="200" viewBox="0 0 900 200" style="width: 900px; height: 200px;"></svg></div></div></div></div></div>
+                  <div class='docs-section-pane'><div class='docs-pane-title'>生成结果</div><div class='docs-preview-shell'><div class='docs-preview-frame'><div class='staff-preview-container'></div></div></div></div>
                 </div>
               </article>
-              <article class="docs-section-card" id="syntax-details">
-                <div class="docs-section-header"><h2>语法与格式</h2><p>保持代码整洁。</p></div>
-                <div class="docs-description"><p>支持 # 注释和自由空格对齐。</p></div>
-                <div class="docs-section-body">
-                  <div class="docs-section-pane"><div class="docs-pane-title">示例</div><div class="docs-code-block"><pre class="dsl-code-block"># 整齐对齐的代码
+              <article class='docs-section-card' id='syntax-details'>
+                <div class='docs-section-header'><h2>语法与格式细节</h2><p>编写整洁的代码。</p></div>
+                <div class='docs-description'>
+                  <p>该记谱语言旨在提供极高的可读性：支持 <code># 注释</code>，忽略空格对齐。</p>
+                </div>
+                <div class='docs-section-body'>
+                  <div class='docs-section-pane'><div class='docs-pane-title'>示例</div><div class='docs-code-block'><pre class='dsl-code-block'># 整齐对齐的代码
 time 4/4
 divisions 8
 
-HH | x x x x  x x x x |
-SD | - - d -  - - d - |</pre></div></div>
-                  <div class="docs-section-pane"><div class="docs-pane-title">生成结果</div><div class="docs-preview-shell"><div class="docs-preview-frame"><div class="staff-preview-container"><div class="staff-preview"><svg pointer-events="none" stroke-width="1" stroke-dasharray="none" fill="black" stroke="black" shadowcolor="black" font-family="Bravura,Academico" font-size="10pt" font-weight="normal" font-style="normal" width="900" height="200" viewBox="0 0 900 200" style="width: 900px; height: 200px;"></svg></div></div></div></div></div>
+HH | x x x x  x x x x | # 主歌
+SD | - - d -  - - d - | # 律动</pre></div></div>
+                  <div class='docs-section-pane'><div class='docs-pane-title'>生成结果</div><div class='docs-preview-shell'><div class='docs-preview-frame'><div class='staff-preview-container'></div></div></div></div>
                 </div>
               </article>
-              <article class="docs-section-card" id="tuplets">
-                <div class="docs-section-header"><h2>连音符与分组</h2><p>利用方括号调整时长。</p></div>
-                <div class="docs-description"><p>支持细分（压缩）和长音符（扩展）。</p></div>
-                <div class="docs-section-body">
-                  <div class="docs-section-pane"><div class="docs-pane-title">示例</div><div class="docs-code-block"><pre class="dsl-code-block">time 4/4
+              <article class='docs-section-card' id='tuplets'>
+                <div class='docs-section-header'><h2>连音符与分组</h2><p>利用方括号调整时长。</p></div>
+                <div class='docs-description'>
+                  <p>利用 <code>[跨度: 音符]</code> 进行压缩（连音符）或扩展（长音符）。</p>
+                </div>
+                <div class='docs-section-body'>
+                  <div class='docs-section-pane'><div class='docs-pane-title'>示例</div><div class='docs-code-block'><pre class='dsl-code-block'>time 4/4
 divisions 8
 
-SD | [d d] d [2:d d d d] [2: d d d] |</pre></div></div>
-                  <div class="docs-section-pane"><div class="docs-pane-title">生成结果</div><div class="docs-preview-shell"><div class="docs-preview-frame"><div class="staff-preview-container"><div class="staff-preview"><svg pointer-events="none" stroke-width="1" stroke-dasharray="none" fill="black" stroke="black" shadowcolor="black" font-family="Bravura,Academico" font-size="10pt" font-weight="normal" font-style="normal" width="900" height="200" viewBox="0 0 900 200" style="width: 900px; height: 200px;"></svg></div></div></div></div></div>
-                </div>
-              </article>
-              <article class="docs-section-card" id="suffixes">
-                <div class="docs-section-header"><h2>时长后缀</h2><p>快速调整音符长度。</p></div>
-                <div class="docs-description"><p>使用附点 (.) 和减半 (/) 后缀。</p></div>
-                <div class="docs-section-body">
-                  <div class="docs-section-pane"><div class="docs-pane-title">示例</div><div class="docs-code-block"><pre class="dsl-code-block">time 4/4
-divisions 4
+# 压缩：32分音符、三连音
+SD | [d d] d [2:d d d d] [2: d d d] |
 
-HH | x. x/ x. x/ | x. / x. / |</pre></div></div>
-                  <div class="docs-section-pane"><div class="docs-pane-title">生成结果</div><div class="docs-preview-shell"><div class="docs-preview-frame"><div class="staff-preview-container"><div class="staff-preview"><svg pointer-events="none" stroke-width="1" stroke-dasharray="none" fill="black" stroke="black" shadowcolor="black" font-family="Bravura,Academico" font-size="10pt" font-weight="normal" font-style="normal" width="900" height="200" viewBox="0 0 900 200" style="width: 900px; height: 200px;"></svg></div></div></div></div></div>
+# 扩展：四分音符
+SD | [2: d] d d [4: d] |</pre></div></div>
+                  <div class='docs-section-pane'><div class='docs-pane-title'>生成结果</div><div class='docs-preview-shell'><div class='docs-preview-frame'><div class='staff-preview-container'></div></div></div></div>
                 </div>
               </article>
-              <article class="docs-section-card" id="repeats">
-                <div class="docs-section-header"><h2>结构与流程</h2><p>管理重复与段落。</p></div>
-                <div class="docs-description"><p>支持重复次数标记和多乐段布局。</p></div>
-                <div class="docs-section-body">
-                  <div class="docs-section-pane"><div class="docs-pane-title">示例</div><div class="docs-code-block"><pre class="dsl-code-block">time 4/4
+              <article class='docs-section-card' id='suffixes'>
+                <div class='docs-section-header'><h2>时长后缀</h2><p>快速调整音符长度。</p></div>
+                <div class='docs-description'>
+                  <p>使用附点 (<code>.</code>) 增加 50% 时长，使用斜杠 (<code>/</code>) 减少一半时长。</p>
+                </div>
+                <div class='docs-section-body'>
+                  <div class='docs-section-pane'><div class='docs-pane-title'>示例</div><div class='docs-code-block'><pre class='dsl-code-block'>time 4/4
+divisions 4
+grouping 1+1+1+1
+
+HH | x. x/ x. x/ | x. / x. / |
+SD | - - d. d/ | d. / d d/ / |</pre></div></div>
+                  <div class='docs-section-pane'><div class='docs-pane-title'>生成结果</div><div class='docs-preview-shell'><div class='docs-preview-frame'><div class='staff-preview-container'></div></div></div></div>
+                </div>
+              </article>
+              <article class='docs-section-card' id='repeats'>
+                <div class='docs-section-header'><h2>结构与流程</h2><p>管理小节、重复和乐段。</p></div>
+                <div class='docs-description'>
+                  <p>使用 <code>|:</code> 和 <code>:|</code>。<code>:|x4</code> 标记会自动展开乐谱。</p>
+                </div>
+                <div class='docs-section-body'>
+                  <div class='docs-section-pane'><div class='docs-pane-title'>示例</div><div class='docs-code-block'><pre class='dsl-code-block'>time 4/4
 divisions 8
 
 HH |: x x x x x x x x :|x4
-SD |  - - d - - - d -  |</pre></div></div>
-                  <div class="docs-section-pane"><div class="docs-pane-title">生成结果</div><div class="docs-preview-shell"><div class="docs-preview-frame"><div class="staff-preview-container"><div class="staff-preview"><svg pointer-events="none" stroke-width="1" stroke-dasharray="none" fill="black" stroke="black" shadowcolor="black" font-family="Bravura,Academico" font-size="10pt" font-weight="normal" font-style="normal" width="900" height="200" viewBox="0 0 900 200" style="width: 900px; height: 200px;"></svg></div></div></div></div></div>
+SD |  - - d - - - d -  |
+BD |  p - - - p - - -  |</pre></div></div>
+                  <div class='docs-section-pane'><div class='docs-pane-title'>生成结果</div><div class='docs-preview-shell'><div class='docs-preview-frame'><div class='staff-preview-container'></div></div></div></div>
                 </div>
               </article>
-              <article class="docs-section-card" id="full-example">
-                <div class="docs-section-header"><h2>大师级示例</h2><p>综合特性演示。</p></div>
-                <div class="docs-description"><p>涵盖装饰音、镲帽、粘滞标记等高级技巧。</p></div>
-                <div class="docs-section-body">
-                  <div class="docs-section-pane"><div class="docs-pane-title">示例</div><div class="docs-code-block"><pre class="dsl-code-block">title Fusion Grooves
+              <article class='docs-section-card' id='full-example'>
+                <div class='docs-section-header'><h2>大师级全特性示例</h2><p>完整演示。</p></div>
+                <div class='docs-description'>
+                  <p>展示头部信息、复杂分组、快捷方式和多段落布局的协同作用。</p>
+                </div>
+                <div class='docs-section-body'>
+                  <div class='docs-section-pane'><div class='docs-pane-title'>示例</div><div class='docs-code-block'><pre class='dsl-code-block'>title Fusion Grooves
+subtitle 高级进阶练习
+composer G. Mao
 tempo 128
 time 4/4
 divisions 16
@@ -198,13 +220,7 @@ HH |: x - x - o - x - | x:close - X - x - c - :|x2
 SD |  - - d:cross - d - | D:rim - [2: d d:flam] - - -  |
 BD |  p - - - p - - - | p - p - - - p -        |
 HF |  - - - - p - - - | - - - - p:close - -    |</pre></div></div>
-                  <div class="docs-section-pane"><div class="docs-pane-title">生成结果</div><div class="docs-preview-shell"><div class="docs-preview-frame"><div class="staff-preview-container"><div class="staff-preview"><svg pointer-events="none" stroke-width="1" stroke-dasharray="none" fill="black" stroke="black" shadowcolor="black" font-family="Bravura,Academico" font-size="10pt" font-weight="normal" font-style="normal" width="900" height="200" viewBox="0 0 900 200" style="width: 900px; height: 200px;"><text fill="#333" stroke="none" font-family="Arial" font-size="24pt" font-weight="bold" x="-88.328" y="40">Fusion Grooves
-tempo 128
-time 4/4
-divisions 16
-grouping 2+2
-
-</text></svg></div></div></div></div></div>
+                  <div class='docs-section-pane'><div class='docs-pane-title'>生成结果</div><div class='docs-preview-shell'><div class='docs-preview-frame'><div class='staff-preview-container'></div></div></div></div>
                 </div>
               </article>
             </div>
@@ -212,9 +228,6 @@ grouping 2+2
         </main>
       </div>
     </div>
-    
-  
-
-<vite-error-overlay></vite-error-overlay>
-<script type="module" src="/src/docsVanilla.ts"></script>
-</body></html>
+    <script type='module' src='/src/docsVanilla.ts'></script>
+  </body>
+</html>

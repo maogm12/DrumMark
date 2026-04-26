@@ -1145,10 +1145,12 @@ input:checked + .toggle-slider:before {
   .workspace {
     flex-direction: column;
   }
-.docs-page {
-  padding: 32px 12px 64px;
-}
 
+  .docs-page {
+    padding: 32px 12px 64px;
+  }
+
+  .docs-sections {
     width: 100%;
     max-width: 100%;
     overflow-x: hidden;

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { buildMusicXml, buildNormalizedScore } from "./dsl";
-
-type OpenSheetMusicDisplayType = import("opensheetmusicdisplay").OpenSheetMusicDisplay;
+import { buildNormalizedScore } from "./dsl";
+import { GalleryPreview } from "./Gallery";
+import { renderScoreToSvg } from "./vexflow";
 
 interface DocsSection {
   id: string;
@@ -10,8 +10,6 @@ interface DocsSection {
   content: ReactNode;
   example: string;
 }
-
-const osmdDefaultFontFamily = "Charter, \"Bitstream Charter\", \"Sitka Text\", Cambria, Georgia, \"Times New Roman\", \"PingFang SC\", \"Microsoft YaHei\", \"Noto Sans SC\", sans-serif";
 
 const docsSections: DocsSection[] = [
   {
@@ -77,11 +75,11 @@ const docsSections: DocsSection[] = [
           <li><strong>Hi-Hat (HH):</strong> <code>:open</code> (shorthand <code>o</code>/<code>O</code>), <code>:close</code>.</li>
           <li><strong>Cymbals (C, RC):</strong> <code>:choke</code>, <code>:bell</code> (Ride only).</li>
           <li><strong>Foot (HF) & Bass (BD):</strong> <code>:close</code> (HF only).</li>
-          <li><strong>Ghost Notes:</strong> Deferred for now because OSMD does not support notehead parentheses reliably yet.</li>
+          <li><strong>Ghost Notes:</strong> Use the <code>:ghost</code> modifier to render noteheads with circles.</li>
         </ul>
       </div>
     ),
-    example: `time 4/4\ndivisions 8\ngrouping 1+1+1+1\n\nSD | d:cross - d:rim - d:flam - d - |\nRC | x:bell - x:choke - x:bell - x:choke - |`,
+    example: `time 4/4\ndivisions 8\ngrouping 1+1+1+1\n\nSD | d:cross - d:rim - d:flam - d:ghost - |\nRC | x:bell - x:choke - x:bell - x:choke - |`,
   },
   {
     id: "syntax-details",
@@ -111,7 +109,6 @@ const docsSections: DocsSection[] = [
             <ul>
               <li><code>[x x]</code>: Fits two 16th notes into a single 8th-note slot (assuming <code>divisions 8</code>).</li>
               <li><code>[2: d d d]</code>: Fits three notes into the space of two slots, creating a <strong>triplet</strong>.</li>
-              <li><code>[4: x x x x x]</code>: A quintuplet (5 notes in 4 slots).</li>
             </ul>
           </li>
           <li><strong>Expansion (Longer Notes):</strong> Stretch a note to occupy multiple slots.
@@ -119,7 +116,7 @@ const docsSections: DocsSection[] = [
               <li><code>[2: p]</code>: Makes the note last for 2 slots (e.g., a quarter note in an 8th-note grid).</li>
             </ul>
           </li>
-          <li><strong>Shorthand:</strong> The syntax is <code>[span: item1 item2 ...]</code>. If the span is exactly 1 slot, you can omit the <code>1:</code> prefix (e.g., <code>[d d d]</code> is the same as <code>[1: d d d]</code>).</li>
+          <li><strong>Shorthand:</strong> The syntax is <code>[span: item1 item2 ...]</code>. If the span is exactly 1 slot, you can omit the <code>1:</code> prefix.</li>
         </ul>
       </div>
     ),
@@ -152,143 +149,57 @@ const docsSections: DocsSection[] = [
     ),
     example: `title Fusion Grooves\nsubtitle Advanced Study\ncomposer G. Mao\ntempo 128\ntime 4/4\ndivisions 16\ngrouping 2+2\n\n# Section A: Main Groove\nHH |: x - x - o - x - | x:close - X - x - c - :|x2\nSD |  - - d:cross - d - | D:rim - [2: d d:flam] - - -  |\nBD |  p - - - p - - - | p - p - - - p -        |\nHF |  - - - - p - - - | - - - - p:close - -    |\n\n# Section B: Bridge with Subdivisions\nRC |  x:bell - x:bell - x:bell - x:bell - | [4: x:choke] |\nDR |  s - - - [3: s s s] - - - | S - t1 t2 t3 - - -   |\nBD |  p - - - p - - -     | p - - - p - - -      |\nST |  R - - - R L R - - - | R - R L R - - -      |\n\n# Outro: Finale\nC  |  X:choke - - - - - - - | - - - - X - - - |\nBD |  [16: p] |`,
   },
+  {
+    id: "gallery",
+    title: "Notehead Gallery",
+    summary: "Browse all available SMuFL noteheads and their respective codes.",
+    content: (
+      <div className="docs-description">
+        <p>The table below shows all supported noteheads. You can use <code>:code</code> on any track to specify them.</p>
+      </div>
+    ),
+    example: "",
+  },
 ];
 
-let osmdModulePromise: Promise<typeof import("opensheetmusicdisplay")> | null = null;
-let staticPreviewRenderChain = Promise.resolve();
-let staticPreviewBuffer: HTMLDivElement | null = null;
-let staticPreviewOsmd: OpenSheetMusicDisplayType | null = null;
+function StaticScorePreview({ score }: { score: any }) {
+  const [markup, setMarkup] = useState("");
 
-async function loadOsmdModule() {
-  osmdModulePromise ??= import("opensheetmusicdisplay");
-  return osmdModulePromise;
-}
+  useEffect(() => {
+    let cancelled = false;
+    async function render() {
+      try {
+        const svg = await renderScoreToSvg(score, {
+          mode: "preview",
+          pagePadding: { top: 10, right: 10, bottom: 10, left: 10 },
+          pageScale: 0.8,
+          titleTopPadding: 0,
+          titleSubtitleGap: 0,
+          titleStaffGap: 0,
+          systemSpacing: 1.0,
+          hideVoice2Rests: false,
+        });
+        if (cancelled) return;
+        setMarkup(svg);
+      } catch (e) {
+        console.error("Docs static preview failed:", e);
+      }
+    }
+    render();
+    return () => { cancelled = true; };
+  }, [score]);
 
-function configureOsmdRules(osmd: OpenSheetMusicDisplayType) {
-  const rules = osmd.EngravingRules as OpenSheetMusicDisplayType["EngravingRules"] & {
-    RenderTitle?: boolean;
-    RenderSubtitle?: boolean;
-    RenderComposer?: boolean;
-    SheetTitleHeight?: number;
-    SheetSubtitleHeight?: number;
-    SheetComposerHeight?: number;
-    SheetMinimumDistanceBetweenTitleAndSubtitle?: number;
-    TitleTopDistance?: number;
-    TitleBottomDistance?: number;
-  };
-
-  rules.PageTopMargin = 0;
-  rules.PageBottomMargin = 0;
-  rules.PageLeftMargin = 2;
-  rules.PageRightMargin = 2;
-  rules.SystemLeftMargin = 0;
-  rules.SystemRightMargin = 0;
-  rules.RenderTitle = true;
-  rules.RenderSubtitle = true;
-  rules.RenderComposer = true;
-  rules.SheetTitleHeight = 3.2;
-  rules.SheetSubtitleHeight = 2.0;
-  rules.SheetComposerHeight = 1.6;
-  rules.SheetMinimumDistanceBetweenTitleAndSubtitle = 1.0;
-  rules.TitleTopDistance = 2.0;
-  rules.TitleBottomDistance = 1.8;
-  rules.MinimumDistanceBetweenSystems = 1.0;
-  rules.MinSkyBottomDistBetweenSystems = 1.0;
-  // Use a very large sheet maximum width and let CSS handle scaling
-  rules.SheetMaximumWidth = 32767;
-}
-
-function getStaffSvgMarkup(markup: string) {
-  const host = document.createElement("div");
-  host.innerHTML = markup;
-  const serializer = new XMLSerializer();
-  return Array.from(host.querySelectorAll("svg"))
-    .filter((svg) => !svg.parentElement?.closest("svg"))
-    .map((svg) => {
-      // Remove fixed dimensions so it shrinks to content height
-      svg.removeAttribute("width");
-      svg.removeAttribute("height");
-      if (!svg.getAttribute("xmlns")) svg.setAttribute("xmlns", "http://www.w3.org/2000/svg");
-      return serializer.serializeToString(svg);
-    });
-}
-
-function readMusicXmlCredit(xml: string, type: "title" | "subtitle" | "composer") {
-  const parser = new DOMParser();
-  const document = parser.parseFromString(xml, "application/xml");
-  if (document.querySelector("parsererror")) return "";
-
-  const credits = Array.from(document.querySelectorAll("credit"));
-  for (const credit of credits) {
-    const page = credit.getAttribute("page");
-    if (page !== null && page !== "1") continue;
-
-    const creditType = credit.querySelector("credit-type")?.textContent?.trim().toLowerCase();
-    if (creditType !== type) continue;
-
-    const words = Array.from(credit.querySelectorAll("credit-words"))
-      .map((node) => node.textContent?.trim() ?? "")
-      .filter(Boolean)
-      .join("\n");
-    if (words) return words;
-  }
-
-  if (type === "title") return document.querySelector("work > work-title")?.textContent?.trim() ?? "";
-  if (type === "composer") return document.querySelector('identification > creator[type="composer"]')?.textContent?.trim() ?? "";
-  return "";
-}
-
-function applyOsmdHeaderMetadata(osmd: OpenSheetMusicDisplayType, xml: string) {
-  const sheet = osmd.Sheet as OpenSheetMusicDisplayType["Sheet"] & {
-    TitleString?: string;
-    SubtitleString?: string;
-    ComposerString?: string;
-  };
-
-  const title = readMusicXmlCredit(xml, "title");
-  const subtitle = readMusicXmlCredit(xml, "subtitle");
-  const composer = readMusicXmlCredit(xml, "composer");
-  if (title) sheet.TitleString = title;
-  if (subtitle) sheet.SubtitleString = subtitle;
-  if (composer) sheet.ComposerString = composer;
-}
-
-async function getStaticPreviewRenderer() {
-  const { OpenSheetMusicDisplay } = await loadOsmdModule();
-
-  if (!staticPreviewBuffer) {
-    staticPreviewBuffer = document.createElement("div");
-    staticPreviewBuffer.style.width = "900px";
-    staticPreviewBuffer.style.position = "fixed";
-    staticPreviewBuffer.style.left = "-9999px";
-    staticPreviewBuffer.style.top = "0";
-    staticPreviewBuffer.style.visibility = "hidden";
-    staticPreviewBuffer.style.pointerEvents = "none";
-    document.body.appendChild(staticPreviewBuffer);
-  }
-
-  if (!staticPreviewOsmd) {
-    staticPreviewOsmd = new OpenSheetMusicDisplay(staticPreviewBuffer, {
-      autoResize: false,
-      drawTitle: true,
-      drawSubtitle: true,
-      drawComposer: true,
-      defaultFontFamily: osmdDefaultFontFamily,
-      drawingParameters: "compacttight",
-      newSystemFromXML: true,
-      pageFormat: "Endless",
-      drawTimeSignatures: true,
-      drawMeasureNumbers: true,
-      percussionOneLineCutoff: 0,
-    });
-    staticPreviewOsmd.setOptions({ defaultColorTitle: "#111111" });
-  }
-
-  return { buffer: staticPreviewBuffer, osmd: staticPreviewOsmd };
+  return (
+    <div className="docs-preview-shell">
+      <div className="docs-preview-frame">
+        <div className="staff-preview" dangerouslySetInnerHTML={{ __html: markup }} />
+      </div>
+    </div>
+  );
 }
 
 function highlightDslSnippet(source: string): ReactNode[] {
-  const pattern = /(#[^\n]*|\b(?:title|subtitle|composer|tempo|time|divisions|grouping)\b|\b(?:HH|HF|DR|SD|BD|T1|T2|T3|RC|C|ST)\b|:\|x\d+|\|:|:\||[|[\]]|\b(?:open|close|choke|rim|cross|bell|flam)\b|(?:t1|t2|t3)\b|\d+(?:\/\d+|\+\d+)*|-|:|[RLSXDxopcdbp]+)/g;
+  const pattern = /(#[^\n]*|\b(?:title|subtitle|composer|tempo|time|divisions|grouping)\b|\b(?:HH|HF|DR|SD|BD|T1|T2|T3|RC|C|ST)\b|:\|x\d+|\|:|:\||[|[\]]|\b(?:open|close|choke|rim|cross|bell|flam|ghost)\b|(?:t1|t2|t3)\b|\d+(?:\/\d+|\+\d+)*|-|:|[RLSXDxopcdbp]+)/g;
   const nodes: ReactNode[] = [];
   let cursor = 0;
   let match: RegExpExecArray | null;
@@ -302,7 +213,7 @@ function highlightDslSnippet(source: string): ReactNode[] {
     else if (/^(HH|HF|DR|SD|BD|T1|T2|T3|RC|C|ST)$/.test(value)) className += " dsl-track";
     else if (/^(:\|x\d+|\|:|:\||\|)$/.test(value)) className += " dsl-barline";
     else if (/^[[\]]$/.test(value)) className += " dsl-group";
-    else if (/^(open|close|choke|rim|cross|bell|flam)$/.test(value)) className += " dsl-modifier";
+    else if (/^(open|close|choke|rim|cross|bell|flam|ghost)$/.test(value)) className += " dsl-modifier";
     else if (/^\d/.test(value)) className += " dsl-number";
     else if (value === "-") className += " dsl-rest";
     else if (value === ":") className += " dsl-punctuation";
@@ -329,46 +240,6 @@ function DslDocsSnippet({ source }: { source: string }) {
   return <div className="docs-code-block"><pre>{highlighted}</pre></div>;
 }
 
-function StaticScorePreview({ xml }: { xml: string }) {
-  const [markup, setMarkup] = useState("");
-
-  useEffect(() => {
-    let cancelled = false;
-
-    staticPreviewRenderChain = staticPreviewRenderChain.then(async () => {
-      try {
-        const { buffer, osmd } = await getStaticPreviewRenderer();
-        configureOsmdRules(osmd);
-
-        await osmd.load(xml);
-        applyOsmdHeaderMetadata(osmd, xml);
-        osmd.render();
-        if (cancelled) return;
-
-        const rendered = getStaffSvgMarkup(buffer.innerHTML)
-          .map((svg, pageIndex) => `<section class="staff-preview-page" data-page="${pageIndex + 1}">${svg}</section>`)
-          .join("");
-        setMarkup(rendered);
-      } catch {
-        if (cancelled) return;
-        setMarkup("");
-      }
-    });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [xml]);
-
-  return (
-    <div className="docs-preview-shell">
-      <div className="docs-preview-frame">
-        <div className="staff-preview page-view" dangerouslySetInnerHTML={{ __html: markup }} />
-      </div>
-    </div>
-  );
-}
-
 function DrumIcon() {
   return (
     <svg aria-hidden="true" className="app-logo" width="24" height="24" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -387,8 +258,20 @@ function DrumIcon() {
 }
 
 function DocsExampleCard({ section }: { section: DocsSection }) {
-  const score = useMemo(() => buildNormalizedScore(section.example), [section.example]);
-  const xml = useMemo(() => buildMusicXml(score, false), [score]);
+  const score = useMemo(() => buildNormalizedScore(section.example || "title T\ntime 4/4\ndivisions 1\n\nSD | - |"), [section.example]);
+
+  if (section.id === "gallery") {
+    return (
+      <article className="docs-section-card" id={section.id}>
+        <div className="docs-section-header">
+          <h2>{section.title}</h2>
+          <p>{section.summary}</p>
+        </div>
+        {section.content}
+        <GalleryPreview />
+      </article>
+    );
+  }
 
   return (
     <article className="docs-section-card" id={section.id}>
@@ -404,7 +287,7 @@ function DocsExampleCard({ section }: { section: DocsSection }) {
         </div>
         <div className="docs-section-pane">
           <div className="docs-pane-title">Score Result</div>
-          <StaticScorePreview xml={xml} />
+          <StaticScorePreview score={score} />
         </div>
       </div>
     </article>
@@ -430,6 +313,22 @@ export function DocsPage() {
     });
 
     return () => observer.disconnect();
+  }, []);
+
+  // Handle initial hash on mount
+  useEffect(() => {
+    const hash = window.location.hash.replace("#", "");
+    if (hash) {
+      // Small delay to ensure dynamic content and score rendering don't jump the scroll
+      const timer = setTimeout(() => {
+        const el = document.getElementById(hash);
+        if (el) {
+          el.scrollIntoView({ behavior: "auto" });
+          setActiveId(hash);
+        }
+      }, 100);
+      return () => clearTimeout(timer);
+    }
   }, []);
 
   useEffect(() => {

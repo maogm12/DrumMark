@@ -1,4 +1,18 @@
 import type { Fraction, NormalizedEvent, NormalizedScore, TrackName } from "./types";
+import {
+  buildVoiceEntries,
+  lcm,
+  multiplyFraction,
+  simplify,
+  subtractFractions,
+  visualDurationForEvent,
+  voiceForTrack as logicVoiceForTrack,
+  groupVoiceEvents,
+  isBeamable,
+  groupingSegmentIndex,
+  type InstrumentSpec,
+  type VoiceEntry,
+} from "./logic";
 
 type VoiceId = 1 | 2;
 
@@ -7,94 +21,12 @@ type VoiceTrack = {
   stem: "up" | "down";
 };
 
-type InstrumentSpec = {
-  displayStep: string;
-  displayOctave: number;
-  notehead?: "x" | "slash" | "diamond" | "circle-x";
-};
-
-type VoiceEventGroup = {
-  start: Fraction;
-  duration: Fraction;
-  events: NormalizedEvent[];
-};
-
-type VoiceEntry =
-  | { kind: "rest"; start: Fraction; duration: Fraction }
-  | { kind: "notes"; start: Fraction; duration: Fraction; events: NormalizedEvent[] };
-
 type ExportMeasure = {
   measure: NormalizedScore["measures"][number];
   showRepeatStart: boolean;
   showRepeatEnd: boolean;
   outputIndex: number;
 };
-
-function gcd(a: number, b: number): number {
-  let x = Math.abs(a);
-  let y = Math.abs(b);
-
-  while (y !== 0) {
-    const next = x % y;
-    x = y;
-    y = next;
-  }
-
-  return x || 1;
-}
-
-function lcm(a: number, b: number): number {
-  return Math.abs(a * b) / gcd(a, b);
-}
-
-function simplify(fraction: Fraction): Fraction {
-  const divisor = gcd(fraction.numerator, fraction.denominator);
-  return {
-    numerator: fraction.numerator / divisor,
-    denominator: fraction.denominator / divisor,
-  };
-}
-
-function addFractions(left: Fraction, right: Fraction): Fraction {
-  return simplify({
-    numerator: left.numerator * right.denominator + right.numerator * left.denominator,
-    denominator: left.denominator * right.denominator,
-  });
-}
-
-function subtractFractions(left: Fraction, right: Fraction): Fraction {
-  return simplify({
-    numerator: left.numerator * right.denominator - right.numerator * left.denominator,
-    denominator: left.denominator * right.denominator,
-  });
-}
-
-function multiplyFraction(fraction: Fraction, multiplier: number): Fraction {
-  return simplify({
-    numerator: fraction.numerator * multiplier,
-    denominator: fraction.denominator,
-  });
-}
-
-function divideFraction(fraction: Fraction, divisor: number): Fraction {
-  return simplify({
-    numerator: fraction.numerator,
-    denominator: fraction.denominator * divisor,
-  });
-}
-
-function fractionsEqual(left: Fraction, right: Fraction): boolean {
-  const a = simplify(left);
-  const b = simplify(right);
-  return a.numerator === b.numerator && a.denominator === b.denominator;
-}
-
-function compareFractions(left: Fraction, right: Fraction): number {
-  const denominator = lcm(left.denominator, right.denominator);
-  const leftValue = left.numerator * (denominator / left.denominator);
-  const rightValue = right.numerator * (denominator / right.denominator);
-  return leftValue - rightValue;
-}
 
 function fractionToDivisions(duration: Fraction, divisions: number): number {
   return (duration.numerator * 4 * divisions) / duration.denominator;
@@ -183,24 +115,6 @@ function noteShapeForFraction(duration: Fraction): { type: string; dots: number 
   }
 }
 
-function visualDurationForEvent(event: NormalizedEvent, duration: Fraction): Fraction {
-  if (!event.tuplet || event.tuplet.actual % event.tuplet.normal === 0) {
-    return duration;
-  }
-
-  return divideFraction(multiplyFraction(duration, event.tuplet.actual), event.tuplet.normal);
-}
-
-function voiceForTrack(track: TrackName): VoiceTrack {
-  switch (track) {
-    case "BD":
-    case "HF":
-      return { voice: 2, stem: "down" };
-    default:
-      return { voice: 1, stem: "up" };
-  }
-}
-
 function instrumentForTrack(track: TrackName, glyph?: string): InstrumentSpec {
   if (track === "HH" && glyph === "c") {
     return { displayStep: "A", displayOctave: 5, notehead: "x" };
@@ -273,83 +187,11 @@ function collectDivisions(score: NormalizedScore): number {
   return divisions;
 }
 
-function groupVoiceEvents(events: NormalizedEvent[]): VoiceEventGroup[] {
-  const sorted = [...events].sort((left, right) => {
-    const startCompare = compareFractions(left.start, right.start);
-
-    if (startCompare !== 0) {
-      return startCompare;
-    }
-
-    return compareFractions(left.duration, right.duration);
-  });
-
-  const groups: VoiceEventGroup[] = [];
-
-  for (const event of sorted) {
-    const current = groups[groups.length - 1];
-
-    if (current && fractionsEqual(current.start, event.start) && fractionsEqual(current.duration, event.duration)) {
-      current.events.push(event);
-      continue;
-    }
-
-    groups.push({
-      start: event.start,
-      duration: event.duration,
-      events: [event],
-    });
-  }
-
-  return groups;
-}
-
-function buildVoiceEntries(
-  groups: VoiceEventGroup[],
-  measureStart: Fraction,
-  measureDuration: Fraction,
-): VoiceEntry[] {
-  const entries: VoiceEntry[] = [];
-  let cursor = measureStart;
-
-  for (const group of groups) {
-    if (compareFractions(group.start, cursor) > 0) {
-      entries.push({
-        kind: "rest",
-        start: cursor,
-        duration: subtractFractions(group.start, cursor),
-      });
-    }
-
-    entries.push({
-      kind: "notes",
-      start: group.start,
-      duration: group.duration,
-      events: group.events,
-    });
-
-    cursor = addFractions(group.start, group.duration);
-  }
-
-  const measureEnd = addFractions(measureStart, measureDuration);
-
-  if (compareFractions(cursor, measureEnd) < 0) {
-    entries.push({
-      kind: "rest",
-      start: cursor,
-      duration: subtractFractions(measureEnd, cursor),
-    });
-  }
-
-  return entries;
-}
-
 function noteheadValueForEvent(event: NormalizedEvent, instrument: InstrumentSpec): InstrumentSpec["notehead"] | undefined {
   if (event.track === "SD") {
     if (event.modifier === "cross") {
       return "x";
     }
-    // Rimshot uses standard notehead but with a tremolo slash added in notations
   }
 
   if (event.track === "RC" && event.modifier === "bell") {
@@ -391,12 +233,6 @@ function forwardXml(duration: Fraction, divisions: number, voice: VoiceTrack): s
     `<staff>1</staff>`,
     "</forward>",
   ].join("");
-}
-
-function isBeamable(duration: Fraction): boolean {
-  const normalized = simplify(duration);
-  const denominator = normalized.denominator;
-  return denominator >= 8;
 }
 
 function graceNoteXml(event: NormalizedEvent, voice: VoiceTrack, slash?: boolean): string {
@@ -531,26 +367,6 @@ function stickingsByStart(events: NormalizedEvent[]): Map<string, string> {
   return new Map([...byStart].map(([key, values]) => [key, values.join(" ")]));
 }
 
-function groupingSegmentIndex(score: NormalizedScore, position: Fraction): number {
-  const grouping = score.ast.headers.grouping.values;
-  const time = score.ast.headers.time;
-  
-  // Convert position to a value in units of the time signature's denominator
-  // Example: in 7/8, position 0/1 -> 0, position 1/8 -> 1, position 1/4 -> 2
-  const posInUnits = (position.numerator * time.beatUnit) / position.denominator;
-  
-  let accumulated = 0;
-  for (let i = 0; i < grouping.length; i++) {
-    accumulated += grouping[i];
-    // If the note starts before this boundary, it belongs to this segment
-    if (posInUnits < accumulated - 0.0001) { // small epsilon for float precision
-      return i;
-    }
-  }
-  
-  return Math.max(0, grouping.length - 1);
-}
-
 function measureXml(score: NormalizedScore, exportMeasure: ExportMeasure, divisions: number, forceLineBreak: boolean, hideVoice2Rests: boolean): string {
   const measure = exportMeasure.measure;
   const measureDuration = {
@@ -558,12 +374,8 @@ function measureXml(score: NormalizedScore, exportMeasure: ExportMeasure, divisi
     denominator: score.ast.headers.time.beatUnit,
   };
   const measureStart = multiplyFraction(measureDuration, measure.globalIndex);
-  const upEvents = measure.events.filter((event) => voiceForTrack(event.track).voice === 1 && event.track !== "ST");
-  const downEvents = measure.events.filter((event) => {
-    const isVoice2 = voiceForTrack(event.track).voice === 2 && event.track !== "ST";
-    if (!isVoice2) return false;
-    return true;
-  });
+  const upEvents = measure.events.filter((event) => logicVoiceForTrack(event.track) === 1 && event.track !== "ST");
+  const downEvents = measure.events.filter((event) => logicVoiceForTrack(event.track) === 2 && event.track !== "ST");
   const upEntries = upEvents.length > 0
     ? buildVoiceEntries(groupVoiceEvents(upEvents), measureStart, measureDuration)
     : [];

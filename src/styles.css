@@ -886,6 +886,13 @@ input:checked + .toggle-slider:before {
   gap: 28px;
 }
 
+.staff-preview svg {
+  display: block;
+  width: 100% !important;
+  height: auto !important;
+  max-width: 100%;
+}
+
 .staff-preview-page {
   width: 100%;
   min-height: 1100px;

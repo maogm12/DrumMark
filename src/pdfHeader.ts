@@ -23,8 +23,6 @@ export function drawPdfHeaderText({
   margin: number;
   fonts: PdfHeaderFonts;
 }) {
-  console.log("[PDF-HEADER] Drawing headers:", { title, subtitle, composer });
-
   // Use Bold font for everything temporarily to verify if Regular font is the issue
   // Also using safer Y coordinates
   const rows = [
@@ -41,10 +39,9 @@ export function drawPdfHeaderText({
     try {
       const width = row.font.widthOfTextAtSize(row.text, row.size);
       const x = row.align === "right" ? pageWidth - margin - width : (pageWidth - width) / 2;
-      
-      console.log(`[PDF-HEADER] Drawing row: "${row.text}" at x=${x.toFixed(1)}, y=${row.y} using ${row.font.name}`);
 
       page.drawText(row.text, {
+
         x,
         y: row.y,
         size: row.size,

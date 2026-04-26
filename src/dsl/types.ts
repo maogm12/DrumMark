@@ -26,6 +26,8 @@ export const MODIFIERS = [
   "cross",
   "bell",
   "flam",
+  "ghost",
+  "drag",
 ] as const;
 
 export type Modifier = (typeof MODIFIERS)[number];

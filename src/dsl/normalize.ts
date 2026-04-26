@@ -1,3 +1,10 @@
+import {
+  addFractions,
+  divideFraction,
+  lcm,
+  multiplyFraction,
+  simplify,
+} from "./logic";
 import { buildScoreAst } from "./ast";
 import { TRACKS } from "./types";
 import type {
@@ -11,59 +18,6 @@ import type {
   ScoreAst,
   TrackName,
 } from "./types";
-
-function gcd(a: number, b: number): number {
-  let x = Math.abs(a);
-  let y = Math.abs(b);
-
-  while (y !== 0) {
-    const next = x % y;
-    x = y;
-    y = next;
-  }
-
-  return x || 1;
-}
-
-function lcm(a: number, b: number): number {
-  return Math.abs(a * b) / gcd(a, b);
-}
-
-function simplify(fraction: Fraction): Fraction {
-  const divisor = gcd(fraction.numerator, fraction.denominator);
-  const denominator = fraction.denominator / divisor;
-  const numerator = fraction.numerator / divisor;
-
-  if (denominator < 0) {
-    return {
-      numerator: -numerator,
-      denominator: -denominator,
-    };
-  }
-
-  return { numerator, denominator };
-}
-
-function addFractions(left: Fraction, right: Fraction): Fraction {
-  return simplify({
-    numerator: left.numerator * right.denominator + right.numerator * left.denominator,
-    denominator: left.denominator * right.denominator,
-  });
-}
-
-function multiplyFraction(fraction: Fraction, multiplier: number): Fraction {
-  return simplify({
-    numerator: fraction.numerator * multiplier,
-    denominator: fraction.denominator,
-  });
-}
-
-function divideFraction(fraction: Fraction, divisor: number): Fraction {
-  return simplify({
-    numerator: fraction.numerator,
-    denominator: fraction.denominator * divisor,
-  });
-}
 
 function classifyEventKind(track: TrackName, glyph: Exclude<NormalizedEvent["glyph"], never>): NormalizedEventKind {
   if (track === "ST") {

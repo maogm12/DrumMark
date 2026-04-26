@@ -5,6 +5,7 @@ import { linter, type Diagnostic } from "@codemirror/lint";
 import type { PDFDocument as PDFLibDocument } from "pdf-lib";
 import { buildMusicXml, buildNormalizedScore, type ParseError } from "./dsl";
 import { type NormalizedScore } from "./dsl";
+import { renderScoreToSvg, renderScorePagesToSvgs, type VexflowRenderOptions } from "./vexflow";
 import { drumDslEditorTheme, drumDslLanguage, drumDslSyntaxHighlighting } from "./dslLanguage";
 
 const seedDsl = `tempo 96
@@ -25,15 +26,15 @@ type PagePadding = {
   bottom: number;
   left: number;
 };
-const osmdDefaultFontFamily = "Charter, \"Bitstream Charter\", \"Sitka Text\", Cambria, Georgia, \"Times New Roman\", \"PingFang SC\", \"Microsoft YaHei\", \"Noto Sans SC\", sans-serif";
+// const osmdDefaultFontFamily = "Charter, \"Bitstream Charter\", \"Sitka Text\", Cambria, Georgia, \"Times New Roman\", \"PingFang SC\", \"Microsoft YaHei\", \"Noto Sans SC\", sans-serif";
 
 const pdfPageWidth = 612;
 const pdfPageHeight = 792;
 const pdfMargin = 36;
-const pdfOsmdHeaderReservePx = 150;
-type OpenSheetMusicDisplayType = import("opensheetmusicdisplay").OpenSheetMusicDisplay;
+// const pdfOsmdHeaderReservePx = 150;
+// type OpenSheetMusicDisplayType = import("opensheetmusicdisplay").OpenSheetMusicDisplay;
 
-let osmdModulePromise: Promise<typeof import("opensheetmusicdisplay")> | null = null;
+// let osmdModulePromise: Promise<typeof import("opensheetmusicdisplay")> | null = null;
 
 function downloadBlob(filename: string, blob: Blob) {
   const url = URL.createObjectURL(blob);
@@ -56,19 +57,19 @@ function safeExportBasename(title: string | undefined) {
     .replace(/^-+|-+$/g, "") || "drum-notation";
 }
 
-function getStaffSvgMarkup(markup: string) {
-  const host = document.createElement("div");
-  host.innerHTML = markup;
-  const serializer = new XMLSerializer();
-  return Array.from(host.querySelectorAll("svg"))
-    .filter((svg) => !svg.parentElement?.closest("svg"))
-    .map((svg) => {
-      if (!svg.getAttribute("xmlns")) {
-        svg.setAttribute("xmlns", "http://www.w3.org/2000/svg");
-      }
-      return serializer.serializeToString(svg);
-    });
-}
+// function getStaffSvgMarkup(markup: string) {
+//   const host = document.createElement("div");
+//   host.innerHTML = markup;
+//   const serializer = new XMLSerializer();
+//   return Array.from(host.querySelectorAll("svg"))
+//     .filter((svg) => !svg.parentElement?.closest("svg"))
+//     .map((svg) => {
+//       if (!svg.getAttribute("xmlns")) {
+//         svg.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+//       }
+//       return serializer.serializeToString(svg);
+//     });
+// }
 
 function parseSvgSize(svgMarkup: string) {
   const doc = new DOMParser().parseFromString(svgMarkup, "image/svg+xml");
@@ -237,10 +238,10 @@ function applyPdfMetadata(
   pdf.catalog.set(PDFName.of("Metadata"), metadataRef);
 }
 
-async function loadOsmdModule() {
-  osmdModulePromise ??= import("opensheetmusicdisplay");
-  return osmdModulePromise;
-}
+// async function loadOsmdModule() {
+//   osmdModulePromise ??= import("opensheetmusicdisplay");
+//   return osmdModulePromise;
+// }
 
 function useDebouncedValue<T>(value: T, delayMs: number) {
   const [debouncedValue, setDebouncedValue] = useState(value);
@@ -258,113 +259,113 @@ function useDebouncedValue<T>(value: T, delayMs: number) {
   return debouncedValue;
 }
 
-function configureOsmdRules(osmd: OpenSheetMusicDisplayType, mode: "preview" | "pdf") {
-  const rules = osmd.EngravingRules as OpenSheetMusicDisplayType["EngravingRules"] & {
-    RenderTitle?: boolean;
-    RenderSubtitle?: boolean;
-    RenderComposer?: boolean;
-    SheetTitleHeight?: number;
-    SheetSubtitleHeight?: number;
-    SheetComposerHeight?: number;
-    SheetMinimumDistanceBetweenTitleAndSubtitle?: number;
-    TitleTopDistance?: number;
-    TitleBottomDistance?: number;
-  };
+// function configureOsmdRules(osmd: OpenSheetMusicDisplayType, mode: "preview" | "pdf") {
+//   const rules = osmd.EngravingRules as OpenSheetMusicDisplayType["EngravingRules"] & {
+//     RenderTitle?: boolean;
+//     RenderSubtitle?: boolean;
+//     RenderComposer?: boolean;
+//     SheetTitleHeight?: number;
+//     SheetSubtitleHeight?: number;
+//     SheetComposerHeight?: number;
+//     SheetMinimumDistanceBetweenTitleAndSubtitle?: number;
+//     TitleTopDistance?: number;
+//     TitleBottomDistance?: number;
+//   };
 
-  rules.PageTopMargin = 0;
-  rules.PageBottomMargin = 5;
-  rules.PageLeftMargin = 2;
-  rules.PageRightMargin = 2;
-  rules.SystemLeftMargin = 0;
-  rules.SystemRightMargin = 0;
-  rules.RenderTitle = true;
-  rules.RenderSubtitle = true;
-  rules.RenderComposer = true;
-  rules.SheetTitleHeight = 3.4;
-  rules.SheetSubtitleHeight = 2.1;
-  rules.SheetComposerHeight = 1.8;
-  rules.SheetMinimumDistanceBetweenTitleAndSubtitle = 1.2;
-  rules.TitleTopDistance = 3.6;
-  rules.TitleBottomDistance = 2.4;
+//   rules.PageTopMargin = 0;
+//   rules.PageBottomMargin = 5;
+//   rules.PageLeftMargin = 2;
+//   rules.PageRightMargin = 2;
+//   rules.SystemLeftMargin = 0;
+//   rules.SystemRightMargin = 0;
+//   rules.RenderTitle = true;
+//   rules.RenderSubtitle = true;
+//   rules.RenderComposer = true;
+//   rules.SheetTitleHeight = 3.4;
+//   rules.SheetSubtitleHeight = 2.1;
+//   rules.SheetComposerHeight = 1.8;
+//   rules.SheetMinimumDistanceBetweenTitleAndSubtitle = 1.2;
+//   rules.TitleTopDistance = 3.6;
+//   rules.TitleBottomDistance = 2.4;
 
-  if (mode === "pdf") {
-    rules.PageTopMargin = pdfOsmdHeaderReservePx;
-    rules.MinimumDistanceBetweenSystems = 1.0;
-    rules.MinSkyBottomDistBetweenSystems = 1.0;
-    rules.StaffDistance = 4;
-    rules.BetweenStaffDistance = 2;
-    rules.SheetMaximumWidth = 32767;
-  }
-}
+//   if (mode === "pdf") {
+//     rules.PageTopMargin = pdfOsmdHeaderReservePx;
+//     rules.MinimumDistanceBetweenSystems = 1.0;
+//     rules.MinSkyBottomDistBetweenSystems = 1.0;
+//     rules.StaffDistance = 4;
+//     rules.BetweenStaffDistance = 2;
+//     rules.SheetMaximumWidth = 32767;
+//   }
+// }
 
-function readMusicXmlCredit(xml: string, type: "title" | "subtitle" | "composer") {
-  const parser = new DOMParser();
-  const document = parser.parseFromString(xml, "application/xml");
-  if (document.querySelector("parsererror")) {
-    return "";
-  }
+// function readMusicXmlCredit(xml: string, type: "title" | "subtitle" | "composer") {
+//   const parser = new DOMParser();
+//   const document = parser.parseFromString(xml, "application/xml");
+//   if (document.querySelector("parsererror")) {
+//     return "";
+//   }
 
-  const credits = Array.from(document.querySelectorAll("credit"));
-  for (const credit of credits) {
-    const page = credit.getAttribute("page");
-    if (page !== null && page !== "1") {
-      continue;
-    }
+//   const credits = Array.from(document.querySelectorAll("credit"));
+//   for (const credit of credits) {
+//     const page = credit.getAttribute("page");
+//     if (page !== null && page !== "1") {
+//       continue;
+//     }
 
-    const creditType = credit.querySelector("credit-type")?.textContent?.trim().toLowerCase();
-    if (creditType !== type) {
-      continue;
-    }
+//     const creditType = credit.querySelector("credit-type")?.textContent?.trim().toLowerCase();
+//     if (creditType !== type) {
+//       continue;
+//     }
 
-    const words = Array.from(credit.querySelectorAll("credit-words"))
-      .map((node) => node.textContent?.trim() ?? "")
-      .filter(Boolean)
-      .join("\n");
-    if (words) {
-      return words;
-    }
-  }
+//     const words = Array.from(credit.querySelectorAll("credit-words"))
+//       .map((node) => node.textContent?.trim() ?? "")
+//       .filter(Boolean)
+//       .join("\n");
+//     if (words) {
+//       return words;
+//     }
+//   }
 
-  if (type === "title") {
-    return document.querySelector("work > work-title")?.textContent?.trim() ?? "";
-  }
+//   if (type === "title") {
+//     return document.querySelector("work > work-title")?.textContent?.trim() ?? "";
+//   }
 
-  if (type === "composer") {
-    return document.querySelector('identification > creator[type="composer"]')?.textContent?.trim() ?? "";
-  }
+//   if (type === "composer") {
+//     return document.querySelector('identification > creator[type="composer"]')?.textContent?.trim() ?? "";
+//   }
 
-  return "";
-}
+//   return "";
+// }
 
-function applyOsmdHeaderMetadata(osmd: OpenSheetMusicDisplayType, xml: string) {
-  const sheet = osmd.Sheet as OpenSheetMusicDisplayType["Sheet"] & {
-    TitleString?: string;
-    SubtitleString?: string;
-    ComposerString?: string;
-  };
+// function applyOsmdHeaderMetadata(osmd: OpenSheetMusicDisplayType, xml: string) {
+//   const sheet = osmd.Sheet as OpenSheetMusicDisplayType["Sheet"] & {
+//     TitleString?: string;
+//     SubtitleString?: string;
+//     ComposerString?: string;
+//   };
 
-  const title = readMusicXmlCredit(xml, "title");
-  const subtitle = readMusicXmlCredit(xml, "subtitle");
-  const composer = readMusicXmlCredit(xml, "composer");
+//   const title = readMusicXmlCredit(xml, "title");
+//   const subtitle = readMusicXmlCredit(xml, "subtitle");
+//   const composer = readMusicXmlCredit(xml, "composer");
 
-  if (title) sheet.TitleString = title;
-  if (subtitle) sheet.SubtitleString = subtitle;
-  if (composer) sheet.ComposerString = composer;
-}
+  //   if (title) sheet.TitleString = title;
+//   if (subtitle) sheet.SubtitleString = subtitle;
+//   if (composer) sheet.ComposerString = composer;
+// }
 
-function buildBlankPreviewMarkup(pageCount: number) {
-  return Array.from({ length: Math.max(1, pageCount) }, (_, pageIndex) =>
-    `<section class="staff-preview-page" data-page="${pageIndex + 1}"></section>`,
-  ).join("");
-}
+// function buildBlankPreviewMarkup(pageCount: number) {
+//   return Array.from({ length: Math.max(1, pageCount) }, (_, pageIndex) =>
+//     `<section class="staff-preview-page" data-page="${pageIndex + 1}"></section>`,
+//   ).join("");
+// }
 
-function isRecoverablePreviewError(error: unknown) {
-  const message = error instanceof Error ? error.message : String(error);
-  return (
-    message.includes("Invalid number of staves") ||
-    message.includes("given music sheet was incomplete or could not be loaded")
-  );
-}
+// function isRecoverablePreviewError(error: unknown) {
+//   const message = error instanceof Error ? error.message : String(error);
+//   return (
+//     message.includes("Invalid number of staves") ||
+//     message.includes("given music sheet was incomplete or could not be loaded")
+//   );
+// }
 
 function beautifyXml(xml: string): string {
   const lines = xml
@@ -625,31 +626,30 @@ function DslEditor({ value, onChange, errors }: { value: string; onChange: (valu
 }
 
 function StaffPreview({
-  xml,
+  score,
   pagePadding,
   pageScale,
   titleTopPadding,
   titleSubtitleGap,
   titleStaffGap,
   systemSpacing,
+  hideVoice2Rests,
   active,
 }: {
-  xml: string;
+  score: NormalizedScore | null;
   pagePadding: PagePadding;
   pageScale: number;
   titleTopPadding: number;
   titleSubtitleGap: number;
   titleStaffGap: number;
   systemSpacing: number;
+  hideVoice2Rests: boolean;
   active: boolean;
 }) {
   const shellRef = useRef<HTMLDivElement | null>(null);
   const scrollPosRef = useRef({ top: 0, left: 0 });
-  const bufferRef = useRef<HTMLDivElement | null>(null);
-  const osmdRef = useRef<OpenSheetMusicDisplayType | null>(null);
-  const pageCountRef = useRef(1);
-  const [error, setError] = useState<string | null>(null);
   const [renderedMarkup, setRenderedMarkup] = useState("");
+  const [error, setError] = useState<string | null>(null);
 
   function handleScroll(e: UIEvent<HTMLDivElement>) {
     scrollPosRef.current = {
@@ -659,100 +659,40 @@ function StaffPreview({
   }
 
   useEffect(() => {
-    return () => {
-      if (bufferRef.current) {
-        bufferRef.current.remove();
-        bufferRef.current = null;
-      }
-      osmdRef.current = null;
-    };
-  }, []);
+    if (!active || !score) return;
 
-  useEffect(() => {
-    let cancelled = false;
+    const targetTop = scrollPosRef.current.top;
+    const targetLeft = scrollPosRef.current.left;
 
-    async function render() {
-      if (!active) return;
-      
-      const targetTop = scrollPosRef.current.top;
-      const targetLeft = scrollPosRef.current.left;
+    try {
+      const opts: VexflowRenderOptions = {
+        mode: "preview",
+        pagePadding,
+        pageScale,
+        titleTopPadding,
+        titleSubtitleGap,
+        titleStaffGap,
+        systemSpacing,
+        hideVoice2Rests,
+      };
 
-      try {
-        if (cancelled) return;
-        const { OpenSheetMusicDisplay } = await loadOsmdModule();
-        let buffer = bufferRef.current;
-        if (!buffer) {
-          buffer = document.createElement("div");
-          buffer.style.width = "900px";
-          buffer.style.position = "absolute";
-          buffer.style.visibility = "hidden";
-          buffer.style.pointerEvents = "none";
-          document.body.appendChild(buffer);
-          bufferRef.current = buffer;
-        }
-
-        let osmd = osmdRef.current;
-        if (!osmd) {
-          osmd = new OpenSheetMusicDisplay(buffer, {
-            autoResize: false,
-            drawTitle: true,
-            drawSubtitle: true,
-            drawComposer: true,
-            defaultFontFamily: osmdDefaultFontFamily,
-            drawingParameters: "compacttight",
-            newSystemFromXML: true,
-            pageFormat: "Letter_P",
-            drawTimeSignatures: true,
-            drawMeasureNumbers: true,
-            percussionOneLineCutoff: 0,
-          });
-          osmd.setOptions({ defaultColorTitle: "#111111" });
-          osmdRef.current = osmd;
-        }
-
-        configureOsmdRules(osmd, "preview");
-        osmd.EngravingRules.MinimumDistanceBetweenSystems = systemSpacing;
-        osmd.EngravingRules.MinSkyBottomDistBetweenSystems = systemSpacing;
-        osmd.EngravingRules.TitleTopDistance = titleTopPadding;
-        osmd.EngravingRules.SheetMinimumDistanceBetweenTitleAndSubtitle = titleSubtitleGap;
-        osmd.EngravingRules.TitleBottomDistance = titleStaffGap;
-
-        await osmd.load(xml);
-        applyOsmdHeaderMetadata(osmd, xml);
-        osmd.render();
-
-        if (cancelled) {
-          return;
-        }
-
-        const pageSvgs = getStaffSvgMarkup(buffer.innerHTML);
-        const markup = pageSvgs
-          .map((svg, pageIndex) => `<section class="staff-preview-page" data-page="${pageIndex + 1}">${svg}</section>`)
-          .join("");
-        pageCountRef.current = Math.max(1, pageSvgs.length);
+      renderScoreToSvg(score, opts).then((svgMarkup) => {
+        const markup = `<section class="staff-preview-page" data-page="1">${svgMarkup}</section>`;
         setRenderedMarkup(markup);
-        
+
         if (shellRef.current) {
           shellRef.current.scrollTop = targetTop;
           shellRef.current.scrollLeft = targetLeft;
         }
 
         setError(null);
-      } catch (renderError) {
-        if (!cancelled) {
-          if (isRecoverablePreviewError(renderError)) {
-            setRenderedMarkup(buildBlankPreviewMarkup(pageCountRef.current));
-            setError(null);
-            return;
-          }
-          setError(renderError instanceof Error ? renderError.message : "Could not render staff preview.");
-        }
-      }
+      });
+    } catch (renderError) {
+      const msg = renderError instanceof Error ? renderError.message : String(renderError);
+      console.error("VexFlow render error:", renderError);
+      setError(msg || "Could not render staff preview.");
     }
-
-    void render();
-    return () => { cancelled = true; };
-  }, [systemSpacing, titleStaffGap, titleSubtitleGap, titleTopPadding, xml, active]);
+  }, [score, systemSpacing, titleStaffGap, titleSubtitleGap, titleTopPadding, active, hideVoice2Rests, pagePadding, pageScale]);
 
   const printableStyle = {
     "--staff-zoom-width": `${pageScale * 100}%`,
@@ -762,7 +702,7 @@ function StaffPreview({
     "--page-padding-left": `${pagePadding.left}px`,
   } as CSSProperties;
 
-  if (!xml.trim()) {
+  if (!score) {
     return (
       <div className="staff-preview-shell" ref={shellRef} onScroll={handleScroll}>
         <div className="staff-printable-frame" style={printableStyle}>
@@ -807,69 +747,39 @@ function MusicXmlPreview({ xml }: { xml: string }) {
   );
 }
 
-async function renderPdfPageSvgs(
-  xml: string,
+function renderPdfPageSvgs(
+  score: NormalizedScore,
   layout?: {
     titleTopPadding?: number;
     titleSubtitleGap?: number;
     titleStaffGap?: number;
     systemSpacing?: number;
+    hideVoice2Rests?: boolean;
   },
 ) {
-  const { OpenSheetMusicDisplay } = await loadOsmdModule();
-  const buffer = document.createElement("div");
-  buffer.style.width = "900px";
-  buffer.style.position = "absolute";
-  buffer.style.visibility = "hidden";
-  buffer.style.pointerEvents = "none";
-  document.body.appendChild(buffer);
+  const opts: VexflowRenderOptions = {
+    mode: "pdf",
+    pagePadding: { top: 36, right: 36, bottom: 36, left: 36 },
+    pageScale: 1,
+    titleTopPadding: layout?.titleTopPadding ?? 3.6,
+    titleSubtitleGap: layout?.titleSubtitleGap ?? 1.2,
+    titleStaffGap: layout?.titleStaffGap ?? 2.8,
+    systemSpacing: layout?.systemSpacing ?? 1.4,
+    hideVoice2Rests: layout?.hideVoice2Rests ?? false,
+  };
 
-  try {
-    const osmd = new OpenSheetMusicDisplay(buffer, {
-      autoResize: false,
-      drawComposer: true,
-      drawSubtitle: true,
-      drawTitle: true,
-      defaultFontFamily: osmdDefaultFontFamily,
-      drawingParameters: "compacttight",
-      newSystemFromXML: true,
-      pageFormat: "Letter_P",
-      drawTimeSignatures: true,
-      drawMeasureNumbers: true,
-      percussionOneLineCutoff: 0,
-    });
-    configureOsmdRules(osmd, "pdf");
-    if (layout?.systemSpacing !== undefined) {
-      osmd.EngravingRules.MinimumDistanceBetweenSystems = layout.systemSpacing;
-      osmd.EngravingRules.MinSkyBottomDistBetweenSystems = layout.systemSpacing;
-    }
-    if (layout?.titleTopPadding !== undefined) {
-      osmd.EngravingRules.TitleTopDistance = layout.titleTopPadding;
-    }
-    if (layout?.titleSubtitleGap !== undefined) {
-      osmd.EngravingRules.SheetMinimumDistanceBetweenTitleAndSubtitle = layout.titleSubtitleGap;
-    }
-    if (layout?.titleStaffGap !== undefined) {
-      osmd.EngravingRules.TitleBottomDistance = layout.titleStaffGap;
-    }
-
-    await osmd.load(xml);
-    applyOsmdHeaderMetadata(osmd, xml);
-    osmd.render();
-    return getStaffSvgMarkup(buffer.innerHTML);
-  } finally {
-    document.body.removeChild(buffer);
-  }
+  return renderScorePagesToSvgs(score, opts);
 }
 
 async function buildPdf(
   score: NormalizedScore,
-  xml: string,
+  _xml: string,
   layout?: {
     titleTopPadding?: number;
     titleSubtitleGap?: number;
     titleStaffGap?: number;
     systemSpacing?: number;
+    hideVoice2Rests?: boolean;
   },
 ) {
   const [{ PDFDocument, PDFHexString, PDFName }] = await Promise.all([import("pdf-lib")]);
@@ -880,7 +790,7 @@ async function buildPdf(
   const subject = subtitle ? `Drum notation - ${subtitle}` : "Drum notation";
   const keywords = ["drum notation", "drums", "musicxml", title, author];
   const createdAt = new Date();
-  const pageSvgs = await renderPdfPageSvgs(xml, layout);
+  const pageSvgs = await renderPdfPageSvgs(score, layout);
 
   if (pageSvgs.length === 0) {
     throw new Error("Could not render staff pages for PDF.");
@@ -995,10 +905,6 @@ export function App() {
     analysisInput,
     120,
   );
-  const pagePreviewXml = useDebouncedValue(
-    settings.activeTab === "page" && hasRenderableScore ? staffXml : "",
-    250,
-  );
   const canExport = !isScorePending && hasRenderableScore && score.errors.length === 0;
 
   useEffect(() => {
@@ -1106,6 +1012,7 @@ export function App() {
         titleSubtitleGap: settings.titleSubtitleGap,
         titleStaffGap: settings.titleStaffGap,
         systemSpacing: settings.systemSpacing,
+        hideVoice2Rests: settings.hideVoice2Rests,
       });
       const pdfBuffer = pdfBytes.buffer.slice(pdfBytes.byteOffset, pdfBytes.byteOffset + pdfBytes.byteLength) as ArrayBuffer;
       downloadBlob(`${safeExportBasename(score.ast.headers.title?.value)}.pdf`, new Blob([pdfBuffer], { type: "application/pdf" }));
@@ -1143,7 +1050,7 @@ export function App() {
           </div>
         </div>
         <div className="header-actions">
-          <a className="export-button" href="./docs.html">Docs</a>
+          <a className="export-button" href="docs.html">Docs</a>
           <button className="export-button" disabled={!canExport} onClick={handleMusicXmlExport} type="button">Export MusicXML</button>
           <button className="export-button primary" disabled={!canExport || pendingPdfExport} onClick={handlePdfExport} type="button">
             {pendingPdfExport ? "Exporting PDF..." : "Export PDF"}
@@ -1207,13 +1114,14 @@ export function App() {
                 <div className="page-surface-body" onWheel={handlePageSurfaceWheel}>
                   {settings.activeTab === "page" ? (
                     <StaffPreview
-                      xml={hasRenderableScore ? (pagePreviewXml || staffXml) : ""}
+                      score={hasRenderableScore ? score : null}
                       pagePadding={settings.pagePadding}
                       pageScale={settings.pageScale}
                       titleTopPadding={settings.titleTopPadding}
                       titleSubtitleGap={settings.titleSubtitleGap}
                       titleStaffGap={settings.titleStaffGap}
                       systemSpacing={settings.systemSpacing}
+                      hideVoice2Rests={settings.hideVoice2Rests}
                       active={true}
                     />
                   ) : null}

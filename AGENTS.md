@@ -1,7 +1,15 @@
 # AGENTS.md
 
+## Engineering Integrity
+
+- **Research First:** When encountering technical obstacles or unfamiliar APIs, prioritize reading source code and official documentation to understand implementation details and usage patterns.
+- **Avoid "Shotgun" Debugging:** Do not make speculative changes (guess-and-check) followed by requests for user verification.
+- **Prototype Verification:** Before applying complex fixes or features, implement small-scale prototypes or reproduction scripts to verify assumptions autonomously.
+- **Technical Rigor:** Ensure every change is idiomatically correct and does not introduce regressions or syntax errors (like omission placeholders) into the codebase.
+- **Knowledge Retention:** After researching source code or documentation to solve a problem, document the findings (API details, internal logic, discovered constraints) in `LEARNINGS.md` or a similar technical log to prevent future regressions and aid collaboration.
+
 ## Rendering Rules
 
-- All score rendering must be done by OSMD.
-- Do not add custom HTML/CSS rendering that simulates score headers, titles, staves, or notation when OSMD cannot render a document.
-- If OSMD cannot render a given input, fall back only to blank pages or empty preview states instead of custom score-like markup.
+- **Total Delegation:** All score rendering (staves, notes, headers, titles, tempo) must be handled exclusively by VexFlow.
+- **No Manual Simulation:** Do not add custom HTML, CSS, or Canvas/SVG drawing code to simulate or "patch" missing score elements that should be part of the VexFlow output.
+- **Graceful Failure:** If VexFlow cannot render a specific input, fall back only to empty preview states or clear error messages instead of trying to manually draw placeholders.

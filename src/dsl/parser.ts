@@ -288,6 +288,8 @@ function isModifierAllowed(track: SourceTrackName, glyph: Exclude<BasicGlyph, "-
     case "bell":
       return track === "RC" && (glyph === "x" || glyph === "X");
     case "flam":
+    case "ghost":
+    case "drag":
       return (track === "SD" || track === "T1" || track === "T2" || track === "T3") && (glyph === "d" || glyph === "D");
   }
 }

@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { buildNormalizedScore } from "./dsl";
-import { GalleryPreview } from "./Gallery";
 import { renderScoreToSvg } from "./vexflow";
 
 interface DocsSection {
@@ -149,17 +148,6 @@ const docsSections: DocsSection[] = [
     ),
     example: `title Fusion Grooves\nsubtitle Advanced Study\ncomposer G. Mao\ntempo 128\ntime 4/4\ndivisions 16\ngrouping 2+2\n\n# Section A: Main Groove\nHH |: x - x - o - x - | x:close - X - x - c - :|x2\nSD |  - - d:cross - d - | D:rim - [2: d d:flam] - - -  |\nBD |  p - - - p - - - | p - p - - - p -        |\nHF |  - - - - p - - - | - - - - p:close - -    |\n\n# Section B: Bridge with Subdivisions\nRC |  x:bell - x:bell - x:bell - x:bell - | [4: x:choke] |\nDR |  s - - - [3: s s s] - - - | S - t1 t2 t3 - - -   |\nBD |  p - - - p - - -     | p - - - p - - -      |\nST |  R - - - R L R - - - | R - R L R - - -      |\n\n# Outro: Finale\nC  |  X:choke - - - - - - - | - - - - X - - - |\nBD |  [16: p] |`,
   },
-  {
-    id: "gallery",
-    title: "Notehead Gallery",
-    summary: "Browse all available SMuFL noteheads and their respective codes.",
-    content: (
-      <div className="docs-description">
-        <p>The table below shows all supported noteheads. You can use <code>:code</code> on any track to specify them.</p>
-      </div>
-    ),
-    example: "",
-  },
 ];
 
 function StaticScorePreview({ score }: { score: any }) {
@@ -259,19 +247,6 @@ function DrumIcon() {
 
 function DocsExampleCard({ section }: { section: DocsSection }) {
   const score = useMemo(() => buildNormalizedScore(section.example || "title T\ntime 4/4\ndivisions 1\n\nSD | - |"), [section.example]);
-
-  if (section.id === "gallery") {
-    return (
-      <article className="docs-section-card" id={section.id}>
-        <div className="docs-section-header">
-          <h2>{section.title}</h2>
-          <p>{section.summary}</p>
-        </div>
-        {section.content}
-        <GalleryPreview />
-      </article>
-    );
-  }
 
   return (
     <article className="docs-section-card" id={section.id}>

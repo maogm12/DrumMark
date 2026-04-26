@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { buildNormalizedScore } from "./dsl";
-import { GalleryPreview } from "./Gallery";
 import { renderScoreToSvg } from "./vexflow";
 
 interface DocsSection {
@@ -149,17 +148,6 @@ const docsSections: DocsSection[] = [
     ),
     example: `title Fusion Grooves\nsubtitle 高级进阶练习\ncomposer G. Mao\ntempo 128\ntime 4/4\ndivisions 16\ngrouping 2+2\n\n# 乐段 A: 主律动\nHH |: x - x - o - x - | x:close - X - x - c - :|x2\nSD |  - - d:cross - d - | D:rim - [2: d d:flam] - - -  |\nBD |  p - - - p - - - | p - p - - - p -        |\nHF |  - - - - p - - - | - - - - p:close - -    |\n\n# 乐段 B: 复杂细分桥接\nRC |  x:bell - x:bell - x:bell - x:bell - | [4: x:choke] |\nDR |  s - - - [3: s s s] - - - | S - t1 t2 t3 - - -   |\nBD |  p - - - p - - -     | p - - - p - - -      |\nST |  R - - - R L R - - - | R - R L R - - -      |\n\n# 结尾: Finale\nC  |  X:choke - - - - - - - | - - - - X - - - |\nBD |  [16: p] |`,
   },
-  {
-    id: "gallery",
-    title: "符头参考库",
-    summary: "查看所有可用的 SMuFL 符头及其对应代码。",
-    content: (
-      <div className="docs-description">
-        <p>下表展示了系统目前支持的所有符头。你可以在任何轨道上使用 <code>:代码</code> 来指定它们。</p>
-      </div>
-    ),
-    example: "",
-  },
 ];
 
 function StaticScorePreview({ score }: { score: any }) {
@@ -259,19 +247,6 @@ function DrumIcon() {
 
 function DocsExampleCard({ section }: { section: DocsSection }) {
   const score = useMemo(() => buildNormalizedScore(section.example || "title T\ntime 4/4\ndivisions 1\n\nSD | - |"), [section.example]);
-
-  if (section.id === "gallery") {
-    return (
-      <article className="docs-section-card" id={section.id}>
-        <div className="docs-section-header">
-          <h2>{section.title}</h2>
-          <p>{section.summary}</p>
-        </div>
-        {section.content}
-        <GalleryPreview />
-      </article>
-    );
-  }
 
   return (
     <article className="docs-section-card" id={section.id}>

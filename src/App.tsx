@@ -12,7 +12,7 @@ const seedDsl = `tempo 96
 time 4/4
 divisions 16
 
-HH |: x - x - o - x - | x - x:close - X - x - :|x3
+HH |: x - x - o - x - | x - x:close - X - x - :|
 SD |  - - d:cross - d - | D:rim - [2: d d:flam d] - - -  |
 BD |  p - - - p - - - | p - p - - - p -                     |
 HF |  - - - - p - - - | - - - - p:close - -                |
@@ -26,15 +26,10 @@ type PagePadding = {
   bottom: number;
   left: number;
 };
-// const osmdDefaultFontFamily = "Charter, \"Bitstream Charter\", \"Sitka Text\", Cambria, Georgia, \"Times New Roman\", \"PingFang SC\", \"Microsoft YaHei\", \"Noto Sans SC\", sans-serif";
 
 const pdfPageWidth = 612;
 const pdfPageHeight = 792;
 const pdfMargin = 36;
-// const pdfOsmdHeaderReservePx = 150;
-// type OpenSheetMusicDisplayType = import("opensheetmusicdisplay").OpenSheetMusicDisplay;
-
-// let osmdModulePromise: Promise<typeof import("opensheetmusicdisplay")> | null = null;
 
 function downloadBlob(filename: string, blob: Blob) {
   const url = URL.createObjectURL(blob);
@@ -56,20 +51,6 @@ function safeExportBasename(title: string | undefined) {
     .replace(/[^\p{L}\p{N}]+/gu, "-")
     .replace(/^-+|-+$/g, "") || "drum-notation";
 }
-
-// function getStaffSvgMarkup(markup: string) {
-//   const host = document.createElement("div");
-//   host.innerHTML = markup;
-//   const serializer = new XMLSerializer();
-//   return Array.from(host.querySelectorAll("svg"))
-//     .filter((svg) => !svg.parentElement?.closest("svg"))
-//     .map((svg) => {
-//       if (!svg.getAttribute("xmlns")) {
-//         svg.setAttribute("xmlns", "http://www.w3.org/2000/svg");
-//       }
-//       return serializer.serializeToString(svg);
-//     });
-// }
 
 function parseSvgSize(svgMarkup: string) {
   const doc = new DOMParser().parseFromString(svgMarkup, "image/svg+xml");
@@ -238,11 +219,6 @@ function applyPdfMetadata(
   pdf.catalog.set(PDFName.of("Metadata"), metadataRef);
 }
 
-// async function loadOsmdModule() {
-//   osmdModulePromise ??= import("opensheetmusicdisplay");
-//   return osmdModulePromise;
-// }
-
 function useDebouncedValue<T>(value: T, delayMs: number) {
   const [debouncedValue, setDebouncedValue] = useState(value);
 
@@ -258,114 +234,6 @@ function useDebouncedValue<T>(value: T, delayMs: number) {
 
   return debouncedValue;
 }
-
-// function configureOsmdRules(osmd: OpenSheetMusicDisplayType, mode: "preview" | "pdf") {
-//   const rules = osmd.EngravingRules as OpenSheetMusicDisplayType["EngravingRules"] & {
-//     RenderTitle?: boolean;
-//     RenderSubtitle?: boolean;
-//     RenderComposer?: boolean;
-//     SheetTitleHeight?: number;
-//     SheetSubtitleHeight?: number;
-//     SheetComposerHeight?: number;
-//     SheetMinimumDistanceBetweenTitleAndSubtitle?: number;
-//     TitleTopDistance?: number;
-//     TitleBottomDistance?: number;
-//   };
-
-//   rules.PageTopMargin = 0;
-//   rules.PageBottomMargin = 5;
-//   rules.PageLeftMargin = 2;
-//   rules.PageRightMargin = 2;
-//   rules.SystemLeftMargin = 0;
-//   rules.SystemRightMargin = 0;
-//   rules.RenderTitle = true;
-//   rules.RenderSubtitle = true;
-//   rules.RenderComposer = true;
-//   rules.SheetTitleHeight = 3.4;
-//   rules.SheetSubtitleHeight = 2.1;
-//   rules.SheetComposerHeight = 1.8;
-//   rules.SheetMinimumDistanceBetweenTitleAndSubtitle = 1.2;
-//   rules.TitleTopDistance = 3.6;
-//   rules.TitleBottomDistance = 2.4;
-
-//   if (mode === "pdf") {
-//     rules.PageTopMargin = pdfOsmdHeaderReservePx;
-//     rules.MinimumDistanceBetweenSystems = 1.0;
-//     rules.MinSkyBottomDistBetweenSystems = 1.0;
-//     rules.StaffDistance = 4;
-//     rules.BetweenStaffDistance = 2;
-//     rules.SheetMaximumWidth = 32767;
-//   }
-// }
-
-// function readMusicXmlCredit(xml: string, type: "title" | "subtitle" | "composer") {
-//   const parser = new DOMParser();
-//   const document = parser.parseFromString(xml, "application/xml");
-//   if (document.querySelector("parsererror")) {
-//     return "";
-//   }
-
-//   const credits = Array.from(document.querySelectorAll("credit"));
-//   for (const credit of credits) {
-//     const page = credit.getAttribute("page");
-//     if (page !== null && page !== "1") {
-//       continue;
-//     }
-
-//     const creditType = credit.querySelector("credit-type")?.textContent?.trim().toLowerCase();
-//     if (creditType !== type) {
-//       continue;
-//     }
-
-//     const words = Array.from(credit.querySelectorAll("credit-words"))
-//       .map((node) => node.textContent?.trim() ?? "")
-//       .filter(Boolean)
-//       .join("\n");
-//     if (words) {
-//       return words;
-//     }
-//   }
-
-//   if (type === "title") {
-//     return document.querySelector("work > work-title")?.textContent?.trim() ?? "";
-//   }
-
-//   if (type === "composer") {
-//     return document.querySelector('identification > creator[type="composer"]')?.textContent?.trim() ?? "";
-//   }
-
-//   return "";
-// }
-
-// function applyOsmdHeaderMetadata(osmd: OpenSheetMusicDisplayType, xml: string) {
-//   const sheet = osmd.Sheet as OpenSheetMusicDisplayType["Sheet"] & {
-//     TitleString?: string;
-//     SubtitleString?: string;
-//     ComposerString?: string;
-//   };
-
-//   const title = readMusicXmlCredit(xml, "title");
-//   const subtitle = readMusicXmlCredit(xml, "subtitle");
-//   const composer = readMusicXmlCredit(xml, "composer");
-
-  //   if (title) sheet.TitleString = title;
-//   if (subtitle) sheet.SubtitleString = subtitle;
-//   if (composer) sheet.ComposerString = composer;
-// }
-
-// function buildBlankPreviewMarkup(pageCount: number) {
-//   return Array.from({ length: Math.max(1, pageCount) }, (_, pageIndex) =>
-//     `<section class="staff-preview-page" data-page="${pageIndex + 1}"></section>`,
-//   ).join("");
-// }
-
-// function isRecoverablePreviewError(error: unknown) {
-//   const message = error instanceof Error ? error.message : String(error);
-//   return (
-//     message.includes("Invalid number of staves") ||
-//     message.includes("given music sheet was incomplete or could not be loaded")
-//   );
-// }
 
 function beautifyXml(xml: string): string {
   const lines = xml
@@ -664,19 +532,19 @@ function StaffPreview({
     const targetTop = scrollPosRef.current.top;
     const targetLeft = scrollPosRef.current.left;
 
-    try {
-      const opts: VexflowRenderOptions = {
-        mode: "preview",
-        pagePadding,
-        pageScale,
-        titleTopPadding,
-        titleSubtitleGap,
-        titleStaffGap,
-        systemSpacing,
-        hideVoice2Rests,
-      };
+    const opts: VexflowRenderOptions = {
+      mode: "preview",
+      pagePadding,
+      pageScale,
+      titleTopPadding,
+      titleSubtitleGap,
+      titleStaffGap,
+      systemSpacing,
+      hideVoice2Rests,
+    };
 
-      renderScoreToSvg(score, opts).then((svgMarkup) => {
+    renderScoreToSvg(score, opts)
+      .then((svgMarkup) => {
         const markup = `<section class="staff-preview-page" data-page="1">${svgMarkup}</section>`;
         setRenderedMarkup(markup);
 
@@ -686,12 +554,12 @@ function StaffPreview({
         }
 
         setError(null);
+      })
+      .catch((renderError) => {
+        const msg = renderError instanceof Error ? renderError.message : String(renderError);
+        console.error("VexFlow render error:", renderError);
+        setError(msg || "Could not render staff preview.");
       });
-    } catch (renderError) {
-      const msg = renderError instanceof Error ? renderError.message : String(renderError);
-      console.error("VexFlow render error:", renderError);
-      setError(msg || "Could not render staff preview.");
-    }
   }, [score, systemSpacing, titleStaffGap, titleSubtitleGap, titleTopPadding, active, hideVoice2Rests, pagePadding, pageScale]);
 
   const printableStyle = {
@@ -1033,11 +901,26 @@ export function App() {
     }));
   }
 
-  function handlePageSurfaceWheel(event: React.WheelEvent<HTMLDivElement>) {
-    if (!(event.ctrlKey || event.metaKey)) return;
-    event.preventDefault();
-    adjustPageScale(event.deltaY < 0 ? 0.1 : -0.1);
-  }
+  const pageSurfaceBodyRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const handleGlobalWheel = (event: WheelEvent) => {
+      // Intercept all zoom gestures (ctrl/meta + wheel) to disable browser zoom globally
+      if (event.ctrlKey || event.metaKey) {
+        event.preventDefault();
+
+        // Only scale the score if we are on the Page tab and mouse is over the preview area
+        if (settings.activeTab === "page" && pageSurfaceBodyRef.current?.contains(event.target as Node)) {
+          adjustPageScale(event.deltaY < 0 ? 0.1 : -0.1);
+        }
+      }
+    };
+
+    window.addEventListener("wheel", handleGlobalWheel, { passive: false });
+    return () => {
+      window.removeEventListener("wheel", handleGlobalWheel);
+    };
+  }, [settings.activeTab]);
 
   return (
     <main className="app-shell">
@@ -1058,9 +941,8 @@ export function App() {
         </div>
       </header>
 
-      <>
       <section className="workspace">
-          <section className={`pane editor-pane${settings.activeTab === "editor" ? " active" : ""}`} style={{ width: editorWidth }}>
+        <section className={`pane editor-pane${settings.activeTab === "editor" ? " active" : ""}`} style={{ width: editorWidth }}>
           <header className="pane-header">
             <span className="pane-title">Editor</span>
             <div className="preview-header-actions mobile-only-actions">
@@ -1111,7 +993,7 @@ export function App() {
                     </div>
                   ) : null}
                 </div>
-                <div className="page-surface-body" onWheel={handlePageSurfaceWheel}>
+                <div className="page-surface-body" ref={pageSurfaceBodyRef}>
                   {settings.activeTab === "page" ? (
                     <StaffPreview
                       score={hasRenderableScore ? score : null}
@@ -1181,43 +1063,42 @@ export function App() {
               </aside>
             )}
           </div>
-          </section>
         </section>
+      </section>
 
-        <footer className="status-bar">
-          <div className="status-left">
-            {score.errors.length > 0 ? (
-              <button 
-                className={`status-error-toggle${showErrors ? " active" : ""}`}
-                onClick={() => setShowErrors(!showErrors)}
-                type="button"
-              >
-                {score.errors.length} diagnostic issue{score.errors.length === 1 ? "" : "s"} found
-              </button>
-            ) : (
-              <span className="status-success">✓ DSL Valid</span>
-            )}
-          </div>
-          <div className="status-right">{score.ast.paragraphs.length} lines • {score.ast.repeatSpans.length} repeats</div>
-        </footer>
+      <footer className="status-bar">
+        <div className="status-left">
+          {score.errors.length > 0 ? (
+            <button 
+              className={`status-error-toggle${showErrors ? " active" : ""}`}
+              onClick={() => setShowErrors(!showErrors)}
+              type="button"
+            >
+              {score.errors.length} diagnostic issue{score.errors.length === 1 ? "" : "s"} found
+            </button>
+          ) : (
+            <span className="status-success">✓ DSL Valid</span>
+          )}
+        </div>
+        <div className="status-right">{score.ast.paragraphs.length} lines • {score.ast.repeatSpans.length} repeats</div>
+      </footer>
 
-        {score.errors.length > 0 && showErrors && (
-          <div className="error-list">
-            <div className="error-list-header">
-              <span>Errors</span>
-              <button onClick={() => setShowErrors(false)}>Close</button>
-            </div>
-            <div className="error-list-content">
-              {score.errors.map((error, index) => (
-                <div className="error-item" key={`${error.line}-${error.column}-${index}`}>
-                  <span className="error-loc">[{error.line}:{error.column}]</span>
-                  <span>{error.message}</span>
-                </div>
-              ))}
-            </div>
+      {score.errors.length > 0 && showErrors && (
+        <div className="error-list">
+          <div className="error-list-header">
+            <span>Errors</span>
+            <button onClick={() => setShowErrors(false)}>Close</button>
           </div>
-        )}
-      </>
+          <div className="error-list-content">
+            {score.errors.map((error, index) => (
+              <div className="error-item" key={`${error.line}-${error.column}-${index}`}>
+                <span className="error-loc">[{error.line}:{error.column}]</span>
+                <span>{error.message}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </main>
   );
 }

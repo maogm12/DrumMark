@@ -342,6 +342,7 @@ Rules:
 - Paragraph = consecutive block of track lines
 - Blank lines separate paragraphs
 - Paragraph primarily affects layout and text organization
+- Each paragraph starts a new system in the rendered score
 - Paragraph does not change musical time structure
 - Active tracks continue across paragraph boundaries
 - Omitting an active track in a later paragraph means that track is present but silent for that paragraph
@@ -429,6 +430,11 @@ It is not a real score track. After parsing, `DR` is expanded into standard trac
 - `t2` -> `T2` normal hit
 - `t3` -> `T3` normal hit
 
+**Combined hits:** Use `+` to play multiple drums simultaneously. `s+t3` plays SD and T3 at the same time.
+
+- `s+S` -> SD with both normal and accent (produces accent)
+- `s+t1+t2` -> three drums simultaneously
+
 Rules:
 
 - `DR` exists only as source syntax sugar
@@ -443,6 +449,7 @@ Example:
 
 ```txt
 DR | s - t1 - t2 - t3 - |
+DR | s+t3 - s+S - |     # SD+T3 simultaneous, then SD+SD(accent)
 ```
 
 ## Base Tokens
@@ -462,7 +469,18 @@ DR | s - t1 - t2 - t3 - |
 - `P` pedal accent hit
 - `R` right hand sticking
 - `L` left hand sticking
-...
+
+### Duration Suffixes
+
+Any hit or rest can be followed by duration suffixes to adjust its relative weight:
+
+- `.` (Dot): Multiplies duration by 1.5. Multiple dots are cumulative (e.g., `..` is 1.75x).
+- `/` (Half): Divides duration by 2. Multiple halves are cumulative (e.g., `//` is 0.25x).
+
+Combinations are allowed: `d./` is 0.75x duration.
+
+---
+
 `DR` allows:
 
 - `-`
@@ -495,11 +513,13 @@ DR | s - t1 - t2 - t3 - |
 - `R`
 - `L`
 
+`SD`, `T1`, `T2`, `T3`, `BD` allow `x` and `X` as sugar for `d:cross` and `D:cross`.
+
 Examples:
 
 ```txt
 HH | x - X - |
-SD | d - d D |
+SD | x - X - |    # equivalent to SD | d:cross - D:cross - |
 HF | - - p - |
 ST | R - L - |
 ```
@@ -719,7 +739,6 @@ Any group that would require automatic tie splitting is a hard error in v0.
 
 - `|:` repeat start
 - `:|` repeat end
-- `:|xN` repeat end with total play count
 
 Legal measure boundary forms:
 
@@ -736,24 +755,8 @@ SD |  - - d - - - D - | - - d - d - - -  |
 BD |  p - - - p - - - | p - p - - - p -  |
 ```
 
-Single-measure repeat repeated four times total:
-
-```txt
-HH |: x - x - x - x - :|x4
-```
-
-Two-measure repeat played three times total:
-
-```txt
-HH |: x - x - x - x - | x - x - X - x - :|x3
-SD |  - - d - - - D - | - - d - d - - -  |
-BD |  p - - - p - - - | p - p - - - p -  |
-```
-
 ### Repeat Semantics
 
-- `:|` is equivalent to `:|x2`
-- `xN` means total play count for the repeated region, not extra repeats
 - Repeats are global measure structure, not private to one track
 - Repeat boundaries may be written on any track
 - A repeat declaration on any track applies to the whole score
@@ -772,32 +775,72 @@ Practical guidance:
 - Repeat starts and ends must be paired
 - Nested repeats are not allowed in v0
 - Crossing repeats are not allowed
-- `N` in `:|xN` must be an integer greater than or equal to `2`
-- If multiple tracks declare the same repeat region, start bar, end bar, and play count must all match
 - First/second endings are not supported in v0
 - D.C., D.S., Segno, and Coda are not supported in v0
+
+### Multi-Measure Rest Syntax
+
+`|--N--|` is the **only** way to specify a multi-measure rest.
+
+Syntax rules:
+
+- `N` must be surrounded by at least one `-` on each side
+- Spaces around `N` are allowed
+- The entire construct must fit within a single measure boundary `| ... |`
+
+Examples:
+
+```txt
+HH | --8-- |     # 8-measure rest
+HH |- 4 - |     # 4-measure rest (spaces allowed)
+BD | --1-- |    # 1-measure rest
+```
+
+This is semantically distinct from: `|--N--|` generates a single `<multiple-rest>` measure in MusicXML, which signals the notation software to display a thick bar with the number N.
+
+### Inline Measure Repeat
+
+`*N` at the end of a measure repeats that entire measure N times.
+
+Syntax rules:
+
+- `*N` is part of the measure content, not a separate measure
+- `N` must be a positive integer
+- The measure (including `*N` itself) is repeated N times in the output
+- Spaces around `*N` are allowed
+
+Examples:
+
+```txt
+HH | xxxx *2 |    # repeats the entire measure "xxxx *2" 2 times (2 measures of xxxx)
+HH | - *3 |       # repeats the blank measure 3 times (3 blanks)
+```
+
+This macro is syntactic sugar. After expansion, there is no record that `*N` was used—it is indistinguishable from writing the measure N times manually.
 
 ## Measure Validation
 
 Within a measure:
 
 - An ordinary token counts as `1` slot
+- A token with suffixes has its weight calculated as: `(2 - 0.5^dots) / (2^halves)`
 - A group `[span: ...]` counts as `span` slots
 
-For each explicitly written measure on a track:
+Validation Rules:
 
-- Total occupied slots must equal `divisions`
+1. **Total Duration Match**: For each measure, the sum of all token weights must exactly equal the `divisions` header value. Any mismatch results in a hard error.
+2. **Grouping Boundary Alignment**: No token or group is allowed to cross a boundary defined by the `grouping` header. If a token's duration would cause it to overlap a boundary, a hard error is reported.
 
 Example:
 
 ```txt
 time 4/4
-divisions 16
+grouping 2+2
+divisions 4
 
-HH | x - x - [2: x x x] - x - x - |
+HH | x. x/ x x |  # Error: 'x.' crosses boundary at slot 2
+HH | x. / x x |   # Correct: 'x.' ends at 1.5, followed by half-rest '/' at 1.5-2.0
 ```
-
-The total slot count must equal `16`.
 
 ## Whitespace and Comments
 
@@ -913,8 +956,7 @@ Suggested mapping:
 - Measures and time signatures come from `time`
 - Tuplets come from groups `[span: ...]` where item count ≠ span
 - `divisions` in MusicXML may be chosen independently as needed for accurate durations
-- `:|` and `:|x2` should export as actual repeat barlines when possible
-- `:|xN` where `N > 2` may be expanded in v0 if repeat-count preservation is unreliable
+- `:|` should export as actual repeat barlines when possible
 
 ### Sticking
 
@@ -960,7 +1002,7 @@ time 4/4
 divisions 16
 grouping 2+2
 
-HH |: x - x - o - x - | x - x:close - X - x - :|x3
+HH |: x - x - o - x - | x - x:close - X - x - :|
 SD |  - - d:cross - d - | D:rim - [2: d d:flam d] - - -  |
 BD |  p - - - p - - - | p - p - - - p -                     |
 HF |  - - - - p - - - | - - - - p:close - -                |

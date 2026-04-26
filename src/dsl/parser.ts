@@ -6,6 +6,7 @@ import {
   type MeasureToken,
   type ParseError,
   type ParsedHeaders,
+  type ParsedMeasure,
   type ParsedTrackLine,
   type PreprocessedLine,
   type TrackParagraph,
@@ -18,7 +19,7 @@ import {
 import { preprocessSource } from "./preprocess";
 
 type HeaderAccumulator = Partial<ParsedHeaders>;
-type RawMeasure = Omit<ParsedTrackLine["measures"][number], "tokens">;
+type RawMeasure = Omit<ParsedTrackLine["measures"][number], "tokens"> & { tokens?: MeasureToken[] };
 
 const SUPPORTED_BEAT_UNITS = new Set([2, 4, 8, 16]);
 
@@ -266,7 +267,7 @@ function isTrackGlyphAllowed(track: SourceTrackName, glyph: BasicGlyph): boolean
     case "T2":
     case "T3":
     case "BD":
-      return glyph === "-" || glyph === "d" || glyph === "D" || glyph === "p" || glyph === "P";
+      return glyph === "-" || glyph === "d" || glyph === "D" || glyph === "p" || glyph === "P" || glyph === "x" || glyph === "X";
     case "HF":
       return glyph === "-" || glyph === "p" || glyph === "P";
     case "ST":
@@ -416,35 +417,142 @@ function parseMeasureTokens(
     }
 
     const glyph = parsedGlyph.glyph;
-
-    if (!isTrackGlyphAllowed(track, glyph)) {
-      errors.push({
-        line: lineNumber,
-        column: columnOffset + cursor,
-        message: `Token \`${glyph}\` is invalid on track ${track}`,
-      });
-      cursor += 1;
-      continue;
-    }
+    let cursorAfterGlyph = parsedGlyph.next;
 
     if (glyph === "o" || glyph === "O") {
+      if (!isTrackGlyphAllowed(track, glyph)) {
+        errors.push({
+          line: lineNumber,
+          column: columnOffset + cursor,
+          message: `Token \`${glyph}\` is invalid on track ${track}`,
+        });
+      }
+
+      let dots = 0;
+      let halves = 0;
+      while (cursorAfterGlyph < content.length) {
+        if (content[cursorAfterGlyph] === ".") {
+          dots += 1;
+          cursorAfterGlyph += 1;
+        } else if (content[cursorAfterGlyph] === "/") {
+          halves += 1;
+          cursorAfterGlyph += 1;
+        } else {
+          break;
+        }
+      }
+
       tokens.push({
         kind: "modified",
         value: glyph === "o" ? "x" : "X",
         modifier: "open",
+        dots,
+        halves,
       });
-      cursor += 1;
+      cursor = cursorAfterGlyph;
       continue;
     }
 
-    if (content[parsedGlyph.next] === ":") {
+    // DR combined glyph: s+t3 means play s and t3 simultaneously
+    if (track === "DR" && content[cursorAfterGlyph] === "+") {
+      const combinedItems: { value: string; dots: number; halves: number }[] = [];
+      let cursorAfterPlus = cursorAfterGlyph + 1;
+
+      while (cursorAfterPlus < content.length) {
+        if (/\s/.test(content[cursorAfterPlus])) {
+          cursorAfterPlus += 1;
+          continue;
+        }
+
+        if (content[cursorAfterPlus] === "+") {
+          cursorAfterPlus += 1;
+          continue;
+        }
+
+        const parsedPart = readBasicGlyph(track, content, cursorAfterPlus);
+        if (!parsedPart) {
+          errors.push({
+            line: lineNumber,
+            column: columnOffset + cursorAfterPlus,
+            message: `Unknown token \`${content[cursorAfterPlus]}\` in combined glyph`,
+          });
+          break;
+        }
+
+        let dots = 0;
+        let halves = 0;
+        let dotCursor = parsedPart.next;
+        while (dotCursor < content.length) {
+          if (content[dotCursor] === ".") {
+            dots += 1;
+            dotCursor += 1;
+          } else if (content[dotCursor] === "/") {
+            halves += 1;
+            dotCursor += 1;
+          } else {
+            break;
+          }
+        }
+
+        combinedItems.push({ value: parsedPart.glyph, dots, halves });
+        cursorAfterPlus = dotCursor;
+
+        // Check if there's another + or if we're done
+        if (content[cursorAfterPlus] !== "+") {
+          break;
+        }
+        cursorAfterPlus += 1;
+      }
+
+      if (combinedItems.length >= 2) {
+        tokens.push({
+          kind: "combined",
+          items: combinedItems as { value: BasicGlyph; dots: number; halves: number }[],
+        });
+        cursor = cursorAfterPlus;
+        continue;
+      }
+
+      // If combinedItems.length < 2, consume the + and fall through
+      // (fallthrough without advancing cursor would cause the + to be re-parsed as unknown token)
+      cursor = cursorAfterPlus;
+    }
+
+    // x/X on SD/T1/T2/T3/BD is sugar for d:cross/D:cross
+    if ((track === "SD" || track === "T1" || track === "T2" || track === "T3" || track === "BD") && (glyph === "x" || glyph === "X")) {
+      let dots = 0;
+      let halves = 0;
+      while (cursorAfterGlyph < content.length) {
+        if (content[cursorAfterGlyph] === ".") {
+          dots += 1;
+          cursorAfterGlyph += 1;
+        } else if (content[cursorAfterGlyph] === "/") {
+          halves += 1;
+          cursorAfterGlyph += 1;
+        } else {
+          break;
+        }
+      }
+
+      tokens.push({
+        kind: "modified",
+        value: glyph === "x" ? "d" : "D",
+        modifier: "cross",
+        dots,
+        halves,
+      });
+      cursor = cursorAfterGlyph;
+      continue;
+    }
+
+    if (content[cursorAfterGlyph] === ":") {
       if (track === "DR") {
         errors.push({
           line: lineNumber,
           column: columnOffset + cursor,
           message: "Track `DR` does not support modifiers",
         });
-        cursor = parsedGlyph.next + 1;
+        cursor = cursorAfterGlyph + 1;
         continue;
       }
 
@@ -454,23 +562,29 @@ function parseMeasureTokens(
           column: columnOffset + cursor,
           message: "Rests cannot have modifiers",
         });
-        cursor += 2;
+        cursor = cursorAfterGlyph + 1;
         continue;
       }
 
-      const parsedModifier = readModifier(content, parsedGlyph.next + 1);
+      const parsedModifier = readModifier(content, cursorAfterGlyph + 1);
 
       if (!parsedModifier) {
         errors.push({
           line: lineNumber,
-          column: columnOffset + parsedGlyph.next + 1,
+          column: columnOffset + cursorAfterGlyph + 1,
           message: "Unknown modifier",
         });
-        cursor = parsedGlyph.next + 1;
+        cursor = cursorAfterGlyph + 1;
         continue;
       }
 
-      if (!isModifierAllowed(track, glyph, parsedModifier.modifier)) {
+      if (!isTrackGlyphAllowed(track, glyph)) {
+        errors.push({
+          line: lineNumber,
+          column: columnOffset + cursor,
+          message: `Token \`${glyph}\` is invalid on track ${track}`,
+        });
+      } else if (!isModifierAllowed(track, glyph, parsedModifier.modifier)) {
         errors.push({
           line: lineNumber,
           column: columnOffset + cursor,
@@ -478,20 +592,62 @@ function parseMeasureTokens(
         });
       }
 
+      let dots = 0;
+      let halves = 0;
+      let suffixCursor = parsedModifier.next;
+      while (suffixCursor < content.length) {
+        if (content[suffixCursor] === ".") {
+          dots += 1;
+          suffixCursor += 1;
+        } else if (content[suffixCursor] === "/") {
+          halves += 1;
+          suffixCursor += 1;
+        } else {
+          break;
+        }
+      }
+
       tokens.push({
         kind: "modified",
         value: glyph,
         modifier: parsedModifier.modifier,
+        dots,
+        halves,
       });
-      cursor = parsedModifier.next;
+      cursor = suffixCursor;
       continue;
+    }
+
+    if (!isTrackGlyphAllowed(track, glyph)) {
+      errors.push({
+        line: lineNumber,
+        column: columnOffset + cursor,
+        message: `Token \`${glyph}\` is invalid on track ${track}`,
+      });
+    }
+
+    let dots = 0;
+    let halves = 0;
+    let suffixCursor = cursorAfterGlyph;
+    while (suffixCursor < content.length) {
+      if (content[suffixCursor] === ".") {
+        dots += 1;
+        suffixCursor += 1;
+      } else if (content[suffixCursor] === "/") {
+        halves += 1;
+        suffixCursor += 1;
+      } else {
+        break;
+      }
     }
 
     tokens.push({
       kind: "basic",
       value: glyph,
+      dots,
+      halves,
     });
-    cursor = parsedGlyph.next;
+    cursor = suffixCursor;
   }
 
   return tokens;
@@ -538,26 +694,6 @@ function parseMeasureTail(remainder: string, line: PreprocessedLine, errors: Par
       return { length: 2, kind: "repeat_start" };
     }
 
-    if (remainder.startsWith(":|x", index)) {
-      const match = remainder.slice(index).match(/^:\|x(\d+)/);
-
-      if (!match) {
-        return null;
-      }
-
-      const times = Number(match[1]);
-
-      if (times < 2) {
-        errors.push({
-          line: line.lineNumber,
-          column: line.content.indexOf(remainder.slice(index)) + 1,
-          message: "Repeat count must be at least 2",
-        });
-      }
-
-      return { length: match[0].length, kind: "repeat_end", times };
-    }
-
     if (remainder.startsWith(":|", index)) {
       return { length: 2, kind: "repeat_end", times: 2 };
     }
@@ -594,7 +730,7 @@ function parseMeasureTail(remainder: string, line: PreprocessedLine, errors: Par
       cursor += startBoundary.length;
     }
 
-    const endBoundaryMatch = remainder.slice(cursor).match(/(?:\|:|:\|x\d+|:\||\|)/);
+    const endBoundaryMatch = remainder.slice(cursor).match(/\|:|:\|x\d+|:\||\|/);
 
     if (!endBoundaryMatch || endBoundaryMatch.index === undefined) {
       errors.push({
@@ -619,6 +755,83 @@ function parseMeasureTail(remainder: string, line: PreprocessedLine, errors: Par
 
     const content = remainder.slice(cursor, endIndex).trim();
 
+    // Check for inline repeat: "xxxx *3" (content with *N)
+    const inlineRepeatMatch = content.match(/^(.*?)\s*\*\s*(\d+)\s*$/);
+    if (inlineRepeatMatch) {
+      const measureContent = inlineRepeatMatch[1].trim();
+      const repeatCount = parseInt(inlineRepeatMatch[2], 10);
+      if (repeatCount >= 2 && measureContent !== "") {
+        // Valid inline repeat: content *N
+        measures.push({
+          content: measureContent,
+          repeatStart: currentLeftBoundary === "repeat_start",
+          repeatEnd: endBoundary.kind === "repeat_end",
+          repeatTimes: endBoundary.kind === "repeat_end" ? endBoundary.times : undefined,
+          repeatCount,
+        });
+        currentLeftBoundary = endBoundary.kind === "repeat_start" ? "repeat_start" : "barline";
+        cursor = endIndex + endBoundary.length;
+        continue;
+      }
+      // repeatCount < 2 or empty content - invalid, fall through to error
+    }
+
+    // Check for bare *N macro: "*2" expands to 2 empty measures
+    // Only matches when content is EXACTLY *N (whitespace allowed around N)
+    const bareStarMatch = content.match(/^\s*\*\s*(\d+)\s*$/);
+    if (bareStarMatch) {
+      const count = parseInt(bareStarMatch[1], 10);
+      if (count >= 1) {
+        for (let i = 0; i < count; i++) {
+          measures.push({
+            content: "",
+            repeatStart: i === 0 ? currentLeftBoundary === "repeat_start" : false,
+            repeatEnd: i === count - 1 ? endBoundary.kind === "repeat_end" : false,
+            repeatTimes: i === count - 1 && endBoundary.kind === "repeat_end" ? endBoundary.times : undefined,
+          });
+        }
+        currentLeftBoundary = endBoundary.kind === "repeat_start" ? "repeat_start" : "barline";
+        cursor = endIndex + endBoundary.length;
+        continue;
+      }
+      errors.push({
+        line: line.lineNumber,
+        column: line.content.indexOf(content) + 1,
+        message: "Macro expansion count must be at least 1",
+      });
+      currentLeftBoundary = endBoundary.kind === "repeat_start" ? "repeat_start" : "barline";
+      cursor = endIndex + endBoundary.length;
+      continue;
+    }
+
+    // Check for multi-rest visual shorthand: |- 8 -| or |-8-
+    // Dashes on both sides required, spaces around number allowed.
+    const multiRestMatch = content.match(/^-+ *(\d+) *-+$/);
+    if (multiRestMatch) {
+      const count = parseInt(multiRestMatch[1], 10);
+      if (count < 1) {
+        errors.push({
+          line: line.lineNumber,
+          column: line.content.indexOf(content) + 1,
+          message: "Multi-rest count must be at least 1",
+        });
+        currentLeftBoundary = endBoundary.kind === "repeat_start" ? "repeat_start" : "barline";
+        cursor = endIndex + endBoundary.length;
+        continue;
+      }
+      measures.push({
+        content: "",
+        tokens: [],
+        repeatStart: false,
+        repeatEnd: false,
+        multiRestCount: count,
+      });
+      currentLeftBoundary = "barline";
+      cursor = endIndex + endBoundary.length;
+      continue;
+    }
+
+    // Regular measure (no special shorthand)
     measures.push({
       content,
       repeatStart: currentLeftBoundary === "repeat_start",
@@ -654,19 +867,94 @@ function parseTrackLine(line: PreprocessedLine, errors: ParseError[]): ParsedTra
   return {
     track: parsed.track,
     lineNumber: line.lineNumber,
-    measures: measures.map((measure) => {
+    measures: measures.flatMap((measure, _measureIndex) => {
+      // Check for *N inline repeat: "xxxx *3" means repeat "xxxx" 3 times
+      const inlineRepeatMatch = measure.content.match(/^(.*?)\s*\*\s*(\d+)\s*$/);
+      if (inlineRepeatMatch && inlineRepeatMatch[1].trim() !== "") {
+        const repeatCount = parseInt(inlineRepeatMatch[2], 10);
+        if (repeatCount >= 2) {
+          const measureContent = inlineRepeatMatch[1].trim();
+          const parsedTokens = parseMeasureTokens(
+            measureContent,
+            parsed.track,
+            line.lineNumber,
+            1,
+            errors,
+            true,
+          );
+          const expanded: ParsedMeasure[] = [];
+          for (let i = 0; i < repeatCount; i++) {
+            expanded.push({
+              content: measureContent,
+              tokens: parsedTokens,
+              repeatStart: i === 0 ? measure.repeatStart : false,
+              repeatEnd: i === repeatCount - 1 ? measure.repeatEnd : false,
+              repeatTimes: i === repeatCount - 1 ? measure.repeatTimes : undefined,
+            });
+          }
+          return expanded;
+        }
+      }
+
+      // Check for bare *N repeat marker - repeat this measure N times
+      // | *2 | means repeat this (blank) measure 2 times = 2 blank measures
+      const bareRepeatMatch = measure.content.match(/^\*(\d+)$/);
+      if (bareRepeatMatch) {
+        const count = parseInt(bareRepeatMatch[1], 10);
+        if (count < 1) {
+          errors.push({
+            line: line.lineNumber,
+            column: 1,
+            message: "Repeat count must be at least 1",
+          });
+          return [];
+        }
+        const expanded: ParsedMeasure[] = [];
+        for (let i = 0; i < count; i++) {
+          expanded.push({
+            content: "",
+            tokens: [],
+            repeatStart: i === 0 ? measure.repeatStart : false,
+            repeatEnd: i === count - 1 ? measure.repeatEnd : false,
+            repeatTimes: i === count - 1 ? measure.repeatTimes : undefined,
+          });
+        }
+        return expanded;
+      }
+
       const measureStart = line.content.indexOf(measure.content);
-      return {
-        ...measure,
-        tokens: parseMeasureTokens(
-          measure.content,
-          parsed.track,
-          line.lineNumber,
-          (measureStart === -1 ? 1 : measureStart + 1),
-          errors,
-          true,
-        ),
-      };
+      const parsedTokens = parseMeasureTokens(
+        measure.content,
+        parsed.track,
+        line.lineNumber,
+        measureStart === -1 ? 1 : measureStart + 1,
+        errors,
+        true,
+      );
+
+      // Inline repeat: replicate this measure N times (e.g., "xxxx *3" → 3 measures with same notes)
+      if (measure.repeatCount !== undefined && measure.repeatCount > 1) {
+        const expanded: ParsedMeasure[] = [];
+        for (let i = 0; i < measure.repeatCount; i++) {
+          expanded.push({
+            content: measure.content,
+            tokens: parsedTokens,
+            repeatStart: i === 0 ? measure.repeatStart : false,
+            repeatEnd: i === measure.repeatCount - 1 ? measure.repeatEnd : false,
+            repeatTimes: i === measure.repeatCount - 1 ? measure.repeatTimes : undefined,
+          });
+        }
+        return expanded;
+      }
+
+      return [{
+        content: measure.content,
+        tokens: parsedTokens,
+        repeatStart: measure.repeatStart,
+        repeatEnd: measure.repeatEnd,
+        repeatTimes: measure.repeatTimes,
+        multiRestCount: measure.multiRestCount,
+      }];
     }),
     source: line,
   };

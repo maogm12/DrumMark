@@ -8,6 +8,7 @@ import {
 import { buildScoreAst } from "./ast";
 import { TRACKS } from "./types";
 import type {
+  BasicGlyph,
   Fraction,
   MeasureToken,
   Modifier,
@@ -72,6 +73,28 @@ function pushTokenEvents(
     return;
   }
 
+  if (token.kind === "combined") {
+    // Combined token: all items play at the same time position
+    for (const item of token.items) {
+      // "-" in combined is unusual but filter it out to avoid classification issues
+      if (item.value === "-") continue;
+      const glyph = item.value as Exclude<BasicGlyph, "-">;
+      into.push({
+        track,
+        paragraphIndex,
+        measureIndex,
+        measureInParagraph,
+        start: addFractions(measureStart, tokenStart),
+        duration: tokenDuration,
+        kind: classifyEventKind(track, glyph),
+        glyph,
+        modifier: undefined,
+        ...(tuplet ? { tuplet } : {}),
+      });
+    }
+    return;
+  }
+
   if (token.value === "-") {
     return;
   }
@@ -93,6 +116,18 @@ function pushTokenEvents(
   });
 }
 
+function calculateTokenWeight(token: MeasureToken): number {
+  if (token.kind === "group") {
+    return token.span;
+  }
+  if (token.kind === "combined") {
+    return 1; // All items play simultaneously = 1 slot
+  }
+  // Weight = (1 + 0.5 + 0.25... based on dots) / (2^halves)
+  const baseWeight = 2 - Math.pow(0.5, token.dots);
+  return baseWeight / Math.pow(2, token.halves);
+}
+
 export function normalizeScoreAst(ast: ScoreAst): NormalizedScore {
   const errors = [...ast.errors];
   const measures: NormalizedMeasure[] = [];
@@ -101,6 +136,13 @@ export function normalizeScoreAst(ast: ScoreAst): NormalizedScore {
     denominator: ast.headers.time.beatUnit,
   });
   const slotDuration = divideFraction(measureDuration, ast.headers.divisions.value);
+
+  const groupingValues = ast.headers.grouping.values;
+  const slotsPerBeatUnit = ast.headers.divisions.value / ast.headers.time.beats;
+  const groupingBoundaries = groupingValues.reduce((acc, val, i) => {
+    const prev = acc[i - 1] ?? 0;
+    return [...acc, prev + (val * slotsPerBeatUnit)];
+  }, [] as number[]);
 
   for (let paragraphIndex = 0; paragraphIndex < ast.paragraphs.length; paragraphIndex += 1) {
     const paragraph = ast.paragraphs[paragraphIndex];
@@ -117,12 +159,31 @@ export function normalizeScoreAst(ast: ScoreAst): NormalizedScore {
           continue;
         }
 
-        let slotOffset = 0;
+        let currentSlotOffset = 0;
+        const expectedSlots = ast.headers.divisions.value;
 
         for (const token of measure.tokens) {
-          const span = token.kind === "group" ? token.span : 1;
-          const tokenStart = multiplyFraction(slotDuration, slotOffset);
-          const tokenDuration = multiplyFraction(slotDuration, span);
+          const weight = calculateTokenWeight(token);
+          const tokenStart = multiplyFraction(slotDuration, currentSlotOffset);
+          const tokenDuration = multiplyFraction(slotDuration, weight);
+
+          // Boundary check: A note or group cannot cross a grouping boundary
+          const startSlot = currentSlotOffset;
+          const endSlot = currentSlotOffset + weight;
+          
+          for (const boundary of groupingBoundaries) {
+            // Use a small epsilon to avoid floating point issues
+            if (startSlot < boundary - 0.0001 && endSlot > boundary + 0.0001) {
+              const tokenDesc = token.kind === "combined"
+                ? token.items.map((i) => i.value).join("+")
+                : token.kind === "group" ? "group" : token.value;
+              errors.push({
+                line: measure.sourceLine ?? track.lineNumber ?? paragraph.startLine,
+                column: 1,
+                message: `Token \`${tokenDesc}\` crosses grouping boundary at ${boundary} in track ${track.track}`,
+              });
+            }
+          }
 
           pushTokenEvents(
             track.track,
@@ -136,7 +197,27 @@ export function normalizeScoreAst(ast: ScoreAst): NormalizedScore {
             events,
           );
 
-          slotOffset += span;
+          currentSlotOffset += weight;
+        }
+
+        // Final measure length validation
+        // Multi-rest measures span multiple bars and don't need to fill a single measure
+        if (measure.multiRestCount === undefined && Math.abs(currentSlotOffset - expectedSlots) > 0.0001) {
+          errors.push({
+            line: measure.sourceLine ?? track.lineNumber ?? paragraph.startLine,
+            column: 1,
+            message: `Track \`${track.track}\` measure ${globalIndex + 1} has invalid duration: used ${currentSlotOffset} slots, expected ${expectedSlots}`,
+          });
+        }
+      }
+
+      let multiRestCount: number | undefined = undefined;
+      for (const track of paragraph.tracks) {
+        const m = track.measures[measureInParagraph];
+        if (m?.multiRestCount !== undefined) {
+          if (multiRestCount === undefined || m.multiRestCount < multiRestCount) {
+            multiRestCount = m.multiRestCount;
+          }
         }
       }
 
@@ -145,6 +226,7 @@ export function normalizeScoreAst(ast: ScoreAst): NormalizedScore {
         paragraphIndex,
         measureInParagraph,
         sourceLine: paragraph.tracks[0]?.measures[measureInParagraph]?.sourceLine ?? 0,
+        multiRestCount,
         events: events.sort((left, right) => {
           const denominator = lcm(left.start.denominator, right.start.denominator);
           const leftValue = left.start.numerator * (denominator / left.start.denominator);

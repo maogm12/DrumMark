@@ -1,10 +1,15 @@
-import type { Fraction, NormalizedEvent, NormalizedScore, TrackName } from "./types";
 import {
-  buildVoiceEntries,
-  lcm,
+  addFractions,
+  compareFractions,
+  fractionsEqual,
   multiplyFraction,
   simplify,
   subtractFractions,
+  type Fraction,
+} from "./logic";
+import type { NormalizedEvent, NormalizedScore, TrackName } from "./types";
+import {
+  buildVoiceEntries,
   visualDurationForEvent,
   voiceForTrack as logicVoiceForTrack,
   groupVoiceEvents,
@@ -12,6 +17,7 @@ import {
   groupingSegmentIndex,
   type InstrumentSpec,
   type VoiceEntry,
+  type VoiceEventGroup,
 } from "./logic";
 
 type VoiceId = 1 | 2;
@@ -88,22 +94,32 @@ function noteShapeForFraction(duration: Fraction): { type: string; dots: number 
       return { type: "whole", dots: 0 };
     case "3/2":
       return { type: "whole", dots: 1 };
+    case "7/4":
+      return { type: "whole", dots: 2 };
     case "1/2":
       return { type: "half", dots: 0 };
     case "3/4":
       return { type: "half", dots: 1 };
+    case "7/8":
+      return { type: "half", dots: 2 };
     case "1/4":
       return { type: "quarter", dots: 0 };
     case "3/8":
       return { type: "quarter", dots: 1 };
+    case "7/16":
+      return { type: "quarter", dots: 2 };
     case "1/8":
       return { type: "eighth", dots: 0 };
     case "3/16":
       return { type: "eighth", dots: 1 };
+    case "7/32":
+      return { type: "eighth", dots: 2 };
     case "1/16":
       return { type: "16th", dots: 0 };
     case "3/32":
       return { type: "16th", dots: 1 };
+    case "7/64":
+      return { type: "16th", dots: 2 };
     case "1/32":
       return { type: "32nd", dots: 0 };
     case "3/64":
@@ -140,6 +156,8 @@ function instrumentForTrack(track: TrackName, glyph?: string): InstrumentSpec {
       return { displayStep: "A", displayOctave: 5, notehead: "x" };
     case "ST":
       return { displayStep: "B", displayOctave: 5 };
+    default:
+      return { displayStep: "B", displayOctave: 5 };
   }
 }
 
@@ -175,6 +193,9 @@ function highestEventIndex(events: NormalizedEvent[]): number {
 }
 
 function collectDivisions(score: NormalizedScore): number {
+  const lcm = (a: number, b: number) => (a * b) / gcd(a, b);
+  const gcd = (a: number, b: number): number => (b === 0 ? a : gcd(b, a % b));
+
   let divisions = 1;
 
   for (const measure of score.measures) {
@@ -263,6 +284,7 @@ function noteXml(
   divisions: number,
   voice: VoiceTrack,
   isChord: boolean,
+  startsTuplet: boolean,
   closesTuplet: boolean,
   sticking?: string,
   beamState: "begin" | "continue" | "end" | null = null,
@@ -284,10 +306,15 @@ function noteXml(
 
   // Tuplet start/stop
   if (event.tuplet) {
-    notationsContent.push('<tuplet type="start" bracket="yes" number="1"/>');
-  }
-  if (closesTuplet && !isChord) {
-    notationsContent.push('<tuplet type="stop" number="1"/>');
+    if (startsTuplet) {
+      const showNumber = (event.tuplet.actual === 3 || event.tuplet.actual === 5) ? ' show-number="actual"' : ' show-number="none"';
+      const tupletActual = `<tuplet-actual><number-of-notes>${event.tuplet.actual}</number-of-notes><tuple-type>${shape.type}</tuple-type></tuplet-actual>`;
+      const tupletNormal = `<tuplet-normal><number-of-notes>${event.tuplet.normal}</number-of-notes><tuple-type>${shape.type}</tuple-type></tuplet-normal>`;
+      notationsContent.push(`<tuplet type="start" number="1"${showNumber}>${tupletActual}${tupletNormal}</tuplet>`);
+    }
+    if (closesTuplet) {
+      notationsContent.push('<tuplet type="stop" number="1"/>');
+    }
   }
 
   // Technical/Articulations from notationsXml logic
@@ -376,37 +403,44 @@ function measureXml(score: NormalizedScore, exportMeasure: ExportMeasure, divisi
   const measureStart = multiplyFraction(measureDuration, measure.globalIndex);
   const upEvents = measure.events.filter((event) => logicVoiceForTrack(event.track) === 1 && event.track !== "ST");
   const downEvents = measure.events.filter((event) => logicVoiceForTrack(event.track) === 2 && event.track !== "ST");
+  
   const upEntries = upEvents.length > 0
-    ? buildVoiceEntries(groupVoiceEvents(upEvents), measureStart, measureDuration)
+    ? buildVoiceEntries(score, groupVoiceEvents(upEvents), measureStart, measureDuration)
     : [];
   const downEntries = downEvents.length > 0
-    ? buildVoiceEntries(groupVoiceEvents(downEvents), measureStart, measureDuration)
+    ? buildVoiceEntries(score, groupVoiceEvents(downEvents), measureStart, measureDuration)
     : [];
+    
   const stickings = stickingsByStart(measure.events);
   const renderedStickings = new Set<string>();
-  const attributes =
-    exportMeasure.outputIndex === 0
+  const showAttributes = exportMeasure.outputIndex === 0 || measure.multiRestCount !== undefined;
+  const attributes = showAttributes
       ? [
           "<attributes>",
-          `<divisions>${divisions}</divisions>`,
-          "<key><fifths>0</fifths></key>",
-          `<time><beats>${score.ast.headers.time.beats}</beats><beat-type>${score.ast.headers.time.beatUnit}</beat-type></time>`,
-          "<staves>1</staves>",
-          "<clef number=\"1\"><sign>percussion</sign><line>2</line></clef>",
+          exportMeasure.outputIndex === 0 ? `<divisions>${divisions}</divisions>` : "",
+          exportMeasure.outputIndex === 0 ? "<key><fifths>0</fifths></key>" : "",
+          exportMeasure.outputIndex === 0 ? `<time><beats>${score.ast.headers.time.beats}</beats><beat-type>${score.ast.headers.time.beatUnit}</beat-type></time>` : "",
+          exportMeasure.outputIndex === 0 ? "<staves>1</staves>" : "",
+          exportMeasure.outputIndex === 0 ? '<clef number="1"><sign>percussion</sign><line>2</line></clef>' : "",
+          measure.multiRestCount !== undefined
+            ? `<measure-style><multiple-rest>${measure.multiRestCount}</multiple-rest></measure-style>`
+            : "",
           "</attributes>",
-          `<direction placement="above"><direction-type><metronome><beat-unit>quarter</beat-unit><per-minute>${score.ast.headers.tempo.value}</per-minute></metronome></direction-type><sound tempo="${score.ast.headers.tempo.value}"/></direction>`,
-        ].join("")
+          exportMeasure.outputIndex === 0
+            ? `<direction placement="above"><direction-type><metronome><beat-unit>quarter</beat-unit><per-minute>${score.ast.headers.tempo.value}</per-minute></metronome></direction-type><sound tempo="${score.ast.headers.tempo.value}"/></direction>`
+            : "",
+        ].filter(Boolean).join("")
       : "";
   const repeatStart = exportMeasure.showRepeatStart
-    ? "<barline location=\"left\"><repeat direction=\"forward\"/></barline>"
+    ? '<barline location="left"><repeat direction="forward"/></barline>'
     : "";
   const repeatEnd = exportMeasure.showRepeatEnd
-    ? "<barline location=\"right\"><repeat direction=\"backward\"/></barline>"
+    ? '<barline location="right"><repeat direction="backward"/></barline>'
     : "";
   const print = exportMeasure.outputIndex === 0
     ? "<print><measure-numbering>system</measure-numbering></print>"
     : forceLineBreak
-      ? "<print new-system=\"yes\"><measure-numbering>system</measure-numbering></print>"
+      ? '<print new-system="yes"><measure-numbering>system</measure-numbering></print>'
       : "";
 
   function processVoiceEntries(entries: VoiceEntry[], voice: VoiceTrack): string[] {
@@ -431,6 +465,18 @@ function measureXml(score: NormalizedScore, exportMeasure: ExportMeasure, divisi
         renderedStickings.add(stickingKey);
       }
 
+      const nextEntry = entries[i + 1];
+      const prevEntry = entries[i - 1];
+
+      const currentTuplet = entry.events[0]?.tuplet;
+      const prevTuplet = prevEntry?.kind === "notes" ? prevEntry.events[0]?.tuplet : undefined;
+      const nextTuplet = nextEntry?.kind === "notes" ? nextEntry.events[0]?.tuplet : undefined;
+
+      // A tuplet starts if the current event has a tuplet and the previous one doesn't (or it's a different tuplet)
+      const startsTuplet = currentTuplet !== undefined && currentTuplet !== prevTuplet;
+      // A tuplet closes if the current event has a tuplet and the next one doesn't (or it's a different tuplet)
+      const closesTuplet = currentTuplet !== undefined && currentTuplet !== nextTuplet;
+
       if (!isBeamable(entry.duration)) {
         const stickingTargetIndex = stickingForEntry ? highestEventIndex(entry.events) : -1;
         result.push(
@@ -441,7 +487,8 @@ function measureXml(score: NormalizedScore, exportMeasure: ExportMeasure, divisi
               divisions,
               voice,
               index > 0,
-              index === entry.events.length - 1 && Boolean(event.tuplet),
+              startsTuplet && index === 0,
+              closesTuplet && index === entry.events.length - 1,
               index === stickingTargetIndex ? stickingForEntry : undefined,
             );
 
@@ -452,9 +499,6 @@ function measureXml(score: NormalizedScore, exportMeasure: ExportMeasure, divisi
         );
         continue;
       }
-
-      const nextEntry = entries[i + 1];
-      const prevEntry = entries[i - 1];
 
       const prevGroup = prevEntry?.kind === "notes" && isBeamable(prevEntry.duration);
       const nextGroup = nextEntry?.kind === "notes" && isBeamable(nextEntry.duration);
@@ -483,7 +527,8 @@ function measureXml(score: NormalizedScore, exportMeasure: ExportMeasure, divisi
             divisions,
             voice,
             index > 0,
-            index === entry.events.length - 1 && Boolean(event.tuplet),
+            startsTuplet && index === 0,
+            closesTuplet && index === entry.events.length - 1,
             index === stickingTargetIndex ? stickingForEntry : undefined,
             beamState,
           );
@@ -516,12 +561,31 @@ function measureXml(score: NormalizedScore, exportMeasure: ExportMeasure, divisi
     voiceContent.push(...downNotes);
   }
 
+  // If a measure is entirely empty, output a 'Whole Measure Rest'.
+  // This is required for OSMD's auto-merge logic.
+  const isPurelyEmpty = measure.generated || measure.multiRestCount !== undefined || (
+    upEntries.every(e => e.kind === "rest") &&
+    downEntries.every(e => e.kind === "rest")
+  );
+
+  const emptyMeasureContent = [
+    "<note>",
+    '<rest measure="yes"/>',
+    `<duration>${fractionToDivisions(measureDuration, divisions)}</duration>`,
+    "<voice>1</voice>",
+    "<type>whole</type>",
+    "<staff>1</staff>",
+    "</note>",
+  ].join("");
+
+  const content = isPurelyEmpty ? [emptyMeasureContent] : voiceContent;
+
   return [
-    `<measure number="${exportMeasure.outputIndex + 1}">`,
+    `<measure number="${measure.globalIndex + 1}">`,
     print,
     attributes,
     repeatStart,
-    ...voiceContent,
+    ...content,
     repeatEnd,
     "</measure>",
   ].join("");
@@ -533,6 +597,23 @@ function buildExportMeasures(score: NormalizedScore): ExportMeasure[] {
 
   for (let index = 0; index < score.measures.length; index += 1) {
     const measure = score.measures[index];
+
+    // Handle multi-measure rests - output N measures with <multiple-rest> on first
+    if (measure.multiRestCount && measure.multiRestCount > 1) {
+      for (let i = 0; i < measure.multiRestCount; i++) {
+        expanded.push({
+          measure: {
+            ...measure,
+            multiRestCount: i === 0 ? measure.multiRestCount : undefined,
+          },
+          showRepeatStart: false,
+          showRepeatEnd: false,
+          outputIndex: expanded.length,
+        });
+      }
+      continue;
+    }
+
     const repeatSpan = repeatByStart.get(measure.globalIndex);
 
     if (repeatSpan && repeatSpan.times > 2) {
@@ -547,7 +628,7 @@ function buildExportMeasures(score: NormalizedScore): ExportMeasure[] {
         }
       }
 
-      index = repeatSpan.endBar;
+      index = repeatSpan.endBar + 1;
       continue;
     }
 

@@ -21,10 +21,10 @@ C  | X - - - |`);
       generated: true,
     });
     expect(score.paragraphs[1].tracks[0].measures[0].tokens).toEqual([
-      { kind: "basic", value: "-" },
-      { kind: "basic", value: "-" },
-      { kind: "basic", value: "-" },
-      { kind: "basic", value: "-" },
+      { kind: "basic", value: "-", dots: 0, halves: 0 },
+      { kind: "basic", value: "-", dots: 0, halves: 0 },
+      { kind: "basic", value: "-", dots: 0, halves: 0 },
+      { kind: "basic", value: "-", dots: 0, halves: 0 },
     ]);
   });
 
@@ -44,27 +44,21 @@ SD | d - D - | d - d - |`);
     ]);
   });
 
-  it("builds repeat spans and reports repeat conflicts", () => {
+  it("builds repeat spans", () => {
     const score = buildScoreAst(`time 4/4
 divisions 4
 
 HH |: x - x - | x - x - :|
 SD |  d - D - | d - d -   |
 
-HH |: x - x - :|x3
-SD |  d - d - :|x2`);
+HH |: x - x - | x - x - :|
+SD |  d - d - | d - d -   |`);
 
     expect(score.repeatSpans).toEqual([
       { startBar: 0, endBar: 1, times: 2 },
-      { startBar: 2, endBar: 2, times: 3 },
+      { startBar: 2, endBar: 3, times: 2 },
     ]);
-    expect(score.errors).toEqual([
-      {
-        line: 7,
-        column: 1,
-        message: "Conflicting repeat count at bar 3",
-      },
-    ]);
+    expect(score.errors).toEqual([]);
   });
 
   it("reports unmatched repeat boundaries", () => {
@@ -94,22 +88,22 @@ HH | x - x - x - x - | |`);
     expect(score.errors).toEqual([]);
     expect(score.paragraphs[0].tracks.map((track) => track.track)).toEqual(["HH", "SD", "T1", "T2"]);
     expect(score.paragraphs[0].tracks[1].measures[0].tokens).toEqual([
-      { kind: "basic", value: "d" },
-      { kind: "basic", value: "-" },
+      { kind: "basic", value: "d", dots: 0, halves: 0 },
+      { kind: "basic", value: "-", dots: 0, halves: 0 },
       {
         kind: "group",
         count: 3,
         span: 2,
         items: [
-          { kind: "basic", value: "-" },
-          { kind: "basic", value: "d" },
-          { kind: "basic", value: "-" },
+          { kind: "basic", value: "-", dots: 0, halves: 0 },
+          { kind: "basic", value: "d", dots: 0, halves: 0 },
+          { kind: "basic", value: "-", dots: 0, halves: 0 },
         ],
       },
-      { kind: "basic", value: "-" },
-      { kind: "basic", value: "-" },
-      { kind: "basic", value: "-" },
-      { kind: "basic", value: "-" },
+      { kind: "basic", value: "-", dots: 0, halves: 0 },
+      { kind: "basic", value: "-", dots: 0, halves: 0 },
+      { kind: "basic", value: "-", dots: 0, halves: 0 },
+      { kind: "basic", value: "-", dots: 0, halves: 0 },
     ]);
     expect(score.paragraphs[0].tracks[1].measures[1].tokens).toHaveLength(8);
   });
@@ -126,10 +120,10 @@ DR | s T1 T2 T3 |`);
     const t2Track = score.paragraphs[0].tracks.find((t) => t.track === "T2");
     const t3Track = score.paragraphs[0].tracks.find((t) => t.track === "T3");
 
-    expect(sdTrack?.measures[0].tokens[0]).toEqual({ kind: "basic", value: "d" });
-    expect(t1Track?.measures[0].tokens[1]).toEqual({ kind: "basic", value: "D" });
-    expect(t2Track?.measures[0].tokens[2]).toEqual({ kind: "basic", value: "D" });
-    expect(t3Track?.measures[0].tokens[3]).toEqual({ kind: "basic", value: "D" });
+    expect(sdTrack?.measures[0].tokens[0]).toEqual({ kind: "basic", value: "d", dots: 0, halves: 0 });
+    expect(t1Track?.measures[0].tokens[1]).toEqual({ kind: "basic", value: "D", dots: 0, halves: 0 });
+    expect(t2Track?.measures[0].tokens[2]).toEqual({ kind: "basic", value: "D", dots: 0, halves: 0 });
+    expect(t3Track?.measures[0].tokens[3]).toEqual({ kind: "basic", value: "D", dots: 0, halves: 0 });
   });
 
   it("reports grouping compatibility and DR mixing errors", () => {

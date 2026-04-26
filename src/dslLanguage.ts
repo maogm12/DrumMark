@@ -155,6 +155,10 @@ function readTrackToken(stream: StringStream, state: DslState): string | null {
     return "punctuation";
   }
 
+  if (stream.match(/^[./]+/)) {
+    return "duration-modifier";
+  }
+
   const mod = matchWord(stream, modifiers);
   if (mod) {
     return "modifier";
@@ -289,6 +293,7 @@ const drumDslParser: StreamParser<DslState> = {
     "group-count": tags.integer,
     punctuation: tags.punctuation,
     modifier: tags.modifier,
+    "duration-modifier": tags.arithmeticOperator,
     rest: tags.null,
     "dr-tom": tags.typeName,
     "sticking-note": tags.attributeValue,

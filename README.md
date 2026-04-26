@@ -19,7 +19,7 @@
 - ✍️ **Text-Driven:** Forget tedious mouse clicks. Record your ideas using simple characters (`x`, `d`, `p`).
 - ⚡ **Live Preview:** Real-time rendering engine based on OSMD.
 - 🎼 **Professional Export:** Generate standard MusicXML compatible with MuseScore, Sibelius, or Finale.
-- 📏 **Rhythmic Precision:** Supports complex meters (e.g., 7/8), automatic beaming, and advanced tuplets.
+- 📏 **Rhythmic Precision:** Supports complex meters (e.g., 7/8), duration modifiers (dots `.` and halves `/`), automatic beaming, and advanced tuplets.
 - 🥁 **Full Technique Support:** Covers rimshots, flams, chokes, bells, and more across all major drum kit components.
 
 ---

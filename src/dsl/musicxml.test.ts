@@ -4,6 +4,7 @@ import { buildMusicXml, buildNormalizedScore } from "./index";
 describe("buildMusicXml", () => {
   it("emits dotted note markup for stretched groups", () => {
     const score = buildNormalizedScore(`time 4/4
+grouping 4
 divisions 8
 
 HH | [3: x] - - - - - |`);
@@ -28,7 +29,7 @@ HH | x x x x x x x x |`);
 
   it("exports 3:2 groups as eighth-note triplets", () => {
     const score = buildNormalizedScore(`time 4/4
-grouping 1+1+1+1
+grouping 2+2
 divisions 8
 
 DR | [2:s] ss [ss][ssss] [2:sss] |`);
@@ -42,17 +43,16 @@ DR | [2:s] ss [ss][ssss] [2:sss] |`);
     expect(tripletNotes).toHaveLength(3);
   });
 
-  it("expands repeats when play count is greater than two", () => {
+  it("generates repeat barlines for repeat spans", () => {
     const score = buildNormalizedScore(`time 4/4
 divisions 4
 
-HH |: x - x - :|x3`);
+HH |: x - x - :|`);
 
     expect(score.errors).toEqual([]);
     const xml = buildMusicXml(score);
-    expect(xml.match(/<measure number=/g)).toHaveLength(3);
-    expect(xml).not.toContain("<repeat direction=\"forward\"/>");
-    expect(xml).not.toContain("<repeat direction=\"backward\"/>");
+    expect(xml).toContain('<repeat direction="forward"/>');
+    expect(xml).toContain('<repeat direction="backward"/>');
   });
 
   it("requests system-level measure numbers", () => {

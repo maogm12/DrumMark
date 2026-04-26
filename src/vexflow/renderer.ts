@@ -151,7 +151,9 @@ function renderSystem(context: any, score: NormalizedScore, measures: any[], sys
       if (isFirstSystem) {
         stave.addTimeSignature(`${score.ast.headers.time.beats}/${score.ast.headers.time.beatUnit}`);
         if (score.ast.headers.tempo) {
-          stave.setTempo({ duration: "q", bpm: score.ast.headers.tempo.value }, 0);
+          // Move slightly to the left (x=-10) and remove vertical shift (y=0)
+          const tempo = new VF.StaveTempo({ duration: "q", bpm: score.ast.headers.tempo.value }, -10, 0);
+          stave.addModifier(tempo);
         }
       }
     }

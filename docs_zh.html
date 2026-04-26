@@ -1,15 +1,16 @@
 <!DOCTYPE html><html lang="zh-CN"><head>
-    <script type="module">import { injectIntoGlobalHook } from "/drum_notation/@react-refresh";
-injectIntoGlobalHook(window);
-window.$RefreshReg$ = () => {};
-window.$RefreshSig$ = () => (type) => type;</script>
+  
 
-    <script type="module" src="/drum_notation/@vite/client"></script>
+  
+
+    <script type="module" src="/drum_notation/docs_zh.html?html-proxy&amp;index=0.js"></script>
+
+    
 
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>鼓谱记谱指南</title>
-    <link rel="stylesheet" href="/drum_notation/src/styles.css">
+    <link rel="stylesheet" href="./src/styles.css">
   </head>
   <body class="docs-body">
     <div class="docs-layout">
@@ -76,15 +77,29 @@ window.$RefreshSig$ = () => (type) => type;</script>
                 <div class="docs-section-header"><h2>乐谱元数据</h2><p>设置乐谱的全局信息和节奏基础。</p></div>
                 <div class="docs-description"><p>包含标题、作者、速度（BPM）、拍号和细分数。</p></div>
                 <div class="docs-section-body">
-                  <div class="docs-section-pane"><div class="docs-pane-title">示例</div><div class="docs-code-block"><pre class="dsl-code-block"><span class="docs-token dsl-header">title</span> 灵魂乐研究\ntempo 100\ntime 4/4\ndivisions 8\n\nHH <span class="docs-token dsl-barline">|</span> x - x x x x x - <span class="docs-token dsl-barline">|</span></pre></div></div>
-                  <div class="docs-section-pane"><div class="docs-pane-title">生成结果</div><div class="docs-preview-shell"><div class="docs-preview-frame"><div class="staff-preview-container"><div class="staff-preview"><svg pointer-events="none" stroke-width="1" stroke-dasharray="none" fill="black" stroke="black" shadowcolor="black" font-family="Bravura,Academico" font-size="10pt" font-weight="normal" font-style="normal" width="900" height="200" viewBox="0 0 900 200" style="width: 900px; height: 200px;"><text fill="#333" stroke="none" font-family="Arial" font-size="24pt" font-weight="bold" x="-63.078" y="40">灵魂乐研究\ntempo 100\ntime 4/4\ndivisions 8\n\nHH | x - x x x x x - |</text></svg></div></div></div></div></div>
+                  <div class="docs-section-pane"><div class="docs-pane-title">示例</div><div class="docs-code-block"><pre class="dsl-code-block">title 灵魂乐研究
+tempo 100
+time 4/4
+divisions 8
+
+HH | x - x x x x x - |</pre></div></div>
+                  <div class="docs-section-pane"><div class="docs-pane-title">生成结果</div><div class="docs-preview-shell"><div class="docs-preview-frame"><div class="staff-preview-container"><div class="staff-preview"><svg pointer-events="none" stroke-width="1" stroke-dasharray="none" fill="black" stroke="black" shadowcolor="black" font-family="Bravura,Academico" font-size="10pt" font-weight="normal" font-style="normal" width="900" height="200" viewBox="0 0 900 200" style="width: 900px; height: 200px;"><text fill="#333" stroke="none" font-family="Arial" font-size="24pt" font-weight="bold" x="-63.078" y="40">灵魂乐研究
+tempo 100
+time 4/4
+divisions 8
+
+HH | x - x x x x x - |</text></svg></div></div></div></div></div>
                 </div>
               </article>
               <article class="docs-section-card" id="grouping">
                 <div class="docs-section-header"><h2>乐句分组</h2><p>控制符杠连接逻辑。</p></div>
                 <div class="docs-description"><p>定义内部重音和视觉分组。</p></div>
                 <div class="docs-section-body">
-                  <div class="docs-section-pane"><div class="docs-pane-title">示例</div><div class="docs-code-block"><pre class="dsl-code-block"><span class="docs-token dsl-header">time</span> 7/8\ndivisions 7\ngrouping 2+2+3\n\nHH <span class="docs-token dsl-barline">|</span> x x x x x x x <span class="docs-token dsl-barline">|</span></pre></div></div>
+                  <div class="docs-section-pane"><div class="docs-pane-title">示例</div><div class="docs-code-block"><pre class="dsl-code-block">time 7/8
+divisions 7
+grouping 2+2+3
+
+HH | x x x x x x x |</pre></div></div>
                   <div class="docs-section-pane"><div class="docs-pane-title">生成结果</div><div class="docs-preview-shell"><div class="docs-preview-frame"><div class="staff-preview-container"><div class="staff-preview"><svg pointer-events="none" stroke-width="1" stroke-dasharray="none" fill="black" stroke="black" shadowcolor="black" font-family="Bravura,Academico" font-size="10pt" font-weight="normal" font-style="normal" width="900" height="200" viewBox="0 0 900 200" style="width: 900px; height: 200px;"></svg></div></div></div></div></div>
                 </div>
               </article>
@@ -92,7 +107,12 @@ window.$RefreshSig$ = () => (type) => type;</script>
                 <div class="docs-section-header"><h2>乐器与轨道</h2><p>将创意映射到声部。</p></div>
                 <div class="docs-description"><p>支持 HH, RC, C, SD, BD, T1-T3, HF, ST 等标准轨道。</p></div>
                 <div class="docs-section-body">
-                  <div class="docs-section-pane"><div class="docs-pane-title">示例</div><div class="docs-code-block"><pre class="dsl-code-block"><span class="docs-token dsl-header">time</span> 4/4\ndivisions 8\n\nHH <span class="docs-token dsl-barline">|</span> x - x x x x x x <span class="docs-token dsl-barline">|</span>\nSD <span class="docs-token dsl-barline">|</span> - - d - - - d - <span class="docs-token dsl-barline">|</span>\nBD <span class="docs-token dsl-barline">|</span> p - p - p - - - <span class="docs-token dsl-barline">|</span></pre></div></div>
+                  <div class="docs-section-pane"><div class="docs-pane-title">示例</div><div class="docs-code-block"><pre class="dsl-code-block">time 4/4
+divisions 8
+
+HH | x - x x x x x x |
+SD | - - d - - - d - |
+BD | p - p - p - - - |</pre></div></div>
                   <div class="docs-section-pane"><div class="docs-pane-title">生成结果</div><div class="docs-preview-shell"><div class="docs-preview-frame"><div class="staff-preview-container"><div class="staff-preview"><svg pointer-events="none" stroke-width="1" stroke-dasharray="none" fill="black" stroke="black" shadowcolor="black" font-family="Bravura,Academico" font-size="10pt" font-weight="normal" font-style="normal" width="900" height="200" viewBox="0 0 900 200" style="width: 900px; height: 200px;"></svg></div></div></div></div></div>
                 </div>
               </article>
@@ -100,7 +120,11 @@ window.$RefreshSig$ = () => (type) => type;</script>
                 <div class="docs-section-header"><h2>演奏技巧</h2><p>通过修饰符丰富细节。</p></div>
                 <div class="docs-description"><p>支持 :rim, :cross, :flam, :ghost 等。</p></div>
                 <div class="docs-section-body">
-                  <div class="docs-section-pane"><div class="docs-pane-title">示例</div><div class="docs-code-block"><pre class="dsl-code-block"><span class="docs-token dsl-header">time</span> 4/4\ndivisions 8\n\nSD <span class="docs-token dsl-barline">|</span> d:cross - d:rim - d:flam - d:ghost - <span class="docs-token dsl-barline">|</span>\nRC <span class="docs-token dsl-barline">|</span> x:bell - x:choke - x:bell - x:choke - <span class="docs-token dsl-barline">|</span></pre></div></div>
+                  <div class="docs-section-pane"><div class="docs-pane-title">示例</div><div class="docs-code-block"><pre class="dsl-code-block">time 4/4
+divisions 8
+
+SD | d:cross - d:rim - d:flam - d:ghost - |
+RC | x:bell - x:choke - x:bell - x:choke - |</pre></div></div>
                   <div class="docs-section-pane"><div class="docs-pane-title">生成结果</div><div class="docs-preview-shell"><div class="docs-preview-frame"><div class="staff-preview-container"><div class="staff-preview"><svg pointer-events="none" stroke-width="1" stroke-dasharray="none" fill="black" stroke="black" shadowcolor="black" font-family="Bravura,Academico" font-size="10pt" font-weight="normal" font-style="normal" width="900" height="200" viewBox="0 0 900 200" style="width: 900px; height: 200px;"></svg></div></div></div></div></div>
                 </div>
               </article>
@@ -108,7 +132,12 @@ window.$RefreshSig$ = () => (type) => type;</script>
                 <div class="docs-section-header"><h2>语法与格式</h2><p>保持代码整洁。</p></div>
                 <div class="docs-description"><p>支持 # 注释和自由空格对齐。</p></div>
                 <div class="docs-section-body">
-                  <div class="docs-section-pane"><div class="docs-pane-title">示例</div><div class="docs-code-block"><pre class="dsl-code-block"><span class="docs-token dsl-comment"># 整齐对齐的代码\ntime 4/4\ndivisions 8\n\nHH <span class="docs-token dsl-barline">|</span> x x x x  x x x x <span class="docs-token dsl-barline">|</span>\nSD <span class="docs-token dsl-barline">|</span> - - d -  - - d - <span class="docs-token dsl-barline">|</span></span></pre></div></div>
+                  <div class="docs-section-pane"><div class="docs-pane-title">示例</div><div class="docs-code-block"><pre class="dsl-code-block"># 整齐对齐的代码
+time 4/4
+divisions 8
+
+HH | x x x x  x x x x |
+SD | - - d -  - - d - |</pre></div></div>
                   <div class="docs-section-pane"><div class="docs-pane-title">生成结果</div><div class="docs-preview-shell"><div class="docs-preview-frame"><div class="staff-preview-container"><div class="staff-preview"><svg pointer-events="none" stroke-width="1" stroke-dasharray="none" fill="black" stroke="black" shadowcolor="black" font-family="Bravura,Academico" font-size="10pt" font-weight="normal" font-style="normal" width="900" height="200" viewBox="0 0 900 200" style="width: 900px; height: 200px;"></svg></div></div></div></div></div>
                 </div>
               </article>
@@ -116,7 +145,10 @@ window.$RefreshSig$ = () => (type) => type;</script>
                 <div class="docs-section-header"><h2>连音符与分组</h2><p>利用方括号调整时长。</p></div>
                 <div class="docs-description"><p>支持细分（压缩）和长音符（扩展）。</p></div>
                 <div class="docs-section-body">
-                  <div class="docs-section-pane"><div class="docs-pane-title">示例</div><div class="docs-code-block"><pre class="dsl-code-block"><span class="docs-token dsl-header">time</span> 4/4\ndivisions 8\n\nSD <span class="docs-token dsl-barline">|</span> [d d] d [2:d d d d] [2: d d d] <span class="docs-token dsl-barline">|</span></pre></div></div>
+                  <div class="docs-section-pane"><div class="docs-pane-title">示例</div><div class="docs-code-block"><pre class="dsl-code-block">time 4/4
+divisions 8
+
+SD | [d d] d [2:d d d d] [2: d d d] |</pre></div></div>
                   <div class="docs-section-pane"><div class="docs-pane-title">生成结果</div><div class="docs-preview-shell"><div class="docs-preview-frame"><div class="staff-preview-container"><div class="staff-preview"><svg pointer-events="none" stroke-width="1" stroke-dasharray="none" fill="black" stroke="black" shadowcolor="black" font-family="Bravura,Academico" font-size="10pt" font-weight="normal" font-style="normal" width="900" height="200" viewBox="0 0 900 200" style="width: 900px; height: 200px;"></svg></div></div></div></div></div>
                 </div>
               </article>
@@ -124,7 +156,10 @@ window.$RefreshSig$ = () => (type) => type;</script>
                 <div class="docs-section-header"><h2>时长后缀</h2><p>快速调整音符长度。</p></div>
                 <div class="docs-description"><p>使用附点 (.) 和减半 (/) 后缀。</p></div>
                 <div class="docs-section-body">
-                  <div class="docs-section-pane"><div class="docs-pane-title">示例</div><div class="docs-code-block"><pre class="dsl-code-block"><span class="docs-token dsl-header">time</span> 4/4\ndivisions 4\n\nHH <span class="docs-token dsl-barline">|</span> x. x/ x. x/ <span class="docs-token dsl-barline">|</span> x. / x. / <span class="docs-token dsl-barline">|</span></pre></div></div>
+                  <div class="docs-section-pane"><div class="docs-pane-title">示例</div><div class="docs-code-block"><pre class="dsl-code-block">time 4/4
+divisions 4
+
+HH | x. x/ x. x/ | x. / x. / |</pre></div></div>
                   <div class="docs-section-pane"><div class="docs-pane-title">生成结果</div><div class="docs-preview-shell"><div class="docs-preview-frame"><div class="staff-preview-container"><div class="staff-preview"><svg pointer-events="none" stroke-width="1" stroke-dasharray="none" fill="black" stroke="black" shadowcolor="black" font-family="Bravura,Academico" font-size="10pt" font-weight="normal" font-style="normal" width="900" height="200" viewBox="0 0 900 200" style="width: 900px; height: 200px;"></svg></div></div></div></div></div>
                 </div>
               </article>
@@ -132,7 +167,11 @@ window.$RefreshSig$ = () => (type) => type;</script>
                 <div class="docs-section-header"><h2>结构与流程</h2><p>管理重复与段落。</p></div>
                 <div class="docs-description"><p>支持重复次数标记和多乐段布局。</p></div>
                 <div class="docs-section-body">
-                  <div class="docs-section-pane"><div class="docs-pane-title">示例</div><div class="docs-code-block"><pre class="dsl-code-block"><span class="docs-token dsl-header">time</span> 4/4\ndivisions 8\n\nHH <span class="docs-token dsl-barline">|:</span> x x x x x x x x <span class="docs-token dsl-barline">:|</span>x4\nSD <span class="docs-token dsl-barline">|</span>  - - d - - - d -  <span class="docs-token dsl-barline">|</span></pre></div></div>
+                  <div class="docs-section-pane"><div class="docs-pane-title">示例</div><div class="docs-code-block"><pre class="dsl-code-block">time 4/4
+divisions 8
+
+HH |: x x x x x x x x :|x4
+SD |  - - d - - - d -  |</pre></div></div>
                   <div class="docs-section-pane"><div class="docs-pane-title">生成结果</div><div class="docs-preview-shell"><div class="docs-preview-frame"><div class="staff-preview-container"><div class="staff-preview"><svg pointer-events="none" stroke-width="1" stroke-dasharray="none" fill="black" stroke="black" shadowcolor="black" font-family="Bravura,Academico" font-size="10pt" font-weight="normal" font-style="normal" width="900" height="200" viewBox="0 0 900 200" style="width: 900px; height: 200px;"></svg></div></div></div></div></div>
                 </div>
               </article>
@@ -140,8 +179,24 @@ window.$RefreshSig$ = () => (type) => type;</script>
                 <div class="docs-section-header"><h2>大师级示例</h2><p>综合特性演示。</p></div>
                 <div class="docs-description"><p>涵盖装饰音、镲帽、粘滞标记等高级技巧。</p></div>
                 <div class="docs-section-body">
-                  <div class="docs-section-pane"><div class="docs-pane-title">示例</div><div class="docs-code-block"><pre class="dsl-code-block"><span class="docs-token dsl-header">title</span> Fusion Grooves\ntempo 128\ntime 4/4\ndivisions 16\ngrouping 2+2\n\n<span class="docs-token dsl-comment"># 乐段 A\nHH <span class="docs-token dsl-barline">|:</span> x - x - o - x - <span class="docs-token dsl-barline">|</span> x:close - X - x - c - <span class="docs-token dsl-barline">:|</span>x2\nSD <span class="docs-token dsl-barline">|</span>  - - d:cross - d - <span class="docs-token dsl-barline">|</span> D:rim - [2: d d:flam] - - -  <span class="docs-token dsl-barline">|</span>\nBD <span class="docs-token dsl-barline">|</span>  p - - - p - - - <span class="docs-token dsl-barline">|</span> p - p - - - p -        <span class="docs-token dsl-barline">|</span>\nHF <span class="docs-token dsl-barline">|</span>  - - - - p - - - <span class="docs-token dsl-barline">|</span> - - - - p:close - -    <span class="docs-token dsl-barline">|</span></span></pre></div></div>
-                  <div class="docs-section-pane"><div class="docs-pane-title">生成结果</div><div class="docs-preview-shell"><div class="docs-preview-frame"><div class="staff-preview-container"><div class="staff-preview"><svg pointer-events="none" stroke-width="1" stroke-dasharray="none" fill="black" stroke="black" shadowcolor="black" font-family="Bravura,Academico" font-size="10pt" font-weight="normal" font-style="normal" width="900" height="200" viewBox="0 0 900 200" style="width: 900px; height: 200px;"><text fill="#333" stroke="none" font-family="Arial" font-size="24pt" font-weight="bold" x="-88.328" y="40">Fusion Grooves\ntempo 128\ntime 4/4\ndivisions 16\ngrouping 2+2\n\n</text></svg></div></div></div></div></div>
+                  <div class="docs-section-pane"><div class="docs-pane-title">示例</div><div class="docs-code-block"><pre class="dsl-code-block">title Fusion Grooves
+tempo 128
+time 4/4
+divisions 16
+grouping 2+2
+
+# 乐段 A
+HH |: x - x - o - x - | x:close - X - x - c - :|x2
+SD |  - - d:cross - d - | D:rim - [2: d d:flam] - - -  |
+BD |  p - - - p - - - | p - p - - - p -        |
+HF |  - - - - p - - - | - - - - p:close - -    |</pre></div></div>
+                  <div class="docs-section-pane"><div class="docs-pane-title">生成结果</div><div class="docs-preview-shell"><div class="docs-preview-frame"><div class="staff-preview-container"><div class="staff-preview"><svg pointer-events="none" stroke-width="1" stroke-dasharray="none" fill="black" stroke="black" shadowcolor="black" font-family="Bravura,Academico" font-size="10pt" font-weight="normal" font-style="normal" width="900" height="200" viewBox="0 0 900 200" style="width: 900px; height: 200px;"><text fill="#333" stroke="none" font-family="Arial" font-size="24pt" font-weight="bold" x="-88.328" y="40">Fusion Grooves
+tempo 128
+time 4/4
+divisions 16
+grouping 2+2
+
+</text></svg></div></div></div></div></div>
                 </div>
               </article>
             </div>

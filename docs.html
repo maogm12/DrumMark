@@ -1,15 +1,16 @@
 <!DOCTYPE html><html lang="en"><head>
-    <script type="module">import { injectIntoGlobalHook } from "/drum_notation/@react-refresh";
-injectIntoGlobalHook(window);
-window.$RefreshReg$ = () => {};
-window.$RefreshSig$ = () => (type) => type;</script>
+  
 
-    <script type="module" src="/drum_notation/@vite/client"></script>
+  
+
+    <script type="module" src="/drum_notation/docs.html?html-proxy&amp;index=0.js"></script>
+
+    
 
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Drum Notation Guide</title>
-    <link rel="stylesheet" href="/drum_notation/src/styles.css">
+    <link rel="stylesheet" href="./src/styles.css">
   </head>
   <body class="docs-body">
     <div class="docs-layout">
@@ -80,15 +81,29 @@ window.$RefreshSig$ = () => (type) => type;</script>
                 <div class="docs-section-header"><h2>Document Metadata</h2><p>Global information and timing.</p></div>
                 <div class="docs-description"><p>Set up credits, tempo, and time signature.</p></div>
                 <div class="docs-section-body">
-                  <div class="docs-section-pane"><div class="docs-pane-title">Example</div><div class="docs-code-block"><pre class="dsl-code-block"><span class="docs-token dsl-header">title</span> Funk Study\ntempo 100\ntime 4/4\ndivisions 8\n\nHH <span class="docs-token dsl-barline">|</span> x - x x x x x - <span class="docs-token dsl-barline">|</span></pre></div></div>
-                  <div class="docs-section-pane"><div class="docs-pane-title">Score Result</div><div class="docs-preview-shell"><div class="docs-preview-frame"><div class="staff-preview-container"><div class="staff-preview"><svg pointer-events="none" stroke-width="1" stroke-dasharray="none" fill="black" stroke="black" shadowcolor="black" font-family="Bravura,Academico" font-size="10pt" font-weight="normal" font-style="normal" width="900" height="200" viewBox="0 0 900 200" style="width: 900px; height: 200px;"><text fill="#333" stroke="none" font-family="Arial" font-size="24pt" font-weight="bold" x="-70.187" y="40">Funk Study\ntempo 100\ntime 4/4\ndivisions 8\n\nHH | x - x x x x x - |</text></svg></div></div></div></div></div>
+                  <div class="docs-section-pane"><div class="docs-pane-title">Example</div><div class="docs-code-block"><pre class="dsl-code-block">title Funk Study
+tempo 100
+time 4/4
+divisions 8
+
+HH | x - x x x x x - |</pre></div></div>
+                  <div class="docs-section-pane"><div class="docs-pane-title">Score Result</div><div class="docs-preview-shell"><div class="docs-preview-frame"><div class="staff-preview-container"><div class="staff-preview"><svg pointer-events="none" stroke-width="1" stroke-dasharray="none" fill="black" stroke="black" shadowcolor="black" font-family="Bravura,Academico" font-size="10pt" font-weight="normal" font-style="normal" width="900" height="200" viewBox="0 0 900 200" style="width: 900px; height: 200px;"><text fill="#333" stroke="none" font-family="Arial" font-size="24pt" font-weight="bold" x="-70.187" y="40">Funk Study
+tempo 100
+time 4/4
+divisions 8
+
+HH | x - x x x x x - |</text></svg></div></div></div></div></div>
                 </div>
               </article>
               <article class="docs-section-card" id="grouping">
                 <div class="docs-section-header"><h2>Musical Grouping</h2><p>Control visual beaming.</p></div>
                 <div class="docs-description"><p>Defines how notes are grouped and beamed.</p></div>
                 <div class="docs-section-body">
-                  <div class="docs-section-pane"><div class="docs-pane-title">Example</div><div class="docs-code-block"><pre class="dsl-code-block"><span class="docs-token dsl-header">time</span> 7/8\ndivisions 7\ngrouping 2+2+3\n\nHH <span class="docs-token dsl-barline">|</span> x x x x x x x <span class="docs-token dsl-barline">|</span></pre></div></div>
+                  <div class="docs-section-pane"><div class="docs-pane-title">Example</div><div class="docs-code-block"><pre class="dsl-code-block">time 7/8
+divisions 7
+grouping 2+2+3
+
+HH | x x x x x x x |</pre></div></div>
                   <div class="docs-section-pane"><div class="docs-pane-title">Score Result</div><div class="docs-preview-shell"><div class="docs-preview-frame"><div class="staff-preview-container"><div class="staff-preview"><svg pointer-events="none" stroke-width="1" stroke-dasharray="none" fill="black" stroke="black" shadowcolor="black" font-family="Bravura,Academico" font-size="10pt" font-weight="normal" font-style="normal" width="900" height="200" viewBox="0 0 900 200" style="width: 900px; height: 200px;"></svg></div></div></div></div></div>
                 </div>
               </article>
@@ -96,7 +111,12 @@ window.$RefreshSig$ = () => (type) => type;</script>
                 <div class="docs-section-header"><h2>Instruments &amp; Tracks</h2><p>Mapping percussion parts.</p></div>
                 <div class="docs-description"><p>Supports HH, RC, C, SD, BD, T1-T3, HF, ST.</p></div>
                 <div class="docs-section-body">
-                  <div class="docs-section-pane"><div class="docs-pane-title">Example</div><div class="docs-code-block"><pre class="dsl-code-block"><span class="docs-token dsl-header">time</span> 4/4\ndivisions 8\n\nHH <span class="docs-token dsl-barline">|</span> x - x x x x x x <span class="docs-token dsl-barline">|</span>\nSD <span class="docs-token dsl-barline">|</span> - - d - - - d - <span class="docs-token dsl-barline">|</span>\nBD <span class="docs-token dsl-barline">|</span> p - p - p - - - <span class="docs-token dsl-barline">|</span></pre></div></div>
+                  <div class="docs-section-pane"><div class="docs-pane-title">Example</div><div class="docs-code-block"><pre class="dsl-code-block">time 4/4
+divisions 8
+
+HH | x - x x x x x x |
+SD | - - d - - - d - |
+BD | p - p - p - - - |</pre></div></div>
                   <div class="docs-section-pane"><div class="docs-pane-title">Score Result</div><div class="docs-preview-shell"><div class="docs-preview-frame"><div class="staff-preview-container"><div class="staff-preview"><svg pointer-events="none" stroke-width="1" stroke-dasharray="none" fill="black" stroke="black" shadowcolor="black" font-family="Bravura,Academico" font-size="10pt" font-weight="normal" font-style="normal" width="900" height="200" viewBox="0 0 900 200" style="width: 900px; height: 200px;"></svg></div></div></div></div></div>
                 </div>
               </article>
@@ -104,7 +124,11 @@ window.$RefreshSig$ = () => (type) => type;</script>
                 <div class="docs-section-header"><h2>Playing Techniques</h2><p>Adding detail with modifiers.</p></div>
                 <div class="docs-description"><p>Use :rim, :cross, :flam, :ghost.</p></div>
                 <div class="docs-section-body">
-                  <div class="docs-section-pane"><div class="docs-pane-title">Example</div><div class="docs-code-block"><pre class="dsl-code-block"><span class="docs-token dsl-header">time</span> 4/4\ndivisions 8\n\nSD <span class="docs-token dsl-barline">|</span> d:cross - d:rim - d:flam - d:ghost - <span class="docs-token dsl-barline">|</span>\nRC <span class="docs-token dsl-barline">|</span> x:bell - x:choke - x:bell - x:choke - <span class="docs-token dsl-barline">|</span></pre></div></div>
+                  <div class="docs-section-pane"><div class="docs-pane-title">Example</div><div class="docs-code-block"><pre class="dsl-code-block">time 4/4
+divisions 8
+
+SD | d:cross - d:rim - d:flam - d:ghost - |
+RC | x:bell - x:choke - x:bell - x:choke - |</pre></div></div>
                   <div class="docs-section-pane"><div class="docs-pane-title">Score Result</div><div class="docs-preview-shell"><div class="docs-preview-frame"><div class="staff-preview-container"><div class="staff-preview"><svg pointer-events="none" stroke-width="1" stroke-dasharray="none" fill="black" stroke="black" shadowcolor="black" font-family="Bravura,Academico" font-size="10pt" font-weight="normal" font-style="normal" width="900" height="200" viewBox="0 0 900 200" style="width: 900px; height: 200px;"></svg></div></div></div></div></div>
                 </div>
               </article>
@@ -112,7 +136,12 @@ window.$RefreshSig$ = () => (type) => type;</script>
                 <div class="docs-section-header"><h2>Syntax &amp; Formatting</h2><p>Clean notation code.</p></div>
                 <div class="docs-description"><p>Flexible whitespace and comments.</p></div>
                 <div class="docs-section-body">
-                  <div class="docs-section-pane"><div class="docs-pane-title">Example</div><div class="docs-code-block"><pre class="dsl-code-block"><span class="docs-token dsl-comment"># Cleanly aligned\ntime 4/4\ndivisions 8\n\nHH <span class="docs-token dsl-barline">|</span> x x x x  x x x x <span class="docs-token dsl-barline">|</span>\nSD <span class="docs-token dsl-barline">|</span> - - d -  - - d - <span class="docs-token dsl-barline">|</span></span></pre></div></div>
+                  <div class="docs-section-pane"><div class="docs-pane-title">Example</div><div class="docs-code-block"><pre class="dsl-code-block"># Cleanly aligned
+time 4/4
+divisions 8
+
+HH | x x x x  x x x x |
+SD | - - d -  - - d - |</pre></div></div>
                   <div class="docs-section-pane"><div class="docs-pane-title">Score Result</div><div class="docs-preview-shell"><div class="docs-preview-frame"><div class="staff-preview-container"><div class="staff-preview"><svg pointer-events="none" stroke-width="1" stroke-dasharray="none" fill="black" stroke="black" shadowcolor="black" font-family="Bravura,Academico" font-size="10pt" font-weight="normal" font-style="normal" width="900" height="200" viewBox="0 0 900 200" style="width: 900px; height: 200px;"></svg></div></div></div></div></div>
                 </div>
               </article>
@@ -120,7 +149,10 @@ window.$RefreshSig$ = () => (type) => type;</script>
                 <div class="docs-section-header"><h2>Rhythmic Groups</h2><p>Adjust durations with brackets.</p></div>
                 <div class="docs-description"><p>Supports subdivisions and tuplets.</p></div>
                 <div class="docs-section-body">
-                  <div class="docs-section-pane"><div class="docs-pane-title">Example</div><div class="docs-code-block"><pre class="dsl-code-block"><span class="docs-token dsl-header">time</span> 4/4\ndivisions 8\n\nSD <span class="docs-token dsl-barline">|</span> [d d] d [2:d d d d] [2: d d d] <span class="docs-token dsl-barline">|</span></pre></div></div>
+                  <div class="docs-section-pane"><div class="docs-pane-title">Example</div><div class="docs-code-block"><pre class="dsl-code-block">time 4/4
+divisions 8
+
+SD | [d d] d [2:d d d d] [2: d d d] |</pre></div></div>
                   <div class="docs-section-pane"><div class="docs-pane-title">Score Result</div><div class="docs-preview-shell"><div class="docs-preview-frame"><div class="staff-preview-container"><div class="staff-preview"><svg pointer-events="none" stroke-width="1" stroke-dasharray="none" fill="black" stroke="black" shadowcolor="black" font-family="Bravura,Academico" font-size="10pt" font-weight="normal" font-style="normal" width="900" height="200" viewBox="0 0 900 200" style="width: 900px; height: 200px;"></svg></div></div></div></div></div>
                 </div>
               </article>
@@ -128,7 +160,10 @@ window.$RefreshSig$ = () => (type) => type;</script>
                 <div class="docs-section-header"><h2>Duration Suffixes</h2><p>Fine-tune note lengths.</p></div>
                 <div class="docs-description"><p>Dotted (.) and halved (/) suffixes.</p></div>
                 <div class="docs-section-body">
-                  <div class="docs-section-pane"><div class="docs-pane-title">Example</div><div class="docs-code-block"><pre class="dsl-code-block"><span class="docs-token dsl-header">time</span> 4/4\ndivisions 4\n\nHH <span class="docs-token dsl-barline">|</span> x. x/ x. x/ <span class="docs-token dsl-barline">|</span> x. / x. / <span class="docs-token dsl-barline">|</span></pre></div></div>
+                  <div class="docs-section-pane"><div class="docs-pane-title">Example</div><div class="docs-code-block"><pre class="dsl-code-block">time 4/4
+divisions 4
+
+HH | x. x/ x. x/ | x. / x. / |</pre></div></div>
                   <div class="docs-section-pane"><div class="docs-pane-title">Score Result</div><div class="docs-preview-shell"><div class="docs-preview-frame"><div class="staff-preview-container"><div class="staff-preview"><svg pointer-events="none" stroke-width="1" stroke-dasharray="none" fill="black" stroke="black" shadowcolor="black" font-family="Bravura,Academico" font-size="10pt" font-weight="normal" font-style="normal" width="900" height="200" viewBox="0 0 900 200" style="width: 900px; height: 200px;"></svg></div></div></div></div></div>
                 </div>
               </article>
@@ -136,7 +171,11 @@ window.$RefreshSig$ = () => (type) => type;</script>
                 <div class="docs-section-header"><h2>Structure &amp; Flow</h2><p>Bars and repeats.</p></div>
                 <div class="docs-description"><p>Repeat counts and sections.</p></div>
                 <div class="docs-section-body">
-                  <div class="docs-section-pane"><div class="docs-pane-title">Example</div><div class="docs-code-block"><pre class="dsl-code-block"><span class="docs-token dsl-header">time</span> 4/4\ndivisions 8\n\nHH <span class="docs-token dsl-barline">|:</span> x x x x x x x x <span class="docs-token dsl-barline">:|</span>x4\nSD <span class="docs-token dsl-barline">|</span>  - - d - - - d -  <span class="docs-token dsl-barline">|</span></pre></div></div>
+                  <div class="docs-section-pane"><div class="docs-pane-title">Example</div><div class="docs-code-block"><pre class="dsl-code-block">time 4/4
+divisions 8
+
+HH |: x x x x x x x x :|x4
+SD |  - - d - - - d -  |</pre></div></div>
                   <div class="docs-section-pane"><div class="docs-pane-title">Score Result</div><div class="docs-preview-shell"><div class="docs-preview-frame"><div class="staff-preview-container"><div class="staff-preview"><svg pointer-events="none" stroke-width="1" stroke-dasharray="none" fill="black" stroke="black" shadowcolor="black" font-family="Bravura,Academico" font-size="10pt" font-weight="normal" font-style="normal" width="900" height="200" viewBox="0 0 900 200" style="width: 900px; height: 200px;"></svg></div></div></div></div></div>
                 </div>
               </article>
@@ -144,8 +183,24 @@ window.$RefreshSig$ = () => (type) => type;</script>
                 <div class="docs-section-header"><h2>The Master Class</h2><p>Full demonstration.</p></div>
                 <div class="docs-description"><p>Fusion Grooves with complex subdivisions.</p></div>
                 <div class="docs-section-body">
-                  <div class="docs-section-pane"><div class="docs-pane-title">Example</div><div class="docs-code-block"><pre class="dsl-code-block"><span class="docs-token dsl-header">title</span> Fusion Grooves\ntempo 128\ntime 4/4\ndivisions 16\ngrouping 2+2\n\n<span class="docs-token dsl-comment"># Main Groove\nHH <span class="docs-token dsl-barline">|:</span> x - x - o - x - <span class="docs-token dsl-barline">|</span> x:close - X - x - c - <span class="docs-token dsl-barline">:|</span>x2\nSD <span class="docs-token dsl-barline">|</span>  - - d:cross - d - <span class="docs-token dsl-barline">|</span> D:rim - [2: d d:flam] - - -  <span class="docs-token dsl-barline">|</span>\nBD <span class="docs-token dsl-barline">|</span>  p - - - p - - - <span class="docs-token dsl-barline">|</span> p - p - - - p -        <span class="docs-token dsl-barline">|</span>\nHF <span class="docs-token dsl-barline">|</span>  - - - - p - - - <span class="docs-token dsl-barline">|</span> - - - - p:close - -    <span class="docs-token dsl-barline">|</span></span></pre></div></div>
-                  <div class="docs-section-pane"><div class="docs-pane-title">Score Result</div><div class="docs-preview-shell"><div class="docs-preview-frame"><div class="staff-preview-container"><div class="staff-preview"><svg pointer-events="none" stroke-width="1" stroke-dasharray="none" fill="black" stroke="black" shadowcolor="black" font-family="Bravura,Academico" font-size="10pt" font-weight="normal" font-style="normal" width="900" height="200" viewBox="0 0 900 200" style="width: 900px; height: 200px;"><text fill="#333" stroke="none" font-family="Arial" font-size="24pt" font-weight="bold" x="-88.328" y="40">Fusion Grooves\ntempo 128\ntime 4/4\ndivisions 16\ngrouping 2+2\n\n</text></svg></div></div></div></div></div>
+                  <div class="docs-section-pane"><div class="docs-pane-title">Example</div><div class="docs-code-block"><pre class="dsl-code-block">title Fusion Grooves
+tempo 128
+time 4/4
+divisions 16
+grouping 2+2
+
+# Main Groove
+HH |: x - x - o - x - | x:close - X - x - c - :|x2
+SD |  - - d:cross - d - | D:rim - [2: d d:flam] - - -  |
+BD |  p - - - p - - - | p - p - - - p -        |
+HF |  - - - - p - - - | - - - - p:close - -    |</pre></div></div>
+                  <div class="docs-section-pane"><div class="docs-pane-title">Score Result</div><div class="docs-preview-shell"><div class="docs-preview-frame"><div class="staff-preview-container"><div class="staff-preview"><svg pointer-events="none" stroke-width="1" stroke-dasharray="none" fill="black" stroke="black" shadowcolor="black" font-family="Bravura,Academico" font-size="10pt" font-weight="normal" font-style="normal" width="900" height="200" viewBox="0 0 900 200" style="width: 900px; height: 200px;"><text fill="#333" stroke="none" font-family="Arial" font-size="24pt" font-weight="bold" x="-88.328" y="40">Fusion Grooves
+tempo 128
+time 4/4
+divisions 16
+grouping 2+2
+
+</text></svg></div></div></div></div></div>
                 </div>
               </article>
             </div>

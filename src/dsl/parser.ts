@@ -310,14 +310,20 @@ function readBasicGlyph(track: SourceTrackName, input: string, cursor: number): 
   }
 
   const glyph = input[cursor];
+  if (glyph === undefined) return null;
   return isBasicGlyph(glyph) ? { glyph, next: cursor + 1 } : null;
 }
 
 function readModifier(input: string, start: number): { modifier: Modifier; next: number } | null {
   let end = start;
 
-  while (end < input.length && /[a-z]/.test(input[end])) {
-    end += 1;
+  while (end < input.length) {
+    const char = input[end];
+    if (char !== undefined && /[a-z]/.test(char)) {
+      end += 1;
+    } else {
+      break;
+    }
   }
 
   const value = input.slice(start, end);
@@ -344,12 +350,13 @@ function parseMeasureTokens(
   let cursor = 0;
 
   while (cursor < content.length) {
-    if (/\s/.test(content[cursor])) {
+    const char = content[cursor];
+    if (char !== undefined && /\s/.test(char)) {
       cursor += 1;
       continue;
     }
 
-    if (content[cursor] === "[") {
+    if (char === "[") {
       if (!allowGroups) {
         errors.push({
           line: lineNumber,
@@ -378,7 +385,8 @@ function parseMeasureTokens(
 
       if (colonMatch) {
         span = Number(colonMatch[1]);
-        inner = colonMatch[2];
+        const m2 = colonMatch[2];
+        inner = m2 !== undefined ? m2 : "";
       } else if (body.trim()) {
         span = 1;
         inner = body.trim();
@@ -455,16 +463,17 @@ function parseMeasureTokens(
 
     // DR combined glyph: s+t3 means play s and t3 simultaneously
     if (track === "DR" && content[cursorAfterGlyph] === "+") {
-      const combinedItems: { value: string; dots: number; halves: number }[] = [];
+      const combinedItems: { value: BasicGlyph; dots: number; halves: number }[] = [];
       let cursorAfterPlus = cursorAfterGlyph + 1;
 
       while (cursorAfterPlus < content.length) {
-        if (/\s/.test(content[cursorAfterPlus])) {
+        const cap = content[cursorAfterPlus];
+        if (cap !== undefined && /\s/.test(cap)) {
           cursorAfterPlus += 1;
           continue;
         }
 
-        if (content[cursorAfterPlus] === "+") {
+        if (cap === "+") {
           cursorAfterPlus += 1;
           continue;
         }
@@ -706,8 +715,13 @@ function parseMeasureTail(remainder: string, line: PreprocessedLine, errors: Par
   };
 
   while (cursor < remainder.length) {
-    while (cursor < remainder.length && /\s/.test(remainder[cursor])) {
-      cursor += 1;
+    while (cursor < remainder.length) {
+      const char = remainder[cursor];
+      if (char !== undefined && /\s/.test(char)) {
+        cursor += 1;
+      } else {
+        break;
+      }
     }
 
     if (cursor >= remainder.length) {
@@ -757,9 +771,11 @@ function parseMeasureTail(remainder: string, line: PreprocessedLine, errors: Par
 
     // Check for inline repeat: "xxxx *3" (content with *N)
     const inlineRepeatMatch = content.match(/^(.*?)\s*\*\s*(\d+)\s*$/);
-    if (inlineRepeatMatch) {
-      const measureContent = inlineRepeatMatch[1].trim();
-      const repeatCount = parseInt(inlineRepeatMatch[2], 10);
+    const m1 = inlineRepeatMatch?.[1];
+    const m2 = inlineRepeatMatch?.[2];
+    if (inlineRepeatMatch && m1 !== undefined && m2 !== undefined) {
+      const measureContent = m1.trim();
+      const repeatCount = parseInt(m2, 10);
       if (repeatCount >= 2 && measureContent !== "") {
         // Valid inline repeat: content *N
         measures.push({
@@ -779,8 +795,9 @@ function parseMeasureTail(remainder: string, line: PreprocessedLine, errors: Par
     // Check for bare *N macro: "*2" expands to 2 empty measures
     // Only matches when content is EXACTLY *N (whitespace allowed around N)
     const bareStarMatch = content.match(/^\s*\*\s*(\d+)\s*$/);
-    if (bareStarMatch) {
-      const count = parseInt(bareStarMatch[1], 10);
+    const bsm1 = bareStarMatch?.[1];
+    if (bareStarMatch && bsm1 !== undefined) {
+      const count = parseInt(bsm1, 10);
       if (count >= 1) {
         for (let i = 0; i < count; i++) {
           measures.push({
@@ -807,8 +824,9 @@ function parseMeasureTail(remainder: string, line: PreprocessedLine, errors: Par
     // Check for multi-rest visual shorthand: |- 8 -| or |-8-
     // Dashes on both sides required, spaces around number allowed.
     const multiRestMatch = content.match(/^-+ *(\d+) *-+$/);
-    if (multiRestMatch) {
-      const count = parseInt(multiRestMatch[1], 10);
+    const mrm1 = multiRestMatch?.[1];
+    if (multiRestMatch && mrm1 !== undefined) {
+      const count = parseInt(mrm1, 10);
       if (count < 1) {
         errors.push({
           line: line.lineNumber,
@@ -870,10 +888,12 @@ function parseTrackLine(line: PreprocessedLine, errors: ParseError[]): ParsedTra
     measures: measures.flatMap((measure, _measureIndex) => {
       // Check for *N inline repeat: "xxxx *3" means repeat "xxxx" 3 times
       const inlineRepeatMatch = measure.content.match(/^(.*?)\s*\*\s*(\d+)\s*$/);
-      if (inlineRepeatMatch && inlineRepeatMatch[1].trim() !== "") {
-        const repeatCount = parseInt(inlineRepeatMatch[2], 10);
+      const m1 = inlineRepeatMatch?.[1];
+      const m2 = inlineRepeatMatch?.[2];
+      if (inlineRepeatMatch && m1 !== undefined && m2 !== undefined && m1.trim() !== "") {
+        const repeatCount = parseInt(m2, 10);
         if (repeatCount >= 2) {
-          const measureContent = inlineRepeatMatch[1].trim();
+          const measureContent = m1.trim();
           const parsedTokens = parseMeasureTokens(
             measureContent,
             parsed.track,
@@ -899,8 +919,9 @@ function parseTrackLine(line: PreprocessedLine, errors: ParseError[]): ParsedTra
       // Check for bare *N repeat marker - repeat this measure N times
       // | *2 | means repeat this (blank) measure 2 times = 2 blank measures
       const bareRepeatMatch = measure.content.match(/^\*(\d+)$/);
-      if (bareRepeatMatch) {
-        const count = parseInt(bareRepeatMatch[1], 10);
+      const bm1 = bareRepeatMatch?.[1];
+      if (bareRepeatMatch && bm1 !== undefined) {
+        const count = parseInt(bm1, 10);
         if (count < 1) {
           errors.push({
             line: line.lineNumber,
@@ -993,12 +1014,14 @@ function splitParagraphs(lines: PreprocessedLine[], errors: ParseError[]): Track
         .map((line) => parseTrackLine(line, errors))
         .filter((line): line is ParsedTrackLine => line !== null);
 
+      const firstLine = paragraphLines[0];
+      if (firstLine === undefined) return null;
       return {
-        startLine: paragraphLines[0].lineNumber,
+        startLine: firstLine.lineNumber,
         lines: parsedLines,
       };
     })
-    .filter((paragraph) => paragraph.lines.length > 0);
+    .filter((paragraph): paragraph is TrackParagraph => paragraph !== null && paragraph.lines.length > 0);
 }
 
 export function parseDocumentSkeleton(source: string): DocumentSkeleton {
@@ -1013,6 +1036,7 @@ export function parseDocumentSkeleton(source: string): DocumentSkeleton {
 
   for (let index = 0; index < lines.length; index += 1) {
     const line = lines[index];
+    if (line === undefined) continue;
 
     if (line.kind !== "content") {
       continue;

@@ -1,4 +1,4 @@
-import * as VF from "vexflow";
+import VexFlow from "vexflow";
 import type { NormalizedEvent, NormalizedScore } from "../dsl/types";
 import type { VexflowRenderOptions } from "./types";
 import { 
@@ -17,15 +17,28 @@ import {
   durationCode,
   instrumentForTrack,
   makeNoteKey,
-  getVexNotehead,
-  isVexCode,
 } from "./notes";
 import { graceNoteSlash, modifierIsGrace } from "./articulations";
 
-async function ensureVexFlowFonts() {
-  const vfAny = VF as any;
-  const VexFlow = vfAny.VexFlow || VF;
+const { 
+  Renderer, 
+  Stave, 
+  StaveTempo, 
+  BarlineType,
+  Formatter, 
+  Voice, 
+  StaveNote, 
+  Beam, 
+  Articulation, 
+  GraceNote, 
+  GraceNoteGroup, 
+  Annotation, 
+  ModifierPosition,
+  Tuplet,
+  RendererBackends
+} = VexFlow;
 
+async function ensureVexFlowFonts() {
   if (typeof VexFlow.loadFonts === "function") {
     try {
       await VexFlow.loadFonts("Bravura", "Academico");
@@ -71,7 +84,7 @@ export async function renderScoreToSvg(score: NormalizedScore, options: VexflowR
 
   const totalHeight = 200 + allSystems.length * (staffHeight + systemSpacing);
 
-  const renderer = new VF.Renderer(container, VF.Renderer.Backends.SVG);
+  const renderer = new Renderer(container, RendererBackends.SVG);
   renderer.resize(systemWidth, totalHeight);
   const context = renderer.getContext();
   context.setFillStyle("#333");
@@ -81,7 +94,9 @@ export async function renderScoreToSvg(score: NormalizedScore, options: VexflowR
 
   let yOffset = 150;
   for (let i = 0; i < allSystems.length; i++) {
-    renderSystem(context, score, allSystems[i], {
+    const system = allSystems[i];
+    if (system === undefined) continue;
+    renderSystem(context, score, system, {
       x: 50,
       y: yOffset,
       width: systemWidth - 100,
@@ -144,7 +159,7 @@ function renderSystem(context: any, score: NormalizedScore, measures: any[], sys
 
   for (let i = 0; i < measures.length; i++) {
     const measure = measures[i];
-    const stave = new VF.Stave(x + i * measureWidth, y, measureWidth);
+    const stave = new Stave(x + i * measureWidth, y, measureWidth);
 
     if (i === 0) {
       stave.addClef("percussion");
@@ -152,7 +167,7 @@ function renderSystem(context: any, score: NormalizedScore, measures: any[], sys
         stave.addTimeSignature(`${score.ast.headers.time.beats}/${score.ast.headers.time.beatUnit}`);
         if (score.ast.headers.tempo) {
           // Move slightly to the left (x=-10) and remove vertical shift (y=0)
-          const tempo = new VF.StaveTempo({ duration: "q", bpm: score.ast.headers.tempo.value }, -10, 0);
+          const tempo = new StaveTempo({ duration: "q", bpm: score.ast.headers.tempo.value }, -10, 0);
           stave.addModifier(tempo);
         }
       }
@@ -160,8 +175,8 @@ function renderSystem(context: any, score: NormalizedScore, measures: any[], sys
 
     const showRepeatStart = score.ast.repeatSpans.some(s => s.startBar === measure.globalIndex);
     const showRepeatEnd = score.ast.repeatSpans.some(s => s.endBar === measure.globalIndex);
-    if (showRepeatStart) stave.setBegBarType(VF.Barline.type.REPEAT_BEGIN);
-    if (showRepeatEnd) stave.setEndBarType(VF.Barline.type.REPEAT_END);
+    if (showRepeatStart) stave.setBegBarType(BarlineType.REPEAT_BEGIN);
+    if (showRepeatEnd) stave.setEndBarType(BarlineType.REPEAT_END);
 
     stave.setContext(context).draw();
     staves.push(stave);
@@ -172,7 +187,7 @@ function renderSystem(context: any, score: NormalizedScore, measures: any[], sys
     allTuplets.push(...tuplets);
   }
 
-  const formatter = new VF.Formatter();
+  const formatter = new Formatter();
   for (let i = 0; i < staves.length; i++) {
     const stave = staves[i];
     const staveVoices = allVoices.filter(v => (v as any)._stave === stave);
@@ -217,7 +232,7 @@ function renderMeasureVoices(
   const tuplets: any[] = [];
 
   const v1Notes = createVexNotes(score, upEntries, 1, measureStart, stickings, beams, tuplets);
-  const voice1 = new VF.Voice({ num_beats: measureDuration.numerator, beat_value: measureDuration.denominator }).setStrict(false).addTickables(v1Notes);
+  const voice1 = new Voice({ numBeats: measureDuration.numerator, beatValue: measureDuration.denominator }).setStrict(false).addTickables(v1Notes);
   (voice1 as any)._stave = stave;
 
   const voices = [voice1];
@@ -226,7 +241,7 @@ function renderMeasureVoices(
   const hasV2Events = downEvents.length > 0;
   if (hasV2Events || !options.hideVoice2Rests) {
     const v2Notes = createVexNotes(score, downEntries, 2, measureStart, stickings, beams, tuplets, options.hideVoice2Rests);
-    const voice2 = new VF.Voice({ num_beats: measureDuration.numerator, beat_value: measureDuration.denominator }).setStrict(false).addTickables(v2Notes);
+    const voice2 = new Voice({ numBeats: measureDuration.numerator, beatValue: measureDuration.denominator }).setStrict(false).addTickables(v2Notes);
     (voice2 as any)._stave = stave;
     voices.push(voice2);
   }
@@ -253,15 +268,16 @@ function createVexNotes(
   for (const entry of entries) {
     let note: any;
     if (entry.kind === "rest") {
-      note = new VF.StaveNote({ keys: [voiceId === 1 ? "B/4" : "F/4"], duration: durationCode(entry.duration) + "r" });
+      note = new StaveNote({ keys: [voiceId === 1 ? "B/4" : "F/4"], duration: durationCode(entry.duration) + "r" });
       if (hideRests && voiceId === 2) note.setStyle({ fillStyle: "transparent", strokeStyle: "transparent" });
       
       // Fix: Encountering a rest should break the current beam
-      if (currentBeamNotes.length > 1) allBeams.push(new VF.Beam(currentBeamNotes));
+      if (currentBeamNotes.length > 1) allBeams.push(new Beam(currentBeamNotes));
       currentBeamNotes = [];
       currentBeamSegment = -1;
     } else {
       const firstEvent = entry.events[0];
+      if (firstEvent === undefined) continue;
       const instrumentSpecs = entry.events.map(e => ({
         spec: instrumentForTrack(e.track, e.glyph),
         event: e
@@ -269,15 +285,11 @@ function createVexNotes(
       const keys = instrumentSpecs.map(item => makeNoteKey(item.event, item.spec));
       const visualDur = visualDurationForEvent(firstEvent, entry.duration);
 
-      note = new VF.StaveNote({ keys, duration: durationCode(visualDur), auto_stem: false });
+      note = new StaveNote({ keys, duration: durationCode(visualDur), autoStem: false });
       note.setStemDirection(voiceId === 1 ? 1 : -1);
 
       // Explicitly set notehead for each key in the chord if it's a raw SMuFL ID or ghost
       instrumentSpecs.forEach((item, index) => {
-        const head = getVexNotehead(item.event, item.spec);
-        const vfAny = VF as any;
-        const smufl = vfAny.smufl?.to_code_points || {};
-        
         // Use underscore property for consistency with bundle probe
         const heads = note.note_heads || (note as any).noteHeads;
         if (!heads?.[index]) return;
@@ -285,63 +297,58 @@ function createVexNotes(
         if (item.event.modifier === "ghost") {
           // Hardcoded Unicode: Parenthesis Left + Black Notehead + Parenthesis Right
           heads[index].text = "\uE0F5\uE0A4\uE0F6";
-        } else if (head && !isVexCode(head)) {
-          const glyphCode = smufl[head];
-          if (glyphCode) {
-            heads[index].text = glyphCode;
-          }
         }
       });
 
       entry.events.forEach((e) => {
-        if (e.kind === "accent") note.addModifier(new VF.Articulation("a>").setPosition(voiceId === 1 ? 3 : 4), 0);
-        else if (e.modifier === "close") note.addModifier(new VF.Articulation("a-").setPosition(voiceId === 1 ? 3 : 4), 0);
-        else if (e.modifier === "choke") note.addModifier(new VF.Articulation("a.").setPosition(voiceId === 1 ? 3 : 4), 0);
+        if (e.kind === "accent") note.addModifier(new Articulation("a>").setPosition(voiceId === 1 ? 3 : 4), 0);
+        else if (e.modifier === "close") note.addModifier(new Articulation("a-").setPosition(voiceId === 1 ? 3 : 4), 0);
+        else if (e.modifier === "choke") note.addModifier(new Articulation("a.").setPosition(voiceId === 1 ? 3 : 4), 0);
 
         if (modifierIsGrace(e)) {
           const slash = graceNoteSlash(e);
-          const gn = new VF.GraceNote({ keys: [makeNoteKey(e, instrumentForTrack(e.track, e.glyph))], duration: "16", slash });
-          note.addModifier(new VF.GraceNoteGroup([gn], slash), 0);
+          const gn = new GraceNote({ keys: [makeNoteKey(e, instrumentForTrack(e.track, e.glyph))], duration: "16", slash });
+          note.addModifier(new GraceNoteGroup([gn], slash), 0);
         }
       });
 
       if (voiceId === 1) {
         const stick = stickings.get(`${entry.start.numerator}/${entry.start.denominator}`);
-        if (stick) note.addModifier(new VF.Annotation(stick).setPosition(VF.Modifier.Position.ABOVE), 0);
+        if (stick) note.addModifier(new Annotation(stick).setPosition(ModifierPosition.ABOVE), 0);
       }
 
       const segment = groupingSegmentIndex(score, subtractFractions(entry.start, measureStart));
       if (isBeamable(visualDur) && segment === currentBeamSegment) {
         currentBeamNotes.push(note);
       } else {
-        if (currentBeamNotes.length > 1) allBeams.push(new VF.Beam(currentBeamNotes));
+        if (currentBeamNotes.length > 1) allBeams.push(new Beam(currentBeamNotes));
         currentBeamNotes = isBeamable(visualDur) ? [note] : [];
         currentBeamSegment = isBeamable(visualDur) ? segment : -1;
       }
 
       if (firstEvent.tuplet) {
         if (!activeTuplet || activeTuplet.actual !== firstEvent.tuplet.actual) {
-          if (tupletNotes.length > 0) allTuplets.push(new VF.Tuplet(tupletNotes, { num_notes: activeTuplet.actual, notes_occupied: activeTuplet.normal }));
+          if (tupletNotes.length > 0) allTuplets.push(new Tuplet(tupletNotes, { numNotes: activeTuplet.actual, notesOccupied: activeTuplet.normal }));
           tupletNotes = [note];
           activeTuplet = firstEvent.tuplet;
         } else {
           tupletNotes.push(note);
           if (tupletNotes.length === activeTuplet.actual) {
-            allTuplets.push(new VF.Tuplet(tupletNotes, { num_notes: activeTuplet.actual, notes_occupied: activeTuplet.normal }));
+            allTuplets.push(new Tuplet(tupletNotes, { numNotes: activeTuplet.actual, notesOccupied: activeTuplet.normal }));
             tupletNotes = [];
             activeTuplet = null;
           }
         }
       } else if (tupletNotes.length > 0) {
-        allTuplets.push(new VF.Tuplet(tupletNotes, { num_notes: activeTuplet.actual, notes_occupied: activeTuplet.normal }));
+        allTuplets.push(new Tuplet(tupletNotes, { numNotes: activeTuplet.actual, notesOccupied: activeTuplet.normal }));
         tupletNotes = [];
         activeTuplet = null;
       }
     }
     notes.push(note);
   }
-  if (currentBeamNotes.length > 1) allBeams.push(new VF.Beam(currentBeamNotes));
-  if (tupletNotes.length > 0) allTuplets.push(new VF.Tuplet(tupletNotes, { num_notes: activeTuplet.actual, notes_occupied: activeTuplet.normal }));
+  if (currentBeamNotes.length > 1) allBeams.push(new Beam(currentBeamNotes));
+  if (tupletNotes.length > 0) allTuplets.push(new Tuplet(tupletNotes, { numNotes: activeTuplet.actual, notesOccupied: activeTuplet.normal }));
   return notes;
 }
 
@@ -367,7 +374,7 @@ export async function renderScorePagesToSvgs(score: NormalizedScore, options: Ve
   let systemIdx = 0;
   while (systemIdx < allSystems.length) {
     const container = document.createElement('div');
-    const renderer = new VF.Renderer(container, VF.Renderer.Backends.SVG);
+    const renderer = new Renderer(container, RendererBackends.SVG);
     const systemsThisPage = Math.min(5, allSystems.length - systemIdx);
     renderer.resize(800, 1100);
     const context = renderer.getContext();
@@ -377,11 +384,14 @@ export async function renderScorePagesToSvgs(score: NormalizedScore, options: Ve
 
     let yOffset = systemIdx === 0 ? 150 : 50;
     for (let s = 0; s < systemsThisPage; s++) {
-      renderSystem(context, score, allSystems[systemIdx], {
-        x: 50, y: yOffset, width: 700, isFirstSystem: systemIdx === 0,
-        measureDuration: { numerator: score.ast.headers.time.beats, denominator: score.ast.headers.time.beatUnit },
-        options
-      });
+      const system = allSystems[systemIdx];
+      if (system) {
+        renderSystem(context, score, system, {
+          x: 50, y: yOffset, width: 700, isFirstSystem: systemIdx === 0,
+          measureDuration: { numerator: score.ast.headers.time.beats, denominator: score.ast.headers.time.beatUnit },
+          options
+        });
+      }
       yOffset += 100 + options.systemSpacing * 100;
       systemIdx++;
     }

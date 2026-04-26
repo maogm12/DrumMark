@@ -56,8 +56,12 @@ function parseSvgSize(svgMarkup: string) {
   const doc = new DOMParser().parseFromString(svgMarkup, "image/svg+xml");
   const svg = doc.documentElement;
   const viewBox = svg.getAttribute("viewBox")?.split(/\s+/).map(Number);
-  if (viewBox && viewBox.length === 4 && viewBox.every(Number.isFinite)) {
-    return { width: viewBox[2], height: viewBox[3] };
+  if (viewBox && viewBox.length === 4) {
+    const v2 = viewBox[2];
+    const v3 = viewBox[3];
+    if (v2 !== undefined && v3 !== undefined && Number.isFinite(v2) && Number.isFinite(v3)) {
+      return { width: v2, height: v3 };
+    }
   }
 
   const parseLength = (value: string | null) => {
@@ -300,28 +304,30 @@ function highlightXmlLine(line: string, lineIndex: number): ReactNode[] {
     let attrCursor = 0;
     let attrMatch: RegExpExecArray | null;
 
-    while ((attrMatch = attrPattern.exec(attrs)) !== null) {
-      if (attrMatch.index > attrCursor) {
-        nodes.push(attrs.slice(attrCursor, attrMatch.index));
+    if (attrs) {
+      while ((attrMatch = attrPattern.exec(attrs)) !== null) {
+        if (attrMatch.index > attrCursor) {
+          nodes.push(attrs.slice(attrCursor, attrMatch.index));
+        }
+
+        nodes.push(
+          attrMatch[1],
+          <span className="xml-attr" key={`${lineIndex}-${match.index}-${attrMatch.index}-attr`}>
+            {attrMatch[2]}
+          </span>,
+          <span className="xml-punctuation" key={`${lineIndex}-${match.index}-${attrMatch.index}-eq`}>
+            {attrMatch[3]}
+          </span>,
+          <span className="xml-string" key={`${lineIndex}-${match.index}-${attrMatch.index}-value`}>
+            {attrMatch[4]}
+          </span>,
+        );
+        attrCursor = attrMatch.index + attrMatch[0].length;
       }
 
-      nodes.push(
-        attrMatch[1],
-        <span className="xml-attr" key={`${lineIndex}-${match.index}-${attrMatch.index}-attr`}>
-          {attrMatch[2]}
-        </span>,
-        <span className="xml-punctuation" key={`${lineIndex}-${match.index}-${attrMatch.index}-eq`}>
-          {attrMatch[3]}
-        </span>,
-        <span className="xml-string" key={`${lineIndex}-${match.index}-${attrMatch.index}-value`}>
-          {attrMatch[4]}
-        </span>,
-      );
-      attrCursor = attrMatch.index + attrMatch[0].length;
-    }
-
-    if (attrCursor < attrs.length) {
-      nodes.push(attrs.slice(attrCursor));
+      if (attrCursor < attrs.length) {
+        nodes.push(attrs.slice(attrCursor));
+      }
     }
 
     nodes.push(
@@ -673,9 +679,12 @@ async function buildPdf(
     const image = await pdf.embedPng(imageData.bytes);
     const contentWidth = pdfPageWidth - pdfMargin * 2;
     const contentHeight = pdfPageHeight - (pdfMargin * 2);
-    const imageScale = Math.min(contentWidth / imageData.width, contentHeight / imageData.height);
-    const imageWidth = imageData.width * imageScale;
-    const imageHeight = imageData.height * imageScale;
+    
+    const iw = imageData.width;
+    const ih = imageData.height;
+    const imageScale = Math.min(contentWidth / iw, contentHeight / ih);
+    const imageWidth = iw * imageScale;
+    const imageHeight = ih * imageScale;
     const imageY = pdfPageHeight - pdfMargin - imageHeight;
 
     page.drawImage(image, {

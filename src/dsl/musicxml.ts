@@ -1,7 +1,4 @@
 import {
-  addFractions,
-  compareFractions,
-  fractionsEqual,
   multiplyFraction,
   simplify,
   subtractFractions,
@@ -17,7 +14,6 @@ import {
   groupingSegmentIndex,
   type InstrumentSpec,
   type VoiceEntry,
-  type VoiceEventGroup,
 } from "./logic";
 
 type VoiceId = 1 | 2;
@@ -179,10 +175,8 @@ function highestEventIndex(events: NormalizedEvent[]): number {
   let highestIndex = 0;
   let highestRank = -Infinity;
 
-  for (let index = 0; index < events.length; index += 1) {
-    const event = events[index];
+  for (const [index, event] of events.entries()) {
     const rank = instrumentPitchRank(instrumentForTrack(event.track, event.glyph));
-
     if (rank > highestRank) {
       highestIndex = index;
       highestRank = rank;
@@ -193,7 +187,7 @@ function highestEventIndex(events: NormalizedEvent[]): number {
 }
 
 function collectDivisions(score: NormalizedScore): number {
-  const lcm = (a: number, b: number) => (a * b) / gcd(a, b);
+  const lcm = (a: number, b: number) => (a * b) / (gcd(a, b) || 1);
   const gcd = (a: number, b: number): number => (b === 0 ? a : gcd(b, a % b));
 
   let divisions = 1;
@@ -405,10 +399,10 @@ function measureXml(score: NormalizedScore, exportMeasure: ExportMeasure, divisi
   const downEvents = measure.events.filter((event) => logicVoiceForTrack(event.track) === 2 && event.track !== "ST");
   
   const upEntries = upEvents.length > 0
-    ? buildVoiceEntries(score, groupVoiceEvents(upEvents), measureStart, measureDuration)
+    ? buildVoiceEntries(groupVoiceEvents(upEvents), measureStart, measureDuration)
     : [];
   const downEntries = downEvents.length > 0
-    ? buildVoiceEntries(score, groupVoiceEvents(downEvents), measureStart, measureDuration)
+    ? buildVoiceEntries(groupVoiceEvents(downEvents), measureStart, measureDuration)
     : [];
     
   const stickings = stickingsByStart(measure.events);
@@ -446,9 +440,7 @@ function measureXml(score: NormalizedScore, exportMeasure: ExportMeasure, divisi
   function processVoiceEntries(entries: VoiceEntry[], voice: VoiceTrack): string[] {
     const result: string[] = [];
 
-    for (let i = 0; i < entries.length; i++) {
-      const entry = entries[i];
-
+    for (const [i, entry] of entries.entries()) {
       if (entry.kind === "rest") {
         if (hideVoice2Rests && voice.voice === 2) {
           result.push(forwardXml(entry.duration, divisions, voice));
@@ -595,8 +587,13 @@ function buildExportMeasures(score: NormalizedScore): ExportMeasure[] {
   const repeatByStart = new Map(score.ast.repeatSpans.map((span) => [span.startBar, span] as const));
   const expanded: ExportMeasure[] = [];
 
-  for (let index = 0; index < score.measures.length; index += 1) {
+  let index = 0;
+  while (index < score.measures.length) {
     const measure = score.measures[index];
+    if (!measure) {
+      index++;
+      continue;
+    }
 
     // Handle multi-measure rests - output N measures with <multiple-rest> on first
     if (measure.multiRestCount && measure.multiRestCount > 1) {
@@ -611,6 +608,7 @@ function buildExportMeasures(score: NormalizedScore): ExportMeasure[] {
           outputIndex: expanded.length,
         });
       }
+      index++;
       continue;
     }
 
@@ -619,12 +617,15 @@ function buildExportMeasures(score: NormalizedScore): ExportMeasure[] {
     if (repeatSpan && repeatSpan.times > 2) {
       for (let repeatIndex = 0; repeatIndex < repeatSpan.times; repeatIndex += 1) {
         for (let bar = repeatSpan.startBar; bar <= repeatSpan.endBar; bar += 1) {
-          expanded.push({
-            measure: score.measures[bar],
-            showRepeatStart: false,
-            showRepeatEnd: false,
-            outputIndex: expanded.length,
-          });
+          const barMeasure = score.measures[bar];
+          if (barMeasure) {
+            expanded.push({
+              measure: barMeasure,
+              showRepeatStart: false,
+              showRepeatEnd: false,
+              outputIndex: expanded.length,
+            });
+          }
         }
       }
 
@@ -638,6 +639,7 @@ function buildExportMeasures(score: NormalizedScore): ExportMeasure[] {
       showRepeatEnd: score.ast.repeatSpans.some((span) => span.endBar === measure.globalIndex && span.times <= 2),
       outputIndex: expanded.length,
     });
+    index++;
   }
 
   return expanded;

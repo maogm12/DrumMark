@@ -100,8 +100,8 @@ export function groupingSegmentIndex(score: NormalizedScore, positionInMeasure: 
   const posInUnits = (positionInMeasure.numerator * time.beatUnit) / positionInMeasure.denominator;
   
   let accumulated = 0;
-  for (let i = 0; i < grouping.length; i++) {
-    accumulated += grouping[i];
+  for (const [i, g] of grouping.entries()) {
+    accumulated += g;
     if (posInUnits < accumulated - 0.0001) {
       return i;
     }

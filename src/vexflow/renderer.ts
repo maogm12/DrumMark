@@ -174,10 +174,19 @@ function renderSystem(context: any, score: NormalizedScore, measures: any[], sys
 
   const formatter = new VF.Formatter();
   for (let i = 0; i < staves.length; i++) {
-    const staveVoices = allVoices.filter(v => (v as any)._stave === staves[i]);
+    const stave = staves[i];
+    const staveVoices = allVoices.filter(v => (v as any)._stave === stave);
     if (staveVoices.length > 0) {
-      formatter.joinVoices(staveVoices).format(staveVoices, measureWidth - 20);
-      staveVoices.forEach(v => (v as any).draw(context, staves[i]));
+      // Calculate real available width for notes: 
+      // stave.getNoteStartX() gives the X where notes begin after Clef/TimeSig
+      // stave.getX() + stave.getWidth() is the end of the stave
+      // We subtract a small padding (10) for the end barline
+      const noteStart = stave.getNoteStartX();
+      const noteEnd = stave.getX() + stave.getWidth();
+      const availableWidth = Math.max(10, noteEnd - noteStart - 10);
+      
+      formatter.joinVoices(staveVoices).format(staveVoices, availableWidth);
+      staveVoices.forEach(v => (v as any).draw(context, stave));
     }
   }
 
@@ -208,15 +217,21 @@ function renderMeasureVoices(
   const tuplets: any[] = [];
 
   const v1Notes = createVexNotes(score, upEntries, 1, measureStart, stickings, beams, tuplets);
-  const v2Notes = createVexNotes(score, downEntries, 2, measureStart, stickings, beams, tuplets, options.hideVoice2Rests);
-
   const voice1 = new VF.Voice({ num_beats: measureDuration.numerator, beat_value: measureDuration.denominator }).setStrict(false).addTickables(v1Notes);
   (voice1 as any)._stave = stave;
 
-  const voice2 = new VF.Voice({ num_beats: measureDuration.numerator, beat_value: measureDuration.denominator }).setStrict(false).addTickables(v2Notes);
-  (voice2 as any)._stave = stave;
+  const voices = [voice1];
 
-  return { voices: [voice1, voice2], beams, tuplets };
+  // Only create voice 2 if there are actual events or if we are not hiding rests
+  const hasV2Events = downEvents.length > 0;
+  if (hasV2Events || !options.hideVoice2Rests) {
+    const v2Notes = createVexNotes(score, downEntries, 2, measureStart, stickings, beams, tuplets, options.hideVoice2Rests);
+    const voice2 = new VF.Voice({ num_beats: measureDuration.numerator, beat_value: measureDuration.denominator }).setStrict(false).addTickables(v2Notes);
+    (voice2 as any)._stave = stave;
+    voices.push(voice2);
+  }
+
+  return { voices, beams, tuplets };
 }
 
 function createVexNotes(
@@ -240,6 +255,11 @@ function createVexNotes(
     if (entry.kind === "rest") {
       note = new VF.StaveNote({ keys: [voiceId === 1 ? "B/4" : "F/4"], duration: durationCode(entry.duration) + "r" });
       if (hideRests && voiceId === 2) note.setStyle({ fillStyle: "transparent", strokeStyle: "transparent" });
+      
+      // Fix: Encountering a rest should break the current beam
+      if (currentBeamNotes.length > 1) allBeams.push(new VF.Beam(currentBeamNotes));
+      currentBeamNotes = [];
+      currentBeamSegment = -1;
     } else {
       const firstEvent = entry.events[0];
       const instrumentSpecs = entry.events.map(e => ({

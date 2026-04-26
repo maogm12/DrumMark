@@ -15,23 +15,18 @@ async function prerender(url, outputPath) {
 
   // 在保存前进行“脱水”处理
   await page.evaluate(() => {
-    // 1. 移除所有 Vite 注入的调试脚本和 HMR 脚本
+    // 1. 彻底移除所有 script 标签，包括 Vite 注入的代理脚本和 HMR 脚本
     const scripts = Array.from(document.querySelectorAll('script'));
-    scripts.forEach(s => {
-      if (s.src.includes('@vite') || s.src.includes('@react-refresh') || s.textContent?.includes('injectIntoGlobalHook')) {
-        s.remove();
-      }
-    });
+    scripts.forEach(s => s.remove());
 
     // 2. 将代码块恢复为纯文本（移除高亮 span），防止二次污染
     const codeBlocks = document.querySelectorAll('.dsl-code-block');
     codeBlocks.forEach(block => {
-      // 关键：保留原始换行符，移除所有 HTML 标签
       const rawText = block.innerText || block.textContent;
       block.innerHTML = rawText; 
     });
 
-    // 3. 修复样式链接为相对路径 (针对 GitHub Pages)
+    // 3. 修复样式链接为相对路径
     const links = document.querySelectorAll('link[rel="stylesheet"]');
     links.forEach(l => {
       if (l.href.includes('styles.css')) {
@@ -40,8 +35,14 @@ async function prerender(url, outputPath) {
     });
   });
 
-  const content = await page.content();
-  // 移除残留的 Vite 占位符字符串
+  let content = await page.content();
+  
+  // 4. 在 </body> 结束前重新插入原始的 vanilla 脚本 (使用绝对路径或相对路径)
+  // 这样在开发模式下依然能正常运行交互逻辑，且不会有代理冲突
+  const scriptTag = '<script type="module" src="/drum_notation/src/docsVanilla.ts"></script>';
+  content = content.replace('</body>', `${scriptTag}\n</body>`);
+
+  // 修复换行符转义问题
   const cleanContent = content.replace(/\\n/g, '\n');
   
   fs.writeFileSync(outputPath, cleanContent);
@@ -51,7 +52,7 @@ async function prerender(url, outputPath) {
 }
 
 async function run() {
-  const port = 5260;
+  const port = 5270;
   const devServer = spawn('npm', ['run', 'dev', '--', '--port', port.toString()], {
     stdio: 'ignore',
     detached: true

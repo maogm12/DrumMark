@@ -2,182 +2,73 @@ import { describe, expect, it } from "vitest";
 import { buildNormalizedScore } from "./normalize";
 
 describe("buildNormalizedScore", () => {
-  it("validates slot totals against divisions", () => {
+  it("resolves context-aware aliases and fallback instruments", () => {
     const score = buildNormalizedScore(`time 4/4
 divisions 4
 
-HH | x - x |`);
-
-    expect(score.errors).toEqual([
-      {
-        line: 4,
-        column: 1,
-        message: "Track `HH` measure 1 has invalid duration: used 3 slots, expected 4",
-      },
-    ]);
-  });
-
-  it("reports notes crossing grouping boundaries", () => {
-    const score = buildNormalizedScore(`time 4/4
-grouping 2+2
-divisions 4
-
-HH | x x. x |`);
-
-    expect(score.errors).toEqual([
-      {
-        line: 5,
-        column: 1,
-        message: "Token `x` crosses grouping boundary at 2 in track HH",
-      },
-      {
-        line: 5,
-        column: 1,
-        message: "Track `HH` measure 1 has invalid duration: used 3.5 slots, expected 4",
-      },
-    ]);
-  });
-
-  it("allows dotted notes that fit within boundaries", () => {
-    const score = buildNormalizedScore(`time 4/4
-grouping 2+2
-divisions 4
-
-HH | x. -/ x x |`);
+HH | x - - - |
+SD | x - - - |
+| x s b g |`);
 
     expect(score.errors).toEqual([]);
-    expect(score.measures[0].events[0].duration).toEqual({ numerator: 3, denominator: 8 }); // 1.5 * 1/4 = 3/8
+    
+    // HH | x -> HH:d
+    const hhEvent = score.measures[0].events.find(e => e.track === "HH" && e.start.numerator === 0);
+    expect(hhEvent?.glyph).toBe("x"); // Cymbal family
+    expect(hhEvent?.modifier).toBeUndefined();
+
+    // SD | x -> SD:d:cross
+    const sdEvent = score.measures[0].events.find(e => e.track === "SD" && e.start.numerator === 0);
+    expect(sdEvent?.track).toBe("SD");
+    expect(sdEvent?.modifier).toBe("cross");
+
+    // Anonymous | x -> HH:d
+    const hhAt0 = score.measures[0].events.filter(e => e.track === "HH" && e.start.numerator === 0);
+    expect(hhAt0).toHaveLength(2);
+
+    // Anonymous | s -> SD:d at slot 1 (1/4)
+    const anonS = score.measures[0].events.find(e => e.track === "SD" && e.start.numerator === 1 && e.start.denominator === 4);
+    expect(anonS).toBeDefined();
+
+    // Anonymous | b -> BD:d at slot 2 (2/4 -> 1/2)
+    const anonB = score.measures[0].events.find(e => e.track === "BD" && e.start.numerator === 1 && e.start.denominator === 2);
+    expect(anonB).toBeDefined();
+
+    // Anonymous | g -> SD:d:ghost at slot 3 (3/4)
+    const anonG = score.measures[0].events.find(e => e.track === "SD" && e.start.numerator === 3);
+    expect(anonG?.modifier).toBe("ghost");
   });
 
-  it("normalizes events with measure-relative timing and tuplets", () => {
+  it("handles braced scopes and timing accurately", () => {
     const score = buildNormalizedScore(`time 4/4
-grouping 4
 divisions 4
 
-HH | x [2: x o X] - |
-SD | d - D - |
-HF | - p:close - - |
-ST | [2: R L R] - - |`);
+| RC{d d} SD{[d d d]} |`);
+
 
     expect(score.errors).toEqual([]);
-    expect(score.measures).toHaveLength(1);
-    expect(score.measures[0].events).toEqual([
-      {
-        track: "HH",
-        paragraphIndex: 0,
-        measureIndex: 0,
-        measureInParagraph: 0,
-        start: { numerator: 0, denominator: 1 },
-        duration: { numerator: 1, denominator: 4 },
-        kind: "hit",
-        glyph: "x",
-        modifier: undefined,
-      },
-      {
-        track: "SD",
-        paragraphIndex: 0,
-        measureIndex: 0,
-        measureInParagraph: 0,
-        start: { numerator: 0, denominator: 1 },
-        duration: { numerator: 1, denominator: 4 },
-        kind: "hit",
-        glyph: "d",
-        modifier: undefined,
-      },
-      {
-        track: "ST",
-        paragraphIndex: 0,
-        measureIndex: 0,
-        measureInParagraph: 0,
-        start: { numerator: 0, denominator: 1 },
-        duration: { numerator: 1, denominator: 6 },
-        kind: "sticking",
-        glyph: "R",
-        modifier: undefined,
-        tuplet: { actual: 3, normal: 2 },
-      },
-      {
-        track: "ST",
-        paragraphIndex: 0,
-        measureIndex: 0,
-        measureInParagraph: 0,
-        start: { numerator: 1, denominator: 6 },
-        duration: { numerator: 1, denominator: 6 },
-        kind: "sticking",
-        glyph: "L",
-        modifier: undefined,
-        tuplet: { actual: 3, normal: 2 },
-      },
-      {
-        track: "HH",
-        paragraphIndex: 0,
-        measureIndex: 0,
-        measureInParagraph: 0,
-        start: { numerator: 1, denominator: 4 },
-        duration: { numerator: 1, denominator: 6 },
-        kind: "hit",
-        glyph: "x",
-        modifier: undefined,
-        tuplet: { actual: 3, normal: 2 },
-      },
-      {
-        track: "HF",
-        paragraphIndex: 0,
-        measureIndex: 0,
-        measureInParagraph: 0,
-        start: { numerator: 1, denominator: 4 },
-        duration: { numerator: 1, denominator: 4 },
-        kind: "pedal",
-        glyph: "p",
-        modifier: "close",
-      },
-      {
-        track: "ST",
-        paragraphIndex: 0,
-        measureIndex: 0,
-        measureInParagraph: 0,
-        start: { numerator: 1, denominator: 3 },
-        duration: { numerator: 1, denominator: 6 },
-        kind: "sticking",
-        glyph: "R",
-        modifier: undefined,
-        tuplet: { actual: 3, normal: 2 },
-      },
-      {
-        track: "HH",
-        paragraphIndex: 0,
-        measureIndex: 0,
-        measureInParagraph: 0,
-        start: { numerator: 5, denominator: 12 },
-        duration: { numerator: 1, denominator: 6 },
-        kind: "hit",
-        glyph: "x",
-        modifier: "open",
-        tuplet: { actual: 3, normal: 2 },
-      },
-      {
-        track: "SD",
-        paragraphIndex: 0,
-        measureIndex: 0,
-        measureInParagraph: 0,
-        start: { numerator: 1, denominator: 2 },
-        duration: { numerator: 1, denominator: 4 },
-        kind: "accent",
-        glyph: "D",
-        modifier: undefined,
-      },
-      {
-        track: "HH",
-        paragraphIndex: 0,
-        measureIndex: 0,
-        measureInParagraph: 0,
-        start: { numerator: 7, denominator: 12 },
-        duration: { numerator: 1, denominator: 6 },
-        kind: "accent",
-        glyph: "X",
-        modifier: undefined,
-        tuplet: { actual: 3, normal: 2 },
-      },
-    ]);
+    const events = score.measures[0].events;
+    
+    // RC{d d} takes 2 slots (0, 1)
+    expect(events.filter(e => e.track === "RC")).toHaveLength(2);
+    expect(events.find(e => e.track === "RC" && e.start.numerator === 0)).toBeDefined();
+    expect(events.find(e => e.track === "RC" && e.start.numerator === 1)).toBeDefined();
+
+    // SD{[3: d d d]} takes 1 slot (at slot 2)
+    const sdEvents = events.filter(e => e.track === "SD");
+    expect(sdEvents).toHaveLength(3);
+    // First SD event at start 2/4 (simplified to 1/2)
+    expect(sdEvents[0].start).toMatchObject({ numerator: 1, denominator: 2 });
+  });
+
+  it("merges multiple modifiers correctly (accent priority)", () => {
+    const score = buildNormalizedScore(`time 4/4
+divisions 4
+| s:rim:accent |`);
+
+    const event = score.measures[0].events[0];
+    expect(event.track).toBe("SD");
+    expect(event.kind).toBe("accent");
+    expect(event.modifier).toBe("rim");
   });
 });

@@ -127,10 +127,7 @@ function noteShapeForFraction(duration: Fraction): { type: string; dots: number 
   }
 }
 
-function instrumentForTrack(track: TrackName, glyph?: string): InstrumentSpec {
-  if (track === "HH" && glyph === "c") {
-    return { displayStep: "A", displayOctave: 5, notehead: "x" };
-  }
+function instrumentForTrack(track: TrackName, _glyph?: string): InstrumentSpec {
   switch (track) {
     case "HH":
       return { displayStep: "G", displayOctave: 5, notehead: "x" };
@@ -176,7 +173,7 @@ function highestEventIndex(events: NormalizedEvent[]): number {
   let highestRank = -Infinity;
 
   for (const [index, event] of events.entries()) {
-    const rank = instrumentPitchRank(instrumentForTrack(event.track, event.glyph));
+    const rank = instrumentPitchRank(instrumentForTrack(event.track));
     if (rank > highestRank) {
       highestIndex = index;
       highestRank = rank;
@@ -203,6 +200,10 @@ function collectDivisions(score: NormalizedScore): number {
 }
 
 function noteheadValueForEvent(event: NormalizedEvent, instrument: InstrumentSpec): InstrumentSpec["notehead"] | undefined {
+  if (event.modifier === "ghost") {
+    return "normal"; // Ghost notes are often normal heads with parentheses, but we'll use 'normal' and add parentheses in notations
+  }
+
   if (event.track === "SD") {
     if (event.modifier === "cross") {
       return "x";

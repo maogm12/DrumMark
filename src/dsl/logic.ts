@@ -141,6 +141,20 @@ export type VoiceEntry =
   | { kind: "rest"; start: Fraction; duration: Fraction }
   | { kind: "notes"; start: Fraction; duration: Fraction; events: NormalizedEvent[] };
 
+export function resolveFallbackTrack(glyph: string): TrackName {
+  const v = glyph;
+  if (v === "s" || v === "S") return "SD";
+  if (v === "b" || v === "B") return "BD";
+  if (v === "t1" || v === "T1") return "T1";
+  if (v === "t2" || v === "T2") return "T2";
+  if (v === "t3" || v === "T3") return "T3";
+  if (v === "c" || v === "C") return "C";
+  if (v === "r" || v === "R") return "RC";
+  if (v === "p" || v === "P") return "HF";
+  if (v === "g" || v === "G") return "SD";
+  return "HH"; // Default for x, d, o etc.
+}
+
 /**
  * Groups events by their start time and duration.
  */

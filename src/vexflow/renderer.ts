@@ -42,9 +42,9 @@ async function ensureVexFlowFonts() {
   if (typeof VexFlow.loadFonts === "function") {
     try {
       await VexFlow.loadFonts("Bravura", "Academico");
-      if (typeof VexFlow.setFonts === "function") {
-        VexFlow.setFonts("Bravura", "Academico");
-      }
+      // if (typeof VexFlow.setFonts === "function") {
+      //   VexFlow.setFonts("Bravura", "Academico");
+      // }
     } catch (e) {
       console.error("VexFlow font loading failed:", e);
     }
@@ -87,6 +87,7 @@ export async function renderScoreToSvg(score: NormalizedScore, options: VexflowR
   const renderer = new Renderer(container, RendererBackends.SVG);
   renderer.resize(systemWidth, totalHeight);
   const context = renderer.getContext();
+  context.setFont("Arial", 10);
   context.setFillStyle("#333");
   context.setStrokeStyle("#333");
 

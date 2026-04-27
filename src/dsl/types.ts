@@ -19,6 +19,7 @@ export type TrackName = (typeof TRACKS)[number];
 export type SourceTrackName = TrackName | "DR";
 
 export const MODIFIERS = [
+  "accent",
   "open",
   "close",
   "choke",
@@ -42,13 +43,13 @@ export type MeasureBoundary =
   | { kind: "repeat_start" }
   | RepeatEnd;
 
-export type BasicGlyph = "-" | "x" | "X" | "d" | "D" | "p" | "P" | "R" | "L" | "o" | "O" | "c" | "C" | "s" | "S" | "t1" | "T1" | "t2" | "T2" | "t3" | "T3";
+export type BasicGlyph = "-" | "x" | "X" | "d" | "D" | "p" | "P" | "R" | "L" | "o" | "O" | "c" | "C" | "s" | "S" | "t1" | "T1" | "t2" | "T2" | "t3" | "T3" | "g" | "G" | "r" | "R";
 
 export type TokenGlyph =
-  | { kind: "basic"; value: BasicGlyph; dots: number; halves: number }
-  | { kind: "modified"; value: Exclude<BasicGlyph, "-">; modifier: Modifier; dots: number; halves: number }
+  | { kind: "basic"; value: BasicGlyph; dots: number; halves: number; modifiers: Modifier[]; trackOverride?: string }
   | { kind: "group"; count: number; span: number; items: TokenGlyph[] }
-  | { kind: "combined"; items: { value: BasicGlyph; dots: number; halves: number }[] };
+  | { kind: "combined"; items: TokenGlyph[] }
+  | { kind: "braced"; track: string; items: TokenGlyph[] };
 
 export type MeasureToken = TokenGlyph;
 
@@ -86,7 +87,7 @@ export type ParsedMeasure = {
 };
 
 export type ParsedTrackLine = {
-  track: SourceTrackName;
+  track: SourceTrackName | "ANONYMOUS";
   lineNumber: number;
   measures: ParsedMeasure[];
   source: PreprocessedLine;
@@ -151,7 +152,7 @@ export type ScoreMeasure = ParsedMeasure & {
 };
 
 export type ScoreTrackParagraph = {
-  track: TrackName;
+  track: TrackName | "ANONYMOUS";
   measures: ScoreMeasure[];
   generated: boolean;
   lineNumber?: number;
@@ -161,7 +162,7 @@ export type ScoreParagraph = {
   startLine: number;
   measureCount: number;
   tracks: ScoreTrackParagraph[];
-  groups: TrackName[][];
+  groups: (TrackName | "ANONYMOUS")[][];
 };
 
 export type RepeatSpan = {

@@ -17,7 +17,6 @@ Non-goals for v0:
 - Full-featured general-purpose notation editor
 - WYSIWYG score editing
 - Complete support for all traditional engraving details
-- Ghost-note parentheses in staff preview/export, which are blocked by current OSMD limitations
 
 ## Product Shape
 
@@ -36,20 +35,30 @@ The editor is the source of truth. The preview is derived from parsed DSL. Music
 Pipeline:
 
 ```txt
-DSL -> Tokenizer -> Parser -> AST -> Normalized Events -> Renderers / MusicXML
+DSL -> Tokenizer -> Parser -> AST -> Normalized Events -> Renderers
+                                                        ├── MusicXML Export
+                                                        └── VexFlow Renderer (preview + PDF)
 ```
 
-Outputs:
+All score rendering goes through VexFlow 5. MusicXML is an export-only backend.
 
-- Grid preview
-- Staff preview
-- MusicXML export
+### Rendering Modes
 
-Current rendering constraint:
+VexFlow renderer operates in two modes:
 
-- All score rendering goes through OSMD
-- Ghost-note parentheses are not part of v0 because OSMD does not currently support this notation reliably
-- Reference: https://github.com/opensheetmusicdisplay/opensheetmusicdisplay/issues/887
+**Continuous Scroll Preview**
+
+- Single-page infinite-scroll SVG rendering the full score
+- No page breaks; the entire score is visible at once
+- Used for live preview in the browser
+
+**Page View / PDF Export**
+
+- Score is sliced into pages using the current page size (default: US Letter 8.5×11 in, 612×792 pt)
+- Systems are placed top to bottom, one after another, until the current page has no room for the next system
+- At that point, a new page is started and systems continue filling it the same way
+- Header (title, subtitle, composer) appears on the first page only
+- Each page is rendered as a separate SVG via `renderScorePagesToSvgs`
 
 ### Normalized Events
 
@@ -73,7 +82,7 @@ tuplet
 Notes:
 
 - `track` is the canonical score track after input sugar is resolved
-- `DR` is expanded before normalization and does not appear as a normalized track
+- `DR` (deprecated) and Anonymous tracks are expanded before normalization and do not appear as a normalized track
 - `HH` crash sugar `c` remains a glyph on `HH`; MusicXML derives crash instrument semantics during export
 - `kind` is one of hit, accent, pedal, or sticking
 - `start` and `duration` are rational musical durations, not raw grid slot numbers
@@ -292,13 +301,6 @@ Default behavior:
   * `10/8`
   * `11/8`
 
-Compatibility with `divisions`:
-
-- `divisions` defines grid resolution, not beat grouping
-- Every `grouping` boundary must fall on an integer slot position under the current `divisions`
-- Every supported group must produce item durations that can be represented cleanly under the current `divisions`
-- If `divisions` cannot represent the intended grouping or supported group durations cleanly, validation should report an error
-
 ---
 
 ## Measures, Paragraphs, and Layout
@@ -351,10 +353,10 @@ Rules:
 
 ### Track Registry and Auto Fill
 
-- Tracks are registered globally in order of first appearance
-- Once a track appears, it remains active
-- Missing tracks in later paragraphs are auto-filled with rests
-- Tracks never seen before are not auto-created
+- Any track mentioned via line header (`SD |`), routing scope (`SD { ... }`), or summoning prefix (`SD:d`) is **automatically registered** in the score.
+- Tracks are ordered based on their first appearance in the document.
+- Once a track is registered, it remains active throughout the score.
+- If a registered track is omitted in a later paragraph, it is auto-filled with full-measure rests.
 
 ---
 
@@ -366,7 +368,6 @@ Percussion tracks:
 
 - `HH` hand hi-hat
 - `HF` hi-hat foot
-- `DR` drum-combined input sugar
 - `SD` snare drum
 - `BD` bass drum
 - `T1` high tom
@@ -383,18 +384,11 @@ Auxiliary track:
 
 Cymbal-family tracks:
 
-- `HH`
-- `RC`
-- `C`
+- `HH`, `RC`, `C`
 
 Drum-family tracks:
 
-- `DR`
-- `SD`
-- `BD`
-- `T1`
-- `T2`
-- `T3`
+- `SD`, `BD`, `T1`, `T2`, `T3`
 
 Pedal-family track:
 
@@ -416,59 +410,91 @@ Example:
 HH | x - x - x - x - |
 ```
 
-Track names are case-sensitive. Unknown track names are errors.
-
-### `DR` Input Sugar
-
-`DR` is an input-only sugar track for quickly writing snare/tom patterns on one line.
-
-It is not a real score track. After parsing, `DR` is expanded into standard track events:
-
-- `s` -> `SD` normal hit
-- `S` -> `SD` accent hit
-- `t1` -> `T1` normal hit
-- `t2` -> `T2` normal hit
-- `t3` -> `T3` normal hit
-
-**Combined hits:** Use `+` to play multiple drums simultaneously. `s+t3` plays SD and T3 at the same time.
-
-- `s+S` -> SD with both normal and accent (produces accent)
-- `s+t1+t2` -> three drums simultaneously
-
-Rules:
-
-- `DR` exists only as source syntax sugar
-- AST, normalized events, preview semantics, and export should use only the standard target tracks
-- `DR` only covers `SD`, `T1`, `T2`, and `T3`
-- `DR` should not be mixed with explicit `SD`, `T1`, `T2`, or `T3` lines in the same paragraph
-- `DR` may use normal group syntax
-- Group items inside `DR` must still use only valid `DR` tokens
-- In v0, `DR` does not support modifiers
-
-Example:
+An **Anonymous Track** is a line that starts directly with a barline `|`. It acts as a universal container.
 
 ```txt
-DR | s - t1 - t2 - t3 - |
-DR | s+t3 - s+S - |     # SD+T3 simultaneous, then SD+SD(accent)
+| x - s - x - s |
 ```
+
+### Global Magic Tokens (Aliases)
+
+These tokens provide instant "summoning" of specific instruments from any line. They are divided into two categories:
+
+- **Context-Aware Aliases (Dynamic Routing)**:
+    These tokens resolve to the **local instrument** of the current track or scope. They only fall back to a default instrument in an anonymous track `|`.
+    - `x` -> If the target is in the **Drum Family**, maps to `d:cross` (Cross-stick). Otherwise, maps to `d` (Standard hit). In an anonymous track, defaults to **`HH:d`**.
+    - `p` -> Maps to `(Local):d`. In an anonymous track, defaults to **`HF:d`**.
+    - `g` -> Maps to `(Local):d:ghost`. In an anonymous track, defaults to **`SD:d:ghost`**.
+
+- **Fixed Summoning Tokens (Static Routing)**:
+    These tokens always route to a specific instrument regardless of the line's default.
+    - `s` -> `SD:d`
+    - `S` -> `SD:d:accent`
+    - `b` -> `BD:d`
+    - `B` -> `BD:d:accent`
+    - `r` -> `RC:d`
+    - `R` -> `RC:d:accent`
+    - `c` -> `C:d`
+    - `C` -> `C:d:accent`
+    - `t1`, `t2`, `t3` -> `T1:d`, `T2:d`, `T3:d`
+    - `o` -> `HH:d:open`
+    - `O` -> `HH:d:open:accent`
+
+- **Sticking Annotations**:
+    - `r`, `R`, `l`, `L` -> When used in an `ST` track or with an `ST:` prefix, these map to **Right** and **Left** hand sticking.
+
+**Note on `d`**: The token `d` refers to the "local" instrument. In an anonymous track `|`, `d` also defaults to **`HH`**. In an `ST` track, `d` is invalid and results in a parse error.
+
+### Sticking Semantics
+
+- Sticking tokens (`r`, `l`) in the `ST` track do not create MusicXML `<note>` elements with percussion step/octave.
+- They are attached as `<fingering>` or `<direction>` to notes at the same rhythmic position.
+- If a sticking token is placed in an anonymous track `|` without an `ST:` prefix, `r` is interpreted as a **Ride Cymbal note**. To write sticking in an anonymous track, use `ST:r`.
+
+### Track Routing Scopes
+
+Use braces `{}` to route a block of notes to a specific track without affecting timing or groups.
+
+- Syntax: `TRACK { ... }`
+- Example: `| RC { x x x x } |` (A full measure of Ride)
+- Scopes can wrap groups: `SD { [3: d d d] }`
+
+### The Summoning Operator
+
+Use `:` to explicitly summon a track or apply a modifier.
+
+- **Individual Summon**: `RC:d`
+- **Summon with Modifier**: `s:rim` (equivalent to `SD:d:rim`)
+
+#### Instrument Selection Hierarchy
+
+Priority (from highest to lowest):
+
+1. **Specific Token/Prefix**: A fixed summoning token (like `s`) or an explicit prefix (like `RC:d`) wins.
+2. **Context-Aware Alias**: Tokens like `x`, `p`, or `g` resolve based on the active scope.
+3. **Routing Scope**: Braces `TRACK { ... }` override the line default.
+4. **Line Default**: The track name at the start of the line (e.g., `SD |`).
+5. **Fallback**: In an anonymous track `|`, unrouted tokens follow their specific fallback rules.
+
+**Visual Noteheads**:
+- **Cymbal family**: X-notehead (Ghost notes will also be parenthesized).
+- **Drum/Pedal family**: Standard notehead.
+
+#### Combined Hits
+
+Use `+` to play multiple instruments simultaneously.
+
+- Example: `x+s` (Hi-hat and Snare)
+- Example: `b+x` (Bass drum and Hi-hat)
 
 ## Base Tokens
 
-### Core Tokens
+### The Atomic Note
 
-- `-` rest
-- `s` snare normal hit (`DR` only)
-- `S` snare accent hit (`DR` only)
-- `t1`, `t2`, `t3` tom normal hits (`DR` only)
-- `T1`, `T2`, `T3` tom accent hits (`DR` only)
-- `x` cymbal-family normal hit
-- `X` cymbal-family accent hit
-- `d` drum-family normal hit
-- `D` drum-family accent hit
-- `p` pedal hit
-- `P` pedal accent hit
-- `R` right hand sticking
-- `L` left hand sticking
+The core of the DSL is the single atomic note **`d`**. All other hit tokens are syntactic sugar that map to `d` with various track or modifier defaults.
+
+- **`d`**: The universal hit (standard notehead).
+- **`-`**: Rest.
 
 ### Duration Suffixes
 
@@ -481,79 +507,13 @@ Combinations are allowed: `d./` is 0.75x duration.
 
 ---
 
-`DR` allows:
-
-- `-`
-- `s`
-- `S`
-- `t1`, `T1`
-- `t2`, `T2`
-- `t3`, `T3`
-
-`HH`, `RC`, `C` allow:
-
-- `-`
-- `x`, `X`
-- `o`, `O` (HH only)
-- `c`, `C` (HH only)
-
-`SD`, `T1`, `T2`, `T3`, `BD` allow:
-
-- `-`
-- `d`, `D`
-
-`HF` allows:
-
-- `-`
-- `p`, `P`
-
-`ST` allows:
-
-- `-`
-- `R`
-- `L`
-
-`SD`, `T1`, `T2`, `T3`, `BD` allow `x` and `X` as sugar for `d:cross` and `D:cross`.
-
-Examples:
-
-```txt
-HH | x - X - |
-SD | x - X - |    # equivalent to SD | d:cross - D:cross - |
-HF | - - p - |
-ST | R - L - |
-```
-
----
-
 ## Modifiers
 
-Syntax:
-
-```txt
-<glyph>:<modifier>
-```
-
-Examples:
-
-```txt
-x:open
-x:choke
-d:rim
-d:cross
-x:bell
-d:flam
-p:close
-```
-
-Modifiers do not change slot count. They only affect playing meaning and rendering/export.
-
-Modifiers are a fixed v0 whitelist, not a general extension system.
-
-Any unknown modifier, or any modifier used on an unsupported track/glyph combination, is a hard error.
+Syntax: `<token>:<modifier>` or `Track:d:<modifier>`
 
 ### Supported Modifiers
 
+- `accent` (Mapped from uppercase tokens like `D`, `S`, `X`)
 - `open`
 - `close`
 - `choke`
@@ -561,8 +521,15 @@ Any unknown modifier, or any modifier used on an unsupported track/glyph combina
 - `cross`
 - `bell`
 - `flam`
+- `ghost`
+- `drag`
 
 ### Modifier Rules
+
+`accent`
+
+- Allowed on all percussion tracks.
+- Renders as an accent articulation (`>`) above or below the note.
 
 `open`
 
@@ -591,60 +558,32 @@ Any unknown modifier, or any modifier used on an unsupported track/glyph combina
 `flam`
 
 - Allowed on `SD`, `T1`, `T2`, `T3`
+- Renders as a slashed 16th grace note preceding the main note
+
+`ghost`
+
+- Allowed on `SD`, `HH`, `T1`, `T2`, `T3`
+- Renders as a parenthesized (bracketed) notehead with a circled shape — standard ghost note notation
+
+`drag`
+
+- Allowed on `SD`, `HH`, `T1`, `T2`, `T3`, `RC`
+- Renders as two unsynced 16th grace notes preceding the main note (drag/ruff)
 
 ### Additional Constraints
 
 - Modifiers must be valid for both the track and the base glyph
-- Ghost-note syntax is intentionally out of scope for v0 until OSMD supports notehead parentheses reliably
 
 Examples:
 
 ```txt
-HH | x - x:open - x:close - x - |
-SD | - - d:cross - d - D:rim - |
-RC | - - x:bell - - - x - |
-C  | X:choke - - - - - - - |
+HH | d - d:open - d:close - d - |
+SD | - - d:cross - d - d:rim:accent - |
+RC | - - d:bell - - - d - |
+C  | d:choke:accent - - - - - - - |
+SD | - - d:ghost - - - - |   # ghost note on snare
+HH | d - d:drag - - - - - |   # drag/ruff on hi-hat
 ```
-
-## Open Hi-Hat Sugar
-
-`o` is valid only on `HH` and is sugar for:
-
-```txt
-x:open
-```
-
-Example:
-
-```txt
-HH | x - o - x - x:close - |
-```
-
-Internally, `o` should normalize to `x` with modifier `open`.
-
-## Crash Sugar on Hi-Hat
-
-`c` is valid on `HH` and produces a crash cymbal sound.
-
-This is a convenience sugar, not a new primary notation form.
-
-`C` remains the canonical crash track.
-
-`HH` with `c` is shorthand for a crash hit that should be interpreted the same way as writing on the `C` track at the model/export level.
-
-Example:
-
-```txt
-HH | x - c - x - c:choke - |
-```
-
-Rules:
-
-- `c` on `HH` is a special-case input sugar
-- It should not be generalized into arbitrary cross-track remapping
-- It should map to crash cymbal semantics in rendering and export
-
-Internally, `c` on `HH` is rendered with the crash instrument in MusicXML.
 
 ## Groups
 
@@ -750,9 +689,9 @@ Legal measure boundary forms:
 Examples:
 
 ```txt
-HH |: x - x - x - x - | x - x - X - x - :|
-SD |  - - d - - - D - | - - d - d - - -  |
-BD |  p - - - p - - - | p - p - - - p -  |
+HH |: d - d - d - d - | d - d - d:accent - d - :|
+SD |  - - d - - - d:accent - | - - d - d - - -  |
+BD |  d - - - d - - - | d - d - - - d -                     |
 ```
 
 ### Repeat Semantics
@@ -784,6 +723,7 @@ Practical guidance:
 
 Syntax rules:
 
+- `N` must be a positive integer >= 2
 - `N` must be surrounded by at least one `-` on each side
 - Spaces around `N` are allowed
 - The entire construct must fit within a single measure boundary `| ... |`
@@ -793,10 +733,9 @@ Examples:
 ```txt
 HH | --8-- |     # 8-measure rest
 HH |- 4 - |     # 4-measure rest (spaces allowed)
-BD | --1-- |    # 1-measure rest
 ```
 
-This is semantically distinct from: `|--N--|` generates a single `<multiple-rest>` measure in MusicXML, which signals the notation software to display a thick bar with the number N.
+`N=1` is not allowed and will be rejected as an error.
 
 ### Inline Measure Repeat
 
@@ -812,7 +751,7 @@ Syntax rules:
 Examples:
 
 ```txt
-HH | xxxx *2 |    # repeats the entire measure "xxxx *2" 2 times (2 measures of xxxx)
+HH | dddd *2 |    # repeats the entire measure "dddd *2" 2 times (2 measures of dddd)
 HH | - *3 |       # repeats the blank measure 3 times (3 blanks)
 ```
 
@@ -838,8 +777,8 @@ time 4/4
 grouping 2+2
 divisions 4
 
-HH | x. x/ x x |  # Error: 'x.' crosses boundary at slot 2
-HH | x. / x x |   # Correct: 'x.' ends at 1.5, followed by half-rest '/' at 1.5-2.0
+HH | d. d/ d d |  # Error: 'd.' crosses boundary at slot 2
+HH | d. / d d |   # Correct: 'd.' ends at 1.5, followed by half-rest '/' at 1.5-2.0
 ```
 
 ## Whitespace and Comments
@@ -852,9 +791,9 @@ HH | x. / x x |   # Correct: 'x.' ends at 1.5, followed by half-rest '/' at 1.5-
 These should be treated equivalently by the parser:
 
 ```txt
-HH | x - x - |
-HH|x-x-|
-HH |   x   -   x   -   |
+HH | d - d - |
+HH|d-d-|
+HH |   d   -   d   -   |
 ```
 
 ### Blank Lines
@@ -873,7 +812,7 @@ Supported comment syntax:
 Also allowed at line end:
 
 ```txt
-HH | x - x - |   # verse groove
+HH | d - d - |   # verse groove
 ```
 
 Rules:
@@ -964,6 +903,8 @@ Suggested mapping:
 
 - `R` and `L` do not export as percussion notes
 - Sticking text does not advance rhythmic time
+- Matching is based on start position (Fraction), not track identity
+- A sticking annotation at a given start position applies to all notes at that position, regardless of track
 - Sticking without a matching note at the same start position is ignored in MusicXML export
 
 ### Modifier Export Priority
@@ -978,6 +919,8 @@ Supported export priorities:
 - open/close hi-hat
 - tuplets
 - flam
+- ghost
+- drag
 
 Supported when explicitly included in the whitelist:
 
@@ -988,11 +931,7 @@ Supported when explicitly included in the whitelist:
 
 If a modifier cannot be represented reliably in MusicXML, it is out of scope for v0 and should not be accepted by validation.
 
-Ghost-note rendering/export note:
-
-- Parenthesized ghost-note heads are deferred
-- Reason: OSMD does not currently support this notation reliably
-- Reference: https://github.com/opensheetmusicdisplay/opensheetmusicdisplay/issues/887
+`ghost` and `drag` are exported as grace notes with appropriate notation semantics.
 
 ## Example
 
@@ -1002,13 +941,13 @@ time 4/4
 divisions 16
 grouping 2+2
 
-HH |: x - x - o - x - | x - x:close - X - x - :|
-SD |  - - d:cross - d - | D:rim - [2: d d:flam d] - - -  |
-BD |  p - - - p - - - | p - p - - - p -                     |
+HH |: d - d - o - d - | d - d:close - d:accent - d - :|
+SD |  - - d:cross - d - | d:rim:accent - [2: d d:flam d] - - -  |
+BD |  d - - - d - - - | d - d - - - d -                     |
 HF |  - - - - p - - - | - - - - p:close - -                |
 
-RC | - - x:bell - - - x - | - - - - - - - - |
-C  | X:choke - - - - - - - | - - - - X - - - |
+RC | - - d:bell - - - d - | - - - - - - - - |
+C  | d:choke:accent - - - - - - - | - - - - d:accent - - - |
 ST | R - L - [2: R L R] - | R - L - R - L - |
 ```
 

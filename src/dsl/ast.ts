@@ -1,11 +1,9 @@
 import { parseDocumentSkeleton } from "./parser";
-import { TRACKS, type MeasureToken, type ParseError, type ParsedMeasure, type ParsedTrackLine, type RepeatSpan, type ScoreAst, type ScoreMeasure, type ScoreParagraph, type TrackName } from "./types";
-
-const DR_TARGET_TRACKS: TrackName[] = ["SD", "T1", "T2", "T3"];
-type CanonicalParsedTrackLine = ParsedTrackLine & { track: TrackName };
+import { TRACKS, type MeasureToken, type ParseError, type ParsedMeasure, type ParsedTrackLine, type RepeatSpan, type ScoreAst, type ScoreMeasure, type ScoreParagraph, type TrackName, type TokenGlyph, type ScoreTrackParagraph } from "./types";
+import { resolveFallbackTrack } from "./logic";
 
 function makeRestTokens(divisions: number): MeasureToken[] {
-  return Array.from({ length: divisions }, () => ({ kind: "basic", value: "-" as const, dots: 0, halves: 0 }));
+  return Array.from({ length: divisions }, () => ({ kind: "basic", value: "-" as const, dots: 0, halves: 0, modifiers: [], trackOverride: undefined }));
 }
 
 function makeRestMeasure(globalIndex: number, divisions: number): ScoreMeasure {
@@ -27,11 +25,36 @@ function pushError(errors: ParseError[], line: number, message: string): void {
   });
 }
 
+function calculateTokenWeight(token: TokenGlyph): number {
+  if (token.kind === "group") {
+    return token.span;
+  }
+  if (token.kind === "combined") {
+    return Math.max(...token.items.map(calculateTokenWeight));
+  }
+  if (token.kind === "braced") {
+    return token.items.reduce((sum, item) => sum + calculateTokenWeight(item), 0);
+  }
+
+  const base = 1;
+  const dotMultiplier = 2 - Math.pow(0.5, token.dots);
+  const halfDivider = Math.pow(2, token.halves);
+  return (base * dotMultiplier) / halfDivider;
+}
+
 function normalizeExplicitMeasure(measure: ParsedMeasure, globalIndex: number, lineNumber: number, divisions: number): ScoreMeasure {
-  // For multi-measure rests, keep tokens empty so MusicXML generator outputs a single
-  // <multiple-rest> measure. For regular empty measures, fill with rest tokens.
   const needsRestFill = measure.tokens.length === 0 && measure.multiRestCount === undefined;
-  const tokens = needsRestFill ? makeRestTokens(divisions) : measure.tokens;
+  let tokens = needsRestFill ? makeRestTokens(divisions) : [...measure.tokens];
+
+  if (measure.multiRestCount === undefined) {
+    const currentWeight = tokens.reduce((sum, t) => sum + calculateTokenWeight(t), 0);
+    if (currentWeight < divisions - 0.001) {
+      const remaining = Math.round(divisions - currentWeight);
+      if (remaining > 0) {
+        tokens = [...tokens, ...makeRestTokens(remaining)];
+      }
+    }
+  }
 
   return {
     ...measure,
@@ -42,115 +65,41 @@ function normalizeExplicitMeasure(measure: ParsedMeasure, globalIndex: number, l
   };
 }
 
-function drTokenUsesTrack(token: MeasureToken, track: TrackName): boolean {
-  if (token.kind === "group") {
-    return token.items.some((item) => drTokenUsesTrack(item, track));
-  }
-
-  if (token.kind === "combined") {
-    // Combined token uses track if any of its items match
-    return token.items.some((item) => drGlyphMatchesTrack(item.value, track));
-  }
-
-  return drGlyphMatchesTrack(token.value, track);
-}
-
-function drGlyphMatchesTrack(glyph: string, track: TrackName): boolean {
-  switch (glyph) {
-    case "s":
-    case "S":
-      return track === "SD";
-    case "t1":
-    case "T1":
-      return track === "T1";
-    case "t2":
-    case "T2":
-      return track === "T2";
-    case "t3":
-    case "T3":
-      return track === "T3";
-    default:
-      return false;
-  }
-}
-
-function expandDrToken(token: MeasureToken, track: TrackName): MeasureToken {
-  if (token.kind === "group") {
-    return {
-      kind: "group",
-      count: token.count,
-      span: token.span,
-      items: token.items.map((item) => expandDrToken(item, track)),
-    };
-  }
-
-  if (token.kind === "combined") {
-    // Find the matching item for this track
-    const matchingItem = token.items.find((item) => drGlyphMatchesTrack(item.value, track));
-    if (matchingItem) {
-      const isUppercase = matchingItem.value === matchingItem.value.toUpperCase();
-      const baseGlyph = matchingItem.value.toLowerCase();
-      let value: "d" | "D" | "-";
-      if (baseGlyph === "s") {
-        value = isUppercase ? "D" : "d";
-      } else if (["t1", "t2", "t3"].includes(baseGlyph)) {
-        value = isUppercase ? "D" : "d";
-      } else {
-        value = "-";
-      }
-      return { kind: "basic", value, dots: matchingItem.dots, halves: matchingItem.halves };
+function collectTracksInToken(token: TokenGlyph, tracks: Set<TrackName>, contextTrack: TrackName | "ANONYMOUS"): void {
+  if (token.kind === "basic") {
+    if (token.value === "-") return;
+    if (token.trackOverride && TRACKS.includes(token.trackOverride as TrackName)) {
+      tracks.add(token.trackOverride as TrackName);
+    } else if (contextTrack === "ANONYMOUS") {
+      tracks.add(resolveFallbackTrack(token.value));
+    } else {
+      tracks.add(contextTrack as TrackName);
     }
-    return { kind: "basic", value: "-", dots: 0, halves: 0 };
-  }
-
-  switch (token.value) {
-    case "s":
-      return { kind: "basic", value: track === "SD" ? ("d" as const) : ("-" as const), dots: token.dots, halves: token.halves };
-    case "S":
-      return { kind: "basic", value: track === "SD" ? ("D" as const) : ("-" as const), dots: token.dots, halves: token.halves };
-    case "t1":
-      return { kind: "basic", value: track === "T1" ? ("d" as const) : ("-" as const), dots: token.dots, halves: token.halves };
-    case "T1":
-      return { kind: "basic", value: track === "T1" ? ("D" as const) : ("-" as const), dots: token.dots, halves: token.halves };
-    case "t2":
-      return { kind: "basic", value: track === "T2" ? ("d" as const) : ("-" as const), dots: token.dots, halves: token.halves };
-    case "T2":
-      return { kind: "basic", value: track === "T2" ? ("D" as const) : ("-" as const), dots: token.dots, halves: token.halves };
-    case "t3":
-      return { kind: "basic", value: track === "T3" ? ("d" as const) : ("-" as const), dots: token.dots, halves: token.halves };
-    case "T3":
-      return { kind: "basic", value: track === "T3" ? ("D" as const) : ("-" as const), dots: token.dots, halves: token.halves };
-    default:
-      // Preserved token should already have dots and halves
-      return { ...token };
+  } else if (token.kind === "combined") {
+    token.items.forEach((t) => collectTracksInToken(t, tracks, contextTrack));
+  } else if (token.kind === "group") {
+    token.items.forEach((t) => collectTracksInToken(t, tracks, contextTrack));
+  } else if (token.kind === "braced") {
+    const bracedTrack = token.track as TrackName;
+    if (TRACKS.includes(bracedTrack)) {
+      tracks.add(bracedTrack);
+    }
+    token.items.forEach((t) => collectTracksInToken(t, tracks, bracedTrack));
   }
 }
 
-function expandDrLine(line: ParsedTrackLine): CanonicalParsedTrackLine[] {
-  const usedTracks = DR_TARGET_TRACKS.filter((track) =>
-    line.measures.some((measure) => measure.tokens.some((token) => drTokenUsesTrack(token, track))),
-  );
-
-  return usedTracks.map((track) => ({
-    ...line,
-    track,
-    measures: line.measures.map((measure) => ({
-      ...measure,
-      tokens: measure.tokens.map((token) => expandDrToken(token, track)),
-    })),
-  }));
+function collectTracksInLine(line: ParsedTrackLine, tracks: Set<TrackName>): void {
+  line.measures.forEach((m) => m.tokens.forEach((t) => collectTracksInToken(t, tracks, line.track as TrackName | "ANONYMOUS")));
 }
 
 function gcd(a: number, b: number): number {
   let x = Math.abs(a);
   let y = Math.abs(b);
-
   while (y !== 0) {
     const next = x % y;
     x = y;
     y = next;
   }
-
   return x || 1;
 }
 
@@ -253,17 +202,10 @@ function validateAndBuildRepeats(
 
   for (const paragraph of paragraphs) {
     for (const track of paragraph.tracks) {
-      if (track.generated) {
-        continue;
-      }
-
       for (const measure of track.measures) {
-        if (!measure.repeatStart && !measure.repeatEnd) {
-          continue;
-        }
+        if (!measure.repeatStart && !measure.repeatEnd) continue;
 
         const existing = boundaryByBar.get(measure.globalIndex);
-
         if (!existing) {
           boundaryByBar.set(measure.globalIndex, {
             start: measure.repeatStart || undefined,
@@ -289,7 +231,7 @@ function validateAndBuildRepeats(
     }
   }
 
-  const maxBar = paragraphs.flatMap((paragraph) => paragraph.tracks.flatMap((track) => track.measures)).reduce((max, measure) => Math.max(max, measure.globalIndex), -1);
+  const maxBar = paragraphs.flatMap((p) => p.tracks.flatMap((t) => t.measures)).reduce((max, m) => Math.max(max, m.globalIndex), -1);
   const repeatSpans: RepeatSpan[] = [];
   let openStart: number | null = null;
 
@@ -298,31 +240,16 @@ function validateAndBuildRepeats(
     const start = boundary?.start ?? false;
     const end = boundary?.end ?? false;
 
-    if (start && openStart !== null) {
-      pushError(errors, paragraphs[0]?.startLine ?? 1, `Nested repeat start at bar ${bar + 1} is not supported`);
-    }
-
-    if (start && openStart === null) {
-      openStart = bar;
-    }
-
-    if (end && openStart === null) {
-      pushError(errors, paragraphs[0]?.startLine ?? 1, `Repeat end at bar ${bar + 1} has no matching start`);
-    }
-
+    if (start && openStart !== null) pushError(errors, paragraphs[0]?.startLine ?? 1, `Nested repeat start at bar ${bar + 1} is not supported`);
+    if (start && openStart === null) openStart = bar;
+    if (end && openStart === null) pushError(errors, paragraphs[0]?.startLine ?? 1, `Repeat end at bar ${bar + 1} has no matching start`);
     if (end && openStart !== null) {
-      repeatSpans.push({
-        startBar: openStart,
-        endBar: bar,
-        times: boundary?.times ?? 2,
-      });
+      repeatSpans.push({ startBar: openStart, endBar: bar, times: boundary?.times ?? 2 });
       openStart = null;
     }
   }
 
-  if (openStart !== null) {
-    pushError(errors, paragraphs[0]?.startLine ?? 1, `Repeat starting at bar ${openStart + 1} is missing an end`);
-  }
+  if (openStart !== null) pushError(errors, paragraphs[0]?.startLine ?? 1, `Repeat starting at bar ${openStart + 1} is missing an end`);
 
   return repeatSpans;
 }
@@ -332,90 +259,91 @@ export function buildScoreAst(source: string): ScoreAst {
   const errors = [...skeleton.errors];
   validateGrouping(skeleton.headers as ScoreAst["headers"], errors);
   const paragraphs: ScoreParagraph[] = [];
-  const knownTracks: TrackName[] = [];
+  const globalTracks: TrackName[] = [];
   let globalBarIndex = 0;
 
-  for (const paragraph of skeleton.paragraphs) {
-    const hasDr = paragraph.lines.some((line) => line.track === "DR");
-    const hasExplicitDrumTracks = paragraph.lines.some((line) => line.track === "SD" || line.track === "T1" || line.track === "T2" || line.track === "T3");
-
-    if (hasDr && hasExplicitDrumTracks) {
-      errors.push({
-        line: paragraph.startLine,
-        column: 1,
-        message: "Track `DR` cannot be mixed with explicit `SD`, `T1`, `T2`, or `T3` lines in the same paragraph",
+  // Track discovery and ordering
+  skeleton.paragraphs.forEach((p) =>
+    p.lines.forEach((l) => {
+      const lineTracks = new Set<TrackName>();
+      collectTracksInLine(l, lineTracks);
+      lineTracks.forEach((t) => {
+        if (!globalTracks.includes(t)) {
+          globalTracks.push(t);
+        }
       });
-      continue;
-    }
+    }),
+  );
 
-    const expandedLines: CanonicalParsedTrackLine[] = paragraph.lines.flatMap((line) => line.track === "DR"
-      ? expandDrLine(line)
-      : [{ ...line, track: line.track as TrackName } satisfies CanonicalParsedTrackLine]);
-    const explicitMeasureCounts = [...new Set(expandedLines.map((line) => line.measures.length))];
-
+  for (const paragraph of skeleton.paragraphs) {
+    const explicitMeasureCounts = [...new Set(paragraph.lines.map((l) => l.measures.length))];
     if (explicitMeasureCounts.length > 1) {
       errors.push({
         line: paragraph.startLine,
         column: 1,
-        message: "All explicit track lines in a paragraph must have the same measure count",
+        message: "All track lines in a paragraph must have the same measure count",
       });
       continue;
     }
 
     const measureCount = explicitMeasureCounts[0] ?? 0;
-    const explicitByTrack = new Map(expandedLines.map((line) => [line.track, line] as const));
-
-    for (const line of expandedLines) {
-      if (!knownTracks.includes(line.track)) {
-        knownTracks.push(line.track);
-      }
-
-      for (const measure of line.measures) {
-        for (const token of measure.tokens) {
+    const explicitLines = paragraph.lines.map((line) => {
+      line.measures.forEach((m) =>
+        m.tokens.forEach((t) =>
           validateGroupToken(
-            token,
+            t,
             skeleton.headers.time.beats,
             skeleton.headers.time.beatUnit,
             skeleton.headers.divisions.value,
             errors,
             line.lineNumber,
-          );
-        }
-      }
-    }
-
-    const paragraphTracks = knownTracks
-      .slice()
-      .sort((left, right) => TRACKS.indexOf(left) - TRACKS.indexOf(right))
-      .map((track) => {
-        const explicit = explicitByTrack.get(track);
-
-        if (explicit) {
-          return {
-            track,
-            generated: false,
-            lineNumber: explicit.lineNumber,
-            measures: explicit.measures.map((measure, index) =>
-              normalizeExplicitMeasure(measure, globalBarIndex + index, explicit.lineNumber, skeleton.headers.divisions.value),
-            ),
-          };
-        }
-
-        return {
-          track,
-          generated: true,
-          lineNumber: undefined,
-          measures: Array.from({ length: measureCount }, (_, index) =>
-            makeRestMeasure(globalBarIndex + index, skeleton.headers.divisions.value),
           ),
-        };
+        ),
+      );
+
+      return {
+        track: line.track as TrackName | "ANONYMOUS",
+        generated: false,
+        lineNumber: line.lineNumber,
+        measures: line.measures.map((m, idx) =>
+          normalizeExplicitMeasure(m, globalBarIndex + idx, line.lineNumber, skeleton.headers.divisions.value),
+        ),
+      } satisfies ScoreTrackParagraph;
+    });
+
+    // Auto-fill missing global tracks
+    const explicitTrackNames = new Set(explicitLines.map((l) => l.track));
+    const filledTracks: ScoreTrackParagraph[] = [...explicitLines];
+
+    globalTracks
+      .slice()
+      .sort((a, b) => TRACKS.indexOf(a) - TRACKS.indexOf(b))
+      .forEach((track) => {
+        if (!explicitTrackNames.has(track)) {
+          filledTracks.push({
+            track,
+            generated: true,
+            lineNumber: undefined,
+            measures: Array.from({ length: measureCount }, (_, index) =>
+              makeRestMeasure(globalBarIndex + index, skeleton.headers.divisions.value),
+            ),
+          });
+        }
       });
+
+    // Sort tracks for consistent AST output (Anonymous lines first, then Named tracks in order)
+    filledTracks.sort((a, b) => {
+      if (a.track === "ANONYMOUS" && b.track !== "ANONYMOUS") return -1;
+      if (a.track !== "ANONYMOUS" && b.track === "ANONYMOUS") return 1;
+      if (a.track === "ANONYMOUS" && b.track === "ANONYMOUS") return 0;
+      return TRACKS.indexOf(a.track as TrackName) - TRACKS.indexOf(b.track as TrackName);
+    });
 
     paragraphs.push({
       startLine: paragraph.startLine,
       measureCount,
-      tracks: paragraphTracks,
-      groups: expandedLines.map((line) => [line.track]),
+      tracks: filledTracks,
+      groups: paragraph.lines.filter((l) => l.track !== "ANONYMOUS").map((l) => [l.track as TrackName]),
     });
 
     globalBarIndex += measureCount;

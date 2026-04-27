@@ -7,6 +7,18 @@
 - **Prototype Verification:** Before applying complex fixes or features, implement small-scale prototypes or reproduction scripts to verify assumptions autonomously.
 - **Technical Rigor:** Ensure every change is idiomatically correct and does not introduce regressions or syntax errors (like omission placeholders) into the codebase.
 - **Knowledge Retention:** After researching source code or documentation to solve a problem, document the findings (API details, internal logic, discovered constraints) in `LEARNINGS.md` or a similar technical log to prevent future regressions and aid collaboration.
+- **Design First:** For any significant DSL or architectural changes, the agent MUST present a design proposal and obtain explicit user approval before writing or modifying any implementation code.
+
+## Design Decisions (2026-04-26)
+
+### DSL Refactoring: Anonymous Tracks & Universal Summoning
+- **Status:** APPROVED
+- **Change:** Removed `DR` track. Introduced Anonymous Tracks (`|` prefix) and Track Routing Scopes (`{}`).
+- **Key Features:**
+    - Global Magic Tokens: `s`, `b`, `t1`, etc., are available everywhere.
+    - Colon Operator: `Track:Note:Modifier` for surgical control.
+    - Routing Scopes: `SD { ... }` for bulk track routing.
+- **Rationale:** Eliminate the "island" effect of special tracks, unify syntax across all tracks, and provide a more intuitive "Tab-like" writing experience.
 
 ## Rendering Rules
 

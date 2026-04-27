@@ -15,6 +15,7 @@ import {
   type Modifier,
   type BasicGlyph,
   type MetadataHeader,
+  type TokenGlyph,
 } from "./types";
 import { preprocessSource } from "./preprocess";
 
@@ -253,59 +254,15 @@ function finalizeHeaders(headers: HeaderAccumulator, errors: ParseError[]): Pars
   };
 }
 
-function isTrackGlyphAllowed(track: SourceTrackName, glyph: BasicGlyph): boolean {
-  switch (track) {
-    case "HH":
-      return glyph === "-" || glyph === "x" || glyph === "X" || glyph === "o" || glyph === "O" || glyph === "c" || glyph === "C";
-    case "RC":
-    case "C":
-      return glyph === "-" || glyph === "x" || glyph === "X";
-    case "DR":
-      return glyph === "-" || glyph === "s" || glyph === "S" || glyph === "t1" || glyph === "T1" || glyph === "t2" || glyph === "T2" || glyph === "t3" || glyph === "T3";
-    case "SD":
-    case "T1":
-    case "T2":
-    case "T3":
-    case "BD":
-      return glyph === "-" || glyph === "d" || glyph === "D" || glyph === "p" || glyph === "P" || glyph === "x" || glyph === "X";
-    case "HF":
-      return glyph === "-" || glyph === "p" || glyph === "P";
-    case "ST":
-      return glyph === "-" || glyph === "R" || glyph === "L";
-  }
-}
-
-function isModifierAllowed(track: SourceTrackName, glyph: Exclude<BasicGlyph, "-">, modifier: Modifier): boolean {
-  switch (modifier) {
-    case "open":
-      return track === "HH" && (glyph === "x" || glyph === "X");
-    case "close":
-      return (track === "HH" && (glyph === "x" || glyph === "X")) || (track === "HF" && (glyph === "p" || glyph === "P"));
-    case "choke":
-      return ((track === "C" || track === "RC") && (glyph === "x" || glyph === "X")) || (track === "HH" && (glyph === "c" || glyph === "C"));
-    case "rim":
-    case "cross":
-      return track === "SD" && (glyph === "d" || glyph === "D");
-    case "bell":
-      return track === "RC" && (glyph === "x" || glyph === "X");
-    case "flam":
-    case "ghost":
-    case "drag":
-      return (track === "SD" || track === "T1" || track === "T2" || track === "T3") && (glyph === "d" || glyph === "D");
-  }
-}
-
 function isBasicGlyph(value: string): value is BasicGlyph {
-  return ["-", "x", "X", "d", "D", "p", "P", "R", "L", "o", "O", "c", "C", "s", "S", "t1", "T1", "t2", "T2", "t3", "T3"].includes(value);
+  return ["-", "x", "X", "d", "D", "p", "P", "R", "L", "o", "O", "c", "C", "s", "S", "t1", "T1", "t2", "T2", "t3", "T3", "g", "G", "r", "b", "B"].includes(value);
 }
 
-function readBasicGlyph(track: SourceTrackName, input: string, cursor: number): { glyph: BasicGlyph; next: number } | null {
-  if (track === "DR") {
-    const multiChar = ["t1", "T1", "t2", "T2", "t3", "T3"] as const;
-    for (const glyph of multiChar) {
-      if (input.startsWith(glyph, cursor)) {
-        return { glyph, next: cursor + glyph.length };
-      }
+function readBasicGlyph(input: string, cursor: number): { glyph: BasicGlyph; next: number } | null {
+  const multiChar = ["t1", "T1", "t2", "T2", "t3", "T3"] as const;
+  for (const glyph of multiChar) {
+    if (input.startsWith(glyph, cursor)) {
+      return { glyph, next: cursor + glyph.length };
     }
   }
 
@@ -340,7 +297,7 @@ function readModifier(input: string, start: number): { modifier: Modifier; next:
 
 function parseMeasureTokens(
   content: string,
-  track: SourceTrackName,
+  track: SourceTrackName | "ANONYMOUS",
   lineNumber: number,
   columnOffset: number,
   errors: ParseError[],
@@ -349,320 +306,172 @@ function parseMeasureTokens(
   const tokens: MeasureToken[] = [];
   let cursor = 0;
 
+  const skipSpaces = () => {
+    while (cursor < content.length && /\s/.test(content[cursor]!)) {
+      cursor++;
+    }
+  };
+
   while (cursor < content.length) {
-    const char = content[cursor];
-    if (char !== undefined && /\s/.test(char)) {
-      cursor += 1;
-      continue;
+    skipSpaces();
+    if (cursor >= content.length) break;
+
+    // 1. Check for Track Identifier: TRACK { ... } or TRACK: ...
+    const trackNames = [...TRACKS, "DR", "ANONYMOUS"];
+    let matchedTrackId: string | null = null;
+    for (const id of trackNames) {
+      if (content.startsWith(id, cursor)) {
+        const nextCharPos = cursor + id.length;
+        // Check if id is followed by { or : or space+{:
+        const remainder = content.slice(nextCharPos);
+        const sepMatch = remainder.match(/^\s*([:{])/);
+        if (sepMatch) {
+          matchedTrackId = id;
+          const separator = sepMatch[1] as "{" | ":";
+          const fullMatchLength = id.length + sepMatch[0]!.length;
+
+          if (separator === "{") {
+            const idEnd = cursor + fullMatchLength;
+            let braceLevel = 1;
+            let innerEnd = idEnd;
+            while (innerEnd < content.length && braceLevel > 0) {
+              if (content[innerEnd] === "{") braceLevel++;
+              else if (content[innerEnd] === "}") braceLevel--;
+              innerEnd++;
+            }
+
+            if (braceLevel > 0) {
+              errors.push({ 
+                line: lineNumber, 
+                column: columnOffset + cursor + id.length + 1, 
+                message: "Unterminated braced scope" 
+              });
+              cursor = idEnd;
+              break;
+            }
+
+            const innerContent = content.slice(idEnd, innerEnd - 1);
+            const innerTokens = parseMeasureTokens(innerContent, id as TrackName, lineNumber, columnOffset + idEnd, errors, allowGroups);
+            tokens.push({ kind: "braced", track: id, items: innerTokens });
+            cursor = innerEnd;
+            matchedTrackId = "HANDLED"; 
+            break;
+          } else {
+            // TRACK: prefix, advance cursor past prefix for generic parsing
+            cursor += fullMatchLength;
+          }
+          break;
+        }
+      }
     }
 
-    if (char === "[") {
+    if (matchedTrackId === "HANDLED") continue;
+    if (cursor >= content.length) break;
+
+    // 2. Check for Group: [ ... ]
+    if (content[cursor] === "[") {
       if (!allowGroups) {
-        errors.push({
-          line: lineNumber,
-          column: columnOffset + cursor,
-          message: "Nested groups are not allowed",
-        });
+        errors.push({ line: lineNumber, column: columnOffset + cursor + 1, message: "Nested groups are not allowed" });
         break;
       }
 
       const closeIndex = content.indexOf("]", cursor);
-
       if (closeIndex === -1) {
-        errors.push({
-          line: lineNumber,
-          column: columnOffset + cursor,
-          message: "Unterminated group",
-        });
+        errors.push({ line: lineNumber, column: columnOffset + cursor + 1, message: "Unterminated group" });
         break;
       }
 
       const body = content.slice(cursor + 1, closeIndex);
       const colonMatch = body.match(/^(\d+)\s*:\s*(.*)$/);
-
-      let span: number;
-      let inner: string;
+      let span: number, inner: string;
 
       if (colonMatch) {
         span = Number(colonMatch[1]);
-        const m2 = colonMatch[2];
-        inner = m2 !== undefined ? m2 : "";
+        inner = colonMatch[2] ?? "";
       } else if (body.trim()) {
         span = 1;
         inner = body.trim();
       } else {
-        errors.push({
-          line: lineNumber,
-          column: columnOffset + cursor,
-          message: "Empty group",
-        });
+        errors.push({ line: lineNumber, column: columnOffset + cursor + 1, message: "Empty group" });
         cursor = closeIndex + 1;
         continue;
       }
 
-      const items = parseMeasureTokens(inner, track, lineNumber, columnOffset + cursor + body.indexOf(inner), errors, false);
-
-      tokens.push({
-        kind: "group",
-        count: items.length,
-        span,
-        items,
-      });
+      const items = parseMeasureTokens(inner, track, lineNumber, columnOffset + cursor + 2 + (colonMatch ? body.indexOf(inner) : 0), errors, false);
+      tokens.push({ kind: "group", count: items.length, span, items });
       cursor = closeIndex + 1;
       continue;
     }
 
-    const parsedGlyph = readBasicGlyph(track, content, cursor);
+    // 3. Generic Token Parsing: Glyph[:Mod...][suffixes][+]
+    const parsePart = (ptr: number, inheritedTrackOverride?: string): { token: TokenGlyph; next: number } | null => {
+      const glyphResult = readBasicGlyph(content, ptr);
+      if (!glyphResult) return null;
 
-    if (!parsedGlyph) {
-      errors.push({
-        line: lineNumber,
-        column: columnOffset + cursor,
-        message: `Unknown token \`${content[cursor]}\` on track ${track}`,
-      });
+      let nextPtr = glyphResult.next;
+      const modifiers: Modifier[] = [];
+      while (content[nextPtr] === ":") {
+        const modResult = readModifier(content, nextPtr + 1);
+        if (!modResult) break;
+        modifiers.push(modResult.modifier);
+        nextPtr = modResult.next;
+      }
+
+      let dots = 0, halves = 0;
+      while (nextPtr < content.length) {
+        if (content[nextPtr] === ".") { dots++; nextPtr++; }
+        else if (content[nextPtr] === "/") { halves++; nextPtr++; }
+        else break;
+      }
+
+      return {
+        token: { kind: "basic", value: glyphResult.glyph, dots, halves, modifiers, trackOverride: inheritedTrackOverride },
+        next: nextPtr
+      };
+    };
+
+    const firstPart = parsePart(cursor, matchedTrackId || undefined);
+    if (!firstPart) {
+      errors.push({ line: lineNumber, column: columnOffset + cursor + 1, message: `Unknown token \`${content[cursor]}\` on track ${track}` });
       cursor += 1;
       continue;
     }
 
-    const glyph = parsedGlyph.glyph;
-    let cursorAfterGlyph = parsedGlyph.next;
-
-    if (glyph === "o" || glyph === "O") {
-      if (!isTrackGlyphAllowed(track, glyph)) {
-        errors.push({
-          line: lineNumber,
-          column: columnOffset + cursor,
-          message: `Token \`${glyph}\` is invalid on track ${track}`,
-        });
-      }
-
-      let dots = 0;
-      let halves = 0;
-      while (cursorAfterGlyph < content.length) {
-        if (content[cursorAfterGlyph] === ".") {
-          dots += 1;
-          cursorAfterGlyph += 1;
-        } else if (content[cursorAfterGlyph] === "/") {
-          halves += 1;
-          cursorAfterGlyph += 1;
-        } else {
-          break;
+    let nextCursor = firstPart.next;
+    if (content[nextCursor] === "+") {
+      const items: TokenGlyph[] = [firstPart.token];
+      while (content[nextCursor] === "+") {
+        nextCursor++;
+        let subTrackOverride: string | undefined;
+        for (const tid of [...TRACKS, "DR", "ANONYMOUS"]) {
+           if (content.startsWith(tid, nextCursor) && content[nextCursor + tid.length] === ":") {
+             subTrackOverride = tid;
+             nextCursor += tid.length + 1;
+             break;
+           }
         }
+        
+        const subPart = parsePart(nextCursor, subTrackOverride);
+        if (!subPart) break;
+        items.push(subPart.token);
+        nextCursor = subPart.next;
       }
-
-      tokens.push({
-        kind: "modified",
-        value: glyph === "o" ? "x" : "X",
-        modifier: "open",
-        dots,
-        halves,
-      });
-      cursor = cursorAfterGlyph;
-      continue;
+      tokens.push({ kind: "combined", items });
+    } else {
+      tokens.push(firstPart.token);
     }
 
-    // DR combined glyph: s+t3 means play s and t3 simultaneously
-    if (track === "DR" && content[cursorAfterGlyph] === "+") {
-      const combinedItems: { value: BasicGlyph; dots: number; halves: number }[] = [];
-      let cursorAfterPlus = cursorAfterGlyph + 1;
-
-      while (cursorAfterPlus < content.length) {
-        const cap = content[cursorAfterPlus];
-        if (cap !== undefined && /\s/.test(cap)) {
-          cursorAfterPlus += 1;
-          continue;
-        }
-
-        if (cap === "+") {
-          cursorAfterPlus += 1;
-          continue;
-        }
-
-        const parsedPart = readBasicGlyph(track, content, cursorAfterPlus);
-        if (!parsedPart) {
-          errors.push({
-            line: lineNumber,
-            column: columnOffset + cursorAfterPlus,
-            message: `Unknown token \`${content[cursorAfterPlus]}\` in combined glyph`,
-          });
-          break;
-        }
-
-        let dots = 0;
-        let halves = 0;
-        let dotCursor = parsedPart.next;
-        while (dotCursor < content.length) {
-          if (content[dotCursor] === ".") {
-            dots += 1;
-            dotCursor += 1;
-          } else if (content[dotCursor] === "/") {
-            halves += 1;
-            dotCursor += 1;
-          } else {
-            break;
-          }
-        }
-
-        combinedItems.push({ value: parsedPart.glyph, dots, halves });
-        cursorAfterPlus = dotCursor;
-
-        // Check if there's another + or if we're done
-        if (content[cursorAfterPlus] !== "+") {
-          break;
-        }
-        cursorAfterPlus += 1;
-      }
-
-      if (combinedItems.length >= 2) {
-        tokens.push({
-          kind: "combined",
-          items: combinedItems as { value: BasicGlyph; dots: number; halves: number }[],
-        });
-        cursor = cursorAfterPlus;
-        continue;
-      }
-
-      // If combinedItems.length < 2, consume the + and fall through
-      // (fallthrough without advancing cursor would cause the + to be re-parsed as unknown token)
-      cursor = cursorAfterPlus;
-    }
-
-    // x/X on SD/T1/T2/T3/BD is sugar for d:cross/D:cross
-    if ((track === "SD" || track === "T1" || track === "T2" || track === "T3" || track === "BD") && (glyph === "x" || glyph === "X")) {
-      let dots = 0;
-      let halves = 0;
-      while (cursorAfterGlyph < content.length) {
-        if (content[cursorAfterGlyph] === ".") {
-          dots += 1;
-          cursorAfterGlyph += 1;
-        } else if (content[cursorAfterGlyph] === "/") {
-          halves += 1;
-          cursorAfterGlyph += 1;
-        } else {
-          break;
-        }
-      }
-
-      tokens.push({
-        kind: "modified",
-        value: glyph === "x" ? "d" : "D",
-        modifier: "cross",
-        dots,
-        halves,
-      });
-      cursor = cursorAfterGlyph;
-      continue;
-    }
-
-    if (content[cursorAfterGlyph] === ":") {
-      if (track === "DR") {
-        errors.push({
-          line: lineNumber,
-          column: columnOffset + cursor,
-          message: "Track `DR` does not support modifiers",
-        });
-        cursor = cursorAfterGlyph + 1;
-        continue;
-      }
-
-      if (glyph === "-") {
-        errors.push({
-          line: lineNumber,
-          column: columnOffset + cursor,
-          message: "Rests cannot have modifiers",
-        });
-        cursor = cursorAfterGlyph + 1;
-        continue;
-      }
-
-      const parsedModifier = readModifier(content, cursorAfterGlyph + 1);
-
-      if (!parsedModifier) {
-        errors.push({
-          line: lineNumber,
-          column: columnOffset + cursorAfterGlyph + 1,
-          message: "Unknown modifier",
-        });
-        cursor = cursorAfterGlyph + 1;
-        continue;
-      }
-
-      if (!isTrackGlyphAllowed(track, glyph)) {
-        errors.push({
-          line: lineNumber,
-          column: columnOffset + cursor,
-          message: `Token \`${glyph}\` is invalid on track ${track}`,
-        });
-      } else if (!isModifierAllowed(track, glyph, parsedModifier.modifier)) {
-        errors.push({
-          line: lineNumber,
-          column: columnOffset + cursor,
-          message: `Token \`${glyph}:${parsedModifier.modifier}\` is invalid on track ${track}`,
-        });
-      }
-
-      let dots = 0;
-      let halves = 0;
-      let suffixCursor = parsedModifier.next;
-      while (suffixCursor < content.length) {
-        if (content[suffixCursor] === ".") {
-          dots += 1;
-          suffixCursor += 1;
-        } else if (content[suffixCursor] === "/") {
-          halves += 1;
-          suffixCursor += 1;
-        } else {
-          break;
-        }
-      }
-
-      tokens.push({
-        kind: "modified",
-        value: glyph,
-        modifier: parsedModifier.modifier,
-        dots,
-        halves,
-      });
-      cursor = suffixCursor;
-      continue;
-    }
-
-    if (!isTrackGlyphAllowed(track, glyph)) {
-      errors.push({
-        line: lineNumber,
-        column: columnOffset + cursor,
-        message: `Token \`${glyph}\` is invalid on track ${track}`,
-      });
-    }
-
-    let dots = 0;
-    let halves = 0;
-    let suffixCursor = cursorAfterGlyph;
-    while (suffixCursor < content.length) {
-      if (content[suffixCursor] === ".") {
-        dots += 1;
-        suffixCursor += 1;
-      } else if (content[suffixCursor] === "/") {
-        halves += 1;
-        suffixCursor += 1;
-      } else {
-        break;
-      }
-    }
-
-    tokens.push({
-      kind: "basic",
-      value: glyph,
-      dots,
-      halves,
-    });
-    cursor = suffixCursor;
+    cursor = nextCursor;
   }
 
   return tokens;
 }
 
-function parseTrackName(line: PreprocessedLine, errors: ParseError[]): { track: SourceTrackName; rest: string } | null {
+function parseTrackName(line: PreprocessedLine, errors: ParseError[]): { track: SourceTrackName | "ANONYMOUS"; rest: string } | null {
+  if (line.content.startsWith("|")) {
+    return { track: "ANONYMOUS", rest: line.content };
+  }
+
   const match = line.content.match(/^([A-Z0-9]+)\s*(.*)$/);
 
   if (!match) {
@@ -769,86 +578,6 @@ function parseMeasureTail(remainder: string, line: PreprocessedLine, errors: Par
 
     const content = remainder.slice(cursor, endIndex).trim();
 
-    // Check for inline repeat: "xxxx *3" (content with *N)
-    const inlineRepeatMatch = content.match(/^(.*?)\s*\*\s*(\d+)\s*$/);
-    const m1 = inlineRepeatMatch?.[1];
-    const m2 = inlineRepeatMatch?.[2];
-    if (inlineRepeatMatch && m1 !== undefined && m2 !== undefined) {
-      const measureContent = m1.trim();
-      const repeatCount = parseInt(m2, 10);
-      if (repeatCount >= 2 && measureContent !== "") {
-        // Valid inline repeat: content *N
-        measures.push({
-          content: measureContent,
-          repeatStart: currentLeftBoundary === "repeat_start",
-          repeatEnd: endBoundary.kind === "repeat_end",
-          repeatTimes: endBoundary.kind === "repeat_end" ? endBoundary.times : undefined,
-          repeatCount,
-        });
-        currentLeftBoundary = endBoundary.kind === "repeat_start" ? "repeat_start" : "barline";
-        cursor = endIndex + endBoundary.length;
-        continue;
-      }
-      // repeatCount < 2 or empty content - invalid, fall through to error
-    }
-
-    // Check for bare *N macro: "*2" expands to 2 empty measures
-    // Only matches when content is EXACTLY *N (whitespace allowed around N)
-    const bareStarMatch = content.match(/^\s*\*\s*(\d+)\s*$/);
-    const bsm1 = bareStarMatch?.[1];
-    if (bareStarMatch && bsm1 !== undefined) {
-      const count = parseInt(bsm1, 10);
-      if (count >= 1) {
-        for (let i = 0; i < count; i++) {
-          measures.push({
-            content: "",
-            repeatStart: i === 0 ? currentLeftBoundary === "repeat_start" : false,
-            repeatEnd: i === count - 1 ? endBoundary.kind === "repeat_end" : false,
-            repeatTimes: i === count - 1 && endBoundary.kind === "repeat_end" ? endBoundary.times : undefined,
-          });
-        }
-        currentLeftBoundary = endBoundary.kind === "repeat_start" ? "repeat_start" : "barline";
-        cursor = endIndex + endBoundary.length;
-        continue;
-      }
-      errors.push({
-        line: line.lineNumber,
-        column: line.content.indexOf(content) + 1,
-        message: "Macro expansion count must be at least 1",
-      });
-      currentLeftBoundary = endBoundary.kind === "repeat_start" ? "repeat_start" : "barline";
-      cursor = endIndex + endBoundary.length;
-      continue;
-    }
-
-    // Check for multi-rest visual shorthand: |- 8 -| or |-8-
-    // Dashes on both sides required, spaces around number allowed.
-    const multiRestMatch = content.match(/^-+ *(\d+) *-+$/);
-    const mrm1 = multiRestMatch?.[1];
-    if (multiRestMatch && mrm1 !== undefined) {
-      const count = parseInt(mrm1, 10);
-      if (count < 1) {
-        errors.push({
-          line: line.lineNumber,
-          column: line.content.indexOf(content) + 1,
-          message: "Multi-rest count must be at least 1",
-        });
-        currentLeftBoundary = endBoundary.kind === "repeat_start" ? "repeat_start" : "barline";
-        cursor = endIndex + endBoundary.length;
-        continue;
-      }
-      measures.push({
-        content: "",
-        tokens: [],
-        repeatStart: false,
-        repeatEnd: false,
-        multiRestCount: count,
-      });
-      currentLeftBoundary = "barline";
-      cursor = endIndex + endBoundary.length;
-      continue;
-    }
-
     // Regular measure (no special shorthand)
     measures.push({
       content,
@@ -898,7 +627,7 @@ function parseTrackLine(line: PreprocessedLine, errors: ParseError[]): ParsedTra
             measureContent,
             parsed.track,
             line.lineNumber,
-            1,
+            line.content.indexOf(measureContent) + 1,
             errors,
             true,
           );
@@ -917,7 +646,6 @@ function parseTrackLine(line: PreprocessedLine, errors: ParseError[]): ParsedTra
       }
 
       // Check for bare *N repeat marker - repeat this measure N times
-      // | *2 | means repeat this (blank) measure 2 times = 2 blank measures
       const bareRepeatMatch = measure.content.match(/^\*(\d+)$/);
       const bm1 = bareRepeatMatch?.[1];
       if (bareRepeatMatch && bm1 !== undefined) {
@@ -953,7 +681,7 @@ function parseTrackLine(line: PreprocessedLine, errors: ParseError[]): ParsedTra
         true,
       );
 
-      // Inline repeat: replicate this measure N times (e.g., "xxxx *3" → 3 measures with same notes)
+      // Inline repeat: replicate this measure N times
       if (measure.repeatCount !== undefined && measure.repeatCount > 1) {
         const expanded: ParsedMeasure[] = [];
         for (let i = 0; i < measure.repeatCount; i++) {

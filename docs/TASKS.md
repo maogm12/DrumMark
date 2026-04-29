@@ -104,6 +104,6 @@ Acceptance:
 
 ## Final Verification
 
-- [ ] `T21` Run the full suite and close any fallout from the gap-closure series.
+- [x] `T21` Run the full suite and close any fallout from the gap-closure series.
 Acceptance:
   `npm test` passes after the last task commit, and no earlier task must be reopened to achieve green tests.

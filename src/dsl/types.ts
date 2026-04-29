@@ -13,14 +13,24 @@ export const TRACKS = [
   "RC",
   "C",
   "ST",
+  "BD2",
+  "T4",
+  "RC2",
+  "C2",
+  "SPL",
+  "CHN",
+  "CB",
+  "WB",
+  "CL",
 ] as const;
 
 export type TrackName = (typeof TRACKS)[number];
-export type SourceTrackName = TrackName | "DR";
+export type SourceTrackName = TrackName;
 
 export const MODIFIERS = [
   "accent",
   "open",
+  "half-open",
   "close",
   "choke",
   "rim",
@@ -29,6 +39,8 @@ export const MODIFIERS = [
   "flam",
   "ghost",
   "drag",
+  "roll",
+  "dead",
 ] as const;
 
 export type Modifier = (typeof MODIFIERS)[number];
@@ -43,7 +55,52 @@ export type MeasureBoundary =
   | { kind: "repeat_start" }
   | RepeatEnd;
 
-export type BasicGlyph = "-" | "x" | "X" | "d" | "D" | "p" | "P" | "R" | "L" | "o" | "O" | "c" | "C" | "s" | "S" | "t1" | "T1" | "t2" | "T2" | "t3" | "T3" | "g" | "G" | "r" | "R";
+export type BasicGlyph =
+  | "-"
+  | "x"
+  | "X"
+  | "d"
+  | "D"
+  | "p"
+  | "P"
+  | "R"
+  | "L"
+  | "o"
+  | "O"
+  | "c"
+  | "C"
+  | "c2"
+  | "C2"
+  | "s"
+  | "S"
+  | "b"
+  | "B"
+  | "b2"
+  | "B2"
+  | "r"
+  | "R"
+  | "r2"
+  | "R2"
+  | "t1"
+  | "T1"
+  | "t2"
+  | "T2"
+  | "t3"
+  | "T3"
+  | "t4"
+  | "T4"
+  | "g"
+  | "G"
+  | "spl"
+  | "SPL"
+  | "chn"
+  | "CHN"
+  | "cb"
+  | "CB"
+  | "wb"
+  | "WB"
+  | "cl"
+  | "CL";
 
 export type TokenGlyph =
   | { kind: "basic"; value: BasicGlyph; dots: number; halves: number; modifiers: Modifier[]; trackOverride?: string }

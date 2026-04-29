@@ -10,7 +10,7 @@ Rules:
 
 ## Core Model
 
-- [ ] `T01` Expand the core registries in `src/dsl/types.ts` to the current spec surface.
+- [x] `T01` Expand the core registries in `src/dsl/types.ts` to the current spec surface.
 Acceptance:
   Add missing tracks `BD2 T4 RC2 C2 SPL CHN CB WB CL`, missing magic tokens (`b2 r2 c2 t4 spl chn cb wb cl` plus accented forms), and missing modifiers `half-open roll dead`.
 

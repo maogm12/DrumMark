@@ -311,32 +311,30 @@ export function buildScoreAst(source: string): ScoreAst {
       } satisfies ScoreTrackParagraph;
     });
 
-    // Auto-fill missing global tracks
-    const explicitTrackNames = new Set(explicitLines.map((l) => l.track));
-    const filledTracks: ScoreTrackParagraph[] = [...explicitLines];
-
-    globalTracks
-      .slice()
-      .sort((a, b) => TRACKS.indexOf(a) - TRACKS.indexOf(b))
-      .forEach((track) => {
-        if (!explicitTrackNames.has(track)) {
-          filledTracks.push({
-            track,
-            generated: true,
-            lineNumber: undefined,
-            measures: Array.from({ length: measureCount }, (_, index) =>
-              makeRestMeasure(globalBarIndex + index, skeleton.headers.divisions.value),
-            ),
-          });
-        }
+    const anonymousLines = explicitLines.filter((line) => line.track === "ANONYMOUS");
+    const namedLineByTrack = new Map<TrackName, ScoreTrackParagraph>();
+    explicitLines
+      .filter((line): line is ScoreTrackParagraph & { track: TrackName } => line.track !== "ANONYMOUS")
+      .forEach((line) => {
+        namedLineByTrack.set(line.track, line);
       });
 
-    // Sort tracks for consistent AST output (Anonymous lines first, then Named tracks in order)
-    filledTracks.sort((a, b) => {
-      if (a.track === "ANONYMOUS" && b.track !== "ANONYMOUS") return -1;
-      if (a.track !== "ANONYMOUS" && b.track === "ANONYMOUS") return 1;
-      if (a.track === "ANONYMOUS" && b.track === "ANONYMOUS") return 0;
-      return TRACKS.indexOf(a.track as TrackName) - TRACKS.indexOf(b.track as TrackName);
+    const filledTracks: ScoreTrackParagraph[] = [...anonymousLines];
+    globalTracks.forEach((track) => {
+      const explicitTrack = namedLineByTrack.get(track);
+      if (explicitTrack) {
+        filledTracks.push(explicitTrack);
+        return;
+      }
+
+      filledTracks.push({
+        track,
+        generated: true,
+        lineNumber: undefined,
+        measures: Array.from({ length: measureCount }, (_, index) =>
+          makeRestMeasure(globalBarIndex + index, skeleton.headers.divisions.value),
+        ),
+      });
     });
 
     paragraphs.push({

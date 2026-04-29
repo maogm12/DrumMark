@@ -34,7 +34,7 @@ Acceptance:
 
 ## AST And Semantics
 
-- [ ] `T06` Fix AST track registration and ordering to follow first appearance rather than fixed registry order.
+- [x] `T06` Fix AST track registration and ordering to follow first appearance rather than fixed registry order.
 Acceptance:
   Tracks introduced by line headers, routing scopes, or summon prefixes remain active and preserve first-seen order across the score.
 

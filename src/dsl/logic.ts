@@ -145,11 +145,20 @@ export function resolveFallbackTrack(glyph: string): TrackName {
   const v = glyph;
   if (v === "s" || v === "S") return "SD";
   if (v === "b" || v === "B") return "BD";
+  if (v === "b2" || v === "B2") return "BD2";
   if (v === "t1" || v === "T1") return "T1";
   if (v === "t2" || v === "T2") return "T2";
   if (v === "t3" || v === "T3") return "T3";
+  if (v === "t4" || v === "T4") return "T4";
   if (v === "c" || v === "C") return "C";
+  if (v === "c2" || v === "C2") return "C2";
   if (v === "r" || v === "R") return "RC";
+  if (v === "r2" || v === "R2") return "RC2";
+  if (v === "spl" || v === "SPL") return "SPL";
+  if (v === "chn" || v === "CHN") return "CHN";
+  if (v === "cb" || v === "CB") return "CB";
+  if (v === "wb" || v === "WB") return "WB";
+  if (v === "cl" || v === "CL") return "CL";
   if (v === "p" || v === "P") return "HF";
   if (v === "g" || v === "G") return "SD";
   return "HH"; // Default for x, d, o etc.

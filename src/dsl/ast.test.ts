@@ -55,6 +55,22 @@ divisions 4
     expect(new Set(score.paragraphs[0].tracks.map(t => t.track))).toContain("RC");
   });
 
+  it("preserves global first-appearance order for named tracks", () => {
+    const score = buildScoreAst(`time 4/4
+divisions 4
+
+| RC{d - - -} b2 - - - |
+
+HH | x - - - |`);
+
+    expect(score.errors).toEqual([]);
+    expect(score.paragraphs[0].tracks.map((track) => track.track)).toEqual(["ANONYMOUS", "RC", "BD2", "HH"]);
+    expect(score.paragraphs[1].tracks.map((track) => track.track)).toEqual(["RC", "BD2", "HH"]);
+    expect(score.paragraphs[1].tracks[0].generated).toBe(true);
+    expect(score.paragraphs[1].tracks[1].generated).toBe(true);
+    expect(score.paragraphs[1].tracks[2].generated).toBe(false);
+  });
+
   it("builds repeat spans", () => {
     const score = buildScoreAst(`time 4/4
 divisions 4

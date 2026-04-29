@@ -117,3 +117,9 @@ If the app is served from a sub-directory (e.g., `/drum_notation/`):
 
 - **Section 9.5 has two distinct conflict layers:** cross-track disagreements belong in AST validation as bar-global conflicts (`Conflicting markers/jumps at bar N`), but duplicate navigation tokens inside one physical measure must be rejected earlier in the parser before the second token is silently overwritten.
 - **Marker and jump are independent singleton channels:** one measure may legally carry one marker and one jump together, and both should survive normalization even when declared on a non-leading track or in a later paragraph. The invalid cases are only marker-vs-marker and jump-vs-jump multiplicity within the same global bar.
+
+## 19. Multi-Measure-Rest Learnings (2026-04-29)
+
+- **Current enforced minimum count is `2`, not the base spec's `>= 1`:** parser behavior is already hardened by the suite to reject `--1--` with `Multi-measure rest count must be at least 2`. New section 10 tests should align with that enforced rule until the spec and implementation are deliberately reconciled.
+- **The parser's multi-rest surface is dash-balanced, not width-sensitive:** any whole-measure payload matching `^-+\\s*<digits>\\s*-+$` becomes multi-rest intent, so compact `--8--`, spaced `- 4 -`, and minimal `-2-` are all accepted, while non-numeric forms like `--x--` fall back to ordinary token parsing rather than producing `multiRestCount`.
+- **Canonical IR intent is measure metadata, not generated filler:** once parsed, a multi-rest measure should keep `tokens: []`, skip AST rest autofill, and survive normalize as `multiRest` / `multiRestCount` metadata with no emitted note events, even when the declaration comes from a non-leading track.

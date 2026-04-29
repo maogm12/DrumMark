@@ -328,8 +328,8 @@ function renderMeasureVoices(
   const upEvents = measure.events.filter((e: any) => voiceForTrack(e.track) === 1 && e.track !== "ST");
   const downEvents = measure.events.filter((e: any) => voiceForTrack(e.track) === 2 && e.track !== "ST");
 
-  const upEntries = buildVoiceEntries(groupVoiceEvents(upEvents), measureStart, measureDuration);
-  const downEntries = buildVoiceEntries(groupVoiceEvents(downEvents), measureStart, measureDuration);
+  const upEntries = buildVoiceEntries(groupVoiceEvents(upEvents), measureStart, measureDuration, score.header.grouping);
+  const downEntries = buildVoiceEntries(groupVoiceEvents(downEvents), measureStart, measureDuration, score.header.grouping);
 
   const beams: any[] = [];
   const tuplets: any[] = [];

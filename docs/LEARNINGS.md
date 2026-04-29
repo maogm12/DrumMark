@@ -92,3 +92,8 @@ If the app is served from a sub-directory (e.g., `/drum_notation/`):
 
 - **Group span is a parser invariant, not an AST fallback:** explicit forms like `[0: d]` or `[2:]` should be rejected while parsing with direct `Group span must be at least 1` / `Empty group` errors. Letting zero-span or zero-item groups reach AST validation produces misleading downstream failures and risks divide-by-zero style math.
 - **Not every multi-item group is a tuplet:** section 5.5 distinguishes plain subdivision and stretched dotted/simple durations from true tuplets. In normalized IR, stretched groups like `[3: d d]` and reduced `2:1` / `4:1` compressed ratios such as `[2: d d]` or `[2: d d d d]` should keep `tuplet: null`; only the remaining compressed ratios need `actual:normal` metadata.
+
+## 14. Measure-Validation Learnings (2026-04-29)
+
+- **Section 12 duration mismatches only surface after integer rest autofill has had its chance:** the AST currently auto-pads explicit measures when the remaining weight is a whole-number slot count, so the sharp validation cases are fractional shortfalls or overflows like `7/2` slots in a `divisions 4` bar. Tests that use a plain 1-slot gap will not exercise the hard-error path.
+- **Grouping-boundary validation is token-span based at normalize time:** both basic tokens and whole `group` tokens are rejected when their start/end slot fractions straddle a declared grouping boundary. The current stable error surface is `Token \`<glyph|group>\` crosses grouping boundary at <slot> in track <track>`, reported at the measure's source line and column 1.

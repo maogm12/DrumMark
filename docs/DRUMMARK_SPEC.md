@@ -520,6 +520,24 @@ HH | d. d/ d d |    # 'd.' crosses boundary at slot 2
 HH | d. -/ d d |    # 'd.' ends at 1.5, followed by a half-rest at 1.5-2.0
 ```
 
+### 12.3 Whole-Measure Rest
+
+If all entries in a voice are rests and their combined duration equals the full measure, emit one `<rest measure="yes"/>` element instead of splitting at grouping boundaries:
+
+```xml
+<note>
+  <rest measure="yes"/>
+  <duration>32</duration>
+  <voice>2</voice>
+  <type>whole</type>
+  <staff>1</staff>
+</note>
+```
+
+**Rationale**: A voice that is entirely silent for a full measure does not need to assert the silence slot-by-slot. The grouping structure is irrelevant when there is nothing to render. A single whole-measure rest is semantically equivalent and more compact.
+
+**Rule**: If a voice consists entirely of rests covering a complete measure, emit one whole-measure rest. Otherwise, split rests at grouping boundaries as normal. Applies to both voice 1 and voice 2.
+
 ---
 
 ## 13. Comments

@@ -1,4 +1,6 @@
 import {
+  addFractions,
+  compareFractions,
   multiplyFraction,
   simplify,
   subtractFractions,
@@ -7,6 +9,7 @@ import {
 import type { NormalizedEvent, NormalizedScore, TrackName } from "./types";
 import {
   buildVoiceEntries,
+  getGroupingBoundaries,
   visualDurationForEvent,
   voiceForTrack as logicVoiceForTrack,
   groupVoiceEvents,
@@ -316,6 +319,18 @@ function restXml(duration: Fraction, divisions: number, voice: VoiceTrack): stri
   ].join("");
 }
 
+function wholeMeasureRestXml(divisions: number, voice: VoiceTrack): string {
+  return [
+    "<note>",
+    "<rest measure=\"yes\"/>",
+    `<duration>${divisions}</duration>`,
+    `<voice>${voice.voice}</voice>`,
+    "<type>whole</type>",
+    `<staff>1</staff>`,
+    "</note>",
+  ].join("");
+}
+
 function forwardXml(duration: Fraction, divisions: number, voice: VoiceTrack): string {
   return [
     "<forward>",
@@ -487,10 +502,10 @@ function measureXml(score: NormalizedScore, exportMeasure: ExportMeasure, divisi
   const downEvents = measure.events.filter((event) => logicVoiceForTrack(event.track) === 2 && event.track !== "ST");
   
   const upEntries = upEvents.length > 0
-    ? buildVoiceEntries(groupVoiceEvents(upEvents), measureStart, measureDuration)
+    ? buildVoiceEntries(groupVoiceEvents(upEvents), measureStart, measureDuration, score.header.grouping)
     : [];
   const downEntries = downEvents.length > 0
-    ? buildVoiceEntries(groupVoiceEvents(downEvents), measureStart, measureDuration)
+    ? buildVoiceEntries(groupVoiceEvents(downEvents), measureStart, measureDuration, score.header.grouping)
     : [];
     
   const stickings = stickingsByStart(measure.events);
@@ -524,10 +539,41 @@ function measureXml(score: NormalizedScore, exportMeasure: ExportMeasure, divisi
   function processVoiceEntries(entries: VoiceEntry[], voice: VoiceTrack): string[] {
     const result: string[] = [];
 
+    // Whole-measure rest optimization: if all entries are rests and their total
+    // duration equals the full measure, emit one <rest measure="yes"/> instead of
+    // splitting at grouping boundaries. Applies to both voice 1 and voice 2.
+    if (
+      entries.length > 0 &&
+      entries.every((e) => e.kind === "rest")
+    ) {
+      const totalDuration = entries.reduce(
+        (sum, e) => addFractions(sum, e.duration),
+        { numerator: 0, denominator: 1 },
+      );
+      if (compareFractions(totalDuration, measureDuration) === 0) {
+        return [wholeMeasureRestXml(fractionToDivisions(measureDuration, divisions), voice)];
+      }
+    }
+
     for (const [i, entry] of entries.entries()) {
       if (entry.kind === "rest") {
         if (hideVoice2Rests && voice.voice === 2) {
-          result.push(forwardXml(entry.duration, divisions, voice));
+          const boundaries = getGroupingBoundaries(measureStart, measureDuration, score.header.grouping, score.header.timeSignature);
+          let cursor = entry.start;
+          const end = addFractions(entry.start, entry.duration);
+          for (const boundary of boundaries) {
+            if (compareFractions(cursor, boundary) >= 0) continue;
+            if (compareFractions(end, boundary) <= 0) {
+              result.push(forwardXml(subtractFractions(end, cursor), divisions, voice));
+              cursor = end;
+              break;
+            }
+            result.push(forwardXml(subtractFractions(boundary, cursor), divisions, voice));
+            cursor = boundary;
+          }
+          if (compareFractions(cursor, end) < 0) {
+            result.push(forwardXml(subtractFractions(end, cursor), divisions, voice));
+          }
         } else {
           result.push(restXml(entry.duration, divisions, voice));
         }

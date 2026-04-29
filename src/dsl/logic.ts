@@ -6,6 +6,9 @@ export type { Fraction };
 export function gcd(a: number, b: number): number {
   let x = Math.round(Math.abs(a));
   let y = Math.round(Math.abs(b));
+  
+  if (isNaN(x) || isNaN(y)) return 1;
+
   while (y !== 0) {
     const next = x % y;
     x = y;
@@ -269,15 +272,17 @@ export function buildVoiceEntries(
   measureStart: Fraction,
   measureDuration: Fraction,
   grouping: number[] = [],
+  timeSignature?: { beats: number; beatUnit: number }
 ): VoiceEntry[] {
   const entries: VoiceEntry[] = [];
   let cursor = measureStart;
+  const time = timeSignature ?? { beats: 4, beatUnit: 4 };
 
   for (const group of groups) {
     if (compareFractions(group.start, cursor) > 0) {
       // Gap before this group - split at grouping boundaries
       const gapEnd = group.start;
-      cursor = addRestsForSegment(entries, cursor, gapEnd, measureStart, measureDuration, grouping, measureDuration);
+      cursor = addRestsForSegment(entries, cursor, gapEnd, measureStart, measureDuration, grouping, time);
     }
 
     entries.push({
@@ -292,7 +297,7 @@ export function buildVoiceEntries(
 
   const measureEnd = addFractions(measureStart, measureDuration);
   if (compareFractions(cursor, measureEnd) < 0) {
-    addRestsForSegment(entries, cursor, measureEnd, measureStart, measureDuration, grouping, measureDuration);
+    addRestsForSegment(entries, cursor, measureEnd, measureStart, measureDuration, grouping, time);
   }
 
   return entries;
@@ -308,9 +313,9 @@ function addRestsForSegment(
   measureStart: Fraction,
   measureDuration: Fraction,
   grouping: number[],
-  _measureDuration: Fraction,
+  timeSignature: { beats: number; beatUnit: number }
 ): Fraction {
-  const boundaries = getGroupingBoundaries(measureStart, measureDuration, grouping);
+  const boundaries = getGroupingBoundaries(measureStart, measureDuration, grouping, timeSignature);
   let cursor = start;
 
   for (const boundary of boundaries) {
@@ -337,19 +342,25 @@ function addRestsForSegment(
  * Returns the grouping boundary positions as fractions from measure start.
  * E.g., for grouping [2, 2] in 4/4: boundaries are 2/4 and 4/4.
  */
-function getGroupingBoundaries(measureStart: Fraction, measureDuration: Fraction, grouping: number[]): Fraction[] {
-  const time = { beats: measureDuration.numerator, beatUnit: measureDuration.denominator };
+export function getGroupingBoundaries(
+  measureStart: Fraction,
+  measureDuration: Fraction,
+  grouping: number[],
+  timeSignature: { beats: number; beatUnit: number }
+): Fraction[] {
   const boundaries: Fraction[] = [];
   let accumulated = 0;
 
   for (const g of grouping) {
     accumulated += g;
-    boundaries.push({
-      numerator: accumulated * measureDuration.denominator,
-      denominator: time.beatUnit * measureDuration.denominator,
+    // boundary = accumulated / beatUnit
+    const boundary: Fraction = simplify({
+      numerator: accumulated,
+      denominator: timeSignature.beatUnit,
     });
+    boundaries.push(addFractions(measureStart, boundary));
   }
 
-  // Convert to absolute positions by adding measureStart
-  return boundaries.map(b => addFractions(measureStart, b));
+  return boundaries;
 }
+

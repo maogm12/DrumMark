@@ -86,7 +86,7 @@ HH |: x x x x :|`);
     const score = buildScoreAst(`time 4/4
 divisions 4
 
-|: x x x x :| @segno % |1. x - - - | @to-coda --1-- |.`);
+|: x x x x :| @segno % |1. x - - - | @to-coda --2-- |.`);
 
     expect(score.errors).toEqual([]);
     const measures = score.paragraphs[0].tracks[0].measures;
@@ -102,7 +102,7 @@ divisions 4
     });
     expect(measures[3]).toMatchObject({
       jump: "to-coda",
-      multiRest: { count: 1 },
+      multiRest: { count: 2 },
       voltaTerminator: true,
     });
   });

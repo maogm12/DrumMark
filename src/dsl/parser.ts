@@ -507,7 +507,30 @@ function parseMeasureTokens(
       const modifiers: Modifier[] = [];
       while (content[nextPtr] === ":") {
         const modResult = readModifier(content, nextPtr + 1);
-        if (!modResult) break;
+        if (!modResult) {
+          let modifierEnd = nextPtr + 1;
+          while (modifierEnd < content.length) {
+            const char = content[modifierEnd];
+            if (char !== undefined && /[a-z-]/.test(char)) {
+              modifierEnd += 1;
+            } else {
+              break;
+            }
+          }
+
+          const rawModifier = content.slice(nextPtr + 1, modifierEnd);
+          if (rawModifier) {
+            errors.push({
+              line: lineNumber,
+              column: columnOffset + nextPtr + 1,
+              message: `Unknown modifier \`${rawModifier}\``,
+            });
+            nextPtr = modifierEnd;
+            continue;
+          }
+
+          break;
+        }
         modifiers.push(modResult.modifier);
         nextPtr = modResult.next;
       }
@@ -802,7 +825,7 @@ function parseTrackLine(line: PreprocessedLine, errors: ParseError[]): ParsedTra
       const multiRestMatch = normalizedContent.match(/^-+\s*(\d+)\s*-+$/);
       if (multiRestMatch?.[1] !== undefined) {
         const count = parseInt(multiRestMatch[1], 10);
-        if (count < 1) {
+        if (count < 2) {
           errors.push({
             line: line.lineNumber,
             column: 1,

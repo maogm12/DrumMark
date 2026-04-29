@@ -662,13 +662,47 @@ function parseTrackLine(line: PreprocessedLine, errors: ParseError[]): ParsedTra
     track: parsed.track,
     lineNumber: line.lineNumber,
     measures: measures.flatMap((measure, _measureIndex) => {
-      // Check for *N inline repeat: "xxxx *3" means repeat "xxxx" 3 times
+      const measureRepeatMatch = measure.content.match(/^(%+)$/);
+      if (measureRepeatMatch?.[1] !== undefined) {
+        return [{
+          content: measure.content,
+          tokens: [],
+          repeatStart: measure.repeatStart,
+          repeatEnd: measure.repeatEnd,
+          repeatTimes: measure.repeatTimes,
+          measureRepeatSlashes: measureRepeatMatch[1].length,
+        }];
+      }
+
+      const multiRestMatch = measure.content.match(/^-+\s*(\d+)\s*-+$/);
+      if (multiRestMatch?.[1] !== undefined) {
+        const count = parseInt(multiRestMatch[1], 10);
+        if (count < 1) {
+          errors.push({
+            line: line.lineNumber,
+            column: 1,
+            message: "Multi-measure rest count must be at least 1",
+          });
+          return [];
+        }
+
+        return [{
+          content: measure.content,
+          tokens: [],
+          repeatStart: measure.repeatStart,
+          repeatEnd: measure.repeatEnd,
+          repeatTimes: measure.repeatTimes,
+          multiRestCount: count,
+        }];
+      }
+
+      // Check for *N inline repeat: "xxxx *3" means the content occupies 3 total measures
       const inlineRepeatMatch = measure.content.match(/^(.*?)\s*\*\s*(\d+)\s*$/);
       const m1 = inlineRepeatMatch?.[1];
       const m2 = inlineRepeatMatch?.[2];
       if (inlineRepeatMatch && m1 !== undefined && m2 !== undefined && m1.trim() !== "") {
         const repeatCount = parseInt(m2, 10);
-        if (repeatCount >= 2) {
+        if (repeatCount >= 1) {
           const measureContent = m1.trim();
           const parsedTokens = parseMeasureTokens(
             measureContent,
@@ -689,10 +723,17 @@ function parseTrackLine(line: PreprocessedLine, errors: ParseError[]): ParsedTra
             });
           }
           return expanded;
+        } else {
+          errors.push({
+            line: line.lineNumber,
+            column: 1,
+            message: "Repeat count must be at least 1",
+          });
+          return [];
         }
       }
 
-      // Check for bare *N repeat marker - repeat this measure N times
+      // Check for bare *N repeat marker - creates N total empty measures
       const bareRepeatMatch = measure.content.match(/^\*(\d+)$/);
       const bm1 = bareRepeatMatch?.[1];
       if (bareRepeatMatch && bm1 !== undefined) {

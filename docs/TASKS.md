@@ -24,7 +24,7 @@ Acceptance:
 Acceptance:
   Parser accepts the new track summons and track lines required by the spec and rejects unknown ones with stable errors.
 
-- [ ] `T04` Align parser handling of `%`, `%%`, `*N`, and `|--N--|` with the current spec wording.
+- [x] `T04` Align parser handling of `%`, `%%`, `*N`, and `|--N--|` with the current spec wording.
 Acceptance:
   `%` and `%%` are measure-level constructs, `*N` means total run length, and multi-rest allows `N >= 1`.
 

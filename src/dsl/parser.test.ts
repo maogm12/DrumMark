@@ -193,4 +193,43 @@ DR | d - d - |`);
       message: "Unknown track `DR`",
     });
   });
+
+  it("treats % and %% as standalone measure-repeat measures", () => {
+    const doc = parseDocumentSkeleton(`time 4/4
+divisions 4
+| d d d d | % | %% |`);
+
+    expect(doc.errors).toEqual([]);
+    expect(doc.paragraphs[0].lines[0].measures[1]).toMatchObject({
+      tokens: [],
+      measureRepeatSlashes: 1,
+    });
+    expect(doc.paragraphs[0].lines[0].measures[2]).toMatchObject({
+      tokens: [],
+      measureRepeatSlashes: 2,
+    });
+  });
+
+  it("parses multi-rest measures with N >= 1", () => {
+    const doc = parseDocumentSkeleton(`time 4/4
+divisions 4
+HH | --1-- | - 4 - |`);
+
+    expect(doc.errors).toEqual([]);
+    expect(doc.paragraphs[0].lines[0].measures[0].multiRestCount).toBe(1);
+    expect(doc.paragraphs[0].lines[0].measures[1].multiRestCount).toBe(4);
+  });
+
+  it("treats *N as total run length, including *1", () => {
+    const doc = parseDocumentSkeleton(`time 4/4
+divisions 4
+| d - - - *1 | d - - - *3 |`);
+
+    expect(doc.errors).toEqual([]);
+    expect(doc.paragraphs[0].lines[0].measures).toHaveLength(4);
+    expect(doc.paragraphs[0].lines[0].measures[0].content).toBe("d - - -");
+    expect(doc.paragraphs[0].lines[0].measures[1].content).toBe("d - - -");
+    expect(doc.paragraphs[0].lines[0].measures[2].content).toBe("d - - -");
+    expect(doc.paragraphs[0].lines[0].measures[3].content).toBe("d - - -");
+  });
 });

@@ -90,7 +90,7 @@ Acceptance:
 Acceptance:
   Tests cover new tracks, new magic tokens, `%`/`%%`, `*N`, multi-rest with `N=1`, and repeat-navigation markers/jumps.
 
-- [ ] `T18` Expand AST and normalization tests to cover canonical semantics.
+- [x] `T18` Expand AST and normalization tests to cover canonical semantics.
 Acceptance:
   Tests cover first-appearance track ordering, canonical event/measure shape, grouping validation, and repeat/volta/navigation intent.
 

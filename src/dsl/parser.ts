@@ -835,6 +835,7 @@ function parseTrackLine(line: PreprocessedLine, errors: ParseError[]): ParsedTra
           repeatStart: measure.repeatStart,
           repeatEnd: measure.repeatEnd,
           repeatTimes: measure.repeatTimes,
+          barline: measure.barline,
           marker: navigation.marker as ParsedMeasure["marker"],
           jump: navigation.jump as ParsedMeasure["jump"],
           voltaIndices: measure.voltaIndices,
@@ -861,6 +862,7 @@ function parseTrackLine(line: PreprocessedLine, errors: ParseError[]): ParsedTra
           repeatStart: measure.repeatStart,
           repeatEnd: measure.repeatEnd,
           repeatTimes: measure.repeatTimes,
+          barline: measure.barline,
           marker: navigation.marker as ParsedMeasure["marker"],
           jump: navigation.jump as ParsedMeasure["jump"],
           voltaIndices: measure.voltaIndices,
@@ -893,6 +895,7 @@ function parseTrackLine(line: PreprocessedLine, errors: ParseError[]): ParsedTra
               repeatStart: i === 0 ? measure.repeatStart : false,
               repeatEnd: i === repeatCount - 1 ? measure.repeatEnd : false,
               repeatTimes: i === repeatCount - 1 ? measure.repeatTimes : undefined,
+              barline: i === repeatCount - 1 ? measure.barline : undefined,
               marker: i === 0 ? navigation.marker as ParsedMeasure["marker"] : undefined,
               jump: i === repeatCount - 1 ? navigation.jump as ParsedMeasure["jump"] : undefined,
               voltaIndices: i === 0 ? measure.voltaIndices : undefined,
@@ -931,6 +934,7 @@ function parseTrackLine(line: PreprocessedLine, errors: ParseError[]): ParsedTra
             repeatStart: i === 0 ? measure.repeatStart : false,
             repeatEnd: i === count - 1 ? measure.repeatEnd : false,
             repeatTimes: i === count - 1 ? measure.repeatTimes : undefined,
+            barline: i === count - 1 ? measure.barline : undefined,
             marker: i === 0 ? navigation.marker as ParsedMeasure["marker"] : undefined,
             jump: i === count - 1 ? navigation.jump as ParsedMeasure["jump"] : undefined,
             voltaIndices: i === 0 ? measure.voltaIndices : undefined,
@@ -960,6 +964,7 @@ function parseTrackLine(line: PreprocessedLine, errors: ParseError[]): ParsedTra
             repeatStart: i === 0 ? measure.repeatStart : false,
             repeatEnd: i === measure.repeatCount - 1 ? measure.repeatEnd : false,
             repeatTimes: i === measure.repeatCount - 1 ? measure.repeatTimes : undefined,
+            barline: i === measure.repeatCount - 1 ? measure.barline : undefined,
           });
         }
         return expanded;
@@ -971,6 +976,7 @@ function parseTrackLine(line: PreprocessedLine, errors: ParseError[]): ParsedTra
         repeatStart: measure.repeatStart,
         repeatEnd: measure.repeatEnd,
         repeatTimes: measure.repeatTimes,
+        barline: measure.barline,
         marker: navigation.marker as ParsedMeasure["marker"],
         jump: navigation.jump as ParsedMeasure["jump"],
         voltaIndices: measure.voltaIndices,

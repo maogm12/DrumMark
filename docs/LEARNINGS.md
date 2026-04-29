@@ -97,3 +97,8 @@ If the app is served from a sub-directory (e.g., `/drum_notation/`):
 
 - **Section 12 duration mismatches only surface after integer rest autofill has had its chance:** the AST currently auto-pads explicit measures when the remaining weight is a whole-number slot count, so the sharp validation cases are fractional shortfalls or overflows like `7/2` slots in a `divisions 4` bar. Tests that use a plain 1-slot gap will not exercise the hard-error path.
 - **Grouping-boundary validation is token-span based at normalize time:** both basic tokens and whole `group` tokens are rejected when their start/end slot fractions straddle a declared grouping boundary. The current stable error surface is `Token \`<glyph|group>\` crosses grouping boundary at <slot> in track <track>`, reported at the measure's source line and column 1.
+
+## 15. Repeat-Barline Learnings (2026-04-29)
+
+- **Section 9.1 barline metadata must survive `parseTrackLine()` normalization:** `parseMeasureTail()` already recognizes `double` and `final`, but if `parseTrackLine()` does not copy `measure.barline` into the returned `ParsedMeasure`, downstream AST / normalize layers silently collapse `||` and `|.` into regular barlines.
+- **`||` vs `|  |` is a measure-count distinction as much as a style distinction:** `||` should terminate one measure with `barline: "double"` and start the next measure immediately, while `|  |` should produce a separate empty generated measure between two regular bars. The most stable regression test is therefore `2 measures + double` versus `3 measures + generated middle bar`, not a raw text comparison.

@@ -1,10 +1,11 @@
 import { EditorView } from "@codemirror/view";
 import { HighlightStyle, StreamLanguage, syntaxHighlighting, type StreamParser, type StringStream } from "@codemirror/language";
 import { tags } from "@lezer/highlight";
+import { TRACKS, MODIFIERS } from "./dsl/types";
 
 type HeaderField = "title" | "subtitle" | "composer" | "tempo" | "time" | "divisions" | "grouping";
 type LineMode = "unknown" | "header" | "track";
-type TrackName = "HH" | "HF" | "DR" | "SD" | "BD" | "T1" | "T2" | "T3" | "RC" | "C" | "ST";
+type TrackName = typeof TRACKS[number];
 
 type DslState = {
   lineMode: LineMode;
@@ -14,8 +15,7 @@ type DslState = {
 };
 
 const headerFields: readonly HeaderField[] = ["title", "subtitle", "composer", "tempo", "time", "divisions", "grouping"];
-const trackNames: readonly TrackName[] = ["HH", "HF", "DR", "SD", "BD", "T1", "T2", "T3", "RC", "C", "ST"];
-const modifiers = ["open", "close", "choke", "rim", "cross", "bell", "flam"] as const;
+const modifiers = [...MODIFIERS] as const;
 
 function startState(): DslState {
   return {
@@ -56,18 +56,21 @@ function initializeLine(stream: StringStream, state: DslState): string | null {
     return header === "title" || header === "subtitle" || header === "composer" ? "header-meta" : "header-struct";
   }
 
-  const track = matchWord(stream, trackNames);
+  const track = matchWord(stream, TRACKS);
   if (track) {
     state.lineInitialized = true;
     state.lineMode = "track";
     state.trackName = track;
-    if (track === "DR") {
-      return "track-sugar";
-    }
     if (track === "ST") {
       return "track-sticking";
     }
     return "track";
+  }
+
+  // Measure repeat indicator
+  if (stream.match("|.|") || stream.match("|*|")) {
+    state.lineInitialized = true;
+    return "measure-repeat";
   }
 
   state.lineInitialized = true;
@@ -123,22 +126,48 @@ function readHeaderValue(stream: StringStream, state: DslState): string | null {
 function readTrackToken(stream: StringStream, state: DslState): string | null {
   const track = state.trackName;
 
+  // Comments
+  if (stream.match("%%")) {
+    stream.skipToEnd();
+    return "comment";
+  }
+
+  // Repeat start: |:
   if (stream.match("|:")) {
     return "repeat";
   }
 
-  if (stream.match(":|")) {
+  // Repeat end: :|
+  if (stream.match(":+|")) {
     return "repeat";
   }
 
-  if (stream.match(/^x\d+/)) {
+  // Repeat count: xN or *N
+  if (stream.match(/^[x*]\d+/)) {
     return "repeat-count";
   }
 
-  if (stream.match("|")) {
+  // Barline: single |
+  if (stream.match(/\|\s*(?![*:])/)) {
     return "barline";
   }
 
+  // Inline repeat end: %
+  if (stream.match(/^\s*%/)) {
+    return "inline-repeat-end";
+  }
+
+  // Volta / repeat count: --N--
+  if (stream.match(/^--\d+--/)) {
+    return "repeat-count";
+  }
+
+  // Jump markers: @segno @fine @to-coda @coda
+  if (stream.match(/^@(segno|fine|to-coda|coda)\b/)) {
+    return "jump-marker";
+  }
+
+  // Group tokens: [ ... ]
   if (stream.match("[")) {
     return "group-bracket";
   }
@@ -147,83 +176,94 @@ function readTrackToken(stream: StringStream, state: DslState): string | null {
     return "group-bracket";
   }
 
+  // Group count (inside [N: ... ])
   if (stream.match(/^\d+/)) {
     return "group-count";
   }
 
+  // Track override: {track:glyph}
+  if (stream.match(/\{\s*/)) {
+    return "punctuation";
+  }
+
+  if (stream.match(/\}/)) {
+    return "punctuation";
+  }
+
+  // Modifier separator
   if (stream.match(":")) {
     return "punctuation";
   }
 
+  // Duration modifiers: dots (.) and halves (/ or halved)
   if (stream.match(/^[./]+/)) {
     return "duration-modifier";
   }
 
+  // Music markup modifiers
   const mod = matchWord(stream, modifiers);
   if (mod) {
     return "modifier";
   }
 
+  // Rest
   if (stream.match("-")) {
     return "rest";
   }
 
-  if (stream.match(/^(?:t1|T1|t2|T2|t3|T3)/)) {
-    const val = stream.current();
-    if (track === "DR" && /^[T123]/.test(val)) {
-      return "dr-accent";
-    }
-    return "dr-tom";
-  }
-
-  if (stream.match(/^[RL]/)) {
+  // Sticking notes: L, R and variants L2, R2, L3, R3
+  if (stream.match(/^[LR]\d*/)) {
     return "sticking-note";
   }
 
-  if (stream.match(/^[SD]/)) {
-    return track === "DR" ? "dr-accent" : "note-accent";
+  // Tom tokens: t1-T4
+  if (stream.match(/^(?:t[1-4]|T[1-4])/)) {
+    return "tom-note";
   }
 
-  if (stream.match(/^X/)) {
-    return "cymbal-accent";
+  // BD2 accent
+  if (stream.match(/^BD2\b/)) {
+    return "drum-accent";
   }
 
-  if (stream.match(/^O/)) {
-    return "open-accent";
+  // Accent tokens: X, P, G, D, S, B (uppercase hit tokens with accent semantics)
+  if (stream.match(/^[XPDGSB]\d*/)) {
+    return "accent-note";
   }
 
-  if (stream.match(/^o/)) {
-    return "open-sugar";
-  }
-
-  if (stream.match(/^C/)) {
-    return "crash-accent";
-  }
-
-  if (stream.match(/^c/)) {
-    return "crash-sugar";
-  }
-
-  if (stream.match(/^s/)) {
-    return track === "DR" ? "dr-note" : "note";
-  }
-
-  if (stream.match(/^[xdpP]/)) {
+  // Lowercase basic glyphs
+  if (stream.match(/^[xdp]/)) {
     const glyph = stream.current();
-
     if (glyph === "x") {
-      return "cymbal-note";
+      return track === "ST" ? "sticking-note" : "cymbal-note";
     }
     if (glyph === "p") {
-      const type = track === "HF" ? "foot-note" : "kick-note";
-      return type;
-    }
-    if (glyph === "P") {
-      return "note-accent";
+      return track === "HF" ? "foot-note" : "kick-note";
     }
     return "note";
   }
 
+  // c/o/C/O for cymbal family
+  if (stream.match(/^[cCoO]\d*/)) {
+    return "cymbal-note";
+  }
+
+  // s/S for snare
+  if (stream.match(/^[sS]\d*/)) {
+    return track === "ST" ? "sticking-note" : "note";
+  }
+
+  // b/B for bass drum
+  if (stream.match(/^[bB]\d*/)) {
+    return "kick-note";
+  }
+
+  // r/R for ride cymbal
+  if (stream.match(/^[rR]\d*/)) {
+    return "ride-note";
+  }
+
+  // Identifiers (fallback)
   if (stream.match(/^[A-Za-z0-9]+/)) {
     return "identifier";
   }
@@ -232,7 +272,7 @@ function readTrackToken(stream: StringStream, state: DslState): string | null {
 }
 
 const drumDslParser: StreamParser<DslState> = {
-  name: "drum-dsl",
+  name: "drummark",
   startState: () => startState(),
   copyState: (state) => ({ ...state }),
   token(stream, state) {
@@ -284,31 +324,28 @@ const drumDslParser: StreamParser<DslState> = {
     "header-divider": tags.punctuation,
     "header-operator": tags.arithmeticOperator,
     track: tags.labelName,
-    "track-sugar": tags.className,
     "track-sticking": tags.attributeName,
+    "measure-repeat": [tags.separator, tags.annotation],
     repeat: [tags.separator, tags.controlOperator],
     "repeat-count": [tags.number, tags.annotation],
     barline: tags.separator,
+    "inline-repeat-end": tags.controlOperator,
+    "jump-marker": tags.modifier,
     "group-bracket": tags.squareBracket,
     "group-count": tags.integer,
     punctuation: tags.punctuation,
     modifier: tags.modifier,
     "duration-modifier": tags.arithmeticOperator,
     rest: tags.null,
-    "dr-tom": tags.typeName,
+    "tom-note": tags.typeName,
     "sticking-note": tags.attributeValue,
-    "dr-note": tags.atom,
-    "dr-accent": [tags.atom, tags.strong],
+    "accent-note": [tags.atom, tags.strong],
+    "drum-accent": [tags.atom, tags.strong],
     note: tags.atom,
-    "note-accent": [tags.atom, tags.strong],
     "cymbal-note": tags.tagName,
-    "cymbal-accent": [tags.tagName, tags.strong],
-    "open-accent": [tags.tagName, tags.inserted, tags.strong],
-    "open-sugar": [tags.tagName, tags.inserted],
-    "crash-accent": [tags.tagName, tags.special(tags.atom), tags.strong],
-    "crash-sugar": [tags.tagName, tags.special(tags.atom)],
-    "foot-note": tags.bool,
+    "ride-note": tags.tagName,
     "kick-note": tags.bool,
+    "foot-note": tags.bool,
     identifier: tags.name,
   },
 };
@@ -324,7 +361,6 @@ export const drumDslHighlightStyle = HighlightStyle.define([
   { tag: tags.arithmeticOperator, color: "#0f766e", fontWeight: "600" },
   { tag: tags.punctuation, color: "#94a3b8" },
   { tag: tags.labelName, color: "#0f172a", fontWeight: "700" },
-  { tag: tags.className, color: "#b45309", fontWeight: "700" },
   { tag: tags.attributeName, color: "#0f766e", fontWeight: "700" },
   { tag: tags.attributeValue, color: "#2563eb", fontWeight: "600" },
   { tag: tags.typeName, color: "#7c3aed", fontWeight: "600" },
@@ -338,8 +374,6 @@ export const drumDslHighlightStyle = HighlightStyle.define([
   { tag: tags.tagName, color: "#0369a1" },
   { tag: tags.bool, color: "#0f766e" },
   { tag: tags.strong, fontWeight: "800" },
-  { tag: tags.inserted, color: "#059669" },
-  { tag: tags.special(tags.atom), color: "#b91c1c", fontWeight: "700" },
   { tag: tags.name, color: "#475569" },
 ]);
 

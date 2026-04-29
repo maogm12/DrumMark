@@ -140,6 +140,8 @@ export type ParsedMeasure = {
   repeatEnd: boolean;
   repeatTimes?: number;
   repeatCount?: number;
+  marker?: MarkerType;
+  jump?: JumpType;
   measureRepeatSlashes?: number;
   multiRestCount?: number;
 };

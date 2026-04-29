@@ -28,7 +28,7 @@ Acceptance:
 Acceptance:
   `%` and `%%` are measure-level constructs, `*N` means total run length, and multi-rest allows `N >= 1`.
 
-- [ ] `T05` Add parser support for the current repeat-navigation syntax surface.
+- [x] `T05` Add parser support for the current repeat-navigation syntax surface.
 Acceptance:
   Parser can represent markers/jumps such as `@segno`, `@coda`, `@fine`, `@to-coda`, `@da-capo`, `@dal-segno`, `@dc-al-fine`, `@dc-al-coda`, `@ds-al-fine`, and `@ds-al-coda`.
 

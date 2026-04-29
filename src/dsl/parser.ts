@@ -22,6 +22,8 @@ import { preprocessSource } from "./preprocess";
 type HeaderAccumulator = Partial<ParsedHeaders>;
 type RawMeasure = Omit<ParsedTrackLine["measures"][number], "tokens"> & { tokens?: MeasureToken[] };
 const SORTED_TRACK_NAMES = [...TRACKS].sort((left, right) => right.length - left.length);
+const MARKERS = ["@segno", "@coda", "@fine"] as const;
+const JUMPS = ["@to-coda", "@da-capo", "@dal-segno", "@dc-al-fine", "@dc-al-coda", "@ds-al-fine", "@ds-al-coda"] as const;
 const BASIC_GLYPHS = [
   "-",
   "x",
@@ -640,6 +642,31 @@ function parseMeasureTail(remainder: string, line: PreprocessedLine, errors: Par
   return measures;
 }
 
+function extractNavigationTokens(content: string) {
+  const parts = content.split(/\s+/).filter(Boolean);
+  let marker: (typeof MARKERS)[number] | undefined;
+  let jump: (typeof JUMPS)[number] | undefined;
+  const remaining: string[] = [];
+
+  for (const part of parts) {
+    if ((MARKERS as readonly string[]).includes(part)) {
+      marker = part as (typeof MARKERS)[number];
+      continue;
+    }
+    if ((JUMPS as readonly string[]).includes(part)) {
+      jump = part as (typeof JUMPS)[number];
+      continue;
+    }
+    remaining.push(part);
+  }
+
+  return {
+    content: remaining.join(" "),
+    marker: marker?.slice(1),
+    jump: jump?.slice(1),
+  };
+}
+
 function parseTrackLine(line: PreprocessedLine, errors: ParseError[]): ParsedTrackLine | null {
   const parsed = parseTrackName(line, errors);
 
@@ -662,19 +689,23 @@ function parseTrackLine(line: PreprocessedLine, errors: ParseError[]): ParsedTra
     track: parsed.track,
     lineNumber: line.lineNumber,
     measures: measures.flatMap((measure, _measureIndex) => {
-      const measureRepeatMatch = measure.content.match(/^(%+)$/);
+      const navigation = extractNavigationTokens(measure.content);
+      const normalizedContent = navigation.content;
+      const measureRepeatMatch = normalizedContent.match(/^(%+)$/);
       if (measureRepeatMatch?.[1] !== undefined) {
         return [{
-          content: measure.content,
+          content: normalizedContent,
           tokens: [],
           repeatStart: measure.repeatStart,
           repeatEnd: measure.repeatEnd,
           repeatTimes: measure.repeatTimes,
+          marker: navigation.marker as ParsedMeasure["marker"],
+          jump: navigation.jump as ParsedMeasure["jump"],
           measureRepeatSlashes: measureRepeatMatch[1].length,
         }];
       }
 
-      const multiRestMatch = measure.content.match(/^-+\s*(\d+)\s*-+$/);
+      const multiRestMatch = normalizedContent.match(/^-+\s*(\d+)\s*-+$/);
       if (multiRestMatch?.[1] !== undefined) {
         const count = parseInt(multiRestMatch[1], 10);
         if (count < 1) {
@@ -687,17 +718,19 @@ function parseTrackLine(line: PreprocessedLine, errors: ParseError[]): ParsedTra
         }
 
         return [{
-          content: measure.content,
+          content: normalizedContent,
           tokens: [],
           repeatStart: measure.repeatStart,
           repeatEnd: measure.repeatEnd,
           repeatTimes: measure.repeatTimes,
+          marker: navigation.marker as ParsedMeasure["marker"],
+          jump: navigation.jump as ParsedMeasure["jump"],
           multiRestCount: count,
         }];
       }
 
       // Check for *N inline repeat: "xxxx *3" means the content occupies 3 total measures
-      const inlineRepeatMatch = measure.content.match(/^(.*?)\s*\*\s*(\d+)\s*$/);
+      const inlineRepeatMatch = normalizedContent.match(/^(.*?)\s*\*\s*(\d+)\s*$/);
       const m1 = inlineRepeatMatch?.[1];
       const m2 = inlineRepeatMatch?.[2];
       if (inlineRepeatMatch && m1 !== undefined && m2 !== undefined && m1.trim() !== "") {
@@ -720,6 +753,8 @@ function parseTrackLine(line: PreprocessedLine, errors: ParseError[]): ParsedTra
               repeatStart: i === 0 ? measure.repeatStart : false,
               repeatEnd: i === repeatCount - 1 ? measure.repeatEnd : false,
               repeatTimes: i === repeatCount - 1 ? measure.repeatTimes : undefined,
+              marker: i === 0 ? navigation.marker as ParsedMeasure["marker"] : undefined,
+              jump: i === repeatCount - 1 ? navigation.jump as ParsedMeasure["jump"] : undefined,
             });
           }
           return expanded;
@@ -734,7 +769,7 @@ function parseTrackLine(line: PreprocessedLine, errors: ParseError[]): ParsedTra
       }
 
       // Check for bare *N repeat marker - creates N total empty measures
-      const bareRepeatMatch = measure.content.match(/^\*(\d+)$/);
+      const bareRepeatMatch = normalizedContent.match(/^\*(\d+)$/);
       const bm1 = bareRepeatMatch?.[1];
       if (bareRepeatMatch && bm1 !== undefined) {
         const count = parseInt(bm1, 10);
@@ -754,14 +789,16 @@ function parseTrackLine(line: PreprocessedLine, errors: ParseError[]): ParsedTra
             repeatStart: i === 0 ? measure.repeatStart : false,
             repeatEnd: i === count - 1 ? measure.repeatEnd : false,
             repeatTimes: i === count - 1 ? measure.repeatTimes : undefined,
+            marker: i === 0 ? navigation.marker as ParsedMeasure["marker"] : undefined,
+            jump: i === count - 1 ? navigation.jump as ParsedMeasure["jump"] : undefined,
           });
         }
         return expanded;
       }
 
-      const measureStart = line.content.indexOf(measure.content);
+      const measureStart = line.content.indexOf(normalizedContent);
       const parsedTokens = parseMeasureTokens(
-        measure.content,
+        normalizedContent,
         parsed.track,
         line.lineNumber,
         measureStart === -1 ? 1 : measureStart + 1,
@@ -785,11 +822,13 @@ function parseTrackLine(line: PreprocessedLine, errors: ParseError[]): ParsedTra
       }
 
       return [{
-        content: measure.content,
+        content: normalizedContent,
         tokens: parsedTokens,
         repeatStart: measure.repeatStart,
         repeatEnd: measure.repeatEnd,
         repeatTimes: measure.repeatTimes,
+        marker: navigation.marker as ParsedMeasure["marker"],
+        jump: navigation.jump as ParsedMeasure["jump"],
         multiRestCount: measure.multiRestCount,
       }];
     }),

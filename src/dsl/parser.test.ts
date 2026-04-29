@@ -232,4 +232,39 @@ divisions 4
     expect(doc.paragraphs[0].lines[0].measures[2].content).toBe("d - - -");
     expect(doc.paragraphs[0].lines[0].measures[3].content).toBe("d - - -");
   });
+
+  it("extracts navigation markers and jumps as measure metadata", () => {
+    const doc = parseDocumentSkeleton(`time 4/4
+divisions 4
+| @segno d - - - |
+| d - - - @ds-al-coda |`);
+
+    expect(doc.errors).toEqual([]);
+    expect(doc.paragraphs[0].lines[0].measures[0]).toMatchObject({
+      marker: "segno",
+      jump: undefined,
+    });
+    expect(doc.paragraphs[0].lines[1].measures[0]).toMatchObject({
+      marker: undefined,
+      jump: "ds-al-coda",
+    });
+    expect(doc.paragraphs[0].lines[0].measures[0].tokens[0]).toMatchObject({ kind: "basic", value: "d" });
+  });
+
+  it("allows navigation metadata on shorthand measures", () => {
+    const doc = parseDocumentSkeleton(`time 4/4
+divisions 4
+| @fine % |
+| @to-coda --1-- |`);
+
+    expect(doc.errors).toEqual([]);
+    expect(doc.paragraphs[0].lines[0].measures[0]).toMatchObject({
+      marker: "fine",
+      measureRepeatSlashes: 1,
+    });
+    expect(doc.paragraphs[0].lines[1].measures[0]).toMatchObject({
+      jump: "to-coda",
+      multiRestCount: 1,
+    });
+  });
 });

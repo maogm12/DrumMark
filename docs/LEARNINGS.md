@@ -87,3 +87,8 @@ If the app is served from a sub-directory (e.g., `/drum_notation/`):
 
 - **Section 7 whitespace around `+` is semantic sugar, not a token boundary:** the spec example `HH:d + SD:d` should parse the same as `HH:d+SD:d`. Combined-hit detection therefore has to skip inter-item spaces before checking for the next `+` or the next item payload.
 - **The shared-start invariant belongs in normalize tests, not just parser shape tests:** parser coverage can prove that `+` groups multiple token payloads, but only normalization asserts the actual section 7 contract that every grouped item becomes its own event with the same `start` and `duration`.
+
+## 13. Group-Semantics Learnings (2026-04-29)
+
+- **Group span is a parser invariant, not an AST fallback:** explicit forms like `[0: d]` or `[2:]` should be rejected while parsing with direct `Group span must be at least 1` / `Empty group` errors. Letting zero-span or zero-item groups reach AST validation produces misleading downstream failures and risks divide-by-zero style math.
+- **Not every multi-item group is a tuplet:** section 5.5 distinguishes plain subdivision and stretched dotted/simple durations from true tuplets. In normalized IR, stretched groups like `[3: d d]` and reduced `2:1` / `4:1` compressed ratios such as `[2: d d]` or `[2: d d d d]` should keep `tuplet: null`; only the remaining compressed ratios need `actual:normal` metadata.

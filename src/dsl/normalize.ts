@@ -86,6 +86,17 @@ const ACCENT_MAGIC_TOKENS = new Set<BasicGlyph>([
   "CL",
 ]);
 
+function gcd(a: number, b: number): number {
+  let x = Math.abs(a);
+  let y = Math.abs(b);
+  while (y !== 0) {
+    const next = x % y;
+    x = y;
+    y = next;
+  }
+  return x || 1;
+}
+
 function getTrackFamily(track: TrackName): TrackFamily {
   if (CYMBAL_TRACKS.has(track)) return "cymbal";
   if (DRUM_TRACKS.has(track)) return "drum";
@@ -232,11 +243,13 @@ function tokenToEvents(
       (sum, item) => addFractions(sum, calculateTokenWeightAsFraction(item)),
       { numerator: 0, denominator: 1 },
     );
-    // For groups with more than 1 item (e.g., [1: d d d] or [2: d d:flam d]),
-    // this represents a tuplet where actual = number of items and normal = span.
-    // span=1 means each item occupies 1/3 of its slot (e.g., [1: d d d] is a triplet).
-    // span=2 means the group spans 2 slots with items compressed.
-    const groupTuplet = token.count > 1 ? { actual: token.count, normal: token.span } : undefined;
+    const reducedDivisor = gcd(token.count, token.span);
+    const reducedActual = token.count / reducedDivisor;
+    const reducedNormal = token.span / reducedDivisor;
+    const groupTuplet =
+      token.count > token.span && !(reducedNormal === 1 && (reducedActual === 2 || reducedActual === 4))
+        ? { actual: token.count, normal: token.span }
+        : undefined;
 
     let currentStart = start;
     token.items.forEach((item) => {

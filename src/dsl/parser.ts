@@ -483,6 +483,16 @@ function parseMeasureTokens(
       if (colonMatch) {
         span = Number(colonMatch[1]);
         inner = colonMatch[2] ?? "";
+        if (span < 1) {
+          errors.push({ line: lineNumber, column: columnOffset + cursor + 1, message: "Group span must be at least 1" });
+          cursor = closeIndex + 1;
+          continue;
+        }
+        if (!inner.trim()) {
+          errors.push({ line: lineNumber, column: columnOffset + cursor + 1, message: "Empty group" });
+          cursor = closeIndex + 1;
+          continue;
+        }
       } else if (body.trim()) {
         span = 1;
         inner = body.trim();

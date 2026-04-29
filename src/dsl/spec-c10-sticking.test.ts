@@ -38,7 +38,7 @@ ST | R - - - |`);
 
     const xml = buildMusicXml(score);
     expect(xml.match(/<fingering placement="above" font-size="14">R<\/fingering>/g)).toHaveLength(3);
-    expect(xml.match(/<note>/g)).toHaveLength(3);
+    expect(xml.match(/<note>[\s\S]*?<fingering placement="above" font-size="14">R<\/fingering>[\s\S]*?<\/note>/g)).toHaveLength(3);
   });
 
   it("joins multiple sticking glyphs at one start and attaches the full annotation to each simultaneous note", () => {
@@ -65,6 +65,6 @@ ST | R - L - |`);
     const xml = buildMusicXml(score);
     expect(xml).toContain("<fingering placement=\"above\" font-size=\"14\">R</fingering>");
     expect(xml).not.toContain("<fingering placement=\"above\" font-size=\"14\">L</fingering>");
-    expect(xml.match(/<note>/g)).toHaveLength(1);
+    expect(xml.match(/<note>[\s\S]*?<fingering placement="above" font-size="14">R<\/fingering>[\s\S]*?<\/note>/g)).toHaveLength(1);
   });
 });

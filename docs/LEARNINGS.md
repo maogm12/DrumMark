@@ -70,3 +70,9 @@ If the app is served from a sub-directory (e.g., `/drum_notation/`):
 
 - **Explicit override semantics depend on AST line retention, not only token resolution:** a named line like `HH | SD:d RC:p HF:g |` still has to survive paragraph assembly even if every token is overridden away from `HH`. If AST filling drops that explicit line because no event ultimately lands on its own track, normalize never gets a chance to apply section 5.2 priority rules.
 - **Section 5.2 should be tested on mixed token families, not only plain `d`:** the sharp cases are overridden static tokens (`SD:r`), overridden local-fallback tokens (`RC:p`, `HF:g`), and combined hits where each `+` item resolves independently. Those cases catch priority regressions that broad Appendix A token coverage can miss.
+
+## 10. Modifier-Syntax Learnings (2026-04-29)
+
+- **Section 6.1 support is parser-pass-through plus normalize-shape stability:** for the current DSL, all supported modifiers in `MODIFIERS` are parsed uniformly as `:<name>` chains and preserved in event `modifiers`; only the derived `modifier` field applies extra meaning by selecting the first non-`accent` entry.
+- **Section 6.2 needs explicit tests for summoned forms and `+` item independence:** `Track:d:<modifier>` uses the same token shape as plain `<token>:<modifier>`, just with `trackOverride`, and combined hits must preserve each item's own override/modifier chain instead of sharing state across the `+`.
+- **Multi-track normalization tests should prefer explicit summon syntax over repeated named lines:** repeated lines for the same track in one paragraph exercise paragraph assembly and autofill behavior, which can hide or distort the narrower modifier semantics being tested.

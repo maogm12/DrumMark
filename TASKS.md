@@ -85,7 +85,19 @@
 - [x] Add `Export PDF`
 - [x] Add staff-style preview tab
 
+## Phase 6: DrumScript Extraction & Semantic Model
+
+- [ ] Extract `src/drumscript/` as a standalone logic core
+- [ ] Implement Semantic Intermediate Model (Semantic tracks, Intensity, Techniques)
+- [ ] Remove `glyph` dependency from the core model
+- [ ] Implement instrument registry for easy extension
+- [ ] Implement Voltas/Alternative Endings (`|1.`, `|2.`, `|.`)
+- [ ] Support chainable and additive techniques in the model
+- [ ] Migrate MusicXML backend to consume Semantic Model
+- [ ] Migrate VexFlow backend to consume Semantic Model
+
 ## Immediate Next Tasks
 
-- [ ] Support ghost notes after OSMD can render notehead parentheses reliably
-- [ ] Revisit MusicXML encoding for ghost notes after OSMD issue #887 is resolved
+- [ ] Extract `drumscript/` directory and define its clean API
+- [ ] Implement `|1.`, `|2.` and `|. ` syntax in Parser
+- [ ] Update `compiler.ts` to populate `volta` and `voltaStatus`

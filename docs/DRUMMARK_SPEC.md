@@ -2,9 +2,9 @@
 
 ## Status
 
-Definitive — the authoritative source of truth for the DrumMark DSL.
+**Definitive** — the authoritative source of truth for the DrumMark DSL, IR, compiler design, and MusicXML export.
 
-IR output is defined by `IR_SPEC.md`. This document defines the text syntax that produces valid IR.
+This document is the merged successor of `DSL_DESIGN.md` and `IR_SPEC.md`. All language syntax, intermediate representation, compiler pipeline, error format, and export guidance live here. From now on, only this document needs to be read.
 
 ---
 
@@ -20,9 +20,83 @@ DrumMark is a plain-text notation language for drum scores. It is designed to be
 
 ---
 
-## 2. Headers
+## 2. Architecture & Compile Pipeline
 
-### 2.1 Supported Header Fields
+### 2.1 Pipeline
+
+```
+DSL Source
+  │
+  ▼
+Tokenizer
+  │ token stream
+  ▼
+Parser
+  │ AST
+  ▼
+Normalizer  ──►  Validation
+  │                    │
+  ▼                    ▼  (hard errors thrown here)
+IR (JSON)
+  │
+  ├──────────────────┬────────────────────┐
+  ▼                  ▼                    ▼
+VexFlow Renderer   MusicXML Exporter   Playback Engine
+(preview + PDF)    (MuseScore)         (future)
+```
+
+- All score rendering goes through VexFlow 5.
+- MusicXML is an export-only backend.
+- The editor is the source of truth. Preview and export are derived.
+- IR is the single canonical interchange format.
+
+### 2.2 Rendering Modes
+
+**Continuous Scroll Preview**
+- Single-page infinite-scroll SVG rendering the full score
+- No page breaks; the entire score is visible at once
+- Used for live preview in the browser
+
+**Page View / PDF Export**
+- Score is sliced into pages using the current page size (default: US Letter 8.5×11 in, 612×792 pt)
+- Systems are placed top to bottom, one after another, until the current page has no room for the next system
+- At that point, a new page is started and systems continue filling it the same way
+- Header (title, subtitle, composer) appears on the first page only
+- Each page is rendered as a separate SVG via `renderScorePagesToSvgs`
+
+### 2.3 Normalized Events
+
+The normalized event is the single source for rendering and export. Each event contains:
+
+```
+track          — canonical score track after input sugar is resolved
+paragraphIndex — paragraph index for layout
+measureIndex   — measure index within the score
+measureInParagraph — measure position within its paragraph
+start          — rational musical duration (Fraction), not raw grid slot
+duration       — rational musical duration (Fraction)
+kind           — hit | rest | sticking
+glyph          — atomic glyph token
+modifier       — modifier string(s)
+tuplet         — tuplet spec or null
+tie            — tie spec or null
+voice          — 1 (up-stem) | 2 (down-stem) | null (derived)
+beam           — begin | continue | end | none | null (derived)
+```
+
+Notes:
+- `track` is the canonical score track after input sugar is resolved
+- Anonymous tracks are expanded before normalization and do not appear as a normalized track
+- `HH` crash sugar `c` remains a glyph on `HH`; MusicXML derives crash instrument semantics during export
+- `start` and `duration` are rational musical durations, not raw grid slot numbers
+- Groups that require automatic tie splitting are **rejected** during validation
+- Instrument placement is derived by renderers/exporters from `track`, `glyph`, and `modifier`
+
+---
+
+## 3. Headers
+
+### 3.1 Supported Header Fields
 
 ```txt
 title <text>
@@ -41,7 +115,7 @@ grouping <a+b+c+...>
 - `divisions`: required, positive integer, defines the grid resolution per measure.
 - `grouping`: optional, sum must equal numerator of `time`. Controls beat structure, default accents, beaming. Defaults inferred from `time` if absent.
 
-### 2.2 Grouping Inference
+### 3.2 Grouping Inference
 
 | time | inferred grouping |
 |------|-------------------|
@@ -58,9 +132,9 @@ Irregular meters (`5/8`, `7/8`, `5/4`, etc.) require explicit `grouping`.
 
 ---
 
-## 3. Tracks
+## 4. Tracks
 
-### 3.1 Supported Track Names
+### 4.1 Supported Track Names
 
 | ID | Family | MIDI Note |
 |----|--------|-----------|
@@ -84,7 +158,7 @@ Irregular meters (`5/8`, `7/8`, `5/4`, etc.) require explicit `grouping`.
 | `CL` | percussion | 75 |
 | `ST` | auxiliary | — (no MIDI) |
 
-### 3.2 Track Line Syntax
+### 4.2 Track Line Syntax
 
 ```
 <TRACK> | ... |
@@ -96,7 +170,7 @@ HH | x - x - x - x - |
 SD | - - d:cross - d - |
 ```
 
-### 3.3 Anonymous Track
+### 4.3 Anonymous Track
 
 A line that starts directly with a barline acts as a universal container:
 
@@ -106,7 +180,7 @@ A line that starts directly with a barline acts as a universal container:
 
 The default track for anonymous lines is `HH` for glyph routing.
 
-### 3.4 Track Routing Scopes
+### 4.4 Track Routing Scopes
 
 Use braces `{}` to route a block of notes to a specific track without affecting timing:
 
@@ -115,20 +189,38 @@ Use braces `{}` to route a block of notes to a specific track without affecting 
 SD { [3: d d d] }        # Tuplet group on SD
 ```
 
-### 3.5 Voice Convention
+### 4.5 Voice Convention
 
 - Voice 1 (up-stem): `HH`, `RC`, `RC2`, `C`, `C2`, `SPL`, `CHN`, `SD`, `T1`, `T2`, `T3`, `T4`, `CB`, `WB`, `CL`, `ST`
 - Voice 2 (down-stem): `BD`, `BD2`, `HF`
 
+### 4.6 Track Registry and Auto Fill
+
+- Any track mentioned via line header (`SD |`), routing scope (`SD { ... }`), or summoning prefix (`SD:d`) is **automatically registered** in the score.
+- Tracks are ordered based on their first appearance in the document.
+- Once a track is registered, it remains active throughout the score.
+- If a registered track is omitted in a later paragraph, it is auto-filled with full-measure rests.
+
+### 4.7 Track Families
+
+| Family | Tracks |
+|--------|--------|
+| cymbal | `HH`, `RC`, `RC2`, `C`, `C2`, `SPL`, `CHN` |
+| drum | `SD`, `BD`, `BD2`, `T1`, `T2`, `T3`, `T4` |
+| pedal | `HF` |
+| percussion | `CB`, `WB`, `CL` |
+| auxiliary | `ST` |
+
 ---
 
-## 4. Tokens
+## 5. Tokens
 
-### 4.1 Atomic Tokens
+### 5.1 Atomic Tokens
 
 | Token | Meaning |
 |-------|---------|
 | `d` | Universal hit (standard notehead) |
+| `D` | Universal hit with accent |
 | `-` | Rest |
 | `x` | Cymbal/Crossstick — maps to `HH:d` in cymbal context, `SD:d:cross` in drum context, `HH:d` in anonymous |
 | `s` | `SD:d` |
@@ -160,9 +252,9 @@ SD { [3: d d d] }        # Tuplet group on SD
 | `CL` | `CL:d:accent` |
 | `p` | `(Local):d`; in anonymous track, `HF:d` |
 | `g` | `(Local):d:ghost`; in anonymous track, `SD:d:ghost` |
-| `l`, `L` | Sticking — used in `ST` track or with `ST:` prefix |
+| `R`, `L` | Sticking — used in `ST` track or with `ST:` prefix |
 
-### 4.2 Resolution Priority
+### 5.2 Resolution Priority
 
 When parsing a token, the compiler resolves its target in this order:
 
@@ -170,7 +262,7 @@ When parsing a token, the compiler resolves its target in this order:
 2. **Static Magic Token**: `s`, `b`, `r`, etc. always map to their global physical target (`s` → `SD`) even inside other track lines.
 3. **Context fallback**: `d` or `x` in a named track line uses that line's track; in anonymous `|` defaults to `HH`.
 
-### 4.3 Duration Modifiers
+### 5.3 Duration Modifiers
 
 | Symbol | Effect |
 |--------|--------|
@@ -179,7 +271,7 @@ When parsing a token, the compiler resolves its target in this order:
 
 Combined: `d./` = 0.75× duration.
 
-### 4.4 Rhythmic Math
+### 5.4 Rhythmic Math
 
 Each token's weight is computed as:
 
@@ -201,7 +293,7 @@ weight = base × (2 - 0.5^dots) / (2^halves)
 
 Fractional validation: each token is converted to an absolute Fraction relative to a whole note before summing. The sum of all token weights in a measure must equal the `timeSignature` fraction. No integer slot counting is used for validation.
 
-### 4.5 Groups
+### 5.5 Groups
 
 **Syntax**:
 ```
@@ -223,9 +315,9 @@ Fractional validation: each token is converted to an absolute Fraction relative 
 
 ---
 
-## 5. Modifiers
+## 6. Modifiers
 
-### 5.1 Supported Modifiers
+### 6.1 Supported Modifiers
 
 | Modifier | Allowed on | Visual Effect |
 |----------|-----------|--------------|
@@ -240,10 +332,10 @@ Fractional validation: each token is converted to an absolute Fraction relative 
 | `flam` | `SD`, `T1`, `T2`, `T3`, `T4` | 16th grace note preceding main note |
 | `ghost` | `SD`, `HH`, `T1`, `T2`, `T3`, `T4` | Parenthesized notehead |
 | `drag` | `SD`, `HH`, `T1`, `T2`, `T3`, `T4`, `RC`, `RC2` | Two 16th grace notes preceding |
-| `roll` | `SD`, `HH`, `T1`, `T2`, `T3`, `T4`, `RC`, `RC2`, `BD` | Slash marks on stem |
-| `dead` | `SD`, `HH`, `T1`, `T2`, `T3`, `T4`, `BD` | Small "x" notehead, muted attack |
+| `roll` | `SD`, `HH`, `T1`, `T2`, `T3`, `T4`, `RC`, `RC2`, `BD`, `BD2` | Slash marks on stem |
+| `dead` | `SD`, `HH`, `T1`, `T2`, `T3`, `T4`, `BD`, `BD2` | Small "x" notehead, muted attack |
 
-### 5.2 Modifier Syntax
+### 6.2 Modifier Syntax
 
 ```
 <token>:<modifier>
@@ -262,24 +354,6 @@ HH | d - d:drag - - - - - |
 
 ---
 
-## 6. Sticking
-
-### 6.1 Sticking Track
-
-Use the `ST` track for hand sticking annotations:
-
-```
-ST | R - L - [2: R L R] - | R - L - R - L - |
-```
-
-### 6.2 Sticking Semantics
-
-- Sticking tokens in `ST` track do not create MusicXML `<note>` elements with percussion step/octave. They are attached as `<fingering>` or `<direction>` to notes at the same rhythmic position.
-- Sticking at a given `start` position applies to **all notes** at that position across all tracks.
-- Sticking without a matching note at the same `start` position is ignored in MusicXML export.
-
----
-
 ## 7. Combined Hits
 
 Use `+` to play multiple instruments simultaneously:
@@ -294,9 +368,27 @@ Combined hits produce multiple events at the same `start` position.
 
 ---
 
-## 8. Repeats
+## 8. Sticking
 
-### 8.1 Repeat Barlines
+### 8.1 Sticking Track
+
+Use the `ST` track for hand sticking annotations:
+
+```
+ST | R - L - [2: R L R] - | R - L - R - L - |
+```
+
+### 8.2 Sticking Semantics
+
+- Sticking tokens in `ST` track do not create MusicXML `<note>` elements with percussion step/octave. They are attached as `<fingering>` or `<direction>` to notes at the same rhythmic position.
+- Sticking at a given `start` position applies to **all notes** at that position across all tracks.
+- Sticking without a matching note at the same `start` position is ignored in MusicXML export.
+
+---
+
+## 9. Repeats
+
+### 9.1 Repeat Barlines
 
 | Syntax | Meaning |
 |--------|---------|
@@ -304,17 +396,20 @@ Combined hits produce multiple events at the same `start` position.
 | `\|:` | repeat start |
 | `:\|` | repeat end |
 | `\|: :\|` | repeat start + end (same measure) |
-| `\|\|` | double barline |
+| `\|\|` | double barline (no measure between) |
+| `\|  \|` | double barline with whitespace → empty measure between |
 | `\|.` | explicit volta termination |
 
-### 8.2 Repeat Rules
+**Double barline with empty measure**: If whitespace exists between the two bars, it forms an empty measure. `|  |` and `|  |` (any amount of whitespace) both produce a double barline with an empty measure in between. `||` with no whitespace produces a double barline with no measure between.
+
+### 9.2 Repeat Rules
 
 - Repeats are global measure structure, not private to one track.
 - Repeat boundaries may be written on any track. A declaration on any track applies to the whole score.
 - Nested repeats are not allowed in v1.
 - Crossing repeats are not allowed in v1.
 
-### 8.3 Voltas (Alternative Endings)
+### 9.3 Voltas (Alternative Endings)
 
 | Syntax | Meaning |
 |--------|---------|
@@ -333,9 +428,25 @@ Combined hits produce multiple events at the same `start` position.
 - Both `|: :|` and voltas can span multiple paragraphs. Paragraph boundaries (blank lines) only trigger system breaks in the renderer and do not affect the musical logical structure.
 - If a volta is followed immediately by `:|`, the bracket ends at that barline.
 
+### 9.4 Measure Repeat (`%`)
+
+A standalone measure containing only `%` tokens repeats the preceding measures. Each `%` repeats one preceding measure.
+
+```
+HH | dddd % |           # repeats 1 preceding measure
+HH | c c c %% |         # repeats 2 preceding measures
+BD | b - % % |          # repeats 2 preceding measures (same as above)
+```
+
+**Rules**:
+- One `%` repeats one preceding measure; two `%%` repeats two preceding measures; and so on.
+- The measure containing `%` tokens must contain only that token (no other notes).
+- The referenced measures must not themselves be repeat shorthand measures (no chaining).
+- After expansion, the IR uses `repeatOf` / `repeatOfCount` to record the repeat.
+
 ---
 
-## 9. Multi-Measure Rest
+## 10. Multi-Measure Rest
 
 `|--N--|` is the **only** way to specify a multi-measure rest.
 
@@ -352,7 +463,9 @@ HH |- 4 - |        # 4-measure rest (spaces allowed)
 
 ---
 
-## 10. Inline Measure Repeat
+## 11. Inline Measure Repeat
+
+### `*N` — Inline repeat count
 
 `*N` at the end of a measure repeats that entire measure N times.
 
@@ -365,13 +478,13 @@ This is syntactic sugar. After expansion, there is no record that `*N` was used.
 
 ---
 
-## 11. Measure Validation
+## 12. Measure Validation
 
-### 11.1 Total Duration
+### 12.1 Total Duration
 
 For each measure, the sum of all token weights must equal `divisions`. Any mismatch is a hard error.
 
-### 11.2 Grouping Boundary Alignment
+### 12.2 Grouping Boundary Alignment
 
 No token or group may cross a boundary defined by `grouping`. A hard error is reported if a token's duration overlaps a grouping boundary.
 
@@ -387,19 +500,6 @@ HH | d. / d d |     # 'd.' ends at 1.5, followed by half-rest '/' at 1.5-2.0
 
 ---
 
-## 12. Future Improvements
-
-The following features are defined in the spec but not yet implemented or not storable in IR:
-
-| Feature | Description | IR Status |
-|---------|-------------|-----------|
-| `@tempo:<N>` | Inline tempo change mid-score | Not stored in IR |
-| `@time:<N/M>` | Inline time signature change mid-score | Not stored in IR |
-| `@partial:<N>` | Pickup/anacrusis measure with N slots | Not stored in IR |
-| `@divisions:<N>` | Inline divisions change | Rejected — mid-score divisions change is not supported |
-
----
-
 ## 13. Comments
 
 ```
@@ -410,7 +510,425 @@ The following features are defined in the spec but not yet implemented or not st
 
 ---
 
-## 14. Complete Example
+## 14. Whitespace
+
+- Spaces and tabs are ignored structurally except as token separators.
+- Users may add spaces freely for alignment and readability.
+
+These should be treated equivalently by the parser:
+
+```
+HH | d - d - |
+HH|d-d-|
+HH |   d   -   d   -   |
+```
+
+### Paragraphs
+
+After the header, track content is organized into paragraphs. Blank lines separate paragraphs. Paragraph primarily affects layout and text organization. Each paragraph starts a new system in the rendered score. Paragraph does not change musical time structure.
+
+---
+
+## 15. Compiler Errors
+
+### 15.1 Parsing Strategy
+
+- Be permissive about whitespace
+- Be strict about semantics
+- Try to collect multiple errors in one pass
+- Do not silently rewrite user intent
+- Any unsupported, ambiguous, inconsistent, or non-exportable construct is a hard error
+
+### 15.2 Error Format
+
+Errors should include line, column, and message:
+
+```
+Line 8, Col 12: Unknown token `q` on track HH
+Line 10, Col 7: Group [3: a b] expects 3 items, got 2
+Line 14, Col 1: Repeat boundary conflicts with previous declaration
+Line 18, Col 3: Modifier `:choke` is not allowed on SD
+Line 21, Col 5: Measure duration (14) does not equal divisions (16)
+Line 24, Col 1: Token `d.` crosses grouping boundary at slot 2
+Line 27, Col 8: Unknown track `XX`
+Line 30, Col 1: Empty measure is not allowed in repeat section
+```
+
+### 15.3 Hard Error List
+
+- Unknown header field
+- Unknown track
+- Illegal token on a track
+- Unknown modifier
+- Illegal glyph + modifier combination
+- Malformed group
+- Group item count mismatch
+- Measure slot mismatch
+- Repeat conflict
+- Repeat structure mismatch
+- Paragraph measure-count mismatch among explicit tracks
+- Multi-measure rest with `N < 2`
+- Inline repeat with non-positive `N`
+
+---
+
+## 16. Intermediate Representation (IR)
+
+The compiler emits a JSON IR. All temporal values use the **Fraction** structure, stored in lowest terms (GCD-reduced).
+
+### 16.1 Fraction
+
+```json
+{ "num": 3, "den": 16 }
+```
+
+**Rules**:
+- `num` MUST be a non-negative integer.
+- `den` MUST be a positive integer.
+- Fractions are equal iff `a.num * b.den === b.num * a.den`.
+- A `ComplexityOverflowError` SHOULD be thrown if any intermediate `den > 10^9`.
+
+**Common durations for reference**:
+
+| Name | Fraction |
+|------|----------|
+| whole | `{ "num": 1, "den": 1 }` |
+| half | `{ "num": 1, "den": 2 }` |
+| quarter | `{ "num": 1, "den": 4 }` |
+| 8th | `{ "num": 1, "den": 8 }` |
+| 16th | `{ "num": 1, "den": 16 }` |
+| dotted quarter | `{ "num": 3, "den": 8 }` |
+
+### 16.2 Document Hierarchy
+
+```
+DrumScore
+  └─ header: Header
+  └─ tracks: Track[]
+  └─ measures: Measure[]
+```
+
+### 16.3 Header IR
+
+```json
+{
+  "title": "Funk Study No. 1",
+  "subtitle": "Verse groove",
+  "composer": "G. Mao",
+  "tempo": 96,
+  "timeSignature": { "beats": 4, "beatUnit": 4 },
+  "divisions": 16,
+  "grouping": [2, 2]
+}
+```
+
+| Field | Type | Required | Default | Meaning |
+|-------|------|----------|---------|---------|
+| `title` | string | no | `""` | Score title |
+| `subtitle` | string | no | `""` | Score subtitle |
+| `composer` | string | no | `""` | Composer credit |
+| `tempo` | integer | no | `120` | Quarter-note BPM |
+| `timeSignature` | TimeSignature | **yes** | — | Measure structure |
+| `divisions` | integer | **yes** | — | Grid slots per measure |
+| `grouping` | integer[] | no | inferred from `timeSignature` | Beat grouping; sum MUST equal `beats` |
+| `feel` | string | no | `"straight"` | Playback feel: `"straight"`, `"swing"`, `"shuffle"`, `"latin"` |
+
+### 16.4 Track IR
+
+```json
+{
+  "id": "HH",
+  "family": "cymbal"
+}
+```
+
+| Field | Type | Required | Meaning |
+|-------|------|----------|---------|
+| `id` | string | **yes** | Track identifier |
+| `family` | string | **yes** | One of: `cymbal`, `drum`, `pedal`, `percussion`, `auxiliary` |
+
+### 16.5 Measure IR
+
+```json
+{
+  "index": 0,
+  "events": [ Event, Event, ... ],
+  "barline": "regular",
+  "rangeAnnotations": [ ... ]
+}
+```
+
+| Field | Type | Required | Meaning |
+|-------|------|----------|---------|
+| `index` | integer | **yes** | 0-based measure index within the score |
+| `events` | Event[] | **yes** | All events in this measure; sorted by `start` ascending |
+| `barline` | string | no | One of: `regular`, `double`, `final`, `repeat-start`, `repeat-end`, `repeat-both` |
+| `repeatTimes` | integer | no | Required when `barline` is `repeat-end`; number of repetitions |
+| `volta` | integer[] | no | List of 1-based repetition indices during which this measure is active |
+| `multiRest` | integer | no | Number of measures this rest occupies; `≥ 1`; see §16.6 |
+| `rangeAnnotations` | RangeAnnotation[] | no | Hairpins, slurs, dynamics active in this measure |
+| `repeatOf` | integer | no | 0-based index of the measure whose content this measure repeats |
+| `repeatOfCount` | integer | no | How many consecutive measures to repeat; only valid when `repeatOf` is set |
+
+**Barline types**:
+
+| Value | Visual | DSL Syntax |
+|-------|--------|------------|
+| `regular` | single barline | `|` |
+| `double` | double barline | `||` |
+| `final` | final barline | `|` at end of score |
+| `repeat-start` | repeat start | `|:` |
+| `repeat-end` | repeat end | `:|` |
+| `repeat-both` | repeat start+end | `|: :|` |
+
+**Volta termination** (parser responsibility):
+- A volta ends when: (a) a `repeat-end` barline is encountered, (b) a new `volta` with a different index starts, or (c) an explicit termination barline `|.` is encountered.
+
+### 16.6 Multi-Measure Rest Encoding
+
+A multi-measure rest is encoded as **consecutive measure entries** in the `measures` array. The first entry carries `multiRest: n`; the following `n−1` entries each carry `multiRest: 1`. All `n` entries must be present in the array with consecutive `index` values.
+
+```json
+[
+  { "index": 2, "events": [], "multiRest": 4 },
+  { "index": 3, "events": [], "multiRest": 1 },
+  { "index": 4, "events": [], "multiRest": 1 },
+  { "index": 5, "events": [], "multiRest": 1 }
+]
+```
+
+**Rules**:
+- `multiRest: 1` is equivalent to a normal empty measure (full-measure rest). The distinction is visual only.
+- When `multiRest > 1`, the first entry (`multiRest: n`) triggers the visually-rendered multi-rest glyph. The trailing `n−1` entries are renderer hints for systems that break across pages.
+- All `n` entries MUST have empty `events` arrays.
+- If `multiRest > 1` on a measure that is not the first in a sequence, it is a validation error.
+
+### 16.7 Repeat Shorthand
+
+A measure may reference the content of one or more previous measures using `repeatOf`, instead of duplicating the events:
+
+```json
+[
+  { "index": 0, "events": [{ "track": "HH", "start": { "num": 0, "den": 16 }, ... }] },
+  { "index": 1, "repeatOf": 0 },                    // repeats measure 0
+  { "index": 2, "repeatOf": 0, "repeatOfCount": 2 } // repeats measures 0 and 1
+]
+```
+
+**Rules**:
+- `repeatOf` and `repeatOfCount` are optional; absent means this is a normal measure with explicit events.
+- The referenced source measures must exist and must NOT themselves have `repeatOf` set (no nested repeat references).
+- Source measures must not be multiRest measures.
+- When a measure has `repeatOf`, its `events` array should be empty — renderer and exporter read the source measure's events instead.
+- A measure with `repeatOf` may still carry `barline`, `volta`, `rangeAnnotations`, and `multiRest` — these apply to the repeat instance itself (e.g., the repeated measure may have a different barline style).
+
+### 16.6 Event IR
+
+```json
+{
+  "track": "HH",
+  "start": { "num": 0, "den": 16 },
+  "duration": { "num": 1, "den": 16 },
+  "kind": "hit",
+  "glyph": "d",
+  "modifiers": [],
+  "tuplet": null,
+  "tie": null,
+  "voice": 1,
+  "beam": "begin"
+}
+```
+
+| Field | Type | Required | Meaning |
+|-------|------|----------|---------|
+| `track` | string | **yes** | Track ID |
+| `start` | Fraction | **yes** | Measure-relative offset; `0 ≤ start < 1` |
+| `duration` | Fraction | **yes** | Note duration; `0 < duration ≤ 1` |
+| `kind` | string | **yes** | One of: `hit`, `rest`, `sticking` |
+| `glyph` | string | `kind == "hit"` | Atomic glyph token; one of: `d`, `x`, `p`, `g`, `s`, `b`, `r`, `c`, `t1`, `t2`, `t3`, `t4`, `o` |
+| `modifiers` | string[] | no | Zero or more modifier strings |
+| `tuplet` | TupletSpec \| null | no | Present only if this note is part of a tuplet group |
+| `tie` | string \| null | no | One of: `start`, `stop`, `both`, or absent |
+| `voice` | integer \| null | no | `1` = up-stem, `2` = down-stem; defaults to track-derived convention |
+| `beam` | string \| null | no | One of: `begin`, `continue`, `end`, `none`; absent implies `none` |
+| `beamMode` | string \| null | no | `"auto"` (default) or `"manual"` |
+
+**Event kinds**:
+
+| Kind | Meaning | `glyph` required? | MIDI output? |
+|------|---------|-------------------|-------------|
+| `hit` | Percussive strike | yes | yes |
+| `rest` | Silence placeholder | no | no |
+| `sticking` | Hand indication (R/L) | yes (must be `r` or `l`) | no |
+
+### 16.7 TupletSpec
+
+```json
+{
+  "actual": 3,
+  "normal": 2,
+  "span": 1,
+  "bracket": true
+}
+```
+
+| Field | Type | Default | Meaning |
+|-------|------|---------|---------|
+| `actual` | integer | — | Number of notes played in the tuplet |
+| `normal` | integer | — | Number of notes in the normal duration |
+| `span` | integer | — | How many beat groups this tuplet occupies |
+| `bracket` | boolean | `true` | Whether to draw the tuplet bracket |
+
+**Supported tuplet ratios**: `[2, 1]`, `[3, 2]`, `[4, 3]`, `[3, 1]`, `[4, 1]`, `[5, 4]`, `[6, 4]`, `[7, 4]`.
+
+### 16.8 Beam
+
+Beam state defines this note's position within a beam group. Only 8th notes and shorter can have beam states other than `none`.
+
+| Value | Meaning |
+|-------|---------|
+| `begin` | Beam starts here |
+| `continue` | Mid-beam (neither start nor end) |
+| `end` | Beam ends here |
+| `none` | No beam on this note (half note or longer, or a rest) |
+
+**Rules**:
+- Beaming is computed **per voice** — only notes of the same `voice` are considered for beam grouping.
+- A beam may continue across a measure boundary.
+- The parser computes beam states from `grouping` and `duration` using standard engraving rules before emitting the IR.
+
+### 16.9 Tie
+
+| Value | Meaning |
+|-------|---------|
+| `start` | This note is the start of a tie |
+| `stop` | This note is the end of a tie |
+| `both` | This note is simultaneously a tie start and tie stop (for chains of 3+ notes) |
+
+**Rules**:
+- Tie always connects notes on the **same track**.
+- `start` and `stop` events must have the same `duration`.
+- A chain of 3+ tied notes: first has `tie: "start"`, middle has `tie: "both"`, last has `tie: "stop"`.
+
+### 16.10 Range Annotations
+
+```json
+{
+  "type": "hairpin",
+  "subtype": "crescendo",
+  "track": "HH",
+  "start": { "num": 0, "den": 16 },
+  "end": { "num": 1, "den": 1 }
+}
+```
+
+| Field | Type | Meaning |
+|-------|------|---------|
+| `type` | string | One of: `hairpin`, `slur`, `dynamic` |
+| `subtype` | string | For `hairpin`: `crescendo` or `decrescendo`. For `slur`: `slur`. For `dynamic`: one of `pp`, `p`, `mp`, `mf`, `f`, `ff`, `fff`, `sfz`, `fp` |
+| `track` | string | For hairpin and dynamic — the track this annotation belongs to |
+| `tracks` | string[] | For slur only — all tracks covered by this slur |
+| `start` | Fraction | Measure-relative start position |
+| `end` | Fraction | Measure-relative end position; `end > start`; required for `hairpin` and `slur` |
+
+**Cross-measure spanning**: A hairpin that spans measures 0–2 is represented as one fragment per measure, using `{ "num": 1, "den": 1 }` to anchor at measure boundaries.
+
+---
+
+## 17. MusicXML Export
+
+### 17.1 Export Structure
+
+- Export from normalized events, not raw DSL
+- Use **one percussion part** for the whole drum kit, not one part per track
+- `divisions` in MusicXML may be chosen independently as needed for accurate durations
+- `:|` should export as actual repeat barlines when possible
+
+### 17.2 Track → Instrument Mapping
+
+| Track | MusicXML Instrument | MIDI Note |
+|-------|-------------------|-----------|
+| `HH` | closed hi-hat | 42 |
+| `HF` | pedal hi-hat | 44 |
+| `SD` | snare | 38 |
+| `BD` | bass drum | 36 |
+| `BD2` | bass drum | 36 |
+| `T1` | high tom | 48 |
+| `T2` | mid tom | 45 |
+| `T3` | floor tom | 41 |
+| `T4` | low tom | 43 |
+| `RC` | ride cymbal | 51 |
+| `RC2` | ride cymbal 2 | 59 |
+| `C` | crash cymbal | 49 |
+| `C2` | crash cymbal 2 | 57 |
+| `SPL` | splash cymbal | 55 |
+| `CHN` | china cymbal | 52 |
+| `CB` | cowbell | 56 |
+| `WB` | wobble board | 76 |
+| `CL` | clap | 75 |
+
+### 17.3 Velocity Mapping
+
+| Track | Default Velocity | Accent Velocity | Ghost Velocity |
+|-------|-------------------|-----------------|----------------|
+| `BD` / `BD2` | 90 | 127 | 30 |
+| `SD` | 85 | 120 | 25 |
+| `T1` / `T2` | 80 | 115 | 25 |
+| `T3` / `T4` | 82 | 118 | 28 |
+| `HH` | 80 | 115 | 20 |
+| `HF` | 75 | 110 | 20 |
+| `RC` / `RC2` | 78 | 112 | 20 |
+| `C` / `C2` | 85 | 120 | 25 |
+| `SPL` | 80 | 115 | 20 |
+| `CHN` | 83 | 120 | 22 |
+| `CB` | 75 | 110 | 20 |
+| `WB` / `CL` | 72 | 108 | 18 |
+
+**HiHat open/close**: Note-on for `HH` (42) is sent regardless; a CC4 message follows with value `0` (closed) or `127` (open), sent simultaneously with or 1 tick after the note-on.
+
+### 17.4 Notehead Selection (Renderer & Exporter Reference)
+
+| Family | Default | With `:ghost` | With `:accent` |
+|--------|---------|---------------|----------------|
+| cymbal | X | X (parenthesized) | X + accent mark |
+| drum | filled-circle | filled-circle (parenthesized) | filled-circle + accent mark |
+| pedal | filled-circle | filled-circle (parenthesized) | filled-circle + accent mark |
+| percussion | filled-circle | filled-circle (parenthesized) | filled-circle + accent mark |
+
+### 17.5 Modifier Export Priority
+
+v0 modifiers are limited to forms with stable MusicXML export semantics.
+
+**Supported and reliably exported**:
+- accents
+- open/close hi-hat
+- tuplets
+- flam
+- ghost
+- drag
+
+**Supported when explicitly included in the whitelist**:
+- rim
+- cross
+- bell
+- choke
+
+**Out of scope for v0**: Any modifier that cannot be represented reliably in MusicXML should not be accepted by validation.
+
+`ghost` and `drag` are exported as grace notes with appropriate notation semantics.
+
+### 17.6 Sticking Export
+
+- `ST` sticking is exported as above-staff fingering text at matching note positions.
+- `R` and `L` do not export as percussion notes.
+- Sticking text does not advance rhythmic time.
+- Matching is based on start position (Fraction), not track identity.
+- A sticking annotation at a given start position applies to all notes at that position, regardless of track.
+- Sticking without a matching note at the same start position is ignored.
+
+---
+
+## 18. Complete Example
 
 ```
 title Funk Study No. 1
@@ -429,6 +947,49 @@ HF |  - - - - p - - - | - - - - p:close - -                |
 RC | - - d:bell - - - d - | - - - - - - - - |
 C  | d:choke:accent - - - - - - - | - - - - d:accent - - - |
 ST | R - L - [2: R L R] - | R - L - R - L - |
+```
+
+Corresponding IR excerpt (first measure):
+
+```json
+{
+  "version": "1.0",
+  "header": {
+    "title": "Funk Study No. 1",
+    "subtitle": "Verse groove",
+    "composer": "G. Mao",
+    "tempo": 96,
+    "timeSignature": { "beats": 4, "beatUnit": 4 },
+    "divisions": 16,
+    "grouping": [2, 2]
+  },
+  "tracks": [
+    { "id": "HH", "family": "cymbal" },
+    { "id": "SD", "family": "drum" },
+    { "id": "BD", "family": "drum" },
+    { "id": "HF", "family": "pedal" },
+    { "id": "RC", "family": "cymbal" },
+    { "id": "C", "family": "cymbal" },
+    { "id": "ST", "family": "auxiliary" }
+  ],
+  "measures": [
+    {
+      "index": 0,
+      "barline": "repeat-start",
+      "events": [
+        { "track": "HH", "start": { "num": 0, "den": 16 }, "duration": { "num": 1, "den": 16 }, "kind": "hit", "glyph": "d", "modifiers": [], "tuplet": null, "tie": null, "voice": 1, "beam": "begin" },
+        { "track": "HH", "start": { "num": 1, "den": 16 }, "duration": { "num": 1, "den": 16 }, "kind": "rest", "glyph": null, "modifiers": [], "tuplet": null, "tie": null, "voice": 1, "beam": "none" },
+        { "track": "HH", "start": { "num": 2, "den": 16 }, "duration": { "num": 1, "den": 16 }, "kind": "hit", "glyph": "d", "modifiers": [], "tuplet": null, "tie": null, "voice": 1, "beam": "continue" },
+        { "track": "HH", "start": { "num": 3, "den": 16 }, "duration": { "num": 1, "den": 16 }, "kind": "hit", "glyph": "o", "modifiers": [], "tuplet": null, "tie": null, "voice": 1, "beam": "end" },
+        { "track": "HH", "start": { "num": 4, "den": 16 }, "duration": { "num": 1, "den": 16 }, "kind": "hit", "glyph": "d", "modifiers": [], "tuplet": null, "tie": null, "voice": 1, "beam": "begin" },
+        { "track": "HH", "start": { "num": 7, "den": 16 }, "duration": { "num": 1, "den": 16 }, "kind": "hit", "glyph": "d", "modifiers": [], "tuplet": null, "tie": null, "voice": 1, "beam": "end" },
+        { "track": "SD", "start": { "num": 2, "den": 16 }, "duration": { "num": 1, "den": 16 }, "kind": "hit", "glyph": "d", "modifiers": ["cross"], "tuplet": null, "tie": null, "voice": 1, "beam": "begin" },
+        { "track": "SD", "start": { "num": 3, "den": 16 }, "duration": { "num": 1, "den": 16 }, "kind": "hit", "glyph": "d", "modifiers": [], "tuplet": null, "tie": null, "voice": 1, "beam": "end" },
+        { "track": "BD", "start": { "num": 0, "den": 16 }, "duration": { "num": 1, "den": 16 }, "kind": "hit", "glyph": "d", "modifiers": [], "tuplet": null, "tie": null, "voice": 2, "beam": "none" }
+      ]
+    }
+  ]
+}
 ```
 
 ---
@@ -478,15 +1039,50 @@ ST | R - L - [2: R L R] - | R - L - R - L - |
 | Modifier | BD | BD2 | SD | T1 | T2 | T3 | T4 | HH | HF | RC | RC2 | C | C2 | SPL | CHN | CB | WB | CL |
 |----------|----|----|----|----|----|----|----|----|----|----|----|----|----|-----|-----|----|----|----|----|----|----|
 | accent | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
-| open | | | | | | | | ✓ | | | | | | | | | | | | |
+| open | | | | | | | | ✓ | | | | | | | | | | | |
 | half-open | | | | | | | | ✓ | | | | | | | | | | | |
-| close | | | | | | | | ✓ | ✓ | | | | | | | | | | |
-| choke | | | | | | | | | | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | | | | |
+| close | | | | | | | | | ✓ | ✓ | | | | | | | | | |
+| choke | | | | | | | | | | | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | | | | |
 | bell | | | | | | | | | | ✓ | ✓ | | | | | | | | |
 | rim | | | ✓ | | | | | | | | | | | | | | | | |
 | cross | | | ✓ | | | | | | | | | | | | | | | | | |
-| flam | | | ✓ | ✓ | ✓ | ✓ | ✓ | | | | | | | | | | | | |
+| flam | | | ✓ | ✓ | ✓ | ✓ | ✓ | | | | | | | | | | | | | |
 | ghost | | | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | | | | | | | | | | | |
-| drag | | | ✓ | ✓ | ✓ | ✓ | ✓ | | | | ✓ | ✓ | | | | | | | |
+| drag | | | ✓ | ✓ | ✓ | ✓ | ✓ | | | ✓ | ✓ | | | | | | | | |
 | roll | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | | | ✓ | ✓ | | | | | | | | |
-| dead | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | | | | | | | | | | | | |
+| dead | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | | | | | | | | | | | | | |
+
+---
+
+## Appendix C: Future Improvements
+
+The following features are defined in the spec but not yet implemented or not storable in IR:
+
+| Feature | Description | IR Status |
+|---------|-------------|-----------|
+| `@tempo:<N>` | Inline tempo change mid-score | Not stored in IR |
+| `@time:<N/M>` | Inline time signature change mid-score | Not stored in IR |
+| `@partial:<N>` | Pickup/anacrusis measure with N slots | Not stored in IR |
+| `@divisions:<N>` | Inline divisions change | Rejected — mid-score divisions change is not supported |
+| `dashed` barline | Dashed barline visual | Not yet implemented in IR or renderer |
+
+---
+
+## 19. Implementation Responsibilities
+
+### 19.1 Responsibilities of Each Consumer
+
+| Consumer | Reads | Computes |
+|----------|-------|----------|
+| **VexFlow Renderer** | header, tracks, measures, events | stem directions, beaming (if auto), notehead shapes, positioning, page layout |
+| **MusicXML Exporter** | header, tracks, measures, events | MIDI note numbers, notehead types, beam grouping, tuplet XML elements |
+| **Playback Engine** (future) | header, tracks, measures (with repeats/volts expanded) | linear MIDI event stream, velocities, CC messages |
+
+### 19.2 What IR Does NOT Store
+
+The following are intentionally absent — they are concerns of specific consumers, not the IR:
+
+- **MIDI velocity values**: Mapped by exporter from `modifiers` (e.g., `accent` → velocity 120, `ghost` → velocity 30).
+- **Notehead shape per track/modifier**: Looked up by renderer from the Track Registry appearance table.
+- **Expanded playback sequence**: (Repeat/volta unfolded) computed by playback engine as a separate pass.
+- **Visual positioning data**: (X/Y coordinates) computed by the renderer during layout.

@@ -16,19 +16,25 @@ export function durationCode(duration: Fraction): string {
 }
 
 export function instrumentForTrack(track: TrackName, glyph?: string): InstrumentSpec {
-  if (track === "HH" && (glyph === "c" || glyph === "C")) {
-    return { displayStep: "A", displayOctave: 5, notehead: "x" };
-  }
   switch (track) {
     case "HH": return { displayStep: "G", displayOctave: 5, notehead: "x" };
     case "HF": return { displayStep: "D", displayOctave: 4, notehead: "x" };
     case "SD": return { displayStep: "C", displayOctave: 5 };
     case "BD": return { displayStep: "F", displayOctave: 4 };
+    case "BD2": return { displayStep: "E", displayOctave: 4 };
     case "T1": return { displayStep: "E", displayOctave: 5 };
     case "T2": return { displayStep: "D", displayOctave: 5 };
     case "T3": return { displayStep: "A", displayOctave: 4 };
+    case "T4": return { displayStep: "G", displayOctave: 4 };
     case "RC": return { displayStep: "F", displayOctave: 5, notehead: "x" };
+    case "RC2": return { displayStep: "E", displayOctave: 5, notehead: "x" };
     case "C":  return { displayStep: "A", displayOctave: 5, notehead: "x" };
+    case "C2": return { displayStep: "B", displayOctave: 5, notehead: "x" };
+    case "SPL": return { displayStep: "D", displayOctave: 6, notehead: "x" };
+    case "CHN": return { displayStep: "C", displayOctave: 6, notehead: "x" };
+    case "CB": return { displayStep: "B", displayOctave: 4 };
+    case "WB": return { displayStep: "A", displayOctave: 3 };
+    case "CL": return { displayStep: "G", displayOctave: 4 };
     case "ST": return { displayStep: "B", displayOctave: 5 };
     default:   return { displayStep: "B", displayOctave: 5 };
   }
@@ -44,9 +50,17 @@ export function getVexNotehead(event: NormalizedEvent, _instrument: InstrumentSp
     if (event.modifiers.includes("rim")) return "SF";  // noteheadSlashedBlack1
   }
 
-  if (event.track === "HH" || event.track === "C" || event.track === "RC") {
+  if (
+    event.track === "HH" ||
+    event.track === "RC" ||
+    event.track === "RC2" ||
+    event.track === "C" ||
+    event.track === "C2" ||
+    event.track === "SPL" ||
+    event.track === "CHN"
+  ) {
     if (event.modifiers.includes("open")) return "CX"; // noteheadCircleX
-    if (event.track === "RC" && event.modifiers.includes("bell")) return "D2"; // noteheadDiamondBlack
+    if ((event.track === "RC" || event.track === "RC2") && event.modifiers.includes("bell")) return "D2"; // noteheadDiamondBlack
     return "X"; // noteheadXBlack
   }
 

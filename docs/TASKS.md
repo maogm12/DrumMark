@@ -72,7 +72,7 @@ Acceptance:
 
 ## VexFlow
 
-- [ ] `T14` Extend VexFlow note/instrument mapping to the full track registry.
+- [x] `T14` Extend VexFlow note/instrument mapping to the full track registry.
 Acceptance:
   Renderer handles every current spec track and removes stale special-casing that contradicts the current token model.
 

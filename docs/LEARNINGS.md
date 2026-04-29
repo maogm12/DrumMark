@@ -128,3 +128,9 @@ If the app is served from a sub-directory (e.g., `/drum_notation/`):
 
 - **Section 11 metadata is directional across the expanded run:** after `*N` expansion, left-edge structure such as `volta` and `marker` belongs on the first generated measure, while right-edge structure such as `jump`, `repeat-end`, and `final/double` barlines belongs on the last generated measure. `*1` is the degenerate case where both sides stay on the same single bar.
 - **Invalid inline-repeat counts should be recognized before tokenization:** `*0` and `*-1` are both section 11 count violations and should produce the dedicated `Repeat count must be at least 1` parser error. If the matcher only accepts unsigned digits, negative forms fall through and degrade into misleading `Unknown token \`*\`` / digit errors.
+
+## 21. Track-Registry Learnings (2026-04-29)
+
+- **The canonical track registry is broader than the legacy happy path:** section 4 coverage should assert all 19 currently supported track IDs (`HH HF SD BD T1 T2 T3 RC C ST BD2 T4 RC2 C2 SPL CHN CB WB CL`), not only the later-added multi-character names. That catches accidental regressions in the base single-letter families too.
+- **AST registration is intentionally separate from anonymous content routing:** anonymous lines stay as `ANONYMOUS` paragraph entries, while tracks discovered through anonymous fallback, routing scopes, or summon prefixes are registered as named tracks and auto-filled with generated full-measure rests in every paragraph where they are not explicit lines.
+- **Normalized track order is inherited from AST global registration order:** because each paragraph is back-filled with the full global named-track set, the first paragraph effectively fixes the final `score.tracks` order. Mixed registration channels therefore need regression tests at the normalized layer to ensure line headers, braced scopes, and `Track:` summons all preserve one shared first-seen ordering.

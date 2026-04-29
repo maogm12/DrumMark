@@ -48,7 +48,7 @@ Acceptance:
 
 ## Normalization And Shared Logic
 
-- [ ] `T09` Rebuild normalization so every parsed construct lands in canonical IR.
+- [x] `T09` Rebuild normalization so every parsed construct lands in canonical IR.
 Acceptance:
   Normalization resolves all supported track summons and produces spec-shaped events and measures for the expanded registry.
 

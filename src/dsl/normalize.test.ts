@@ -72,4 +72,57 @@ divisions 4
     expect(event.modifiers).toContain("accent");
     expect(event.modifier).toBe("rim");
   });
+
+  it("normalizes expanded summon tokens and track families", () => {
+    const score = buildNormalizedScore(`time 9/4
+divisions 9
+grouping 1+1+1+1+1+1+1+1+1
+
+| b2 r2 c2 t4 spl chn cb wb cl |`);
+
+    expect(score.errors).toEqual([]);
+    expect(score.measures[0].events.map((event) => event.track)).toEqual([
+      "BD2",
+      "RC2",
+      "C2",
+      "T4",
+      "SPL",
+      "CHN",
+      "CB",
+      "WB",
+      "CL",
+    ]);
+    expect(score.tracks.map((track) => track.id)).toEqual([
+      "BD2",
+      "RC2",
+      "C2",
+      "T4",
+      "SPL",
+      "CHN",
+      "CB",
+      "WB",
+      "CL",
+    ]);
+  });
+
+  it("carries structured measure metadata into normalized measures", () => {
+    const score = buildNormalizedScore(`time 4/4
+divisions 4
+
+|: x x x x :| @segno % |1. x - - - | @to-coda --1-- |.`);
+
+    expect(score.errors).toEqual([]);
+    expect(score.measures[0]).toMatchObject({ barline: "repeat-both" });
+    expect(score.measures[1]).toMatchObject({
+      marker: "segno",
+      measureRepeat: { slashes: 1 },
+    });
+    expect(score.measures[2]).toMatchObject({
+      volta: { indices: [1] },
+    });
+    expect(score.measures[3]).toMatchObject({
+      jump: "to-coda",
+      multiRest: { count: 1 },
+    });
+  });
 });

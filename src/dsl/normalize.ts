@@ -84,7 +84,7 @@ function resolveToken(
 
   // 2. Resolve Magic Tokens (Mapping to d + modifiers)
   const v = token.value;
-  if (v === "S" || v === "B" || v === "X" || v === "P" || v === "R" || v === "C" || v === "O" || v === "D" || v === "G") {
+  if (["S", "B", "B2", "X", "P", "R", "R2", "C", "C2", "O", "D", "G", "SPL", "CHN", "CB", "WB", "CL"].includes(v)) {
     if (!modifiers.includes("accent")) modifiers.push("accent");
   }
 
@@ -212,6 +212,7 @@ export function normalizeScoreAst(ast: ScoreAst): NormalizedScore {
     for (let measureInParagraph = 0; measureInParagraph < paragraph.measureCount; measureInParagraph += 1) {
       const events: NormalizedEvent[] = [];
       let sourceLine = 0;
+      const measureMeta = paragraph.tracks.map((trackLine) => trackLine.measures[measureInParagraph]).find((measure) => measure !== undefined);
 
       for (const trackLine of paragraph.tracks) {
         const measure = trackLine.measures[measureInParagraph];
@@ -265,7 +266,11 @@ export function normalizeScoreAst(ast: ScoreAst): NormalizedScore {
         }
 
         // Pad if measure is short (validation)
-        if (Math.abs(currentSlotOffset - divisions) > 0.001) {
+        if (
+          measure.measureRepeat === undefined &&
+          measure.multiRest === undefined &&
+          Math.abs(currentSlotOffset - divisions) > 0.001
+        ) {
           ast.errors.push({
             line: measure.sourceLine || 0,
             column: 1,
@@ -281,6 +286,14 @@ export function normalizeScoreAst(ast: ScoreAst): NormalizedScore {
         measureInParagraph,
         sourceLine,
         events,
+        generated: measureMeta?.generated,
+        barline: measureMeta?.barline,
+        marker: measureMeta?.marker,
+        jump: measureMeta?.jump,
+        volta: measureMeta?.volta,
+        measureRepeat: measureMeta?.measureRepeat,
+        multiRest: measureMeta?.multiRest,
+        multiRestCount: measureMeta?.multiRestCount,
       });
       globalMeasureIndex++;
     }

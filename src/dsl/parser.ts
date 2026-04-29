@@ -901,7 +901,7 @@ function parseTrackLine(line: PreprocessedLine, errors: ParseError[]): ParsedTra
       }
 
       // Check for *N inline repeat: "xxxx *3" means the content occupies 3 total measures
-      const inlineRepeatMatch = normalizedContent.match(/^(.*?)\s*\*\s*(\d+)\s*$/);
+      const inlineRepeatMatch = normalizedContent.match(/^(.*?)\s*\*\s*(-?\d+)\s*$/);
       const m1 = inlineRepeatMatch?.[1];
       const m2 = inlineRepeatMatch?.[2];
       if (inlineRepeatMatch && m1 !== undefined && m2 !== undefined && m1.trim() !== "") {
@@ -943,7 +943,7 @@ function parseTrackLine(line: PreprocessedLine, errors: ParseError[]): ParsedTra
       }
 
       // Check for bare *N repeat marker - creates N total empty measures
-      const bareRepeatMatch = normalizedContent.match(/^\*(\d+)$/);
+      const bareRepeatMatch = normalizedContent.match(/^\*(-?\d+)$/);
       const bm1 = bareRepeatMatch?.[1];
       if (bareRepeatMatch && bm1 !== undefined) {
         const count = parseInt(bm1, 10);

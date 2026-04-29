@@ -21,6 +21,54 @@ import { preprocessSource } from "./preprocess";
 
 type HeaderAccumulator = Partial<ParsedHeaders>;
 type RawMeasure = Omit<ParsedTrackLine["measures"][number], "tokens"> & { tokens?: MeasureToken[] };
+const SORTED_TRACK_NAMES = [...TRACKS].sort((left, right) => right.length - left.length);
+const BASIC_GLYPHS = [
+  "-",
+  "x",
+  "X",
+  "d",
+  "D",
+  "p",
+  "P",
+  "R",
+  "L",
+  "o",
+  "O",
+  "c2",
+  "C2",
+  "c",
+  "C",
+  "s",
+  "S",
+  "b2",
+  "B2",
+  "b",
+  "B",
+  "r2",
+  "R2",
+  "r",
+  "t1",
+  "T1",
+  "t2",
+  "T2",
+  "t3",
+  "T3",
+  "t4",
+  "T4",
+  "g",
+  "G",
+  "spl",
+  "SPL",
+  "chn",
+  "CHN",
+  "cb",
+  "CB",
+  "wb",
+  "WB",
+  "cl",
+  "CL",
+] as const;
+const MULTI_CHAR_GLYPHS = BASIC_GLYPHS.filter((glyph) => glyph.length > 1).sort((left, right) => right.length - left.length);
 
 const SUPPORTED_BEAT_UNITS = new Set([2, 4, 8, 16]);
 
@@ -255,12 +303,11 @@ function finalizeHeaders(headers: HeaderAccumulator, errors: ParseError[]): Pars
 }
 
 function isBasicGlyph(value: string): value is BasicGlyph {
-  return ["-", "x", "X", "d", "D", "p", "P", "R", "L", "o", "O", "c", "C", "s", "S", "t1", "T1", "t2", "T2", "t3", "T3", "g", "G", "r", "b", "B"].includes(value);
+  return BASIC_GLYPHS.includes(value as BasicGlyph);
 }
 
 function readBasicGlyph(input: string, cursor: number): { glyph: BasicGlyph; next: number } | null {
-  const multiChar = ["t1", "T1", "t2", "T2", "t3", "T3"] as const;
-  for (const glyph of multiChar) {
+  for (const glyph of MULTI_CHAR_GLYPHS) {
     if (input.startsWith(glyph, cursor)) {
       return { glyph, next: cursor + glyph.length };
     }
@@ -276,7 +323,7 @@ function readModifier(input: string, start: number): { modifier: Modifier; next:
 
   while (end < input.length) {
     const char = input[end];
-    if (char !== undefined && /[a-z]/.test(char)) {
+    if (char !== undefined && /[a-z-]/.test(char)) {
       end += 1;
     } else {
       break;
@@ -317,7 +364,7 @@ function parseMeasureTokens(
     if (cursor >= content.length) break;
 
     // 1. Check for Track Identifier: TRACK { ... } or TRACK: ...
-    const trackNames = [...TRACKS, "DR", "ANONYMOUS"];
+    const trackNames = [...SORTED_TRACK_NAMES, "ANONYMOUS"];
     let matchedTrackId: string | null = null;
     for (const id of trackNames) {
       if (content.startsWith(id, cursor)) {
@@ -443,7 +490,7 @@ function parseMeasureTokens(
       while (content[nextCursor] === "+") {
         nextCursor++;
         let subTrackOverride: string | undefined;
-        for (const tid of [...TRACKS, "DR", "ANONYMOUS"]) {
+        for (const tid of [...SORTED_TRACK_NAMES, "ANONYMOUS"]) {
            if (content.startsWith(tid, nextCursor) && content[nextCursor + tid.length] === ":") {
              subTrackOverride = tid;
              nextCursor += tid.length + 1;
@@ -485,7 +532,7 @@ function parseTrackName(line: PreprocessedLine, errors: ParseError[]): { track: 
 
   const track = match[1];
 
-  if (track !== "DR" && !TRACKS.includes(track as TrackName)) {
+  if (!TRACKS.includes(track as TrackName)) {
     errors.push({
       line: line.lineNumber,
       column: 1,

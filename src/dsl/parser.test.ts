@@ -137,4 +137,60 @@ divisions 4
       spaced.paragraphs[0].lines[0].measures[0].tokens,
     );
   });
+
+  it("parses the expanded track registry and multi-character summon tokens", () => {
+    const doc = parseDocumentSkeleton(`time 4/4
+divisions 4
+
+BD2 | b2 - - - |
+T4  | t4 - - - |
+RC2 | r2 - - - |
+C2  | c2 - - - |
+SPL | spl - - - |
+CHN | chn - - - |
+CB  | cb - - - |
+WB  | wb - - - |
+CL  | cl - - - |`);
+
+    expect(doc.errors).toEqual([]);
+    expect(doc.paragraphs[0].lines.map((line) => line.track)).toEqual([
+      "BD2",
+      "T4",
+      "RC2",
+      "C2",
+      "SPL",
+      "CHN",
+      "CB",
+      "WB",
+      "CL",
+    ]);
+    expect(doc.paragraphs[0].lines[0].measures[0].tokens[0]).toMatchObject({ kind: "basic", value: "b2" });
+    expect(doc.paragraphs[0].lines[4].measures[0].tokens[0]).toMatchObject({ kind: "basic", value: "spl" });
+  });
+
+  it("parses newly supported modifiers including hyphenated names", () => {
+    const doc = parseDocumentSkeleton(`time 4/4
+divisions 4
+| d:half-open d:roll d:dead d |`);
+
+    expect(doc.errors).toEqual([]);
+    expect(doc.paragraphs[0].lines[0].measures[0].tokens).toEqual([
+      { kind: "basic", value: "d", dots: 0, halves: 0, modifiers: ["half-open"], trackOverride: undefined },
+      { kind: "basic", value: "d", dots: 0, halves: 0, modifiers: ["roll"], trackOverride: undefined },
+      { kind: "basic", value: "d", dots: 0, halves: 0, modifiers: ["dead"], trackOverride: undefined },
+      { kind: "basic", value: "d", dots: 0, halves: 0, modifiers: [], trackOverride: undefined },
+    ]);
+  });
+
+  it("rejects the removed DR track", () => {
+    const doc = parseDocumentSkeleton(`time 4/4
+divisions 4
+DR | d - d - |`);
+
+    expect(doc.errors).toContainEqual({
+      line: 3,
+      column: 1,
+      message: "Unknown track `DR`",
+    });
+  });
 });

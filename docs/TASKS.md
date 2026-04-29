@@ -20,7 +20,7 @@ Acceptance:
 
 ## Parser
 
-- [ ] `T03` Extend parser glyph/token support to the full current token registry.
+- [x] `T03` Extend parser glyph/token support to the full current token registry.
 Acceptance:
   Parser accepts the new track summons and track lines required by the spec and rejects unknown ones with stable errors.
 

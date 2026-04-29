@@ -47,3 +47,9 @@ If the app is served from a sub-directory (e.g., `/drum_notation/`):
 - **Structural header duplication:** `tempo`, `time`, `divisions`, and `grouping` need the same duplicate-header protection as metadata headers; silently overwriting early header state makes parser behavior depend on source order in a way the spec does not justify.
 - **Grouping/header consistency:** parser finalization must validate that explicit `grouping` sums to the `time` numerator even when both fields parse individually, because this is a section 3 header invariant rather than a later rhythmic-validation concern.
 - **Irregular meter fallback:** when `time` has no inferred grouping (for example `5/8`), the parser should still return a placeholder grouping in the skeleton so downstream code stays typed, but it must emit a hard missing-header error tied to the `time` line.
+
+## 6. Layout-Syntax Learnings (2026-04-29)
+
+- **Comment transparency:** `#` comments are fully removed before parsing, including comment-only lines and line-end comments on headers or track lines. Comment-only lines must not create paragraph breaks or interfere with header scanning.
+- **Whitespace equivalence is semantic, not textual:** tests for section 14 should compare parsed tokens and measure metadata, not raw `measure.content`, because the parser intentionally preserves user formatting in the source text while treating spaces and tabs as structurally insignificant separators.
+- **Paragraph boundaries are blank-line driven:** section 14 paragraph splitting is triggered only by blank lines. Multiple blank lines collapse to one boundary, while comments adjacent to a blank separator remain transparent and do not alter the paragraph split.

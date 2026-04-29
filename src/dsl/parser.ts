@@ -844,6 +844,15 @@ function parseTrackLine(line: PreprocessedLine, errors: ParseError[]): ParsedTra
         }];
       }
 
+      if (normalizedContent.includes("%")) {
+        errors.push({
+          line: line.lineNumber,
+          column: 1,
+          message: "Measure repeat shorthand must occupy the entire measure",
+        });
+        return [];
+      }
+
       const multiRestMatch = normalizedContent.match(/^-+\s*(\d+)\s*-+$/);
       if (multiRestMatch?.[1] !== undefined) {
         const count = parseInt(multiRestMatch[1], 10);

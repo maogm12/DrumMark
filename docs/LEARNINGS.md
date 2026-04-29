@@ -107,3 +107,8 @@ If the app is served from a sub-directory (e.g., `/drum_notation/`):
 
 - **Repeat and volta declarations are global-bar metadata and cannot be read from the first track opportunistically:** in multi-track or cross-paragraph inputs, the declaring line may not be the first track in paragraph order, and earlier tracks may be auto-generated rests. Normalize therefore has to merge per-bar metadata across all track measures before deriving canonical `barline`, `volta`, `marker`, `jump`, `measureRepeat`, and `multiRest` fields.
 - **Same-bar volta declarations must agree across tracks:** because `|1.` / `|1,2.` are global structure, two tracks writing different volta indices on the same global bar is a semantic conflict, not parallel metadata. AST validation should reject that case directly with a stable bar-indexed error instead of letting normalize or MusicXML export pick one arbitrarily.
+
+## 17. Measure-Repeat Learnings (2026-04-29)
+
+- **Section 9.4 standalone-only is a parser rule, not a generic tokenization accident:** when a measure contains `%` alongside ordinary note content, the parser should raise a dedicated `Measure repeat shorthand must occupy the entire measure` error instead of degrading into `Unknown token \`%\``. That keeps the failure aligned with the spec rule the user actually violated.
+- **Measure-repeat intent is global-bar metadata like voltas and markers:** once a `%` or `%%` measure is valid, normalized output should preserve `measureRepeat.slashes` even when the shorthand is declared on a non-leading track, as long as the bar has enough preceding non-repeat source measures to satisfy the anti-chaining and lookback rules.

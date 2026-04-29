@@ -24,3 +24,19 @@ export function modifierIsGrace(event: NormalizedEvent): boolean {
 export function graceNoteSlash(event: NormalizedEvent): boolean {
   return event.modifiers.includes("flam");
 }
+
+export function annotationTextForEvent(event: NormalizedEvent): string | null {
+  if (event.modifiers.includes("half-open")) {
+    return "half-open";
+  }
+
+  return null;
+}
+
+export function tremoloMarksForEvent(event: NormalizedEvent): number | null {
+  if (event.modifiers.includes("roll")) {
+    return 3;
+  }
+
+  return null;
+}

@@ -18,7 +18,12 @@ import {
   instrumentForTrack,
   makeNoteKey,
 } from "./notes";
-import { graceNoteSlash, modifierIsGrace } from "./articulations";
+import {
+  annotationTextForEvent,
+  graceNoteSlash,
+  modifierIsGrace,
+  tremoloMarksForEvent,
+} from "./articulations";
 
 const { 
   Renderer, 
@@ -35,6 +40,7 @@ const {
   Annotation, 
   ModifierPosition,
   Tuplet,
+  Tremolo,
   RendererBackends
 } = VexFlow;
 
@@ -301,11 +307,25 @@ function createVexNotes(
         }
       });
 
-      entry.events.forEach((e) => {
-        if (e.modifiers.includes("accent")) note.addModifier(new Articulation("a>").setPosition(voiceId === 1 ? 3 : 4), 0);
-        else if (e.modifiers.includes("close")) note.addModifier(new Articulation("a-").setPosition(voiceId === 1 ? 3 : 4), 0);
-        else if (e.modifiers.includes("choke")) note.addModifier(new Articulation("a.").setPosition(voiceId === 1 ? 3 : 4), 0);
+      if (entry.events.some((event) => event.modifiers.includes("accent"))) {
+        note.addModifier(new Articulation("a>").setPosition(voiceId === 1 ? 3 : 4), 0);
+      } else if (entry.events.some((event) => event.modifiers.includes("close"))) {
+        note.addModifier(new Articulation("a-").setPosition(voiceId === 1 ? 3 : 4), 0);
+      } else if (entry.events.some((event) => event.modifiers.includes("choke"))) {
+        note.addModifier(new Articulation("a.").setPosition(voiceId === 1 ? 3 : 4), 0);
+      }
 
+      const annotationText = entry.events.map(annotationTextForEvent).find((value) => value !== null);
+      if (annotationText) {
+        note.addModifier(new Annotation(annotationText).setPosition(ModifierPosition.ABOVE), 0);
+      }
+
+      const tremoloMarks = entry.events.map(tremoloMarksForEvent).find((value) => value !== null);
+      if (tremoloMarks) {
+        note.addModifier(new Tremolo(tremoloMarks), 0);
+      }
+
+      entry.events.forEach((e) => {
         if (modifierIsGrace(e)) {
           const slash = graceNoteSlash(e);
           const gn = new GraceNote({ keys: [makeNoteKey(e, instrumentForTrack(e.track, e.glyph))], duration: "16", slash });

@@ -45,6 +45,10 @@ export function instrumentForTrack(track: TrackName, glyph?: string): Instrument
  * or a raw SMuFL glyph ID if no code exists.
  */
 export function getVexNotehead(event: NormalizedEvent, _instrument: InstrumentSpec): string | undefined {
+  if (event.modifiers.includes("dead")) {
+    return "X";
+  }
+
   if (event.track === "SD") {
     if (event.modifiers.includes("cross")) return "X"; // noteheadXBlack
     if (event.modifiers.includes("rim")) return "SF";  // noteheadSlashedBlack1

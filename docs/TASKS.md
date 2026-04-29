@@ -76,7 +76,7 @@ Acceptance:
 Acceptance:
   Renderer handles every current spec track and removes stale special-casing that contradicts the current token model.
 
-- [ ] `T15` Extend VexFlow modifier rendering to the current modifier surface.
+- [x] `T15` Extend VexFlow modifier rendering to the current modifier surface.
 Acceptance:
   Renderer has explicit behavior for `half-open`, `roll`, and `dead` in addition to the already-supported modifiers.
 

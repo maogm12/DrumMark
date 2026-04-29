@@ -555,24 +555,35 @@ function parseMeasureTokens(
       continue;
     }
 
+    const skipWhitespaceFrom = (ptr: number) => {
+      let next = ptr;
+      while (next < content.length && /\s/.test(content[next]!)) {
+        next += 1;
+      }
+      return next;
+    };
+
     let nextCursor = firstPart.next;
-    if (content[nextCursor] === "+") {
+    let combinedCursor = skipWhitespaceFrom(nextCursor);
+    if (content[combinedCursor] === "+") {
       const items: TokenGlyph[] = [firstPart.token];
-      while (content[nextCursor] === "+") {
-        nextCursor++;
+      while (content[combinedCursor] === "+") {
+        combinedCursor += 1;
+        combinedCursor = skipWhitespaceFrom(combinedCursor);
         let subTrackOverride: string | undefined;
         for (const tid of [...SORTED_TRACK_NAMES, "ANONYMOUS"]) {
-           if (content.startsWith(tid, nextCursor) && content[nextCursor + tid.length] === ":") {
+           if (content.startsWith(tid, combinedCursor) && content[combinedCursor + tid.length] === ":") {
              subTrackOverride = tid;
-             nextCursor += tid.length + 1;
+             combinedCursor += tid.length + 1;
              break;
            }
         }
         
-        const subPart = parsePart(nextCursor, subTrackOverride);
+        const subPart = parsePart(combinedCursor, subTrackOverride);
         if (!subPart) break;
         items.push(subPart.token);
         nextCursor = subPart.next;
+        combinedCursor = skipWhitespaceFrom(nextCursor);
       }
       tokens.push({ kind: "combined", items });
     } else {

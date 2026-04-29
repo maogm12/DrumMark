@@ -82,3 +82,8 @@ If the app is served from a sub-directory (e.g., `/drum_notation/`):
 - **Section 5.3 parsing is count-based, not sequence-preserving:** the parser currently records duration suffixes as aggregate `dots` and `halves` counts on each basic token. That is enough to preserve all spec-defined forms like `x...`, `x////`, `x../`, and `x.///`, but tests should assert the counts directly rather than assuming any richer suffix AST.
 - **Section 5.4 formula already produces reduced exact fractions for deep suffix stacks:** representative cases such as `... -> 15/8`, `//// -> 1/16`, `../ -> 7/8`, and `./// -> 3/16` come out of `calculateTokenWeightAsFraction()` in lowest terms, so normalization can safely compose them into event starts and durations without any floating-point tolerance layer.
 - **Exact-math regression tests are strongest when the measure uses mismatched denominators:** a bar like `x... x../ x./// x//// x` forces starts at `15/32`, `11/16`, `47/64`, and `3/4`. That catches both summation drift and any failure to simplify canonical IR fractions.
+
+## 12. Combined-Hit Learnings (2026-04-29)
+
+- **Section 7 whitespace around `+` is semantic sugar, not a token boundary:** the spec example `HH:d + SD:d` should parse the same as `HH:d+SD:d`. Combined-hit detection therefore has to skip inter-item spaces before checking for the next `+` or the next item payload.
+- **The shared-start invariant belongs in normalize tests, not just parser shape tests:** parser coverage can prove that `+` groups multiple token payloads, but only normalization asserts the actual section 7 contract that every grouped item becomes its own event with the same `start` and `duration`.

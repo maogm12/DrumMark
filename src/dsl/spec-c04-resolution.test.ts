@@ -14,7 +14,7 @@ ${body}`);
 
 describe("spec C04 resolution priority", () => {
   it("prefers explicit overrides over static magic-token targets", () => {
-    const score = buildSingleMeasureScore("| SD:r RC:s HF:b BD:o |");
+    const score = buildSingleMeasureScore("| SD:r RC:s HF:b HH:o |");
 
     expect(score.measures[0]?.events.map((event) => ({
       track: event.track,
@@ -24,12 +24,12 @@ describe("spec C04 resolution priority", () => {
       { track: "SD", glyph: "d", modifiers: [] },
       { track: "RC", glyph: "x", modifiers: [] },
       { track: "HF", glyph: "d", modifiers: [] },
-      { track: "BD", glyph: "d", modifiers: ["open"] },
+      { track: "HH", glyph: "x", modifiers: ["open"] },
     ]);
   });
 
   it("prefers explicit overrides over named-line and anonymous context fallback", () => {
-    const namedScore = buildSingleMeasureScore("HH | SD:d BD:x RC:p HF:g |");
+    const namedScore = buildSingleMeasureScore("HH | SD:d SD:x RC:p T1:g |");
     const anonymousScore = buildSingleMeasureScore("| RC:d SD:x HF:p T1:g |");
 
     expect(namedScore.measures[0]?.events.map((event) => ({
@@ -38,9 +38,9 @@ describe("spec C04 resolution priority", () => {
       modifiers: event.modifiers,
     }))).toEqual([
       { track: "SD", glyph: "d", modifiers: [] },
-      { track: "BD", glyph: "d", modifiers: ["cross"] },
+      { track: "SD", glyph: "d", modifiers: ["cross"] },
       { track: "RC", glyph: "x", modifiers: [] },
-      { track: "HF", glyph: "d", modifiers: ["ghost"] },
+      { track: "T1", glyph: "d", modifiers: ["ghost"] },
     ]);
 
     expect(anonymousScore.measures[0]?.events.map((event) => ({
@@ -108,7 +108,7 @@ describe("spec C04 resolution priority", () => {
   });
 
   it("applies resolution priority independently inside combined hits", () => {
-    const score = buildSingleMeasureScore("| x+SD:r+HF:p+RC:g |");
+    const score = buildSingleMeasureScore("| x+SD:r+HF:p+T1:g |");
 
     expect(score.measures[0]?.events.map((event) => ({
       track: event.track,
@@ -118,7 +118,7 @@ describe("spec C04 resolution priority", () => {
       { track: "HH", glyph: "x", modifiers: [] },
       { track: "SD", glyph: "d", modifiers: [] },
       { track: "HF", glyph: "d", modifiers: [] },
-      { track: "RC", glyph: "x", modifiers: ["ghost"] },
+      { track: "T1", glyph: "d", modifiers: ["ghost"] },
     ]);
   });
 });

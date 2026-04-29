@@ -325,6 +325,11 @@ function addRestsForSegment(
     cursor = boundary;
   }
 
+  if (compareFractions(cursor, end) < 0) {
+    entries.push({ kind: "rest", start: cursor, duration: subtractFractions(end, cursor) });
+    return end;
+  }
+
   return cursor;
 }
 

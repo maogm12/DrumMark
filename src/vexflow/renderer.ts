@@ -39,10 +39,99 @@ const {
   GraceNoteGroup, 
   Annotation, 
   ModifierPosition,
+  Modifier,
   Tuplet,
   Tremolo,
+  GlyphNote,
+  Glyphs,
+  VoltaType,
   RendererBackends
 } = VexFlow;
+
+export function jumpText(jump?: NormalizedScore["measures"][number]["jump"]): string | null {
+  if (!jump) return null;
+
+  return {
+    "da-capo": "D.C.",
+    "dal-segno": "D.S.",
+    "dc-al-fine": "D.C. al Fine",
+    "dc-al-coda": "D.C. al Coda",
+    "ds-al-fine": "D.S. al Fine",
+    "ds-al-coda": "D.S. al Coda",
+    "to-coda": "To Coda",
+  }[jump];
+}
+
+export function markerText(marker?: NormalizedScore["measures"][number]["marker"]): string | null {
+  if (!marker) return null;
+
+  return {
+    segno: "Segno",
+    coda: "Coda",
+    fine: "Fine",
+  }[marker];
+}
+
+export function voltaTypeForMeasure(score: NormalizedScore, measure: NormalizedScore["measures"][number]): number | null {
+  const current = measure.volta?.indices.join(",");
+  if (!current) return null;
+
+  const previous = score.measures[measure.globalIndex - 1]?.volta?.indices.join(",");
+  const next = score.measures[measure.globalIndex + 1]?.volta?.indices.join(",");
+  const begins = current !== previous;
+  const ends = current !== next;
+
+  if (begins && ends) return VoltaType.BEGIN_END;
+  if (begins) return VoltaType.BEGIN;
+  if (ends) return VoltaType.END;
+  return VoltaType.MID;
+}
+
+export function measureRepeatGlyph(slashes: number): string {
+  return slashes === 2 ? Glyphs.repeat2Bars : Glyphs.repeat1Bar;
+}
+
+function applyStructuralModifiers(stave: any, score: NormalizedScore, measure: NormalizedScore["measures"][number]) {
+  switch (measure.barline) {
+    case "repeat-start":
+      stave.setBegBarType(BarlineType.REPEAT_BEGIN);
+      break;
+    case "repeat-end":
+      stave.setEndBarType(BarlineType.REPEAT_END);
+      break;
+    case "repeat-both":
+      stave.setBegBarType(BarlineType.REPEAT_BEGIN);
+      stave.setEndBarType(BarlineType.REPEAT_END);
+      break;
+    case "double":
+      stave.setEndBarType(BarlineType.DOUBLE);
+      break;
+    case "final":
+      stave.setEndBarType(BarlineType.END);
+      break;
+    default:
+      break;
+  }
+
+  const voltaType = voltaTypeForMeasure(score, measure);
+  if (voltaType !== null) {
+    stave.setVoltaType(voltaType, `${measure.volta?.indices.join(",")}.`, -5);
+  }
+
+  const marker = markerText(measure.marker);
+  if (marker) {
+    stave.setText(marker, Modifier.Position.ABOVE, { shiftY: -8 });
+  }
+
+  const jump = jumpText(measure.jump);
+  if (jump) {
+    stave.setText(jump, Modifier.Position.ABOVE, { shiftX: 24, shiftY: -8 });
+  }
+
+  if (measure.multiRest) {
+    stave.setText(`rest x${measure.multiRest.count}`, Modifier.Position.ABOVE, { shiftY: -8 });
+  }
+}
 
 async function ensureVexFlowFonts() {
   if (typeof VexFlow.loadFonts === "function") {
@@ -62,8 +151,8 @@ export async function renderScoreToSvg(score: NormalizedScore, options: VexflowR
 
   const { mode } = options;
   const measureDuration = {
-    numerator: score.ast.headers.time.beats,
-    denominator: score.ast.headers.time.beatUnit,
+    numerator: score.header.timeSignature.beats,
+    denominator: score.header.timeSignature.beatUnit,
   };
 
   const container = document.createElement('div');
@@ -124,9 +213,9 @@ export async function renderScoreToSvg(score: NormalizedScore, options: VexflowR
 }
 
 function drawHeader(context: any, score: NormalizedScore, width: number) {
-  const title = score.ast.headers.title?.value;
-  const subtitle = score.ast.headers.subtitle?.value;
-  const composer = score.ast.headers.composer?.value;
+  const title = score.header.title;
+  const subtitle = score.header.subtitle;
+  const composer = score.header.composer;
 
   context.save();
   if (title) {
@@ -169,21 +258,18 @@ function renderSystem(context: any, score: NormalizedScore, measures: any[], sys
     const stave = new Stave(x + i * measureWidth, y, measureWidth);
 
     if (i === 0) {
-      stave.addClef("percussion");
+        stave.addClef("percussion");
       if (isFirstSystem) {
-        stave.addTimeSignature(`${score.ast.headers.time.beats}/${score.ast.headers.time.beatUnit}`);
-        if (score.ast.headers.tempo) {
+        stave.addTimeSignature(`${score.header.timeSignature.beats}/${score.header.timeSignature.beatUnit}`);
+        if (score.header.tempo) {
           // Move slightly to the left (x=-10) and remove vertical shift (y=0)
-          const tempo = new StaveTempo({ duration: "q", bpm: score.ast.headers.tempo.value }, -10, 0);
+          const tempo = new StaveTempo({ duration: "q", bpm: score.header.tempo }, -10, 0);
           stave.addModifier(tempo);
         }
       }
     }
 
-    const showRepeatStart = score.ast.repeatSpans.some(s => s.startBar === measure.globalIndex);
-    const showRepeatEnd = score.ast.repeatSpans.some(s => s.endBar === measure.globalIndex);
-    if (showRepeatStart) stave.setBegBarType(BarlineType.REPEAT_BEGIN);
-    if (showRepeatEnd) stave.setEndBarType(BarlineType.REPEAT_END);
+    applyStructuralModifiers(stave, score, measure);
 
     stave.setContext(context).draw();
     staves.push(stave);
@@ -224,10 +310,17 @@ function renderMeasureVoices(
   options: VexflowRenderOptions
 ) {
   const measureDuration = {
-    numerator: score.ast.headers.time.beats,
-    denominator: score.ast.headers.time.beatUnit,
+    numerator: score.header.timeSignature.beats,
+    denominator: score.header.timeSignature.beatUnit,
   };
   const measureStart = multiplyFraction(measureDuration, measure.globalIndex);
+
+  if (measure.measureRepeat) {
+    const repeatNote = new GlyphNote(measureRepeatGlyph(measure.measureRepeat.slashes), { duration: "w" }, { line: 4, alignCenter: true });
+    const voice = new Voice({ numBeats: measureDuration.numerator, beatValue: measureDuration.denominator }).setStrict(false).addTickables([repeatNote]);
+    (voice as any)._stave = stave;
+    return { voices: [voice], beams: [], tuplets: [] };
+  }
 
   const upEvents = measure.events.filter((e: any) => voiceForTrack(e.track) === 1 && e.track !== "ST");
   const downEvents = measure.events.filter((e: any) => voiceForTrack(e.track) === 2 && e.track !== "ST");
@@ -409,7 +502,7 @@ export async function renderScorePagesToSvgs(score: NormalizedScore, options: Ve
       if (system) {
         renderSystem(context, score, system, {
           x: 50, y: yOffset, width: 700, isFirstSystem: systemIdx === 0,
-          measureDuration: { numerator: score.ast.headers.time.beats, denominator: score.ast.headers.time.beatUnit },
+          measureDuration: { numerator: score.header.timeSignature.beats, denominator: score.header.timeSignature.beatUnit },
           options
         });
       }

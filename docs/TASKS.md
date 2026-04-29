@@ -80,7 +80,7 @@ Acceptance:
 Acceptance:
   Renderer has explicit behavior for `half-open`, `roll`, and `dead` in addition to the already-supported modifiers.
 
-- [ ] `T16` Render measure-level structural intent from canonical IR.
+- [x] `T16` Render measure-level structural intent from canonical IR.
 Acceptance:
   Renderer consumes repeat barlines, `%` shorthand, multi-rest, and any currently in-scope volta/navigation fields from IR.
 

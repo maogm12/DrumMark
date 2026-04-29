@@ -86,7 +86,7 @@ Acceptance:
 
 ## Tests
 
-- [ ] `T17` Expand parser tests to cover the full current token and syntax surface.
+- [x] `T17` Expand parser tests to cover the full current token and syntax surface.
 Acceptance:
   Tests cover new tracks, new magic tokens, `%`/`%%`, `*N`, multi-rest with `N=1`, and repeat-navigation markers/jumps.
 

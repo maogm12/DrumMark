@@ -254,35 +254,6 @@ function instrumentForTrack(track: TrackName, _glyph?: string): InstrumentSpec {
   }
 }
 
-function instrumentPitchRank(instrument: InstrumentSpec): number {
-  const stepRank: Record<string, number> = {
-    C: 0,
-    D: 1,
-    E: 2,
-    F: 3,
-    G: 4,
-    A: 5,
-    B: 6,
-  };
-
-  return instrument.displayOctave * 7 + (stepRank[instrument.displayStep] ?? 0);
-}
-
-function highestEventIndex(events: NormalizedEvent[]): number {
-  let highestIndex = 0;
-  let highestRank = -Infinity;
-
-  for (const [index, event] of events.entries()) {
-    const rank = instrumentPitchRank(instrumentForTrack(event.track));
-    if (rank > highestRank) {
-      highestIndex = index;
-      highestRank = rank;
-    }
-  }
-
-  return highestIndex;
-}
-
 function collectDivisions(score: NormalizedScore): number {
   const lcm = (a: number, b: number) => (a * b) / (gcd(a, b) || 1);
   const gcd = (a: number, b: number): number => (b === 0 ? a : gcd(b, a % b));
@@ -523,7 +494,6 @@ function measureXml(score: NormalizedScore, exportMeasure: ExportMeasure, divisi
     : [];
     
   const stickings = stickingsByStart(measure.events);
-  const renderedStickings = new Set<string>();
   const styleXml = measureStyleXml(measure);
   const showAttributes = exportMeasure.outputIndex === 0 || styleXml.length > 0;
   const attributes = showAttributes
@@ -564,12 +534,7 @@ function measureXml(score: NormalizedScore, exportMeasure: ExportMeasure, divisi
         continue;
       }
 
-      const stickingKey = fractionKey(entry.start);
-      const sticking = stickings.get(stickingKey);
-      const stickingForEntry = sticking && !renderedStickings.has(stickingKey) ? sticking : undefined;
-      if (stickingForEntry) {
-        renderedStickings.add(stickingKey);
-      }
+      const stickingForEntry = stickings.get(fractionKey(entry.start));
 
       const nextEntry = entries[i + 1];
       const prevEntry = entries[i - 1];
@@ -584,7 +549,6 @@ function measureXml(score: NormalizedScore, exportMeasure: ExportMeasure, divisi
       const closesTuplet = currentTuplet !== undefined && currentTuplet !== nextTuplet;
 
       if (!isBeamable(entry.duration)) {
-        const stickingTargetIndex = stickingForEntry ? highestEventIndex(entry.events) : -1;
         result.push(
           ...entry.events.flatMap((event, index) => {
             const note = noteXml(
@@ -595,7 +559,7 @@ function measureXml(score: NormalizedScore, exportMeasure: ExportMeasure, divisi
               index > 0,
               startsTuplet && index === 0,
               closesTuplet && index === entry.events.length - 1,
-              index === stickingTargetIndex ? stickingForEntry : undefined,
+              stickingForEntry,
             );
 
             return event.modifiers.includes("flam")
@@ -624,7 +588,6 @@ function measureXml(score: NormalizedScore, exportMeasure: ExportMeasure, divisi
         beamState = "end";
       }
 
-      const stickingTargetIndex = stickingForEntry ? highestEventIndex(entry.events) : -1;
       result.push(
         ...entry.events.flatMap((event, index) => {
           const note = noteXml(
@@ -635,7 +598,7 @@ function measureXml(score: NormalizedScore, exportMeasure: ExportMeasure, divisi
             index > 0,
             startsTuplet && index === 0,
             closesTuplet && index === entry.events.length - 1,
-            index === stickingTargetIndex ? stickingForEntry : undefined,
+            stickingForEntry,
             beamState,
           );
 

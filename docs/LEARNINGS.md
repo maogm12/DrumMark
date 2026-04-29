@@ -140,3 +140,9 @@ If the app is served from a sub-directory (e.g., `/drum_notation/`):
 - **Appendix B legality has to be enforced after full token resolution:** checking raw syntax is not enough because legality depends on the final physical target track after applying explicit `Track:` override, static magic-token routing, anonymous fallback, and `ST` sticking exceptions.
 - **Normalize is the narrowest correct enforcement point for modifier legality:** by the time `normalizeScoreAst()` walks measure tokens, every validation path can reuse `resolveToken()` and recurse through `combined`, `group`, and `braced` tokens without duplicating parser or AST routing logic.
 - **Representative coverage should mix positive and negative cases across routing paths:** named-track context catches family-level bans, while summon overrides, static magic tokens like `r:open`, and per-item `+` combined hits prove the validator is using resolved tracks rather than the surrounding line or shared-token context.
+
+## 23. Sticking-Semantics Learnings (2026-04-29)
+
+- **Section 8.2 attachment is per note, not per rhythmic slot:** when several notes share one `start` position, the same `ST` annotation must be emitted on every exported note at that position, including same-voice chords and cross-voice simultaneities. A "render once per slot" strategy violates the spec.
+- **Joining multiple `ST` glyphs is a start-position aggregation rule:** if several sticking events normalize to the same `start`, MusicXML should emit one combined fingering string such as `R L` on each simultaneous note rather than splitting the glyphs across different notes.
+- **Ignore-if-no-note is naturally enforced at export time:** keeping `ST` events in normalized IR is fine, but MusicXML should only materialize fingering text while rendering actual note entries. Unmatched sticking starts should therefore disappear from the export without needing a separate normalization pass.

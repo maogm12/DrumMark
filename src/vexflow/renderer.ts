@@ -45,8 +45,8 @@ const {
   GlyphNote,
   Glyphs,
   VoltaType,
-  RendererBackends,
-  MultiMeasureRest
+  Volta,
+  RendererBackends
 } = VexFlow;
 
 export function jumpText(jump?: NormalizedScore["measures"][number]["jump"]): string | null {
@@ -116,7 +116,9 @@ function applyStructuralModifiers(stave: any, score: NormalizedScore, measure: N
 
   const voltaType = voltaTypeForMeasure(score, measure);
   if (voltaType !== null) {
-    stave.setVoltaType(voltaType, `${measure.volta?.indices.join(",")}.`, -5);
+    const volta = new (Volta as any)(voltaType, `${measure.volta?.indices.join(",")}.`, stave.getX(), -5);
+    volta.setPosition(Modifier.Position.ABOVE);
+    stave.addModifier(volta);
   }
 
   const marker = markerText(measure.marker);
@@ -443,19 +445,19 @@ function createVexNotes(
 
       if (firstEvent.tuplet) {
         if (!activeTuplet || activeTuplet.actual !== firstEvent.tuplet.actual) {
-          if (tupletNotes.length > 0) allTuplets.push(new Tuplet(tupletNotes, { numNotes: activeTuplet.actual, notesOccupied: activeTuplet.normal }));
+          if (tupletNotes.length > 0) allTuplets.push(new Tuplet(tupletNotes, { numNotes: activeTuplet.actual, notesOccupied: activeTuplet.normal, ratioed: false }));
           tupletNotes = [note];
           activeTuplet = firstEvent.tuplet;
         } else {
           tupletNotes.push(note);
           if (tupletNotes.length === activeTuplet.actual) {
-            allTuplets.push(new Tuplet(tupletNotes, { numNotes: activeTuplet.actual, notesOccupied: activeTuplet.normal }));
+            allTuplets.push(new Tuplet(tupletNotes, { numNotes: activeTuplet.actual, notesOccupied: activeTuplet.normal, ratioed: false }));
             tupletNotes = [];
             activeTuplet = null;
           }
         }
       } else if (tupletNotes.length > 0) {
-        allTuplets.push(new Tuplet(tupletNotes, { numNotes: activeTuplet.actual, notesOccupied: activeTuplet.normal }));
+        allTuplets.push(new Tuplet(tupletNotes, { numNotes: activeTuplet.actual, notesOccupied: activeTuplet.normal, ratioed: false }));
         tupletNotes = [];
         activeTuplet = null;
       }
@@ -463,7 +465,7 @@ function createVexNotes(
     notes.push(note);
   }
   if (currentBeamNotes.length > 1) allBeams.push(new Beam(currentBeamNotes));
-  if (tupletNotes.length > 0) allTuplets.push(new Tuplet(tupletNotes, { numNotes: activeTuplet.actual, notesOccupied: activeTuplet.normal }));
+  if (tupletNotes.length > 0) allTuplets.push(new Tuplet(tupletNotes, { numNotes: activeTuplet.actual, notesOccupied: activeTuplet.normal, ratioed: false }));
   return notes;
 }
 

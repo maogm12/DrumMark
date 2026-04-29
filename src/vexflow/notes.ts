@@ -7,7 +7,19 @@ export function durationCode(duration: Fraction): string {
   const base: Record<number, string> = {
     1: "w", 2: "h", 4: "q", 8: "8", 16: "16", 32: "32", 64: "64",
   };
-  let code = base[normalized.denominator] ?? "q";
+  let code = base[normalized.denominator];
+  if (!code) {
+    // For denominators not directly representable (e.g., 24 = 1/24 triplet),
+    // find the next shorter duration that is beamable (denominator >= 8).
+    // e.g., 1/24 -> "16" (16th note), 1/12 -> "8" (eighth note)
+    for (const d of [64, 32, 16, 8]) {
+      if (normalized.denominator >= d) {
+        code = base[d];
+        break;
+      }
+    }
+    code = code ?? "q";
+  }
   if (normalized.numerator === 3) {
     const baseDenom = normalized.denominator / 2;
     if (base[baseDenom]) code = base[baseDenom] + "d";

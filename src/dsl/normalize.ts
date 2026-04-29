@@ -166,6 +166,7 @@ function tokenToEvents(
   paragraphIndex: number,
   measureIndex: number,
   measureInParagraph: number,
+  inheritedTuplet?: { actual: number; normal: number },
 ): NormalizedEvent[] {
   if (token.kind === "basic") {
     const resolved = resolveToken(token, contextTrack);
@@ -189,6 +190,7 @@ function tokenToEvents(
         modifier: primaryModifier,
         voice: voiceForTrack(resolved.track),
         beam: "none",
+        ...(inheritedTuplet ? { tuplet: inheritedTuplet } : {}),
       },
     ];
   }
@@ -230,6 +232,11 @@ function tokenToEvents(
       (sum, item) => addFractions(sum, calculateTokenWeightAsFraction(item)),
       { numerator: 0, denominator: 1 },
     );
+    // For groups with more than 1 item (e.g., [1: d d d] or [2: d d:flam d]),
+    // this represents a tuplet where actual = number of items and normal = span.
+    // span=1 means each item occupies 1/3 of its slot (e.g., [1: d d d] is a triplet).
+    // span=2 means the group spans 2 slots with items compressed.
+    const groupTuplet = token.count > 1 ? { actual: token.count, normal: token.span } : undefined;
 
     let currentStart = start;
     token.items.forEach((item) => {
@@ -245,6 +252,7 @@ function tokenToEvents(
           paragraphIndex,
           measureIndex,
           measureInParagraph,
+          groupTuplet,
         ),
       );
       currentStart = addFractions(currentStart, itemDuration);

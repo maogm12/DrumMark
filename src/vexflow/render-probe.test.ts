@@ -48,4 +48,29 @@ divisions 4
     expect(svg).toContain("Segno");
     expect(svg).toContain("To Coda");
   });
+
+  it("renders triplet beams without VexFlow beam errors", async () => {
+    // Single-slot triplet [1: d d d] with divisions=8: each item is 1/3 of a slot
+    // which is 1/24 of the measure (16th note triplet, denominator 24).
+    // The duration code must map 1/24 -> "16" (not "q" which would cause
+    // "Beams can only be applied to notes shorter than a quarter note" in VexFlow).
+    const score = buildNormalizedScore(`time 4/4
+divisions 8
+
+T1 | [1: d d d] - - - - - - - |`);
+
+    const svg = await renderScoreToSvg(score, {
+      mode: "preview",
+      pagePadding: { top: 24, right: 18, bottom: 24, left: 18 },
+      pageScale: 1.0,
+      titleTopPadding: 3.6,
+      titleSubtitleGap: 1.2,
+      titleStaffGap: 2.8,
+      systemSpacing: 1,
+      hideVoice2Rests: true,
+    });
+
+    expect(svg).toContain("<svg");
+    expect(svg).toContain("vf-stavenote");
+  });
 });

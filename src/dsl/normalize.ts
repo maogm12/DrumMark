@@ -8,8 +8,11 @@ import {
 import {
   type Fraction,
   type NormalizedEvent,
+  type NormalizedHeader,
   type NormalizedScore,
   type ScoreAst,
+  type TrackFamily,
+  type NormalizedTrack,
   type TrackName,
   type TokenGlyph,
   type BasicGlyph,
@@ -19,14 +22,21 @@ import {
 
 import { resolveFallbackTrack } from "./logic";
 
-const CYMBAL_TRACKS = new Set<TrackName>(["HH", "RC", "C"]);
-const DRUM_TRACKS = new Set<TrackName>(["SD", "BD", "T1", "T2", "T3"]);
+const CYMBAL_TRACKS = new Set<TrackName>(["HH", "RC", "RC2", "C", "C2", "SPL", "CHN"]);
+const DRUM_TRACKS = new Set<TrackName>(["SD", "BD", "BD2", "T1", "T2", "T3", "T4"]);
+const PEDAL_TRACKS = new Set<TrackName>(["HF"]);
+const PERCUSSION_TRACKS = new Set<TrackName>(["CB", "WB", "CL"]);
 
-function getTrackFamily(track: TrackName): "cymbal" | "drum" | "pedal" | "sticking" {
+function getTrackFamily(track: TrackName): TrackFamily {
   if (CYMBAL_TRACKS.has(track)) return "cymbal";
   if (DRUM_TRACKS.has(track)) return "drum";
-  if (track === "HF") return "pedal";
-  return "sticking";
+  if (PEDAL_TRACKS.has(track)) return "pedal";
+  if (PERCUSSION_TRACKS.has(track)) return "percussion";
+  return "auxiliary";
+}
+
+function voiceForTrack(track: TrackName): 1 | 2 {
+  return track === "BD" || track === "BD2" || track === "HF" ? 2 : 1;
 }
 
 function calculateTokenWeight(token: TokenGlyph): number {
@@ -116,13 +126,9 @@ function tokenToEvents(
     const resolved = resolveToken(token, contextTrack);
     if (!resolved) return [];
 
-    const hasAccent = resolved.modifiers.includes("accent");
     const primaryModifier = resolved.modifiers.find((m) => m !== "accent");
 
-    let kind: NormalizedEvent["kind"] = "hit";
-    if (resolved.track === "HF") kind = "pedal";
-    else if (resolved.track === "ST") kind = "sticking";
-    else if (hasAccent) kind = "accent";
+    const kind: NormalizedEvent["kind"] = resolved.track === "ST" ? "sticking" : "hit";
 
     return [
       {
@@ -134,7 +140,10 @@ function tokenToEvents(
         duration,
         kind,
         glyph: resolved.glyph,
+        modifiers: resolved.modifiers,
         modifier: primaryModifier,
+        voice: voiceForTrack(resolved.track),
+        beam: "none",
       },
     ];
   }
@@ -266,6 +275,7 @@ export function normalizeScoreAst(ast: ScoreAst): NormalizedScore {
       }
 
       measures.push({
+        index: globalMeasureIndex,
         globalIndex: globalMeasureIndex,
         paragraphIndex,
         measureInParagraph,
@@ -276,7 +286,37 @@ export function normalizeScoreAst(ast: ScoreAst): NormalizedScore {
     }
   }
 
+  const header: NormalizedHeader = {
+    ...(ast.headers.title ? { title: ast.headers.title.value } : {}),
+    ...(ast.headers.subtitle ? { subtitle: ast.headers.subtitle.value } : {}),
+    ...(ast.headers.composer ? { composer: ast.headers.composer.value } : {}),
+    tempo: ast.headers.tempo.value,
+    timeSignature: {
+      beats: ast.headers.time.beats,
+      beatUnit: ast.headers.time.beatUnit,
+    },
+    divisions: ast.headers.divisions.value,
+    grouping: [...ast.headers.grouping.values],
+  };
+
+  const trackIds = new Set<TrackName>();
+  for (const paragraph of ast.paragraphs) {
+    for (const track of paragraph.tracks) {
+      if (track.track !== "ANONYMOUS") {
+        trackIds.add(track.track);
+      }
+    }
+  }
+
+  const tracks: NormalizedTrack[] = [...trackIds].map((id) => ({
+    id,
+    family: getTrackFamily(id),
+  }));
+
   return {
+    version: "1.0",
+    header,
+    tracks,
     ast,
     measures,
     errors: ast.errors,

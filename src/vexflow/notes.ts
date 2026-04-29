@@ -40,13 +40,13 @@ export function instrumentForTrack(track: TrackName, glyph?: string): Instrument
  */
 export function getVexNotehead(event: NormalizedEvent, _instrument: InstrumentSpec): string | undefined {
   if (event.track === "SD") {
-    if (event.modifier === "cross") return "X"; // noteheadXBlack
-    if (event.modifier === "rim") return "SF";  // noteheadSlashedBlack1
+    if (event.modifiers.includes("cross")) return "X"; // noteheadXBlack
+    if (event.modifiers.includes("rim")) return "SF";  // noteheadSlashedBlack1
   }
 
   if (event.track === "HH" || event.track === "C" || event.track === "RC") {
-    if (event.modifier === "open") return "CX"; // noteheadCircleX
-    if (event.track === "RC" && event.modifier === "bell") return "D2"; // noteheadDiamondBlack
+    if (event.modifiers.includes("open")) return "CX"; // noteheadCircleX
+    if (event.track === "RC" && event.modifiers.includes("bell")) return "D2"; // noteheadDiamondBlack
     return "X"; // noteheadXBlack
   }
 

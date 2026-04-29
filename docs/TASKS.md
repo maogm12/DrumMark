@@ -14,7 +14,7 @@ Rules:
 Acceptance:
   Add missing tracks `BD2 T4 RC2 C2 SPL CHN CB WB CL`, missing magic tokens (`b2 r2 c2 t4 spl chn cb wb cl` plus accented forms), and missing modifiers `half-open roll dead`.
 
-- [ ] `T02` Replace the outdated normalized type model with a spec-aligned canonical IR shape.
+- [x] `T02` Replace the outdated normalized type model with a spec-aligned canonical IR shape.
 Acceptance:
   `NormalizedEvent`, `NormalizedMeasure`, and `NormalizedScore` carry the fields needed by the current spec, including canonical `kind`, `glyph`, modifier representation, and measure-level metadata slots for repeat/volta/navigation intent.
 

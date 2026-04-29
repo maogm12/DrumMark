@@ -2,15 +2,15 @@ import type { NormalizedEvent } from "../dsl/types";
 
 export function articulationForEvent(event: NormalizedEvent): unknown {
   // Accent for X/D/P glyphs
-  if (event.kind === "accent") {
+  if (event.modifiers.includes("accent")) {
     return { type: "accent", modifier: "a>" };
   }
 
-  if (event.modifier === "close") {
+  if (event.modifiers.includes("close")) {
     return { type: "articulation", modifier: "a-" };
   }
 
-  if (event.modifier === "choke") {
+  if (event.modifiers.includes("choke")) {
     return { type: "articulation", modifier: "a." };
   }
 
@@ -18,9 +18,9 @@ export function articulationForEvent(event: NormalizedEvent): unknown {
 }
 
 export function modifierIsGrace(event: NormalizedEvent): boolean {
-  return event.modifier === "flam" || event.modifier === "drag";
+  return event.modifiers.includes("flam") || event.modifiers.includes("drag");
 }
 
 export function graceNoteSlash(event: NormalizedEvent): boolean {
-  return event.modifier === "flam";
+  return event.modifiers.includes("flam");
 }

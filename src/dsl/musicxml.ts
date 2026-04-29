@@ -200,21 +200,21 @@ function collectDivisions(score: NormalizedScore): number {
 }
 
 function noteheadValueForEvent(event: NormalizedEvent, instrument: InstrumentSpec): InstrumentSpec["notehead"] | undefined {
-  if (event.modifier === "ghost") {
+  if (event.modifiers.includes("ghost")) {
     return "normal"; // Ghost notes are often normal heads with parentheses, but we'll use 'normal' and add parentheses in notations
   }
 
   if (event.track === "SD") {
-    if (event.modifier === "cross") {
+    if (event.modifiers.includes("cross")) {
       return "x";
     }
   }
 
-  if (event.track === "RC" && event.modifier === "bell") {
+  if (event.track === "RC" && event.modifiers.includes("bell")) {
     return "diamond";
   }
 
-  if (event.track === "HH" && event.modifier === "open") {
+  if (event.track === "HH" && event.modifiers.includes("open")) {
     return "circle-x";
   }
 
@@ -313,25 +313,25 @@ function noteXml(
   }
 
   // Technical/Articulations from notationsXml logic
-  if (event.modifier === "open" && nhValue !== "circle-x") {
+  if (event.modifiers.includes("open") && nhValue !== "circle-x") {
     technical.push("<open-string/>");
   }
-  if (event.modifier === "close") {
+  if (event.modifiers.includes("close")) {
     technical.push("<stopped/>");
   }
-  if (event.modifier === "rim") {
+  if (event.modifiers.includes("rim")) {
     technical.push("<other-technical>rim</other-technical>");
   }
-  if (event.modifier === "cross") {
+  if (event.modifiers.includes("cross")) {
     technical.push("<other-technical>cross-stick</other-technical>");
   }
-  if (event.modifier === "choke") {
+  if (event.modifiers.includes("choke")) {
     articulations.push('<staccato placement="above"/>');
   }
-  if (event.modifier === "bell") {
+  if (event.modifiers.includes("bell")) {
     technical.push("<other-technical>bell</other-technical>");
   }
-  if (event.kind === "accent") {
+  if (event.modifiers.includes("accent")) {
     articulations.push('<accent placement="above"/>');
   }
   if (sticking) {
@@ -485,7 +485,7 @@ function measureXml(score: NormalizedScore, exportMeasure: ExportMeasure, divisi
               index === stickingTargetIndex ? stickingForEntry : undefined,
             );
 
-            return event.modifier === "flam"
+            return event.modifiers.includes("flam")
               ? [graceNoteXml(event, voice, true), note]
               : [note];
           }),
@@ -526,7 +526,7 @@ function measureXml(score: NormalizedScore, exportMeasure: ExportMeasure, divisi
             beamState,
           );
 
-          return event.modifier === "flam"
+          return event.modifiers.includes("flam")
             ? [graceNoteXml(event, voice, true), note]
             : [note];
         }),

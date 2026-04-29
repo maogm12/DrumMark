@@ -295,16 +295,16 @@ function createVexNotes(
         const heads = note.note_heads || (note as any).noteHeads;
         if (!heads?.[index]) return;
 
-        if (item.event.modifier === "ghost") {
+        if (item.event.modifiers.includes("ghost")) {
           // Hardcoded Unicode: Parenthesis Left + Black Notehead + Parenthesis Right
           heads[index].text = "\uE0F5\uE0A4\uE0F6";
         }
       });
 
       entry.events.forEach((e) => {
-        if (e.kind === "accent") note.addModifier(new Articulation("a>").setPosition(voiceId === 1 ? 3 : 4), 0);
-        else if (e.modifier === "close") note.addModifier(new Articulation("a-").setPosition(voiceId === 1 ? 3 : 4), 0);
-        else if (e.modifier === "choke") note.addModifier(new Articulation("a.").setPosition(voiceId === 1 ? 3 : 4), 0);
+        if (e.modifiers.includes("accent")) note.addModifier(new Articulation("a>").setPosition(voiceId === 1 ? 3 : 4), 0);
+        else if (e.modifiers.includes("close")) note.addModifier(new Articulation("a-").setPosition(voiceId === 1 ? 3 : 4), 0);
+        else if (e.modifiers.includes("choke")) note.addModifier(new Articulation("a.").setPosition(voiceId === 1 ? 3 : 4), 0);
 
         if (modifierIsGrace(e)) {
           const slash = graceNoteSlash(e);

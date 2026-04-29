@@ -240,11 +240,69 @@ export type Fraction = {
   denominator: number;
 };
 
+export type TrackFamily =
+  | "cymbal"
+  | "drum"
+  | "pedal"
+  | "percussion"
+  | "auxiliary";
+
 export type NormalizedEventKind =
   | "hit"
-  | "accent"
-  | "pedal"
+  | "rest"
   | "sticking";
+
+export type TieState =
+  | "start"
+  | "stop"
+  | "both";
+
+export type BeamState =
+  | "begin"
+  | "continue"
+  | "end"
+  | "none";
+
+export type BarlineType =
+  | "regular"
+  | "double"
+  | "final"
+  | "repeat-start"
+  | "repeat-end"
+  | "repeat-both";
+
+export type MarkerType =
+  | "segno"
+  | "coda"
+  | "fine";
+
+export type JumpType =
+  | "da-capo"
+  | "dal-segno"
+  | "dc-al-fine"
+  | "dc-al-coda"
+  | "ds-al-fine"
+  | "ds-al-coda"
+  | "to-coda";
+
+export type TupletSpec = {
+  actual: number;
+  normal: number;
+  span?: number;
+  bracket?: boolean;
+};
+
+export type VoltaIntent = {
+  indices: number[];
+};
+
+export type MeasureRepeatIntent = {
+  slashes: number;
+};
+
+export type MultiRestIntent = {
+  count: number;
+};
 
 export type NormalizedEvent = {
   track: TrackName;
@@ -255,24 +313,53 @@ export type NormalizedEvent = {
   duration: Fraction;
   kind: NormalizedEventKind;
   glyph: Exclude<BasicGlyph, "-">;
+  modifiers: Modifier[];
   modifier?: Modifier;
-  tuplet?: {
-    actual: number;
-    normal: number;
-  };
+  tuplet?: TupletSpec;
+  tie?: TieState;
+  voice?: 1 | 2;
+  beam?: BeamState;
 };
 
 export type NormalizedMeasure = {
+  index: number;
   globalIndex: number;
   paragraphIndex: number;
   measureInParagraph: number;
   sourceLine: number;
   events: NormalizedEvent[];
   generated?: boolean;
+  barline?: BarlineType;
+  marker?: MarkerType;
+  jump?: JumpType;
+  volta?: VoltaIntent;
+  measureRepeat?: MeasureRepeatIntent;
+  multiRest?: MultiRestIntent;
   multiRestCount?: number;
 };
 
+export type NormalizedHeader = {
+  title?: string;
+  subtitle?: string;
+  composer?: string;
+  tempo: number;
+  timeSignature: {
+    beats: number;
+    beatUnit: number;
+  };
+  divisions: number;
+  grouping: number[];
+};
+
+export type NormalizedTrack = {
+  id: TrackName;
+  family: TrackFamily;
+};
+
 export type NormalizedScore = {
+  version: string;
+  header: NormalizedHeader;
+  tracks: NormalizedTrack[];
   ast: ScoreAst;
   measures: NormalizedMeasure[];
   errors: ParseError[];

@@ -68,7 +68,8 @@ divisions 4
 
     const event = score.measures[0].events[0];
     expect(event.track).toBe("SD");
-    expect(event.kind).toBe("accent");
+    expect(event.kind).toBe("hit");
+    expect(event.modifiers).toContain("accent");
     expect(event.modifier).toBe("rim");
   });
 });

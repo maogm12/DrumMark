@@ -210,13 +210,13 @@ divisions 4
     });
   });
 
-  it("parses multi-rest measures with N >= 1", () => {
+  it("parses multi-rest measures with N >= 2", () => {
     const doc = parseDocumentSkeleton(`time 4/4
 divisions 4
-HH | --1-- | - 4 - |`);
+HH | --2-- | - 4 - |`);
 
     expect(doc.errors).toEqual([]);
-    expect(doc.paragraphs[0].lines[0].measures[0].multiRestCount).toBe(1);
+    expect(doc.paragraphs[0].lines[0].measures[0].multiRestCount).toBe(2);
     expect(doc.paragraphs[0].lines[0].measures[1].multiRestCount).toBe(4);
   });
 
@@ -255,7 +255,7 @@ divisions 4
     const doc = parseDocumentSkeleton(`time 4/4
 divisions 4
 | @fine % |
-| @to-coda --1-- |`);
+| @to-coda --2-- |`);
 
     expect(doc.errors).toEqual([]);
     expect(doc.paragraphs[0].lines[0].measures[0]).toMatchObject({
@@ -264,7 +264,7 @@ divisions 4
     });
     expect(doc.paragraphs[0].lines[1].measures[0]).toMatchObject({
       jump: "to-coda",
-      multiRestCount: 1,
+      multiRestCount: 2,
     });
   });
 });

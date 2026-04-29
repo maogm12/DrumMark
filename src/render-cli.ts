@@ -16,7 +16,7 @@ global.HTMLElement = dom.window.HTMLElement;
 global.HTMLAnchorElement = dom.window.HTMLAnchorElement;
 global.HTMLDivElement = dom.window.HTMLDivElement;
 global.SVGElement = dom.window.SVGElement;
-global.Image = dom.window.Image as any;
+global.Image = dom.window["Image"] as any;
 global.DOMParser = dom.window.DOMParser as any;
 
 // 2. Register local fonts for Canvas in Node
@@ -38,10 +38,9 @@ if (fs.existsSync(bravuraPath)) {
 
 // 3. Mock font loading for Node environment
 // VexFlow 5 will try to fetch fonts, which fails in Node without a fetch mock or absolute paths.
-// Since we want the SVG structure, we can sometimes bypass actual font loading 
-// if we don't care about precise text measurement in this CLI pass, 
+// Since we want the SVG structure, we can sometimes bypass actual font loading
+// if we don't care about precise text measurement in this CLI pass,
 // OR we can tell VexFlow where the fonts are.
-import VexFlow from "vexflow";
 
 async function main() {
   const args = process.argv.slice(2);
@@ -79,6 +78,8 @@ async function main() {
 
     const svg = await renderScoreToSvg(score, {
       mode: "preview",
+      pagePadding: { top: 24, right: 18, bottom: 24, left: 18 },
+      pageScale: 1.0,
       titleTopPadding: 20,
       titleSubtitleGap: 10,
       titleStaffGap: 40,

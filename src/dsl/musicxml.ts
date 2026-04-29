@@ -301,7 +301,7 @@ function collectDivisions(score: NormalizedScore): number {
 
 function noteheadValueForEvent(event: NormalizedEvent, instrument: InstrumentSpec): InstrumentSpec["notehead"] | undefined {
   if (event.modifiers.includes("ghost")) {
-    return "normal"; // Ghost notes are often normal heads with parentheses, but we'll use 'normal' and add parentheses in notations
+    return undefined; // Ghost notes use default notehead, renderer adds parentheses
   }
 
   if (event.modifiers.includes("dead")) {

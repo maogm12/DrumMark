@@ -1,11 +1,11 @@
-import type { Fraction, NormalizedEvent, NormalizedScore, TrackName } from "./types";
+import type { Fraction, NormalizedEvent, NormalizedScore, TrackName, TokenGlyph } from "./types";
 export type { Fraction };
 
 // --- Fraction Math ---
 
 export function gcd(a: number, b: number): number {
-  let x = Math.abs(a);
-  let y = Math.abs(b);
+  let x = Math.round(Math.abs(a));
+  let y = Math.round(Math.abs(b));
   while (y !== 0) {
     const next = x % y;
     x = y;
@@ -21,8 +21,8 @@ export function lcm(a: number, b: number): number {
 
 export function simplify(fraction: Fraction): Fraction {
   const divisor = gcd(fraction.numerator, fraction.denominator);
-  const numerator = fraction.numerator / divisor;
-  const denominator = fraction.denominator / divisor;
+  const numerator = Math.round(fraction.numerator / divisor);
+  const denominator = Math.round(fraction.denominator / divisor);
   if (denominator < 0) {
     return { numerator: -numerator, denominator: -denominator };
   }
@@ -43,17 +43,46 @@ export function subtractFractions(left: Fraction, right: Fraction): Fraction {
   });
 }
 
-export function multiplyFraction(fraction: Fraction, multiplier: number): Fraction {
+export function multiplyFractions(left: Fraction, right: Fraction): Fraction {
   return simplify({
-    numerator: fraction.numerator * multiplier,
-    denominator: fraction.denominator,
+    numerator: left.numerator * right.numerator,
+    denominator: left.denominator * right.denominator,
   });
 }
 
-export function divideFraction(fraction: Fraction, divisor: number): Fraction {
+export function divideFractions(left: Fraction, right: Fraction): Fraction {
   return simplify({
-    numerator: fraction.numerator,
-    denominator: fraction.denominator * divisor,
+    numerator: left.numerator * right.denominator,
+    denominator: left.denominator * right.numerator,
+  });
+}
+
+export function multiplyFraction(fraction: Fraction, multiplier: number): Fraction {
+  return multiplyFractions(fraction, fractionFromNumber(multiplier));
+}
+
+export function divideFraction(fraction: Fraction, divisor: number): Fraction {
+  return divideFractions(fraction, fractionFromNumber(divisor));
+}
+
+export function fractionFromNumber(n: number): Fraction {
+  if (Number.isInteger(n)) {
+    return { numerator: n, denominator: 1 };
+  }
+
+  const s = n.toString();
+  if (s.includes(".")) {
+    const parts = s.split(".");
+    const decimalPlaces = Math.min(parts[1]!.length, 9);
+    const denominator = Math.pow(10, decimalPlaces);
+    const numerator = Math.round(n * denominator);
+    return simplify({ numerator, denominator });
+  }
+
+  const precision = 1000000;
+  return simplify({
+    numerator: Math.round(n * precision),
+    denominator: precision,
   });
 }
 
@@ -83,6 +112,45 @@ export function voiceForTrack(track: TrackName): VoiceId {
     default:
       return 1;
   }
+}
+
+export function calculateTokenWeightAsFraction(token: TokenGlyph): Fraction {
+  if (token.kind === "group") {
+    return { numerator: token.span, denominator: 1 };
+  }
+  if (token.kind === "combined") {
+    // Combined hit weight is the max weight of its items
+    let maxWeight = { numerator: 0, denominator: 1 };
+    for (const item of token.items) {
+      const weight = calculateTokenWeightAsFraction(item);
+      if (compareFractions(weight, maxWeight) > 0) {
+        maxWeight = weight;
+      }
+    }
+    return maxWeight;
+  }
+  if (token.kind === "braced") {
+    return token.items.reduce((sum, item) => addFractions(sum, calculateTokenWeightAsFraction(item)), {
+      numerator: 0,
+      denominator: 1,
+    });
+  }
+
+  // Weight formula: weight = base * (2 - 0.5^dots) / (2^halves)
+  // dots=1: 1.5 = 3/2
+  // dots=2: 1.75 = 7/4
+  // dots=3: 1.875 = 15/8
+  // numerator = 2^(dots+1) - 1, denominator = 2^dots
+
+  const dotNumerator = (1 << (token.dots + 1)) - 1;
+  const dotDenominator = 1 << token.dots;
+  const dotWeight: Fraction = { numerator: dotNumerator, denominator: dotDenominator };
+
+  const halfDivider = 1 << token.halves;
+  return simplify({
+    numerator: dotWeight.numerator,
+    denominator: dotWeight.denominator * halfDivider,
+  });
 }
 
 export function stemDirectionForVoice(voice: VoiceId): "up" | "down" {
@@ -122,7 +190,7 @@ export function visualDurationForEvent(event: NormalizedEvent, duration: Fractio
     return duration;
   }
 
-  return divideFraction(multiplyFraction(duration, event.tuplet.actual), event.tuplet.normal);
+  return divideFractions(multiplyFraction(duration, event.tuplet.actual), fractionFromNumber(event.tuplet.normal));
 }
 
 export type InstrumentSpec = {

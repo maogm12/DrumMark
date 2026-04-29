@@ -45,7 +45,8 @@ const {
   GlyphNote,
   Glyphs,
   VoltaType,
-  RendererBackends
+  RendererBackends,
+  MultiMeasureRest
 } = VexFlow;
 
 export function jumpText(jump?: NormalizedScore["measures"][number]["jump"]): string | null {
@@ -79,7 +80,7 @@ export function voltaTypeForMeasure(score: NormalizedScore, measure: NormalizedS
   const previous = score.measures[measure.globalIndex - 1]?.volta?.indices.join(",");
   const next = score.measures[measure.globalIndex + 1]?.volta?.indices.join(",");
   const begins = current !== previous;
-  const ends = current !== next;
+  const ends = current !== next || score.measures[measure.globalIndex]?.barline === "repeat-end";
 
   if (begins && ends) return VoltaType.BEGIN_END;
   if (begins) return VoltaType.BEGIN;
@@ -316,7 +317,7 @@ function renderMeasureVoices(
   const measureStart = multiplyFraction(measureDuration, measure.globalIndex);
 
   if (measure.measureRepeat) {
-    const repeatNote = new GlyphNote(measureRepeatGlyph(measure.measureRepeat.slashes), { duration: "w" }, { line: 4, alignCenter: true });
+    const repeatNote = new GlyphNote(measureRepeatGlyph(measure.measureRepeat.slashes), { duration: "w" }, { line: 4 });
     const voice = new Voice({ numBeats: measureDuration.numerator, beatValue: measureDuration.denominator }).setStrict(false).addTickables([repeatNote]);
     (voice as any)._stave = stave;
     return { voices: [voice], beams: [], tuplets: [] };

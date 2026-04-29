@@ -14,6 +14,11 @@ grouping 1+1+1+1+1+1+1+1+1
 
     const svg = await renderScoreToSvg(score, {
       mode: "preview",
+      pagePadding: { top: 24, right: 18, bottom: 24, left: 18 },
+      pageScale: 1.0,
+      titleTopPadding: 3.6,
+      titleSubtitleGap: 1.2,
+      titleStaffGap: 2.8,
       systemSpacing: 1,
       hideVoice2Rests: true,
     });
@@ -30,6 +35,11 @@ divisions 4
 
     const svg = await renderScoreToSvg(score, {
       mode: "preview",
+      pagePadding: { top: 24, right: 18, bottom: 24, left: 18 },
+      pageScale: 1.0,
+      titleTopPadding: 3.6,
+      titleSubtitleGap: 1.2,
+      titleStaffGap: 2.8,
       systemSpacing: 1,
       hideVoice2Rests: true,
     });

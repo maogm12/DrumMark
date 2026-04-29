@@ -1,9 +1,38 @@
 import { parseDocumentSkeleton } from "./parser";
-import { TRACKS, type MeasureToken, type ParseError, type ParsedMeasure, type ParsedTrackLine, type RepeatSpan, type ScoreAst, type ScoreMeasure, type ScoreParagraph, type TrackName, type TokenGlyph, type ScoreTrackParagraph } from "./types";
-import { resolveFallbackTrack } from "./logic";
+import {
+  TRACKS,
+  type MeasureToken,
+  type ParseError,
+  type ParsedMeasure,
+  type ParsedTrackLine,
+  type RepeatSpan,
+  type ScoreAst,
+  type ScoreMeasure,
+  type ScoreParagraph,
+  type TrackName,
+  type TokenGlyph,
+  type ScoreTrackParagraph,
+  type Fraction,
+} from "./types";
+import {
+  resolveFallbackTrack,
+  calculateTokenWeightAsFraction,
+  addFractions,
+  compareFractions,
+  simplify,
+  multiplyFractions,
+  divideFractions,
+} from "./logic";
 
 function makeRestTokens(divisions: number): MeasureToken[] {
-  return Array.from({ length: divisions }, () => ({ kind: "basic", value: "-" as const, dots: 0, halves: 0, modifiers: [], trackOverride: undefined }));
+  return Array.from({ length: divisions }, () => ({
+    kind: "basic",
+    value: "-" as const,
+    dots: 0,
+    halves: 0,
+    modifiers: [],
+    trackOverride: undefined,
+  }));
 }
 
 function makeRestMeasure(globalIndex: number, divisions: number): ScoreMeasure {
@@ -26,33 +55,29 @@ function pushError(errors: ParseError[], line: number, message: string): void {
   });
 }
 
-function calculateTokenWeight(token: TokenGlyph): number {
-  if (token.kind === "group") {
-    return token.span;
-  }
-  if (token.kind === "combined") {
-    return Math.max(...token.items.map(calculateTokenWeight));
-  }
-  if (token.kind === "braced") {
-    return token.items.reduce((sum, item) => sum + calculateTokenWeight(item), 0);
-  }
-
-  const base = 1;
-  const dotMultiplier = 2 - Math.pow(0.5, token.dots);
-  const halfDivider = Math.pow(2, token.halves);
-  return (base * dotMultiplier) / halfDivider;
-}
-
-function normalizeExplicitMeasure(measure: ParsedMeasure, globalIndex: number, lineNumber: number, divisions: number): ScoreMeasure {
+function normalizeExplicitMeasure(
+  measure: ParsedMeasure,
+  globalIndex: number,
+  lineNumber: number,
+  divisions: number,
+): ScoreMeasure {
   const needsRestFill = measure.tokens.length === 0 && measure.multiRestCount === undefined;
   let tokens = needsRestFill ? makeRestTokens(divisions) : [...measure.tokens];
 
+  const divisionsFrac: Fraction = { numerator: divisions, denominator: 1 };
   if (measure.multiRestCount === undefined) {
-    const currentWeight = tokens.reduce((sum, t) => sum + calculateTokenWeight(t), 0);
-    if (currentWeight < divisions - 0.001) {
-      const remaining = Math.round(divisions - currentWeight);
-      if (remaining > 0) {
-        tokens = [...tokens, ...makeRestTokens(remaining)];
+    const currentWeight = tokens.reduce(
+      (sum, t) => addFractions(sum, calculateTokenWeightAsFraction(t)),
+      { numerator: 0, denominator: 1 },
+    );
+    
+    if (compareFractions(currentWeight, divisionsFrac) < 0) {
+      const remaining = simplify({
+        numerator: divisionsFrac.numerator * currentWeight.denominator - currentWeight.numerator * divisionsFrac.denominator,
+        denominator: divisionsFrac.denominator * currentWeight.denominator
+      });
+      if (remaining.numerator > 0 && remaining.denominator === 1) {
+        tokens = [...tokens, ...makeRestTokens(remaining.numerator)];
       }
     }
   }
@@ -64,7 +89,7 @@ function normalizeExplicitMeasure(measure: ParsedMeasure, globalIndex: number, l
         ? "repeat-start"
         : measure.repeatEnd
           ? "repeat-end"
-          : "regular";
+          : measure.barline || "regular";
 
   return {
     ...measure,
@@ -143,11 +168,19 @@ function validateGrouping(headers: ScoreAst["headers"], errors: ParseError[]): v
     });
   }
 
+  const divisionsFrac: Fraction = { numerator: headers.divisions.value, denominator: 1 };
+  const beatsFrac: Fraction = { numerator: headers.time.beats, denominator: 1 };
+  
   let cumulative = 0;
   for (const value of headers.grouping.values) {
     cumulative += value;
-    const slotPosition = cumulative * headers.divisions.value;
-    if (slotPosition % headers.time.beats !== 0) {
+    // slotPosition = cumulative * divisions / beats
+    const slotPosition = divideFractions(
+      multiplyFractions({ numerator: cumulative, denominator: 1 }, divisionsFrac),
+      beatsFrac,
+    );
+
+    if (slotPosition.denominator !== 1) {
       errors.push({
         line: headers.grouping.line || headers.divisions.line || 1,
         column: 1,
@@ -174,10 +207,13 @@ function validateGroupToken(
     validateGroupToken(item, measureDurationNumerator, measureDurationDenominator, divisions, errors, line);
   }
 
-  const itemNumerator = measureDurationNumerator * token.span;
-  const itemDenominator = measureDurationDenominator * divisions * token.count;
+  // itemDuration = (measureDuration * span) / (divisions * count)
+  const itemDuration = simplify({
+    numerator: measureDurationNumerator * token.span,
+    denominator: measureDurationDenominator * divisions * token.count
+  });
 
-  if (isBelowSixtyFourth(itemNumerator, itemDenominator)) {
+  if (isBelowSixtyFourth(itemDuration.numerator, itemDuration.denominator)) {
     errors.push({
       line,
       column: 1,
@@ -187,7 +223,7 @@ function validateGroupToken(
   }
 
   if (token.count <= token.span) {
-    if (!isSupportedSimpleDuration(itemNumerator, itemDenominator)) {
+    if (!isSupportedSimpleDuration(itemDuration.numerator, itemDuration.denominator)) {
       errors.push({
         line,
         column: 1,
@@ -380,11 +416,10 @@ export function buildScoreAst(source: string): ScoreAst {
 
     const anonymousLines = explicitLines.filter((line) => line.track === "ANONYMOUS");
     const namedLineByTrack = new Map<TrackName, ScoreTrackParagraph>();
-    explicitLines
-      .filter((line): line is ScoreTrackParagraph & { track: TrackName } => line.track !== "ANONYMOUS")
-      .forEach((line) => {
-        namedLineByTrack.set(line.track, line);
-      });
+    const namedLines = explicitLines.filter((line) => line.track !== "ANONYMOUS");
+    for (const line of namedLines) {
+      namedLineByTrack.set(line.track as TrackName, line);
+    }
 
     const filledTracks: ScoreTrackParagraph[] = [...anonymousLines];
     globalTracks.forEach((track) => {

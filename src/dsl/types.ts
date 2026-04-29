@@ -140,6 +140,7 @@ export type ParsedMeasure = {
   repeatEnd: boolean;
   repeatTimes?: number;
   repeatCount?: number;
+  barline?: BarlineType;
   marker?: MarkerType;
   jump?: JumpType;
   voltaIndices?: number[];

@@ -15,7 +15,7 @@ export function durationCode(duration: Fraction): string {
   return code;
 }
 
-export function instrumentForTrack(track: TrackName, glyph?: string): InstrumentSpec {
+export function instrumentForTrack(track: TrackName, _glyph?: string): InstrumentSpec {
   switch (track) {
     case "HH": return { displayStep: "G", displayOctave: 5, notehead: "x" };
     case "HF": return { displayStep: "D", displayOctave: 4, notehead: "x" };

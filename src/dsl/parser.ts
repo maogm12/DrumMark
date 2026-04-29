@@ -564,6 +564,8 @@ function parseMeasureTail(remainder: string, line: PreprocessedLine, errors: Par
     times?: number;
     voltaIndices?: number[];
     voltaTerminator?: boolean;
+    double?: boolean;
+    final?: boolean;
   } | null => {
     const voltaStartMatch = remainder.slice(index).match(/^\|(\d+(?:,\d+)*)\./);
     if (voltaStartMatch?.[1] !== undefined) {
@@ -575,7 +577,7 @@ function parseMeasureTail(remainder: string, line: PreprocessedLine, errors: Par
     }
 
     if (remainder.startsWith("|.", index)) {
-      return { length: 2, kind: "barline", voltaTerminator: true };
+      return { length: 2, kind: "barline", voltaTerminator: true, final: true };
     }
 
     if (remainder.startsWith("|:", index)) {
@@ -583,7 +585,19 @@ function parseMeasureTail(remainder: string, line: PreprocessedLine, errors: Par
     }
 
     if (remainder.startsWith(":|", index)) {
+      const timesMatch = remainder.slice(index + 2).match(/^x(\d+)/);
+      if (timesMatch?.[1] !== undefined) {
+        return {
+          length: 2 + 1 + timesMatch[1].length,
+          kind: "repeat_end",
+          times: parseInt(timesMatch[1], 10),
+        };
+      }
       return { length: 2, kind: "repeat_end", times: 2 };
+    }
+
+    if (remainder.startsWith("||", index)) {
+      return { length: 2, kind: "barline", double: true };
     }
 
     if (remainder.startsWith("|", index)) {
@@ -658,6 +672,7 @@ function parseMeasureTail(remainder: string, line: PreprocessedLine, errors: Par
       repeatStart: currentLeftBoundary.kind === "repeat_start",
       repeatEnd: endBoundary.kind === "repeat_end",
       repeatTimes: endBoundary.kind === "repeat_end" ? endBoundary.times : undefined,
+      barline: endBoundary.final ? "final" : endBoundary.double ? "double" : undefined,
       voltaIndices: currentLeftBoundary.voltaIndices,
       voltaTerminator: currentLeftBoundary.voltaTerminator || endBoundary.voltaTerminator,
     });
@@ -745,7 +760,7 @@ function parseTrackLine(line: PreprocessedLine, errors: ParseError[]): ParsedTra
           errors.push({
             line: line.lineNumber,
             column: 1,
-            message: "Multi-measure rest count must be at least 1",
+            message: "Multi-measure rest count must be at least 2",
           });
           return [];
         }

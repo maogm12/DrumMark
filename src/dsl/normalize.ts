@@ -1,10 +1,13 @@
 import { buildScoreAst } from "./ast";
 import {
   addFractions,
-  multiplyFraction,
-  divideFraction,
+  multiplyFractions,
+  divideFractions,
   simplify,
   voiceForTrack,
+  calculateTokenWeightAsFraction,
+  compareFractions,
+  fractionsEqual,
 } from "./logic";
 import {
   type Fraction,
@@ -36,24 +39,6 @@ function getTrackFamily(track: TrackName): TrackFamily {
   return "auxiliary";
 }
 
-function calculateTokenWeight(token: TokenGlyph): number {
-  if (token.kind === "group") {
-    return token.span;
-  }
-  if (token.kind === "combined") {
-    return Math.max(...token.items.map(calculateTokenWeight));
-  }
-  if (token.kind === "braced") {
-    return token.items.reduce((sum, item) => sum + calculateTokenWeight(item), 0);
-  }
-
-  // Basic token weight with dots and halves
-  const base = 1;
-  const dotMultiplier = 2 - Math.pow(0.5, token.dots);
-  const halfDivider = Math.pow(2, token.halves);
-  return (base * dotMultiplier) / halfDivider;
-}
-
 type ResolvedToken = {
   track: TrackName;
   glyph: Exclude<BasicGlyph, "-">;
@@ -81,7 +66,7 @@ function resolveToken(
 
   // 2. Resolve Magic Tokens (Mapping to d + modifiers)
   const v = token.value;
-  if (["S", "B", "B2", "X", "P", "R", "R2", "C", "C2", "O", "D", "G", "SPL", "CHN", "CB", "WB", "CL"].includes(v)) {
+  if (["S", "B", "B2", "X", "R", "R2", "C", "C2", "O", "D", "G", "SPL", "CHN", "CB", "WB", "CL"].includes(v)) {
     if (!modifiers.includes("accent")) modifiers.push("accent");
   }
 
@@ -154,9 +139,12 @@ function tokenToEvents(
   if (token.kind === "braced") {
     const events: NormalizedEvent[] = [];
     let currentStart = start;
+    const totalWeight = calculateTokenWeightAsFraction(token);
+
     token.items.forEach((item) => {
-      const weight = calculateTokenWeight(item);
-      const itemDuration = multiplyFraction(duration, weight / calculateTokenWeight(token));
+      const itemWeight = calculateTokenWeightAsFraction(item);
+      const itemDuration = multiplyFractions(duration, divideFractions(itemWeight, totalWeight));
+      
       events.push(
         ...tokenToEvents(
           item,
@@ -175,12 +163,15 @@ function tokenToEvents(
 
   if (token.kind === "group") {
     const events: NormalizedEvent[] = [];
-    const totalWeight = token.items.reduce((sum, item) => sum + calculateTokenWeight(item), 0);
+    const totalWeight = token.items.reduce(
+      (sum, item) => addFractions(sum, calculateTokenWeightAsFraction(item)),
+      { numerator: 0, denominator: 1 },
+    );
 
     let currentStart = start;
     token.items.forEach((item) => {
-      const itemWeight = calculateTokenWeight(item);
-      const itemDuration = multiplyFraction(duration, itemWeight / totalWeight);
+      const itemWeight = calculateTokenWeightAsFraction(item);
+      const itemDuration = multiplyFractions(duration, divideFractions(itemWeight, totalWeight));
 
       events.push(
         ...tokenToEvents(
@@ -227,19 +218,25 @@ export function normalizeScoreAst(ast: ScoreAst): NormalizedScore {
           denominator: measureDuration.denominator * divisions,
         });
 
-        let currentSlotOffset = 0;
+        let currentSlotOffset: Fraction = { numerator: 0, denominator: 1 };
+        const divisionsFrac: Fraction = { numerator: divisions, denominator: 1 };
+        
         for (const token of measure.tokens) {
-          const weight = calculateTokenWeight(token);
-          const tokenStart = multiplyFraction(slotDuration, currentSlotOffset);
-          const tokenDuration = multiplyFraction(slotDuration, weight);
+          const weight = calculateTokenWeightAsFraction(token);
+          const tokenStart = multiplyFractions(slotDuration, currentSlotOffset);
+          const tokenDuration = multiplyFractions(slotDuration, weight);
 
           // Validation: Check grouping boundaries
           const startSlot = currentSlotOffset;
-          const endSlot = currentSlotOffset + weight;
+          const endSlot = addFractions(currentSlotOffset, weight);
+          
           let cumulativeGrouping = 0;
           for (const groupSize of ast.headers.grouping.values) {
             cumulativeGrouping += groupSize;
-            if (startSlot < cumulativeGrouping - 0.001 && endSlot > cumulativeGrouping + 0.001) {
+            const boundaryFrac: Fraction = { numerator: cumulativeGrouping, denominator: 1 };
+            
+            // startSlot < boundaryFrac AND endSlot > boundaryFrac
+            if (compareFractions(startSlot, boundaryFrac) < 0 && compareFractions(endSlot, boundaryFrac) > 0) {
               ast.errors.push({
                 line: measure.sourceLine || 0,
                 column: 1,
@@ -259,19 +256,19 @@ export function normalizeScoreAst(ast: ScoreAst): NormalizedScore {
               measureInParagraph,
             ),
           );
-          currentSlotOffset += weight;
+          currentSlotOffset = addFractions(currentSlotOffset, weight);
         }
 
         // Pad if measure is short (validation)
         if (
           measure.measureRepeat === undefined &&
           measure.multiRest === undefined &&
-          Math.abs(currentSlotOffset - divisions) > 0.001
+          !fractionsEqual(currentSlotOffset, divisionsFrac)
         ) {
           ast.errors.push({
             line: measure.sourceLine || 0,
             column: 1,
-            message: `Track \`${trackLine.track}\` measure ${measureInParagraph + 1} has invalid duration: used ${currentSlotOffset} slots, expected ${divisions}`,
+            message: `Track \`${trackLine.track}\` measure ${measureInParagraph + 1} has invalid duration: used ${currentSlotOffset.numerator}/${currentSlotOffset.denominator} slots, expected ${divisions}`,
           });
         }
       }

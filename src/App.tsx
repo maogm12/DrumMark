@@ -8,7 +8,7 @@ import { type NormalizedScore } from "./dsl";
 import { renderScoreToSvg, renderScorePagesToSvgs, type VexflowRenderOptions } from "./vexflow";
 import { drumDslEditorTheme, drumDslLanguage, drumDslSyntaxHighlighting } from "./dslLanguage";
 
-const seedDsl = `tempo 96
+const legacySeedDsl = `tempo 96
 time 4/4
 divisions 16
 
@@ -19,6 +19,26 @@ HF |  - - - - p - - - | - - - - p:close - -                |
 
 RC |  - - x:bell - - - - - | - - - - x - - - |
 ST |  [2: R L R] - - -     | R - L - R - L - |`;
+
+const seedDsl = `title DrumMark Spec Tour
+subtitle Coverage Demo
+composer OpenAI Codex
+tempo 112
+time 4/4
+divisions 8
+grouping 1+1+1+1
+
+|: x+s p - - RC{d:bell d:choke} SD:d:rim - :|
+HH | x:open - x:half-open - x:close - X - |
+SD | d:cross - g - d:flam - d:drag - |
+BD | b - b2 - b:roll - B:dead - |
+HF | - - p:close - - - p - |
+T1 | [1: d d d] - - - - - - - |
+ST | R - L - R - L - |
+
+| @segno C - RC2:d:bell - SPL - CHN:d:choke - | @fine % |1. C2 - CB - WB - CL - | @to-coda --2-- |.
+
+| t4 - r2 - c2 - cl - *2 | %% |`;
 
 type PagePadding = {
   top: number;
@@ -723,7 +743,13 @@ const defaultSettings: AppSettings = {
 };
 
 export function App() {
-  const [dsl, setDsl] = useState(() => localStorage.getItem("drum-notation-dsl") ?? seedDsl);
+  const [dsl, setDsl] = useState(() => {
+    const saved = localStorage.getItem("drum-notation-dsl");
+    if (!saved || saved === legacySeedDsl) {
+      return seedDsl;
+    }
+    return saved;
+  });
   const [settings, setSettings] = useState<AppSettings>(() => {
     const saved = localStorage.getItem("drum-notation-settings");
     if (!saved) return defaultSettings;

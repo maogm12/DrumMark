@@ -94,7 +94,7 @@ Acceptance:
 Acceptance:
   Tests cover first-appearance track ordering, canonical event/measure shape, grouping validation, and repeat/volta/navigation intent.
 
-- [ ] `T19` Expand MusicXML tests for the new track and modifier surface.
+- [x] `T19` Expand MusicXML tests for the new track and modifier surface.
 Acceptance:
   Tests assert the new instrument mappings and notation output for the gap-closure features.
 

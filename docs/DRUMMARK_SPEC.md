@@ -87,7 +87,7 @@ beam           — begin | continue | end | none | null (derived)
 Notes:
 - `track` is the canonical score track after input sugar is resolved
 - Anonymous tracks are expanded before normalization and do not appear as a normalized track
-- `HH` crash sugar `c` remains a glyph on `HH`; MusicXML derives crash instrument semantics during export
+- `c` resolves canonically to `C:d`; `C` resolves to `C:d:accent`
 - `start` and `duration` are rational musical durations, not raw grid slot numbers
 - Groups that require automatic tie splitting are **rejected** during validation
 - Instrument placement is derived by renderers/exporters from `track`, `glyph`, and `modifier`
@@ -291,7 +291,7 @@ weight = base × (2 - 0.5^dots) / (2^halves)
 - `d//` = 0.25
 - `d/`/` = 0.125
 
-Fractional validation: each token is converted to an absolute Fraction relative to a whole note before summing. The sum of all token weights in a measure must equal the `timeSignature` fraction. No integer slot counting is used for validation.
+Fractional validation: each token is converted to an absolute Fraction relative to a whole note before summing. Validation MUST use exact rational duration math internally. A measure is valid iff the sum of all token durations equals the full `timeSignature` fraction; equivalently, the accumulated token weight equals `divisions`.
 
 ### 5.5 Groups
 
@@ -430,19 +430,42 @@ ST | R - L - [2: R L R] - | R - L - R - L - |
 
 ### 9.4 Measure Repeat (`%`)
 
-A standalone measure containing only `%` tokens repeats the preceding measures. Each `%` repeats one preceding measure.
+A measure containing only `%` shorthand repeats the preceding measures. Each `%` repeats one preceding measure.
 
 ```
-HH | dddd % |           # repeats 1 preceding measure
-HH | c c c %% |         # repeats 2 preceding measures
-BD | b - % % |          # repeats 2 preceding measures (same as above)
+HH | d d d d | % |      # repeats 1 preceding measure
+HH | c c c c | %% |     # repeats 2 preceding measures
+BD | b - - - | % |      # repeats 1 preceding measure
 ```
 
 **Rules**:
 - One `%` repeats one preceding measure; two `%%` repeats two preceding measures; and so on.
-- The measure containing `%` tokens must contain only that token (no other notes).
+- The measure containing `%` shorthand must contain only that token (no other notes).
 - The referenced measures must not themselves be repeat shorthand measures (no chaining).
-- After expansion, the IR uses `repeatOf` / `repeatOfCount` to record the repeat.
+- Canonical IR stores measure-repeat intent as `measureRepeat.slashes` (`1` for `%`, `2` for `%%`).
+
+### 9.5 Complex Repeats (Markers & Jumps)
+
+Complex navigation is handled via markers (targets) and jumps (instructions). These are global and can be declared on any track.
+
+| Syntax | Meaning | Visual |
+|--------|---------|--------|
+| `@segno` | Segno marker | $\S$ |
+| `@coda` | Coda marker | $\phi$ |
+| `@fine` | Fine marker | "Fine" |
+| `@to-coda` | To Coda jump | "To Coda" |
+| `@da-capo` | Da Capo | "D.C." |
+| `@dal-segno` | Dal Segno | "D.S." |
+| `@dc-al-fine` | Da Capo al Fine | "D.C. al Fine" |
+| `@dc-al-coda` | Da Capo al Coda | "D.C. al Coda" |
+| `@ds-al-fine` | Dal Segno al Fine | "D.S. al Fine" |
+| `@ds-al-coda` | Dal Segno al Coda | "D.S. al Coda" |
+
+**Rules**:
+- **Placement**: These tokens can appear anywhere within a measure's content (e.g., `| @segno d d d d |`).
+- **Global Scope**: Like repeat barlines, a marker or jump declared on one track applies to the entire measure for all tracks.
+- **Conflict**: A single measure may contain at most one marker and at most one jump. Conflicting declarations within the same measure (on same or different tracks) are a hard error.
+- **Render position**: Markers usually appear above the start of the measure; jumps usually appear above the end of the measure.
 
 ---
 
@@ -456,10 +479,9 @@ HH |- 4 - |        # 4-measure rest (spaces allowed)
 ```
 
 **Rules**:
-- `N` must be a positive integer ≥ 2.
+- `N` must be a positive integer ≥ 1.
 - `N` must be surrounded by at least one `-` on each side.
 - The entire construct must fit within a single measure boundary `| ... |`.
-- `N=1` is not allowed.
 
 ---
 
@@ -467,7 +489,7 @@ HH |- 4 - |        # 4-measure rest (spaces allowed)
 
 ### `*N` — Inline repeat count
 
-`*N` at the end of a measure repeats that entire measure N times.
+`*N` at the end of a measure expands that measure to a total of `N` consecutive measures.
 
 ```
 HH | dddd *2 |       # 2 measures of dddd
@@ -482,7 +504,7 @@ This is syntactic sugar. After expansion, there is no record that `*N` was used.
 
 ### 12.1 Total Duration
 
-For each measure, the sum of all token weights must equal `divisions`. Any mismatch is a hard error.
+For each measure, the sum of all token durations must equal one full measure length. Equivalently, the sum of token weights must equal `divisions`. Any mismatch is a hard error.
 
 ### 12.2 Grouping Boundary Alignment
 
@@ -495,7 +517,7 @@ HH | d. d/ d d |    # 'd.' crosses boundary at slot 2
 
 **Correct**:
 ```
-HH | d. / d d |     # 'd.' ends at 1.5, followed by half-rest '/' at 1.5-2.0
+HH | d. -/ d d |    # 'd.' ends at 1.5, followed by a half-rest at 1.5-2.0
 ```
 
 ---
@@ -537,7 +559,7 @@ After the header, track content is organized into paragraphs. Blank lines separa
 - Be strict about semantics
 - Try to collect multiple errors in one pass
 - Do not silently rewrite user intent
-- Any unsupported, ambiguous, inconsistent, or non-exportable construct is a hard error
+- Any unsupported, ambiguous, or inconsistent construct is a hard error
 
 ### 15.2 Error Format
 
@@ -574,35 +596,26 @@ Line 30, Col 1: Empty measure is not allowed in repeat section
 
 ## 16. Intermediate Representation (IR)
 
-The compiler emits a JSON IR. All temporal values use the **Fraction** structure, stored in lowest terms (GCD-reduced).
+The compiler emits a JSON IR. All temporal values use the **Fraction** structure.
 
-### 16.1 Fraction
+### 16.1 Basic Types
 
-```json
-{ "num": 3, "den": 16 }
-```
+#### Fraction (Object)
+All temporal values (start, duration) MUST be stored as reduced fractions.
+- `num`: Non-negative integer.
+- `den`: Positive integer.
 
-**Rules**:
-- `num` MUST be a non-negative integer.
-- `den` MUST be a positive integer.
-- Fractions are equal iff `a.num * b.den === b.num * a.den`.
-- A `ComplexityOverflowError` SHOULD be thrown if any intermediate `den > 10^9`.
+#### TimeSignature (Object)
+- `beats`: Number of beats in a measure.
+- `beatUnit`: The note value that represents one beat.
 
-**Common durations for reference**:
-
-| Name | Fraction |
-|------|----------|
-| whole | `{ "num": 1, "den": 1 }` |
-| half | `{ "num": 1, "den": 2 }` |
-| quarter | `{ "num": 1, "den": 4 }` |
-| 8th | `{ "num": 1, "den": 8 }` |
-| 16th | `{ "num": 1, "den": 16 }` |
-| dotted quarter | `{ "num": 3, "den": 8 }` |
+---
 
 ### 16.2 Document Hierarchy
 
 ```
 DrumScore
+  └─ version: string
   └─ header: Header
   └─ tracks: Track[]
   └─ measures: Measure[]
@@ -610,119 +623,105 @@ DrumScore
 
 ### 16.3 Header IR
 
-```json
-{
-  "title": "Funk Study No. 1",
-  "subtitle": "Verse groove",
-  "composer": "G. Mao",
-  "tempo": 96,
-  "timeSignature": { "beats": 4, "beatUnit": 4 },
-  "divisions": 16,
-  "grouping": [2, 2]
-}
-```
-
-| Field | Type | Required | Default | Meaning |
-|-------|------|----------|---------|---------|
-| `title` | string | no | `""` | Score title |
-| `subtitle` | string | no | `""` | Score subtitle |
-| `composer` | string | no | `""` | Composer credit |
-| `tempo` | integer | no | `120` | Quarter-note BPM |
-| `timeSignature` | TimeSignature | **yes** | — | Measure structure |
-| `divisions` | integer | **yes** | — | Grid slots per measure |
-| `grouping` | integer[] | no | inferred from `timeSignature` | Beat grouping; sum MUST equal `beats` |
-| `feel` | string | no | `"straight"` | Playback feel: `"straight"`, `"swing"`, `"shuffle"`, `"latin"` |
+| Field | Type | Required | Meaning |
+|-------|------|----------|---------|
+| `title` | string | no | Score title |
+| `subtitle` | string | no | Score subtitle |
+| `composer` | string | no | Composer credit |
+| `tempo` | integer | no | Quarter-note BPM |
+| `timeSignature` | `TimeSignature` | **yes** | Measure structure |
+| `divisions` | integer | **yes** | Grid slots per measure |
+| `grouping` | integer[] | no | Beat grouping |
 
 ### 16.4 Track IR
 
-```json
-{
-  "id": "HH",
-  "family": "cymbal"
-}
-```
-
 | Field | Type | Required | Meaning |
 |-------|------|----------|---------|
-| `id` | string | **yes** | Track identifier |
-| `family` | string | **yes** | One of: `cymbal`, `drum`, `pedal`, `percussion`, `auxiliary` |
+| `id` | string | **yes** | Track identifier (e.g., "HH") |
+| `family` | string | **yes** | `cymbal`, `drum`, `pedal`, `percussion`, `auxiliary` |
 
 ### 16.5 Measure IR
+
+A `Measure` is the primary container for events and visual/structural metadata.
 
 ```json
 {
   "index": 0,
   "events": [ Event, Event, ... ],
   "barline": "regular",
-  "rangeAnnotations": [ ... ]
+  "marker": "segno",
+  "jump": "ds-al-coda",
+  "volta": { "indices": [1, 2] },
+  "measureRepeat": { "slashes": 1 },
+  "multiRest": { "count": 4 }
 }
 ```
 
 | Field | Type | Required | Meaning |
 |-------|------|----------|---------|
 | `index` | integer | **yes** | 0-based measure index within the score |
-| `events` | Event[] | **yes** | All events in this measure; sorted by `start` ascending |
-| `barline` | string | no | One of: `regular`, `double`, `final`, `repeat-start`, `repeat-end`, `repeat-both` |
-| `repeatTimes` | integer | no | Required when `barline` is `repeat-end`; number of repetitions |
-| `volta` | integer[] | no | List of 1-based repetition indices during which this measure is active |
-| `multiRest` | integer | no | Number of measures this rest occupies; `≥ 1`; see §16.6 |
-| `rangeAnnotations` | RangeAnnotation[] | no | Hairpins, slurs, dynamics active in this measure |
-| `repeatOf` | integer | no | 0-based index of the measure whose content this measure repeats |
-| `repeatOfCount` | integer | no | How many consecutive measures to repeat; only valid when `repeatOf` is set |
+| `events` | `Event[]` | **yes** | All events in this measure |
+| `barline` | `BarlineType` | **yes** | Visual style of the right-hand barline |
+| `marker` | `MarkerType` | no | Navigation marker (e.g., segno, coda) |
+| `jump` | `JumpType` | no | Navigation jump instruction (e.g., D.S. al Coda) |
+| `volta` | `VoltaIntent` | no | Metadata for alternative endings |
+| `measureRepeat` | `MeasureRepeatIntent` | no | Visual repeat shorthand (% or %%) |
+| `multiRest` | `MultiRestIntent` | no | Multi-measure rest metadata |
 
-**Barline types**:
+---
 
-| Value | Visual | DSL Syntax |
-|-------|--------|------------|
-| `regular` | single barline | `|` |
-| `double` | double barline | `||` |
-| `final` | final barline | `|` at end of score |
-| `repeat-start` | repeat start | `|:` |
-| `repeat-end` | repeat end | `:|` |
-| `repeat-both` | repeat start+end | `|: :|` |
+### 16.6 BarlineType (Enum)
 
-**Volta termination** (parser responsibility):
-- A volta ends when: (a) a `repeat-end` barline is encountered, (b) a new `volta` with a different index starts, or (c) an explicit termination barline `|.` is encountered.
+| Value | Meaning |
+|-------|---------|
+| `regular` | Standard single barline |
+| `double` | Double barline |
+| `final` | Termination or heavy double barline |
+| `repeat-start` | Start of a repeat section |
+| `repeat-end` | End of a repeat section |
+| `repeat-both` | Back-to-back repeat (end + start) |
 
-### 16.6 Multi-Measure Rest Encoding
+### 16.7 MarkerType (Enum)
 
-A multi-measure rest is encoded as **consecutive measure entries** in the `measures` array. The first entry carries `multiRest: n`; the following `n−1` entries each carry `multiRest: 1`. All `n` entries must be present in the array with consecutive `index` values.
+| Value | Meaning |
+|-------|---------|
+| `segno` | Segno symbol ($\S$) |
+| `coda` | Coda symbol ($\phi$) |
+| `fine` | "Fine" text |
 
-```json
-[
-  { "index": 2, "events": [], "multiRest": 4 },
-  { "index": 3, "events": [], "multiRest": 1 },
-  { "index": 4, "events": [], "multiRest": 1 },
-  { "index": 5, "events": [], "multiRest": 1 }
-]
-```
+### 16.8 JumpType (Enum)
 
-**Rules**:
-- `multiRest: 1` is equivalent to a normal empty measure (full-measure rest). The distinction is visual only.
-- When `multiRest > 1`, the first entry (`multiRest: n`) triggers the visually-rendered multi-rest glyph. The trailing `n−1` entries are renderer hints for systems that break across pages.
-- All `n` entries MUST have empty `events` arrays.
-- If `multiRest > 1` on a measure that is not the first in a sequence, it is a validation error.
+| Value | Meaning |
+|-------|---------|
+| `da-capo` | "D.C." |
+| `dal-segno` | "D.S." |
+| `dc-al-fine` | "D.C. al Fine" |
+| `dc-al-coda` | "D.C. al Coda" |
+| `ds-al-fine` | "D.S. al Fine" |
+| `ds-al-coda` | "D.S. al Coda" |
+| `to-coda` | "To Coda" |
 
-### 16.7 Repeat Shorthand
+### 16.9 VoltaIntent (Object)
 
-A measure may reference the content of one or more previous measures using `repeatOf`, instead of duplicating the events:
+| Field | Type | Meaning |
+|-------|------|---------|
+| `indices` | `integer[]` | 1-based indices for the jump bracket (e.g., `[1]`) |
 
-```json
-[
-  { "index": 0, "events": [{ "track": "HH", "start": { "num": 0, "den": 16 }, ... }] },
-  { "index": 1, "repeatOf": 0 },                    // repeats measure 0
-  { "index": 2, "repeatOf": 0, "repeatOfCount": 2 } // repeats measures 0 and 1
-]
-```
+### 16.8 MeasureRepeatIntent (Object)
 
-**Rules**:
-- `repeatOf` and `repeatOfCount` are optional; absent means this is a normal measure with explicit events.
-- The referenced source measures must exist and must NOT themselves have `repeatOf` set (no nested repeat references).
-- Source measures must not be multiRest measures.
-- When a measure has `repeatOf`, its `events` array should be empty — renderer and exporter read the source measure's events instead.
-- A measure with `repeatOf` may still carry `barline`, `volta`, `rangeAnnotations`, and `multiRest` — these apply to the repeat instance itself (e.g., the repeated measure may have a different barline style).
+| Field | Type | Meaning |
+|-------|------|---------|
+| `slashes` | `integer` | `1` for `%`, `2` for `%%` |
 
-### 16.6 Event IR
+### 16.9 MultiRestIntent (Object)
+
+| Field | Type | Meaning |
+|-------|------|---------|
+| `count` | `integer` | Total measures in the rest block (N >= 1) |
+
+---
+
+### 16.10 Event IR
 
 ```json
 {
@@ -742,94 +741,35 @@ A measure may reference the content of one or more previous measures using `repe
 | Field | Type | Required | Meaning |
 |-------|------|----------|---------|
 | `track` | string | **yes** | Track ID |
-| `start` | Fraction | **yes** | Measure-relative offset; `0 ≤ start < 1` |
-| `duration` | Fraction | **yes** | Note duration; `0 < duration ≤ 1` |
-| `kind` | string | **yes** | One of: `hit`, `rest`, `sticking` |
-| `glyph` | string | `kind == "hit"` | Atomic glyph token; one of: `d`, `x`, `p`, `g`, `s`, `b`, `r`, `c`, `t1`, `t2`, `t3`, `t4`, `o` |
-| `modifiers` | string[] | no | Zero or more modifier strings |
-| `tuplet` | TupletSpec \| null | no | Present only if this note is part of a tuplet group |
-| `tie` | string \| null | no | One of: `start`, `stop`, `both`, or absent |
-| `voice` | integer \| null | no | `1` = up-stem, `2` = down-stem; defaults to track-derived convention |
-| `beam` | string \| null | no | One of: `begin`, `continue`, `end`, `none`; absent implies `none` |
-| `beamMode` | string \| null | no | `"auto"` (default) or `"manual"` |
+| `start` | `Fraction` | **yes** | Offset from start of measure |
+| `duration` | `Fraction` | **yes** | Musical duration |
+| `kind` | string | **yes** | `hit`, `rest`, `sticking` |
+| `glyph` | string | `kind == "hit"` | Atomic glyph token |
+| `modifiers` | string[] | no | List of modifier strings |
+| `tuplet` | `TupletSpec` | no | Tuplet metadata if applicable |
+| `tie` | `string` | no | `start`, `stop`, `both` |
+| `voice` | integer | no | `1` (up), `2` (down) |
+| `beam` | `string` | no | `begin`, `continue`, `end`, `none` |
 
-**Event kinds**:
+---
 
-| Kind | Meaning | `glyph` required? | MIDI output? |
-|------|---------|-------------------|-------------|
-| `hit` | Percussive strike | yes | yes |
-| `rest` | Silence placeholder | no | no |
-| `sticking` | Hand indication (R/L) | yes (must be `r` or `l`) | no |
-
-### 16.7 TupletSpec
-
-```json
-{
-  "actual": 3,
-  "normal": 2,
-  "span": 1,
-  "bracket": true
-}
-```
-
-| Field | Type | Default | Meaning |
-|-------|------|---------|---------|
-| `actual` | integer | — | Number of notes played in the tuplet |
-| `normal` | integer | — | Number of notes in the normal duration |
-| `span` | integer | — | How many beat groups this tuplet occupies |
-| `bracket` | boolean | `true` | Whether to draw the tuplet bracket |
-
-**Supported tuplet ratios**: `[2, 1]`, `[3, 2]`, `[4, 3]`, `[3, 1]`, `[4, 1]`, `[5, 4]`, `[6, 4]`, `[7, 4]`.
-
-### 16.8 Beam
-
-Beam state defines this note's position within a beam group. Only 8th notes and shorter can have beam states other than `none`.
-
-| Value | Meaning |
-|-------|---------|
-| `begin` | Beam starts here |
-| `continue` | Mid-beam (neither start nor end) |
-| `end` | Beam ends here |
-| `none` | No beam on this note (half note or longer, or a rest) |
-
-**Rules**:
-- Beaming is computed **per voice** — only notes of the same `voice` are considered for beam grouping.
-- A beam may continue across a measure boundary.
-- The parser computes beam states from `grouping` and `duration` using standard engraving rules before emitting the IR.
-
-### 16.9 Tie
-
-| Value | Meaning |
-|-------|---------|
-| `start` | This note is the start of a tie |
-| `stop` | This note is the end of a tie |
-| `both` | This note is simultaneously a tie start and tie stop (for chains of 3+ notes) |
-
-**Rules**:
-- Tie always connects notes on the **same track**.
-- `start` and `stop` events must have the same `duration`.
-- A chain of 3+ tied notes: first has `tie: "start"`, middle has `tie: "both"`, last has `tie: "stop"`.
-
-### 16.10 Range Annotations
-
-```json
-{
-  "type": "hairpin",
-  "subtype": "crescendo",
-  "track": "HH",
-  "start": { "num": 0, "den": 16 },
-  "end": { "num": 1, "den": 1 }
-}
-```
+### 16.11 TupletSpec (Object)
 
 | Field | Type | Meaning |
 |-------|------|---------|
-| `type` | string | One of: `hairpin`, `slur`, `dynamic` |
-| `subtype` | string | For `hairpin`: `crescendo` or `decrescendo`. For `slur`: `slur`. For `dynamic`: one of `pp`, `p`, `mp`, `mf`, `f`, `ff`, `fff`, `sfz`, `fp` |
-| `track` | string | For hairpin and dynamic — the track this annotation belongs to |
-| `tracks` | string[] | For slur only — all tracks covered by this slur |
-| `start` | Fraction | Measure-relative start position |
-| `end` | Fraction | Measure-relative end position; `end > start`; required for `hairpin` and `slur` |
+| `actual` | integer | Notes played (e.g., 3) |
+| `normal` | integer | Notes in normal time (e.g., 2) |
+| `span` | integer | Duration in "normal" units |
+| `bracket` | boolean | Whether to draw the bracket |
+
+### 16.12 Range Annotations
+
+| Field | Type | Meaning |
+|-------|------|---------|
+| `type` | string | `hairpin`, `slur`, `dynamic` |
+| `subtype` | string | e.g., `crescendo`, `p`, `ff` |
+| `start` | `Fraction` | Start position |
+| `end` | `Fraction` | End position (for span types) |
 
 **Cross-measure spanning**: A hairpin that spans measures 0–2 is represented as one fragment per measure, using `{ "num": 1, "den": 1 }` to anchor at measure boundaries.
 
@@ -913,7 +853,7 @@ v0 modifiers are limited to forms with stable MusicXML export semantics.
 - bell
 - choke
 
-**Out of scope for v0**: Any modifier that cannot be represented reliably in MusicXML should not be accepted by validation.
+**Out of scope for the current v0 MusicXML exporter**: A modifier may be valid in the DSL even if this exporter does not yet provide a stable representation for it.
 
 `ghost` and `drag` are exported as grace notes with appropriate notation semantics.
 
@@ -1029,7 +969,7 @@ Corresponding IR excerpt (first measure):
 | `CL` | CL | accent | |
 | `p` | HF (local fallback) | — | |
 | `g` | local | ghost | |
-| `l/L` | ST | — | sticking |
+| `R/L` | ST | — | sticking |
 | `-` | — | — | rest |
 
 ---
@@ -1074,8 +1014,8 @@ The following features are defined in the spec but not yet implemented or not st
 
 | Consumer | Reads | Computes |
 |----------|-------|----------|
-| **VexFlow Renderer** | header, tracks, measures, events | stem directions, beaming (if auto), notehead shapes, positioning, page layout |
-| **MusicXML Exporter** | header, tracks, measures, events | MIDI note numbers, notehead types, beam grouping, tuplet XML elements |
+| **VexFlow Renderer** | header, tracks, measures, events | notehead shapes, positioning, page layout |
+| **MusicXML Exporter** | header, tracks, measures, events | MIDI note numbers, notehead types, tuplet XML elements |
 | **Playback Engine** (future) | header, tracks, measures (with repeats/volts expanded) | linear MIDI event stream, velocities, CC messages |
 
 ### 19.2 What IR Does NOT Store

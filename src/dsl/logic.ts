@@ -77,6 +77,7 @@ export type VoiceId = 1 | 2;
 export function voiceForTrack(track: TrackName): VoiceId {
   switch (track) {
     case "BD":
+    case "BD2":
     case "HF":
       return 2;
     default:
@@ -93,16 +94,17 @@ export function stemDirectionForVoice(voice: VoiceId): "up" | "down" {
  * Used for beaming logic.
  */
 export function groupingSegmentIndex(score: NormalizedScore, positionInMeasure: Fraction): number {
-  const grouping = score.ast.headers.grouping.values;
-  const time = score.ast.headers.time;
-  
-  // Convert position to a value in units of the time signature's denominator
-  const posInUnits = (positionInMeasure.numerator * time.beatUnit) / positionInMeasure.denominator;
-  
+  const grouping = score.header.grouping;
+  const time = score.header.timeSignature;
+
   let accumulated = 0;
   for (const [i, g] of grouping.entries()) {
     accumulated += g;
-    if (posInUnits < accumulated - 0.0001) {
+    const boundary = simplify({
+      numerator: accumulated,
+      denominator: time.beatUnit,
+    });
+    if (compareFractions(positionInMeasure, boundary) < 0) {
       return i;
     }
   }

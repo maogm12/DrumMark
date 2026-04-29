@@ -4,6 +4,7 @@ import {
   multiplyFraction,
   divideFraction,
   simplify,
+  voiceForTrack,
 } from "./logic";
 import {
   type Fraction,
@@ -33,10 +34,6 @@ function getTrackFamily(track: TrackName): TrackFamily {
   if (PEDAL_TRACKS.has(track)) return "pedal";
   if (PERCUSSION_TRACKS.has(track)) return "percussion";
   return "auxiliary";
-}
-
-function voiceForTrack(track: TrackName): 1 | 2 {
-  return track === "BD" || track === "BD2" || track === "HF" ? 2 : 1;
 }
 
 function calculateTokenWeight(token: TokenGlyph): number {

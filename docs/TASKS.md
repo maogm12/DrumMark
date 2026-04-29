@@ -52,7 +52,7 @@ Acceptance:
 Acceptance:
   Normalization resolves all supported track summons and produces spec-shaped events and measures for the expanded registry.
 
-- [ ] `T10` Update shared logic helpers for the expanded track families and canonical voice/beam ownership.
+- [x] `T10` Update shared logic helpers for the expanded track families and canonical voice/beam ownership.
 Acceptance:
   Voice assignment, fallback routing, beam grouping helpers, and duration helpers work for the full track set and new IR model.
 

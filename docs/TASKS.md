@@ -66,7 +66,7 @@ Acceptance:
 Acceptance:
   Exporter has explicit behavior for `half-open`, `roll`, and `dead`, and preserves the existing supported modifier behavior under the new IR model.
 
-- [ ] `T13` Export measure-level structural intent from canonical IR.
+- [x] `T13` Export measure-level structural intent from canonical IR.
 Acceptance:
   Exporter reads canonical repeat barline, `%` shorthand, multi-rest, and in-scope volta/navigation fields from IR instead of reconstructing them from legacy structures.
 

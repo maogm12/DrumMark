@@ -106,4 +106,22 @@ grouping 1+1+1+1+1+1+1+1+1
     const xNoteheads = xml.match(/<notehead>x<\/notehead>/g) ?? [];
     expect(xNoteheads).toHaveLength(4);
   });
+
+  it("exports canonical measure-level repeat, volta, and navigation metadata", () => {
+    const score = buildNormalizedScore(`time 4/4
+divisions 4
+
+|: x x x x :| @segno % |1. x - - - | @to-coda --2-- |.`);
+
+    const xml = buildMusicXml(score);
+
+    expect(xml).toContain('<barline location="left"><repeat direction="forward"/></barline>');
+    expect(xml).toContain('<barline location="right"><repeat direction="backward"/></barline>');
+    expect(xml).toContain("<direction placement=\"above\"><direction-type><segno/></direction-type></direction>");
+    expect(xml).toContain("<direction placement=\"above\"><direction-type><words>To Coda</words></direction-type></direction>");
+    expect(xml).toContain("<measure-style><measure-repeat type=\"start\">1</measure-repeat></measure-style>");
+    expect(xml).toContain('<ending number="1" type="start"/>');
+    expect(xml).toContain('<ending number="1" type="stop"/>');
+    expect(xml).toContain("<measure-style><multiple-rest>2</multiple-rest></measure-style>");
+  });
 });

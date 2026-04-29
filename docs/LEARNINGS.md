@@ -146,3 +146,9 @@ If the app is served from a sub-directory (e.g., `/drum_notation/`):
 - **Section 8.2 attachment is per note, not per rhythmic slot:** when several notes share one `start` position, the same `ST` annotation must be emitted on every exported note at that position, including same-voice chords and cross-voice simultaneities. A "render once per slot" strategy violates the spec.
 - **Joining multiple `ST` glyphs is a start-position aggregation rule:** if several sticking events normalize to the same `start`, MusicXML should emit one combined fingering string such as `R L` on each simultaneous note rather than splitting the glyphs across different notes.
 - **Ignore-if-no-note is naturally enforced at export time:** keeping `ST` events in normalized IR is fine, but MusicXML should only materialize fingering text while rendering actual note entries. Unmatched sticking starts should therefore disappear from the export without needing a separate normalization pass.
+
+## 24. Editor Highlighting Learnings (2026-04-29)
+
+- **The CodeMirror stream highlighter is a separate parser surface:** `src/dslLanguage.ts` does not inherit the real DSL parser's coverage automatically, so spec additions like anonymous lines, `Track:` summons, `Track { ... }` routing scopes, `%`/`%%`, and navigation markers must be added explicitly or they silently fall back to generic identifiers.
+- **`%%` is measure-repeat syntax in DrumMark, not a comment prefix:** carrying over `%%` as a comment token from an older grammar directly conflicts with spec section 9.4 and breaks editor feedback on repeat shorthand.
+- **Single-token summons and block scopes need state, not regex-only matching:** `ST:R` and `RC{d:bell}` only highlight correctly if the stream parser remembers a pending explicit track or routed scope across subsequent `:` / `{` tokens instead of classifying each token in isolation.

@@ -6,7 +6,7 @@ import type { PDFDocument as PDFLibDocument } from "pdf-lib";
 import { buildMusicXml, buildNormalizedScore, type ParseError } from "./dsl";
 import { type NormalizedScore } from "./dsl";
 import { renderScoreToSvg, renderScorePagesToSvgs, type VexflowRenderOptions } from "./vexflow";
-import { drumDslEditorTheme, drumDslLanguage, drumDslSyntaxHighlighting } from "./dslLanguage";
+import { drumMarkEditorTheme, drumMarkLanguage, drumMarkSyntaxHighlighting } from "./drummark";
 
 const legacySeedDsl = `tempo 96
 time 4/4
@@ -437,9 +437,9 @@ function DslEditor({ value, onChange, errors }: { value: string; onChange: (valu
             autocapitalize: "off",
             "data-gramm": "false",
           }),
-          drumDslLanguage,
-          drumDslSyntaxHighlighting,
-          drumDslEditorTheme,
+          drumMarkLanguage,
+          drumMarkSyntaxHighlighting,
+          drumMarkEditorTheme,
           linterCompartment.of(
             linter((v) => {
               return errors.map((err) => {

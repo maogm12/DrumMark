@@ -128,6 +128,9 @@ function collectTracksInToken(token: TokenGlyph, tracks: Set<TrackName>, context
 }
 
 function collectTracksInLine(line: ParsedTrackLine, tracks: Set<TrackName>): void {
+  if (line.track !== "ANONYMOUS" && TRACKS.includes(line.track as TrackName)) {
+    tracks.add(line.track as TrackName);
+  }
   line.measures.forEach((m) => m.tokens.forEach((t) => collectTracksInToken(t, tracks, line.track as TrackName | "ANONYMOUS")));
 }
 

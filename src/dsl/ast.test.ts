@@ -128,4 +128,27 @@ HH | [1: x x x x x x x x x] |`); // 9 items in 1 slot = too small
       message: "Group item durations below 64th notes are not supported in v0",
     }));
   });
+
+  it("rejects chained measure-repeat shorthand", () => {
+    const score = buildScoreAst(`time 4/4
+divisions 4
+
+| d d d d | % | %% |`);
+
+    expect(score.errors).toContainEqual(expect.objectContaining({
+      message: "Measure repeat at bar 3 cannot chain another measure-repeat bar",
+    }));
+  });
+
+  it("rejects conflicting navigation declarations on the same bar", () => {
+    const score = buildScoreAst(`time 4/4
+divisions 4
+
+HH | @segno d - - - |
+SD | @coda d - - - |`);
+
+    expect(score.errors).toContainEqual(expect.objectContaining({
+      message: "Conflicting markers at bar 1",
+    }));
+  });
 });

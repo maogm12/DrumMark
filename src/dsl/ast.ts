@@ -268,6 +268,59 @@ function validateAndBuildRepeats(
   return repeatSpans;
 }
 
+function validateMeasureMetadata(paragraphs: ScoreParagraph[], errors: ParseError[]): void {
+  const markersByBar = new Map<number, string>();
+  const jumpsByBar = new Map<number, string>();
+  const measuresByBar = new Map<number, ScoreMeasure[]>();
+
+  for (const paragraph of paragraphs) {
+    for (const track of paragraph.tracks) {
+      for (const measure of track.measures) {
+        const currentMeasures = measuresByBar.get(measure.globalIndex) ?? [];
+        currentMeasures.push(measure);
+        measuresByBar.set(measure.globalIndex, currentMeasures);
+
+        if (measure.marker) {
+          const existing = markersByBar.get(measure.globalIndex);
+          if (existing && existing !== measure.marker) {
+            pushError(errors, paragraph.startLine, `Conflicting markers at bar ${measure.globalIndex + 1}`);
+          } else {
+            markersByBar.set(measure.globalIndex, measure.marker);
+          }
+        }
+
+        if (measure.jump) {
+          const existing = jumpsByBar.get(measure.globalIndex);
+          if (existing && existing !== measure.jump) {
+            pushError(errors, paragraph.startLine, `Conflicting jumps at bar ${measure.globalIndex + 1}`);
+          } else {
+            jumpsByBar.set(measure.globalIndex, measure.jump);
+          }
+        }
+      }
+    }
+  }
+
+  for (const [barIndex, measures] of measuresByBar.entries()) {
+    const measureRepeat = measures.find((measure) => measure.measureRepeat?.slashes !== undefined)?.measureRepeat;
+    if (measureRepeat) {
+      if (barIndex < measureRepeat.slashes) {
+        pushError(errors, measures[0]?.sourceLine ?? 1, `Measure repeat at bar ${barIndex + 1} does not have ${measureRepeat.slashes} preceding measure(s)`);
+        continue;
+      }
+
+      for (let offset = 1; offset <= measureRepeat.slashes; offset += 1) {
+        const referenced = measuresByBar.get(barIndex - offset);
+        const referencedRepeat = referenced?.find((measure) => measure.measureRepeat?.slashes !== undefined);
+        if (referencedRepeat) {
+          pushError(errors, measures[0]?.sourceLine ?? 1, `Measure repeat at bar ${barIndex + 1} cannot chain another measure-repeat bar`);
+          break;
+        }
+      }
+    }
+  }
+}
+
 export function buildScoreAst(source: string): ScoreAst {
   const skeleton = parseDocumentSkeleton(source);
   const errors = [...skeleton.errors];
@@ -360,6 +413,8 @@ export function buildScoreAst(source: string): ScoreAst {
 
     globalBarIndex += measureCount;
   }
+
+  validateMeasureMetadata(paragraphs, errors);
 
   return {
     headers: skeleton.headers,

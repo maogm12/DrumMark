@@ -42,7 +42,7 @@ Acceptance:
 Acceptance:
   AST carries the information needed downstream for repeat barlines, `%` shorthand, voltas, markers, jumps, and multi-rest without relying on legacy ad hoc expansion only.
 
-- [ ] `T08` Tighten semantic validation to match the current spec.
+- [x] `T08` Tighten semantic validation to match the current spec.
 Acceptance:
   Validation enforces the clarified duration model, grouping boundary rules, legal measure-repeat usage, and the current sticking/token constraints.
 

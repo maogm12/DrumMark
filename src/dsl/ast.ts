@@ -14,6 +14,7 @@ function makeRestMeasure(globalIndex: number, divisions: number): ScoreMeasure {
     repeatEnd: false,
     generated: true,
     globalIndex,
+    barline: "regular",
   };
 }
 
@@ -56,12 +57,25 @@ function normalizeExplicitMeasure(measure: ParsedMeasure, globalIndex: number, l
     }
   }
 
+  const barline =
+    measure.repeatStart && measure.repeatEnd
+      ? "repeat-both"
+      : measure.repeatStart
+        ? "repeat-start"
+        : measure.repeatEnd
+          ? "repeat-end"
+          : "regular";
+
   return {
     ...measure,
     tokens,
     generated: measure.tokens.length === 0 && measure.multiRestCount === undefined,
     globalIndex,
     sourceLine: lineNumber,
+    barline,
+    ...(measure.voltaIndices ? { volta: { indices: [...measure.voltaIndices] } } : {}),
+    ...(measure.measureRepeatSlashes !== undefined ? { measureRepeat: { slashes: measure.measureRepeatSlashes } } : {}),
+    ...(measure.multiRestCount !== undefined ? { multiRest: { count: measure.multiRestCount } } : {}),
   };
 }
 

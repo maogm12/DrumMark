@@ -552,11 +552,32 @@ function parseTrackName(line: PreprocessedLine, errors: ParseError[]): { track: 
 function parseMeasureTail(remainder: string, line: PreprocessedLine, errors: ParseError[]): RawMeasure[] {
   const measures: RawMeasure[] = [];
   let cursor = 0;
-  let currentLeftBoundary: "barline" | "repeat_start" | null = null;
+  let currentLeftBoundary:
+    | { kind: "barline" | "repeat_start"; voltaIndices?: number[]; voltaTerminator?: boolean }
+    | null = null;
 
   const parseBoundary = (
     index: number,
-  ): { length: number; kind: "barline" | "repeat_start" | "repeat_end"; times?: number } | null => {
+  ): {
+    length: number;
+    kind: "barline" | "repeat_start" | "repeat_end";
+    times?: number;
+    voltaIndices?: number[];
+    voltaTerminator?: boolean;
+  } | null => {
+    const voltaStartMatch = remainder.slice(index).match(/^\|(\d+(?:,\d+)*)\./);
+    if (voltaStartMatch?.[1] !== undefined) {
+      return {
+        length: voltaStartMatch[0].length,
+        kind: "barline",
+        voltaIndices: voltaStartMatch[1].split(",").map(Number),
+      };
+    }
+
+    if (remainder.startsWith("|.", index)) {
+      return { length: 2, kind: "barline", voltaTerminator: true };
+    }
+
     if (remainder.startsWith("|:", index)) {
       return { length: 2, kind: "repeat_start" };
     }
@@ -598,11 +619,15 @@ function parseMeasureTail(remainder: string, line: PreprocessedLine, errors: Par
         break;
       }
 
-      currentLeftBoundary = startBoundary.kind;
+      currentLeftBoundary = {
+        kind: startBoundary.kind,
+        ...(startBoundary.voltaIndices ? { voltaIndices: startBoundary.voltaIndices } : {}),
+        ...(startBoundary.voltaTerminator ? { voltaTerminator: true } : {}),
+      };
       cursor += startBoundary.length;
     }
 
-    const endBoundaryMatch = remainder.slice(cursor).match(/\|:|:\|x\d+|:\||\|/);
+    const endBoundaryMatch = remainder.slice(cursor).match(/\|\d+(?:,\d+)*\.|\|\.|\|:|:\|x\d+|:\||\|/);
 
     if (!endBoundaryMatch || endBoundaryMatch.index === undefined) {
       errors.push({
@@ -630,12 +655,18 @@ function parseMeasureTail(remainder: string, line: PreprocessedLine, errors: Par
     // Regular measure (no special shorthand)
     measures.push({
       content,
-      repeatStart: currentLeftBoundary === "repeat_start",
+      repeatStart: currentLeftBoundary.kind === "repeat_start",
       repeatEnd: endBoundary.kind === "repeat_end",
       repeatTimes: endBoundary.kind === "repeat_end" ? endBoundary.times : undefined,
+      voltaIndices: currentLeftBoundary.voltaIndices,
+      voltaTerminator: currentLeftBoundary.voltaTerminator || endBoundary.voltaTerminator,
     });
 
-    currentLeftBoundary = endBoundary.kind === "repeat_start" ? "repeat_start" : "barline";
+    currentLeftBoundary = {
+      kind: endBoundary.kind === "repeat_start" ? "repeat_start" : "barline",
+      ...(endBoundary.voltaIndices ? { voltaIndices: endBoundary.voltaIndices } : {}),
+      ...(endBoundary.voltaTerminator ? { voltaTerminator: true } : {}),
+    };
     cursor = endIndex + endBoundary.length;
   }
 
@@ -701,6 +732,8 @@ function parseTrackLine(line: PreprocessedLine, errors: ParseError[]): ParsedTra
           repeatTimes: measure.repeatTimes,
           marker: navigation.marker as ParsedMeasure["marker"],
           jump: navigation.jump as ParsedMeasure["jump"],
+          voltaIndices: measure.voltaIndices,
+          voltaTerminator: measure.voltaTerminator,
           measureRepeatSlashes: measureRepeatMatch[1].length,
         }];
       }
@@ -725,6 +758,8 @@ function parseTrackLine(line: PreprocessedLine, errors: ParseError[]): ParsedTra
           repeatTimes: measure.repeatTimes,
           marker: navigation.marker as ParsedMeasure["marker"],
           jump: navigation.jump as ParsedMeasure["jump"],
+          voltaIndices: measure.voltaIndices,
+          voltaTerminator: measure.voltaTerminator,
           multiRestCount: count,
         }];
       }
@@ -755,6 +790,8 @@ function parseTrackLine(line: PreprocessedLine, errors: ParseError[]): ParsedTra
               repeatTimes: i === repeatCount - 1 ? measure.repeatTimes : undefined,
               marker: i === 0 ? navigation.marker as ParsedMeasure["marker"] : undefined,
               jump: i === repeatCount - 1 ? navigation.jump as ParsedMeasure["jump"] : undefined,
+              voltaIndices: i === 0 ? measure.voltaIndices : undefined,
+              voltaTerminator: i === repeatCount - 1 ? measure.voltaTerminator : undefined,
             });
           }
           return expanded;
@@ -791,6 +828,8 @@ function parseTrackLine(line: PreprocessedLine, errors: ParseError[]): ParsedTra
             repeatTimes: i === count - 1 ? measure.repeatTimes : undefined,
             marker: i === 0 ? navigation.marker as ParsedMeasure["marker"] : undefined,
             jump: i === count - 1 ? navigation.jump as ParsedMeasure["jump"] : undefined,
+            voltaIndices: i === 0 ? measure.voltaIndices : undefined,
+            voltaTerminator: i === count - 1 ? measure.voltaTerminator : undefined,
           });
         }
         return expanded;
@@ -829,6 +868,8 @@ function parseTrackLine(line: PreprocessedLine, errors: ParseError[]): ParsedTra
         repeatTimes: measure.repeatTimes,
         marker: navigation.marker as ParsedMeasure["marker"],
         jump: navigation.jump as ParsedMeasure["jump"],
+        voltaIndices: measure.voltaIndices,
+        voltaTerminator: measure.voltaTerminator,
         multiRestCount: measure.multiRestCount,
       }];
     }),

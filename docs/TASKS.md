@@ -38,7 +38,7 @@ Acceptance:
 Acceptance:
   Tracks introduced by line headers, routing scopes, or summon prefixes remain active and preserve first-seen order across the score.
 
-- [ ] `T07` Extend AST measure semantics for canonical repeat/volta/navigation intent.
+- [x] `T07` Extend AST measure semantics for canonical repeat/volta/navigation intent.
 Acceptance:
   AST carries the information needed downstream for repeat barlines, `%` shorthand, voltas, markers, jumps, and multi-rest without relying on legacy ad hoc expansion only.
 

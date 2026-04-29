@@ -142,6 +142,8 @@ export type ParsedMeasure = {
   repeatCount?: number;
   marker?: MarkerType;
   jump?: JumpType;
+  voltaIndices?: number[];
+  voltaTerminator?: boolean;
   measureRepeatSlashes?: number;
   multiRestCount?: number;
 };
@@ -209,6 +211,10 @@ export type ScoreMeasure = ParsedMeasure & {
   generated: boolean;
   globalIndex: number;
   sourceLine?: number;
+  barline?: BarlineType;
+  volta?: VoltaIntent;
+  measureRepeat?: MeasureRepeatIntent;
+  multiRest?: MultiRestIntent;
 };
 
 export type ScoreTrackParagraph = {

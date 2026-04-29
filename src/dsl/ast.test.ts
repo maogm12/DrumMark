@@ -82,6 +82,31 @@ HH |: x x x x :|`);
     ]);
   });
 
+  it("carries structured measure metadata for downstream consumers", () => {
+    const score = buildScoreAst(`time 4/4
+divisions 4
+
+|: x x x x :| @segno % |1. x - - - | @to-coda --1-- |.`);
+
+    expect(score.errors).toEqual([]);
+    const measures = score.paragraphs[0].tracks[0].measures;
+    expect(measures[0]).toMatchObject({
+      barline: "repeat-both",
+    });
+    expect(measures[1]).toMatchObject({
+      marker: "segno",
+      measureRepeat: { slashes: 1 },
+    });
+    expect(measures[2]).toMatchObject({
+      volta: { indices: [1] },
+    });
+    expect(measures[3]).toMatchObject({
+      jump: "to-coda",
+      multiRest: { count: 1 },
+      voltaTerminator: true,
+    });
+  });
+
   it("reports non-exportable group forms", () => {
     const score = buildScoreAst(`time 4/4
 divisions 4

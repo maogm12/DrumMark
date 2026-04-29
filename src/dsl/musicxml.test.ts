@@ -69,4 +69,27 @@ ST | R - L - |`);
     expect(xml).toContain("<fingering placement=\"above\" font-size=\"14\">R</fingering>");
     expect(xml).toContain("<fingering placement=\"above\" font-size=\"14\">L</fingering>");
   });
+
+  it("maps the expanded track registry to MusicXML display positions", () => {
+    const score = buildNormalizedScore(`time 9/4
+divisions 9
+grouping 1+1+1+1+1+1+1+1+1
+
+| b2 r2 c2 t4 spl chn cb wb cl |`);
+
+    const xml = buildMusicXml(score);
+
+    expect(xml).toContain("<display-step>E</display-step><display-octave>4</display-octave>");
+    expect(xml).toContain("<display-step>E</display-step><display-octave>5</display-octave>");
+    expect(xml).toContain("<display-step>B</display-step><display-octave>5</display-octave>");
+    expect(xml).toContain("<display-step>G</display-step><display-octave>4</display-octave>");
+    expect(xml).toContain("<display-step>D</display-step><display-octave>6</display-octave>");
+    expect(xml).toContain("<display-step>C</display-step><display-octave>6</display-octave>");
+    expect(xml).toContain("<display-step>B</display-step><display-octave>4</display-octave>");
+    expect(xml).toContain("<display-step>A</display-step><display-octave>3</display-octave>");
+    expect(xml.match(/<display-step>G<\/display-step><display-octave>4<\/display-octave>/g)).toHaveLength(2);
+
+    const xNoteheads = xml.match(/<notehead>x<\/notehead>/g) ?? [];
+    expect(xNoteheads).toHaveLength(4);
+  });
 });

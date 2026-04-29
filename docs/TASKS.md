@@ -58,7 +58,7 @@ Acceptance:
 
 ## MusicXML
 
-- [ ] `T11` Extend MusicXML instrument mapping to the full track registry.
+- [x] `T11` Extend MusicXML instrument mapping to the full track registry.
 Acceptance:
   Exporter maps `BD2 T4 RC2 C2 SPL CHN CB WB CL` correctly and removes stale assumptions such as hi-hat-local crash sugar.
 

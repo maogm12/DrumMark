@@ -137,16 +137,34 @@ function instrumentForTrack(track: TrackName, _glyph?: string): InstrumentSpec {
       return { displayStep: "C", displayOctave: 5 };
     case "BD":
       return { displayStep: "F", displayOctave: 4 };
+    case "BD2":
+      return { displayStep: "E", displayOctave: 4 };
     case "T1":
       return { displayStep: "E", displayOctave: 5 };
     case "T2":
       return { displayStep: "D", displayOctave: 5 };
     case "T3":
       return { displayStep: "A", displayOctave: 4 };
+    case "T4":
+      return { displayStep: "G", displayOctave: 4 };
     case "RC":
       return { displayStep: "F", displayOctave: 5, notehead: "x" };
+    case "RC2":
+      return { displayStep: "E", displayOctave: 5, notehead: "x" };
     case "C":
       return { displayStep: "A", displayOctave: 5, notehead: "x" };
+    case "C2":
+      return { displayStep: "B", displayOctave: 5, notehead: "x" };
+    case "SPL":
+      return { displayStep: "D", displayOctave: 6, notehead: "x" };
+    case "CHN":
+      return { displayStep: "C", displayOctave: 6, notehead: "x" };
+    case "CB":
+      return { displayStep: "B", displayOctave: 4 };
+    case "WB":
+      return { displayStep: "A", displayOctave: 3 };
+    case "CL":
+      return { displayStep: "G", displayOctave: 4 };
     case "ST":
       return { displayStep: "B", displayOctave: 5 };
     default:

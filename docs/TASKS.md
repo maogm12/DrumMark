@@ -62,7 +62,7 @@ Acceptance:
 Acceptance:
   Exporter maps `BD2 T4 RC2 C2 SPL CHN CB WB CL` correctly and removes stale assumptions such as hi-hat-local crash sugar.
 
-- [ ] `T12` Update MusicXML notation export for the current modifier surface.
+- [x] `T12` Update MusicXML notation export for the current modifier surface.
 Acceptance:
   Exporter has explicit behavior for `half-open`, `roll`, and `dead`, and preserves the existing supported modifier behavior under the new IR model.
 

@@ -222,6 +222,10 @@ function noteheadValueForEvent(event: NormalizedEvent, instrument: InstrumentSpe
     return "normal"; // Ghost notes are often normal heads with parentheses, but we'll use 'normal' and add parentheses in notations
   }
 
+  if (event.modifiers.includes("dead")) {
+    return "x";
+  }
+
   if (event.track === "SD") {
     if (event.modifiers.includes("cross")) {
       return "x";
@@ -315,6 +319,7 @@ function noteXml(
   // Consolidate all notations into one tag
   const technical: string[] = [];
   const articulations: string[] = [];
+  const ornaments: string[] = [];
   const notationsContent: string[] = [];
 
   // Tuplet start/stop
@@ -337,6 +342,9 @@ function noteXml(
   if (event.modifiers.includes("close")) {
     technical.push("<stopped/>");
   }
+  if (event.modifiers.includes("half-open")) {
+    technical.push("<other-technical>half-open</other-technical>");
+  }
   if (event.modifiers.includes("rim")) {
     technical.push("<other-technical>rim</other-technical>");
   }
@@ -352,6 +360,9 @@ function noteXml(
   if (event.modifiers.includes("accent")) {
     articulations.push('<accent placement="above"/>');
   }
+  if (event.modifiers.includes("roll")) {
+    ornaments.push('<tremolo type="single">3</tremolo>');
+  }
   if (sticking) {
     technical.push(`<fingering placement="above" font-size="14">${xmlEscape(sticking)}</fingering>`);
   }
@@ -361,6 +372,9 @@ function noteXml(
   }
   if (articulations.length > 0) {
     notationsContent.push(`<articulations>${articulations.join("")}</articulations>`);
+  }
+  if (ornaments.length > 0) {
+    notationsContent.push(`<ornaments>${ornaments.join("")}</ornaments>`);
   }
 
   const notationsTag = notationsContent.length > 0 ? `<notations>${notationsContent.join("")}</notations>` : "";

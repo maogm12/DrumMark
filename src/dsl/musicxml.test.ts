@@ -38,6 +38,20 @@ SD | d:rim d:cross |`);
     expect(xml).toContain("<other-technical>cross-stick</other-technical>");
   });
 
+  it("exports half-open, roll, and dead with explicit MusicXML behavior", () => {
+    const score = buildNormalizedScore(`time 4/4
+divisions 4
+HH | d:half-open - - - |
+SD | d:dead - - - |
+BD | d:roll - - - |`);
+
+    const xml = buildMusicXml(score);
+
+    expect(xml).toContain("<other-technical>half-open</other-technical>");
+    expect(xml).toContain("<tremolo type=\"single\">3</tremolo>");
+    expect(xml).toContain("<notehead>x</notehead>");
+  });
+
   it("exports accents from uppercase tokens", () => {
     const score = buildNormalizedScore(`time 4/4
 divisions 4

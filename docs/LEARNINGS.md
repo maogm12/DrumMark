@@ -59,3 +59,9 @@ If the app is served from a sub-directory (e.g., `/drum_notation/`):
 - **Unknown modifier handling should stay atomic:** when the parser sees `:<name>` after a valid glyph and `<name>` is not in `MODIFIERS`, it should emit one `Unknown modifier \`<name>\`` error at the modifier name column and consume the whole modifier token. Otherwise a single typo degrades into a noisy cascade of per-character `Unknown token` errors.
 - **Section 15 count floors are parser invariants:** multi-measure rest shorthand must reject `--1--` at parse time with `Multi-measure rest count must be at least 2`; accepting it leaks a spec-invalid construct into later AST / export layers.
 - **Column math is based on measure-content offsets:** parser token errors inside measures currently report from the token start within the measure payload, not the left barline. For example, `HH | [x x - - |` reports the unterminated `[` at column 7.
+
+## 8. Atomic-Token Learnings (2026-04-29)
+
+- **Resolution priority must be enforced in normalize, not just track discovery:** section 5.2 is violated if `resolveToken()` applies named-line context before checking static magic tokens. Tokens like `s`, `b`, `r`, `c`, `t1`, `spl`, `cb`, and their accented variants must resolve to their global physical tracks even when written inside another named track line.
+- **`p` and `g` are the only local-fallback magic families in Appendix A:** `p/P` stay on the current named track but fall back to `HF` in anonymous lines; `g/G` stay on the current named track with `ghost`, but fall back to `SD` in anonymous lines. Treating them as generic static aliases breaks the spec's context-sensitive behavior.
+- **`ST` changes the meaning of `R/L`:** bare `R` normally means ride accent, but in `ST` context or with `ST:` override it must normalize as sticking without implicit `accent`. Accent inference for uppercase token families therefore needs a sticking exception.

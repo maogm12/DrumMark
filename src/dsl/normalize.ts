@@ -30,6 +30,61 @@ const CYMBAL_TRACKS = new Set<TrackName>(["HH", "RC", "RC2", "C", "C2", "SPL", "
 const DRUM_TRACKS = new Set<TrackName>(["SD", "BD", "BD2", "T1", "T2", "T3", "T4"]);
 const PEDAL_TRACKS = new Set<TrackName>(["HF"]);
 const PERCUSSION_TRACKS = new Set<TrackName>(["CB", "WB", "CL"]);
+const STATIC_MAGIC_TOKENS = new Set<BasicGlyph>([
+  "s",
+  "S",
+  "b",
+  "B",
+  "b2",
+  "B2",
+  "r",
+  "R",
+  "r2",
+  "R2",
+  "c",
+  "C",
+  "c2",
+  "C2",
+  "t1",
+  "T1",
+  "t2",
+  "T2",
+  "t3",
+  "T3",
+  "t4",
+  "T4",
+  "o",
+  "O",
+  "spl",
+  "SPL",
+  "chn",
+  "CHN",
+  "cb",
+  "CB",
+  "wb",
+  "WB",
+  "cl",
+  "CL",
+]);
+const ACCENT_MAGIC_TOKENS = new Set<BasicGlyph>([
+  "D",
+  "X",
+  "P",
+  "G",
+  "S",
+  "B",
+  "B2",
+  "R",
+  "R2",
+  "C",
+  "C2",
+  "O",
+  "SPL",
+  "CHN",
+  "CB",
+  "WB",
+  "CL",
+]);
 
 function getTrackFamily(track: TrackName): TrackFamily {
   if (CYMBAL_TRACKS.has(track)) return "cymbal";
@@ -54,10 +109,18 @@ function resolveToken(
   let track: TrackName;
   let glyph: Exclude<BasicGlyph, "-"> = "d";
   const modifiers = [...token.modifiers];
+  const explicitTrack = token.trackOverride && TRACKS.includes(token.trackOverride as TrackName)
+    ? token.trackOverride as TrackName
+    : undefined;
+  const stickingToken = token.value === "R" || token.value === "L";
 
   // 1. Resolve Track (Hierarchy)
-  if (token.trackOverride && TRACKS.includes(token.trackOverride as TrackName)) {
-    track = token.trackOverride as TrackName;
+  if (explicitTrack) {
+    track = explicitTrack;
+  } else if (contextTrack === "ST" && stickingToken) {
+    track = "ST";
+  } else if (STATIC_MAGIC_TOKENS.has(token.value)) {
+    track = resolveFallbackTrack(token.value);
   } else if (contextTrack !== "ANONYMOUS") {
     track = contextTrack;
   } else {
@@ -66,7 +129,7 @@ function resolveToken(
 
   // 2. Resolve Magic Tokens (Mapping to d + modifiers)
   const v = token.value;
-  if (["S", "B", "B2", "X", "R", "R2", "C", "C2", "O", "D", "G", "SPL", "CHN", "CB", "WB", "CL"].includes(v)) {
+  if (ACCENT_MAGIC_TOKENS.has(v) && !(track === "ST" && stickingToken)) {
     if (!modifiers.includes("accent")) modifiers.push("accent");
   }
 

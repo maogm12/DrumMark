@@ -778,18 +778,38 @@ function parseMeasureTail(remainder: string, line: PreprocessedLine, errors: Par
   return measures;
 }
 
-function extractNavigationTokens(content: string) {
+function extractNavigationTokens(content: string, line: PreprocessedLine, errors: ParseError[]) {
   const parts = content.split(/\s+/).filter(Boolean);
   let marker: (typeof MARKERS)[number] | undefined;
   let jump: (typeof JUMPS)[number] | undefined;
   const remaining: string[] = [];
+  let searchOffset = 0;
 
   for (const part of parts) {
+    const partColumn = Math.max(1, line.raw.indexOf(part, searchOffset) + 1);
+    searchOffset = Math.max(searchOffset, partColumn - 1 + part.length);
+
     if ((MARKERS as readonly string[]).includes(part)) {
+      if (marker !== undefined) {
+        errors.push({
+          line: line.lineNumber,
+          column: partColumn,
+          message: "Measure contains multiple markers",
+        });
+        continue;
+      }
       marker = part as (typeof MARKERS)[number];
       continue;
     }
     if ((JUMPS as readonly string[]).includes(part)) {
+      if (jump !== undefined) {
+        errors.push({
+          line: line.lineNumber,
+          column: partColumn,
+          message: "Measure contains multiple jumps",
+        });
+        continue;
+      }
       jump = part as (typeof JUMPS)[number];
       continue;
     }
@@ -825,7 +845,7 @@ function parseTrackLine(line: PreprocessedLine, errors: ParseError[]): ParsedTra
     track: parsed.track,
     lineNumber: line.lineNumber,
     measures: measures.flatMap((measure, _measureIndex) => {
-      const navigation = extractNavigationTokens(measure.content);
+      const navigation = extractNavigationTokens(measure.content, line, errors);
       const normalizedContent = navigation.content;
       const measureRepeatMatch = normalizedContent.match(/^(%+)$/);
       if (measureRepeatMatch?.[1] !== undefined) {

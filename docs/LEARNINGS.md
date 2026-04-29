@@ -112,3 +112,8 @@ If the app is served from a sub-directory (e.g., `/drum_notation/`):
 
 - **Section 9.4 standalone-only is a parser rule, not a generic tokenization accident:** when a measure contains `%` alongside ordinary note content, the parser should raise a dedicated `Measure repeat shorthand must occupy the entire measure` error instead of degrading into `Unknown token \`%\``. That keeps the failure aligned with the spec rule the user actually violated.
 - **Measure-repeat intent is global-bar metadata like voltas and markers:** once a `%` or `%%` measure is valid, normalized output should preserve `measureRepeat.slashes` even when the shorthand is declared on a non-leading track, as long as the bar has enough preceding non-repeat source measures to satisfy the anti-chaining and lookback rules.
+
+## 18. Navigation-Metadata Learnings (2026-04-29)
+
+- **Section 9.5 has two distinct conflict layers:** cross-track disagreements belong in AST validation as bar-global conflicts (`Conflicting markers/jumps at bar N`), but duplicate navigation tokens inside one physical measure must be rejected earlier in the parser before the second token is silently overwritten.
+- **Marker and jump are independent singleton channels:** one measure may legally carry one marker and one jump together, and both should survive normalization even when declared on a non-leading track or in a later paragraph. The invalid cases are only marker-vs-marker and jump-vs-jump multiplicity within the same global bar.

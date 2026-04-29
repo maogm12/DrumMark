@@ -41,3 +41,9 @@ If the app is served from a sub-directory (e.g., `/drum_notation/`):
 - **Measure repeat shorthand:** `%` and `%%` work best as measure-level symbols with their own IR intent (`measureRepeat.slashes`), not as inline trailing operators mixed with normal content.
 - **Inline repeat count:** `*N` is clearer and less error-prone when defined as total expanded measure count, not "repeat N more times."
 - **Post-refactor residue check:** After token-system refactors, scan merged spec sections for stale statements that still describe the pre-refactor model, such as local crash sugar on `HH` after moving to global magic tokens.
+
+## 5. Header Parser Learnings (2026-04-29)
+
+- **Structural header duplication:** `tempo`, `time`, `divisions`, and `grouping` need the same duplicate-header protection as metadata headers; silently overwriting early header state makes parser behavior depend on source order in a way the spec does not justify.
+- **Grouping/header consistency:** parser finalization must validate that explicit `grouping` sums to the `time` numerator even when both fields parse individually, because this is a section 3 header invariant rather than a later rhythmic-validation concern.
+- **Irregular meter fallback:** when `time` has no inferred grouping (for example `5/8`), the parser should still return a placeholder grouping in the skeleton so downstream code stays typed, but it must emit a hard missing-header error tied to the `time` line.

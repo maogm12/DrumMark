@@ -165,6 +165,15 @@ function parseHeaderLine(line: PreprocessedLine, headers: HeaderAccumulator, err
       return true;
     }
     case "tempo": {
+      if (headers.tempo) {
+        errors.push({
+          line: line.lineNumber,
+          column: 1,
+          message: "Duplicate header `tempo`",
+        });
+        return true;
+      }
+
       const parsed = parsePositiveInteger(value);
 
       if (parsed === null) {
@@ -180,6 +189,15 @@ function parseHeaderLine(line: PreprocessedLine, headers: HeaderAccumulator, err
       return true;
     }
     case "time": {
+      if (headers.time) {
+        errors.push({
+          line: line.lineNumber,
+          column: 1,
+          message: "Duplicate header `time`",
+        });
+        return true;
+      }
+
       const match = value.match(/^(\d+)\/(\d+)$/);
 
       if (!match) {
@@ -216,6 +234,15 @@ function parseHeaderLine(line: PreprocessedLine, headers: HeaderAccumulator, err
       return true;
     }
     case "divisions": {
+      if (headers.divisions) {
+        errors.push({
+          line: line.lineNumber,
+          column: 1,
+          message: "Duplicate header `divisions`",
+        });
+        return true;
+      }
+
       const parsed = parsePositiveInteger(value);
 
       if (parsed === null) {
@@ -235,6 +262,15 @@ function parseHeaderLine(line: PreprocessedLine, headers: HeaderAccumulator, err
       return true;
     }
     case "grouping": {
+      if (headers.grouping) {
+        errors.push({
+          line: line.lineNumber,
+          column: 1,
+          message: "Duplicate header `grouping`",
+        });
+        return true;
+      }
+
       const parsed = parseGroupingValue(value);
 
       if (!parsed) {
@@ -271,6 +307,29 @@ function finalizeHeaders(headers: HeaderAccumulator, errors: ParseError[]): Pars
     })();
   const inferredGrouping = inferGrouping(time.beats, time.beatUnit);
 
+  const grouping =
+    headers.grouping ??
+    (() => {
+      if (!inferredGrouping) {
+        errors.push({
+          line: time.line || 1,
+          column: 1,
+          message: `Missing required header \`grouping\` for time ${time.beats}/${time.beatUnit}`,
+        });
+        return { field: "grouping", values: [time.beats], line: 0 };
+      }
+
+      return { field: "grouping", values: inferredGrouping, line: 0 };
+    })();
+
+  if (grouping.values.reduce((sum, value) => sum + value, 0) !== time.beats) {
+    errors.push({
+      line: grouping.line || 1,
+      column: 1,
+      message: `Grouping must sum to time numerator ${time.beats}`,
+    });
+  }
+
   return {
     ...(headers.title ? { title: headers.title } : {}),
     ...(headers.subtitle ? { subtitle: headers.subtitle } : {}),
@@ -287,20 +346,7 @@ function finalizeHeaders(headers: HeaderAccumulator, errors: ParseError[]): Pars
         });
         return { field: "divisions", value: 16, line: 0 };
       })(),
-    grouping:
-      headers.grouping ??
-      (() => {
-        if (!inferredGrouping) {
-          errors.push({
-            line: time.line || 1,
-            column: 1,
-            message: `Missing required header \`grouping\` for time ${time.beats}/${time.beatUnit}`,
-          });
-          return { field: "grouping", values: [time.beats], line: 0 };
-        }
-
-        return { field: "grouping", values: inferredGrouping, line: 0 };
-      })(),
+    grouping,
   };
 }
 

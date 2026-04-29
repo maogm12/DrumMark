@@ -284,7 +284,35 @@ export function normalizeScoreAst(ast: ScoreAst): NormalizedScore {
     for (let measureInParagraph = 0; measureInParagraph < paragraph.measureCount; measureInParagraph += 1) {
       const events: NormalizedEvent[] = [];
       let sourceLine = 0;
-      const measureMeta = paragraph.tracks.map((trackLine) => trackLine.measures[measureInParagraph]).find((measure) => measure !== undefined);
+      const trackMeasures = paragraph.tracks
+        .map((trackLine) => trackLine.measures[measureInParagraph])
+        .filter((measure): measure is NonNullable<typeof measure> => measure !== undefined);
+      const mergedRepeatStart = trackMeasures.some((measure) => measure.repeatStart);
+      const mergedRepeatEnd = trackMeasures.some((measure) => measure.repeatEnd);
+      const mergedMeasureRepeat = trackMeasures.find((measure) => measure.measureRepeat !== undefined)?.measureRepeat;
+      const mergedMultiRest = trackMeasures.find((measure) => measure.multiRest !== undefined)?.multiRest;
+      const mergedBarline =
+        mergedRepeatStart && mergedRepeatEnd
+          ? "repeat-both"
+          : mergedRepeatStart
+            ? "repeat-start"
+            : mergedRepeatEnd
+              ? "repeat-end"
+              : trackMeasures.find((measure) => measure.barline === "final")?.barline
+                ?? trackMeasures.find((measure) => measure.barline === "double")?.barline
+                ?? trackMeasures.find((measure) => measure.barline !== undefined)?.barline;
+      const measureMeta = trackMeasures.length === 0
+        ? undefined
+        : {
+            generated: trackMeasures.every((measure) => measure.generated),
+            barline: mergedBarline,
+            marker: trackMeasures.find((measure) => measure.marker !== undefined)?.marker,
+            jump: trackMeasures.find((measure) => measure.jump !== undefined)?.jump,
+            volta: trackMeasures.find((measure) => measure.volta !== undefined)?.volta,
+            measureRepeat: mergedMeasureRepeat,
+            multiRest: mergedMultiRest,
+            multiRestCount: mergedMultiRest?.count,
+          };
 
       for (const trackLine of paragraph.tracks) {
         const measure = trackLine.measures[measureInParagraph];

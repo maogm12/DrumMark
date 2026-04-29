@@ -102,3 +102,8 @@ If the app is served from a sub-directory (e.g., `/drum_notation/`):
 
 - **Section 9.1 barline metadata must survive `parseTrackLine()` normalization:** `parseMeasureTail()` already recognizes `double` and `final`, but if `parseTrackLine()` does not copy `measure.barline` into the returned `ParsedMeasure`, downstream AST / normalize layers silently collapse `||` and `|.` into regular barlines.
 - **`||` vs `|  |` is a measure-count distinction as much as a style distinction:** `||` should terminate one measure with `barline: "double"` and start the next measure immediately, while `|  |` should produce a separate empty generated measure between two regular bars. The most stable regression test is therefore `2 measures + double` versus `3 measures + generated middle bar`, not a raw text comparison.
+
+## 16. Repeat-Rule And Volta Learnings (2026-04-29)
+
+- **Repeat and volta declarations are global-bar metadata and cannot be read from the first track opportunistically:** in multi-track or cross-paragraph inputs, the declaring line may not be the first track in paragraph order, and earlier tracks may be auto-generated rests. Normalize therefore has to merge per-bar metadata across all track measures before deriving canonical `barline`, `volta`, `marker`, `jump`, `measureRepeat`, and `multiRest` fields.
+- **Same-bar volta declarations must agree across tracks:** because `|1.` / `|1,2.` are global structure, two tracks writing different volta indices on the same global bar is a semantic conflict, not parallel metadata. AST validation should reject that case directly with a stable bar-indexed error instead of letting normalize or MusicXML export pick one arbitrarily.

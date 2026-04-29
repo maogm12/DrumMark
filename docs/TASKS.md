@@ -98,7 +98,7 @@ Acceptance:
 Acceptance:
   Tests assert the new instrument mappings and notation output for the gap-closure features.
 
-- [ ] `T20` Add renderer-facing tests or probes for the new track and modifier surface.
+- [x] `T20` Add renderer-facing tests or probes for the new track and modifier surface.
 Acceptance:
   Tests or stable probes verify that VexFlow rendering paths accept the expanded registry and structural intent without regression.
 

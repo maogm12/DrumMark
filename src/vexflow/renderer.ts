@@ -120,16 +120,16 @@ function applyStructuralModifiers(stave: any, score: NormalizedScore, measure: N
 
   const marker = markerText(measure.marker);
   if (marker) {
-    stave.setText(marker, Modifier.Position.ABOVE, { shiftY: -8 });
+    stave.setStaveText(marker, Modifier.Position.ABOVE, { shiftY: -8 });
   }
 
   const jump = jumpText(measure.jump);
   if (jump) {
-    stave.setText(jump, Modifier.Position.ABOVE, { shiftX: 24, shiftY: -8 });
+    stave.setStaveText(jump, Modifier.Position.ABOVE, { shiftX: 24, shiftY: -8 });
   }
 
   if (measure.multiRest) {
-    stave.setText(`rest x${measure.multiRest.count}`, Modifier.Position.ABOVE, { shiftY: -8 });
+    stave.setStaveText(`rest x${measure.multiRest.count}`, Modifier.Position.ABOVE, { shiftY: -8 });
   }
 }
 

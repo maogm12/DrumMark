@@ -85,6 +85,21 @@ const ACCENT_MAGIC_TOKENS = new Set<BasicGlyph>([
   "WB",
   "CL",
 ]);
+const TRACKS_BY_MODIFIER: Record<Modifier, ReadonlySet<TrackName>> = {
+  accent: new Set<TrackName>(TRACKS),
+  open: new Set<TrackName>(["HH"]),
+  "half-open": new Set<TrackName>(["HH"]),
+  close: new Set<TrackName>(["HH", "HF"]),
+  choke: new Set<TrackName>(["RC", "RC2", "C", "C2", "SPL", "CHN"]),
+  bell: new Set<TrackName>(["RC", "RC2"]),
+  rim: new Set<TrackName>(["SD"]),
+  cross: new Set<TrackName>(["SD"]),
+  flam: new Set<TrackName>(["SD", "T1", "T2", "T3", "T4"]),
+  ghost: new Set<TrackName>(["SD", "HH", "T1", "T2", "T3", "T4"]),
+  drag: new Set<TrackName>(["SD", "HH", "T1", "T2", "T3", "T4", "RC", "RC2"]),
+  roll: new Set<TrackName>(["SD", "HH", "T1", "T2", "T3", "T4", "RC", "RC2", "BD", "BD2"]),
+  dead: new Set<TrackName>(["SD", "HH", "T1", "T2", "T3", "T4", "BD", "BD2"]),
+};
 
 function gcd(a: number, b: number): number {
   let x = Math.abs(a);
@@ -276,6 +291,38 @@ function tokenToEvents(
   return [];
 }
 
+function validateModifierLegality(
+  token: TokenGlyph,
+  contextTrack: TrackName | "ANONYMOUS",
+  errors: ScoreAst["errors"],
+  line: number,
+): void {
+  if (token.kind === "basic") {
+    const resolved = resolveToken(token, contextTrack);
+    if (!resolved) return;
+
+    for (const modifier of resolved.modifiers) {
+      if (!TRACKS_BY_MODIFIER[modifier].has(resolved.track)) {
+        errors.push({
+          line,
+          column: 1,
+          message: `Modifier \`${modifier}\` is not allowed on track \`${resolved.track}\``,
+        });
+      }
+    }
+    return;
+  }
+
+  if (token.kind === "combined" || token.kind === "group") {
+    token.items.forEach((item) => validateModifierLegality(item, contextTrack, errors, line));
+    return;
+  }
+
+  if (token.kind === "braced") {
+    token.items.forEach((item) => validateModifierLegality(item, token.track as TrackName, errors, line));
+  }
+}
+
 export function normalizeScoreAst(ast: ScoreAst): NormalizedScore {
   const measures: NormalizedScore["measures"] = [];
   let globalMeasureIndex = 0;
@@ -334,6 +381,8 @@ export function normalizeScoreAst(ast: ScoreAst): NormalizedScore {
         const divisionsFrac: Fraction = { numerator: divisions, denominator: 1 };
         
         for (const token of measure.tokens) {
+          validateModifierLegality(token, trackLine.track as TrackName | "ANONYMOUS", ast.errors, measure.sourceLine || 0);
+
           const weight = calculateTokenWeightAsFraction(token);
           const tokenStart = multiplyFractions(slotDuration, currentSlotOffset);
           const tokenDuration = multiplyFractions(slotDuration, weight);

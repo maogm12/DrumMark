@@ -658,7 +658,7 @@ function renderPdfPageSvgs(
     titleTopPadding: layout?.titleTopPadding ?? 3.6,
     titleSubtitleGap: layout?.titleSubtitleGap ?? 1.2,
     titleStaffGap: layout?.titleStaffGap ?? 2.8,
-    systemSpacing: layout?.systemSpacing ?? 1.4,
+    systemSpacing: layout?.systemSpacing ?? 0.6,
     hideVoice2Rests: layout?.hideVoice2Rests ?? false,
   };
 
@@ -736,7 +736,7 @@ const defaultSettings: AppSettings = {
   pagePadding: { top: 24, right: 18, bottom: 24, left: 18 },
   pageScale: 1.0,
   titleStaffGap: 2.8,
-  systemSpacing: 1.4,
+  systemSpacing: 0.6,
   titleTopPadding: 3.6,
   titleSubtitleGap: 1.2,
   activeTab: "editor",
@@ -1049,18 +1049,17 @@ export function App() {
               </div>
             </div>
 
-            {settingsVisible && (
-              <aside className="settings-panel">
-                <div className="settings-section">
-                  <h3 className="settings-section-title">Score View</h3>
-                  <label className="setting-row toggle">
-                    <span>Hide Voice 2 Rests</span>
-                    <div className="toggle-switch">
-                      <input type="checkbox" checked={settings.hideVoice2Rests} onChange={(e) => updateSetting("hideVoice2Rests", e.target.checked)} />
-                      <span className="toggle-slider"></span>
-                    </div>
-                  </label>
-                </div>
+            <aside className={`settings-panel${settingsVisible ? " active" : ""}`}>
+              <div className="settings-section">
+                <h3 className="settings-section-title">Score View</h3>
+                <label className="setting-row toggle">
+                  <span>Hide Voice 2 Rests</span>
+                  <div className="toggle-switch">
+                    <input type="checkbox" checked={settings.hideVoice2Rests} onChange={(e) => updateSetting("hideVoice2Rests", e.target.checked)} />
+                    <span className="toggle-slider"></span>
+                  </div>
+                </label>
+              </div>
                 <div className="settings-section">
                   <h3 className="settings-section-title">Page Layout</h3>
                   <div className="setting-row">
@@ -1096,7 +1095,6 @@ export function App() {
                   </div>
                 </div>
               </aside>
-            )}
           </div>
         </section>
       </section>

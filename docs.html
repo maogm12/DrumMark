@@ -5,24 +5,31 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>DrumMark Documentation</title>
     <link rel="stylesheet" href="/src/styles.css">
+    <link rel="stylesheet" href="/src/docs.css">
 </head>
 <body class="docs-body">
     <div class="docs-layout">
         <header class="docs-header-bar">
             <div class="docs-header-left">
-                <button id="menu-toggle" class="docs-menu-button"><span></span><span></span><span></span></button>
+                <button id="menu-toggle" class="docs-menu-button" aria-label="Toggle Menu">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="3" y1="12" x2="21" y2="12"></line>
+                        <line x1="3" y1="6" x2="21" y2="6"></line>
+                        <line x1="3" y1="18" x2="21" y2="18"></line>
+                    </svg>
+                </button>
                 <div class="docs-sidebar-brand">
-                    <svg aria-hidden="true" class="app-logo" width="24" height="24" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M19 22V6C19 6 24 7 24 12" stroke="var(--accent-primary)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-                        <circle cx="12" cy="22" r="7" stroke="var(--text-main)" stroke-width="2"/>
-                        <circle cx="12" cy="22" r="8.5" stroke="var(--text-main)" stroke-width="0.5" stroke-opacity="0.4"/>
-                        <circle cx="12" cy="13.5" r="1" fill="var(--text-main)"/>
-                        <circle cx="12" cy="30.5" r="1" fill="var(--text-main)"/>
-                        <circle cx="3.5" cy="22" r="1" fill="var(--text-main)"/>
-                        <circle cx="20.5" cy="22" r="1" fill="var(--text-main)"/>
-                        <line x1="7" y1="20" x2="17" y2="20" stroke="var(--text-main)" stroke-width="0.5" stroke-opacity="0.6"/>
-                        <line x1="7" y1="22" x2="17" y2="22" stroke="var(--text-main)" stroke-width="0.5" stroke-opacity="0.6"/>
-                        <line x1="7" y1="24" x2="17" y2="24" stroke="var(--text-main)" stroke-width="0.5" stroke-opacity="0.6"/>
+                    <svg aria-hidden="true" class="app-logo" width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M19 22V6C19 6 24 7 24 12" stroke="var(--docs-accent)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        <circle cx="12" cy="22" r="7" stroke="var(--docs-text)" stroke-width="2"/>
+                        <circle cx="12" cy="22" r="8.5" stroke="var(--docs-text)" stroke-width="0.5" stroke-opacity="0.4"/>
+                        <circle cx="12" cy="13.5" r="1" fill="var(--docs-text)"/>
+                        <circle cx="12" cy="30.5" r="1" fill="var(--docs-text)"/>
+                        <circle cx="3.5" cy="22" r="1" fill="var(--docs-text)"/>
+                        <circle cx="20.5" cy="22" r="1" fill="var(--docs-text)"/>
+                        <line x1="7" y1="20" x2="17" y2="20" stroke="var(--docs-text)" stroke-width="0.5" stroke-opacity="0.6"/>
+                        <line x1="7" y1="22" x2="17" y2="22" stroke="var(--docs-text)" stroke-width="0.5" stroke-opacity="0.6"/>
+                        <line x1="7" y1="24" x2="17" y2="24" stroke="var(--docs-text)" stroke-width="0.5" stroke-opacity="0.6"/>
                     </svg>
                     <h1>DrumMark</h1>
                 </div>

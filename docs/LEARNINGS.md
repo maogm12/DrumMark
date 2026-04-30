@@ -201,3 +201,15 @@ If the app is served from a sub-directory (e.g., `/drum_notation/`):
 
 - **Pre-rendered docs should not eagerly load the render stack:** `docs.html` and `docs_zh.html` already embed highlighted DSL and SVG previews at build time, so the browser docs entrypoint should avoid top-level imports of DSL parsing, VexFlow rendering, and static highlighting helpers.
 - **Dynamic rendering dependencies belong behind the empty-preview fallback path:** lazy-loading those modules only when a preview container is actually empty reduces unnecessary startup work and avoids extra visible first-paint jitter on the static documentation pages.
+
+## 34. Static Docs Scroll Restoration (2026-04-30)
+
+- **The docs page scrolls inside `.docs-main`, not `window`:** browser-native history restoration and hash anchoring are much less reliable when the actual scroll container is a nested element with `overflow-y: auto` and the body itself is locked.
+- **If scroll restoration is delayed, users see a top flash first:** on mobile, revisiting the docs page can briefly paint at scrollTop `0` and only then restore the previous reading position, which looks like "jump to top, then jump back".
+- **The fix is to own restoration explicitly:** persist `.docs-main.scrollTop`, restore it before revealing the content, and route active-nav tracking and hash jumps through the same scroll container instead of mixing nested scrolling with `window` listeners.
+
+## 35. Static Docs Should Prefer Browser-Native Scrolling (2026-04-30)
+
+- **For a basic docs page, nested scroll containers are unnecessary complexity:** once the content is already pre-rendered into static HTML, using a locked body plus an inner scrolling pane only fights the browser's native history restoration and anchor behavior.
+- **Hash navigation and back/forward restoration become simplest when `window` is the only scroller:** letting the document itself scroll removes the need for custom scroll bookkeeping, first-paint masking, and hash-specific repair logic.
+- **Keep docs runtime JS minimal and non-musical:** the browser docs entrypoint should ideally handle only lightweight UI affordances like the mobile menu, not parsing, rendering, active-nav tracking, or scroll management.

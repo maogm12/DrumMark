@@ -13,24 +13,23 @@
 .docs-body {
   margin: 0;
   padding: 0;
-  overflow: hidden !important; /* Lock body, let container scroll */
-  background: white;
+  background: var(--docs-bg);
   font-family: var(--font-sans);
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 
 .docs-layout {
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-  height: 100dvh;
-  overflow: hidden;
+  min-height: 100vh;
 }
 
 .docs-header-bar {
-  flex: 0 0 64px;
+  position: sticky;
+  top: 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  min-height: 64px;
   padding: 0 24px;
   background: white;
   border-bottom: 1px solid var(--docs-border);
@@ -70,15 +69,18 @@
 }
 
 .docs-container {
-  flex: 1;
   display: flex; /* Changed from grid to flex for better control */
-  overflow: hidden;
-  min-height: 0;
+  align-items: flex-start;
+  max-width: 1400px;
+  margin: 0 auto;
 }
 
 .docs-sidebar {
   width: 280px;
   flex-shrink: 0;
+  position: sticky;
+  top: 64px;
+  max-height: calc(100vh - 64px);
   background: var(--docs-sidebar-bg);
   border-right: 1px solid var(--docs-border);
   overflow-y: auto;
@@ -87,9 +89,8 @@
 
 .docs-main {
   flex: 1;
-  overflow-y: auto; /* This MUST scroll */
   background: white;
-  -webkit-overflow-scrolling: touch;
+  min-width: 0;
 }
 
 .docs-page {
@@ -354,6 +355,12 @@
   .docs-sidebar {
     display: none;
   }
+  .docs-container {
+    display: block;
+  }
+  .docs-main {
+    width: 100%;
+  }
   .docs-page {
     padding: 32px 24px 80px;
   }
@@ -423,9 +430,14 @@
   .docs-sidebar.open {
     display: block;
     position: fixed;
-    top: 0;
+    top: 64px;
     left: 0;
     bottom: 0;
+    width: min(280px, calc(100vw - 32px));
+    max-height: none;
     z-index: 100;
+  }
+  .docs-body.docs-menu-open {
+    overflow: hidden;
   }
 }

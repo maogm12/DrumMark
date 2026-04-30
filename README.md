@@ -59,7 +59,7 @@ BD |  p - - - p - - - | p - p - - - p -        |
 
 ## 📖 Documentation
 
-Want to dive deeper into the syntax? Check out the [DSL_DESIGN.md](./DSL_DESIGN.md) or click the **Docs** button in the app.
+Want to dive deeper into the syntax? Check out the [DRUMMARK_SPEC.md](./docs/DRUMMARK_SPEC.md) or click the **Docs** button in the app.
 
 ---
 

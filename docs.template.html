@@ -105,7 +105,22 @@
                                         <li><strong>tempo:</strong> Quarter-note BPM. Default is 120 if omitted.</li>
                                         <li><strong>time:</strong> The meter (e.g., <code>4/4</code>, <code>3/4</code>, <code>6/8</code>). Required.</li>
                                         <li><strong>divisions:</strong> Total grid units per measure. Required. Controls rhythmic precision — use 16 for standard precision, 32 for complex syncopation.</li>
-                                        <li><strong>grouping:</strong> Defines the beat structure within a measure. When omitted, DrumMark infers it from the time signature: <code>4/4</code> → <code>2+2</code>, <code>6/8</code> → <code>3+3</code>, <code>3/4</code> → <code>1+1+1</code>. For irregular meters like <code>5/8</code>, grouping must be specified explicitly.</li>
+                                        <li><strong>grouping:</strong> Defines the beat structure within a measure. Controls rhythmic grouping and beaming.
+                                            <div class="docs-mini-table-container">
+                                                <table class="docs-table">
+                                                    <thead><tr><th>Time Signature</th><th>Inferred Grouping</th></tr></thead>
+                                                    <tbody>
+                                                        <tr><td><code>2/4</code>, <code>2/2</code></td><td><code>1+1</code></td></tr>
+                                                        <tr><td><code>3/4</code>, <code>3/8</code></td><td><code>1+1+1</code></td></tr>
+                                                        <tr><td><code>4/4</code></td><td><code>2+2</code></td></tr>
+                                                        <tr><td><code>6/8</code></td><td><code>3+3</code></td></tr>
+                                                        <tr><td><code>9/8</code></td><td><code>3+3+3</code></td></tr>
+                                                        <tr><td><code>12/8</code></td><td><code>3+3+3+3</code></td></tr>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                            <p>For irregular meters like <code>5/8</code> or <code>7/8</code>, <code>grouping</code> must be specified explicitly (e.g., <code>grouping: 3+2</code>).</p>
+                                        </li>
                                     </ul>
                                 </div>
                             </div>

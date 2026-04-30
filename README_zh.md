@@ -59,7 +59,7 @@ BD |  p - - - p - - - | p - p - - - p -        |
 
 ## 📖 详细文档
 
-想要深入了解记谱语法？请查看项目中的 [DSL_DESIGN.md](./DSL_DESIGN.md) 或运行项目后点击右上角的 **Docs** 按钮。
+想要深入了解记谱语法？请查看项目中的 [DRUMMARK_SPEC.md](./docs/DRUMMARK_SPEC.md) 或运行项目后点击右上角的 **Docs** 按钮。
 
 ---
 

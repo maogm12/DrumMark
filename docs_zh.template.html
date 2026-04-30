@@ -105,7 +105,22 @@
                                         <li><strong>tempo:</strong> 四分音符 BPM。如不指定默认为 120。</li>
                                         <li><strong>time:</strong> 拍号（如 <code>4/4</code>、<code>3/4</code>、<code>6/8</code>）。必填。</li>
                                         <li><strong>divisions:</strong> 每小节的总网格单位。必填。数值越高节奏越精细——标准精度用 16，复杂切分用 32。</li>
-                                        <li><strong>grouping:</strong> 定义小节内的节拍结构。如省略，DrumMark 会根据拍号推断：<code>4/4</code> → <code>2+2</code>，<code>6/8</code> → <code>3+3</code>，<code>3/4</code> → <code>1+1+1</code>。不规则拍号如 <code>5/8</code> 必须显式指定 grouping。</li>
+                                        <li><strong>grouping:</strong> 定义小节内的节拍结构。控制节奏分组和连杠（beaming）。
+                                            <div class="docs-mini-table-container">
+                                                <table class="docs-table">
+                                                    <thead><tr><th>拍号</th><th>推断的分组 (Inferred Grouping)</th></tr></thead>
+                                                    <tbody>
+                                                        <tr><td><code>2/4</code>, <code>2/2</code></td><td><code>1+1</code></td></tr>
+                                                        <tr><td><code>3/4</code>, <code>3/8</code></td><td><code>1+1+1</code></td></tr>
+                                                        <tr><td><code>4/4</code></td><td><code>2+2</code></td></tr>
+                                                        <tr><td><code>6/8</code></td><td><code>3+3</code></td></tr>
+                                                        <tr><td><code>9/8</code></td><td><code>3+3+3</code></td></tr>
+                                                        <tr><td><code>12/8</code></td><td><code>3+3+3+3</code></td></tr>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                            <p>对于不规则拍号如 <code>5/8</code> 或 <code>7/8</code>，必须显式指定 <code>grouping</code>（例如 <code>grouping: 3+2</code>）。</p>
+                                        </li>
                                     </ul>
                                 </div>
                             </div>

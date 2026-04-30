@@ -33,6 +33,7 @@ If the app is served from a sub-directory (e.g., `/drum_notation/`):
 ## 3. Debugging Strategy
 - **Research First:** Always check `node_modules` source code for the "ground truth" of API implementation.
 - **UI Error Catching:** On mobile/headless environments, render `try...catch` errors and internal metadata (like active font lists) directly into the DOM for immediate visibility.
+- **Static Documentation Generation:** The `npm run build-docs` command uses a headless JSDOM environment to pre-render `.drum` examples into SVGs for the static documentation.
 
 ## 4. DrumMark Spec Review Learnings (2026-04-29)
 

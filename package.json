@@ -5,8 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite --host",
-    "build": "tsc -b && vite build && npm run prerender",
-    "prerender": "tsx build-docs.ts",
+    "build": "tsc -b && vite build && npm run build-docs",
+    "build-docs": "tsx build-docs.ts",
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",

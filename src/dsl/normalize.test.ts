@@ -109,19 +109,19 @@ grouping 1+1+1+1+1+1+1+1+1
     const score = buildNormalizedScore(`time 4/4
 divisions 4
 
-|: x x x x :| @segno % |1. x - - - | @to-coda --2-- |.`);
+|: x x x x :| @segno % |1. x - - - | --2-- @to-coda |.`);
 
     expect(score.errors).toEqual([]);
     expect(score.measures[0]).toMatchObject({ barline: "repeat-both" });
     expect(score.measures[1]).toMatchObject({
-      marker: "segno",
+      startNav: { kind: "segno", anchor: "left-edge" },
       measureRepeat: { slashes: 1 },
     });
     expect(score.measures[2]).toMatchObject({
       volta: { indices: [1] },
     });
     expect(score.measures[3]).toMatchObject({
-      jump: "to-coda",
+      endNav: { kind: "to-coda", anchor: "right-edge" },
       multiRest: { count: 2 },
     });
   });

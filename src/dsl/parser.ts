@@ -2,13 +2,17 @@ import {
   HEADER_FIELDS,
   MODIFIERS,
   TRACKS,
+  type EndNavKind,
   type DocumentSkeleton,
   type MeasureToken,
   type ParseError,
+  type ParsedEndNav,
   type ParsedHeaders,
   type ParsedMeasure,
+  type ParsedStartNav,
   type ParsedTrackLine,
   type PreprocessedLine,
+  type StartNavKind,
   type TrackParagraph,
   type TrackName,
   type SourceTrackName,
@@ -22,8 +26,9 @@ import { preprocessSource } from "./preprocess";
 type HeaderAccumulator = Partial<ParsedHeaders>;
 type RawMeasure = Omit<ParsedTrackLine["measures"][number], "tokens"> & { tokens?: MeasureToken[] };
 const SORTED_TRACK_NAMES = [...TRACKS].sort((left, right) => right.length - left.length);
-const MARKERS = ["@segno", "@coda", "@fine"] as const;
-const JUMPS = ["@to-coda", "@da-capo", "@dal-segno", "@dc-al-fine", "@dc-al-coda", "@ds-al-fine", "@ds-al-coda"] as const;
+const START_NAVS = ["@segno", "@coda"] as const;
+const END_NAVS = ["@fine", "@dc", "@ds", "@dc-al-fine", "@dc-al-coda", "@ds-al-fine", "@ds-al-coda", "@to-coda"] as const;
+const DEPRECATED_NAVS = ["@da-capo", "@dal-segno"] as const;
 const BASIC_GLYPHS = [
   "-",
   "x",
@@ -788,48 +793,163 @@ function parseMeasureTail(remainder: string, line: PreprocessedLine, errors: Par
   return measures;
 }
 
+function splitTopLevelParts(content: string): Array<{ text: string; start: number }> {
+  const parts: Array<{ text: string; start: number }> = [];
+  let squareDepth = 0;
+  let braceDepth = 0;
+  let tokenStart: number | null = null;
+
+  for (let index = 0; index < content.length; index += 1) {
+    const char = content[index];
+    if (char === undefined) continue;
+
+    if (tokenStart === null) {
+      if (/\s/.test(char)) {
+        continue;
+      }
+      tokenStart = index;
+    }
+
+    if (char === "[" ) squareDepth += 1;
+    else if (char === "]") squareDepth = Math.max(0, squareDepth - 1);
+    else if (char === "{") braceDepth += 1;
+    else if (char === "}") braceDepth = Math.max(0, braceDepth - 1);
+
+    const next = content[index + 1];
+    const atBoundary = next === undefined || (/\s/.test(next) && squareDepth === 0 && braceDepth === 0);
+    if (tokenStart !== null && atBoundary) {
+      parts.push({ text: content.slice(tokenStart, index + 1), start: tokenStart });
+      tokenStart = null;
+    }
+  }
+
+  return parts;
+}
+
+function isInlineRepeatSuffixToken(text: string): boolean {
+  return /^\*(-?\d+)$/.test(text);
+}
+
 function extractNavigationTokens(content: string, line: PreprocessedLine, errors: ParseError[]) {
-  const parts = content.split(/\s+/).filter(Boolean);
-  let marker: (typeof MARKERS)[number] | undefined;
-  let jump: (typeof JUMPS)[number] | undefined;
+  const parts = splitTopLevelParts(content);
   const remaining: string[] = [];
-  let searchOffset = 0;
+  let startNav: ParsedStartNav | undefined;
+  let endNav: ParsedEndNav | undefined;
 
+  const partColumn = (offset: number) => {
+    const contentStart = line.content.indexOf(content);
+    return Math.max(1, contentStart + offset + 1);
+  };
+
+  const nonNavParts = parts.filter((part) =>
+    !(START_NAVS as readonly string[]).includes(part.text)
+    && !(END_NAVS as readonly string[]).includes(part.text)
+    && !(DEPRECATED_NAVS as readonly string[]).includes(part.text),
+  );
+  const anchorParts = nonNavParts.filter((part) => !isInlineRepeatSuffixToken(part.text));
+  const pureNavigationMeasure = anchorParts.length === 0;
+
+  let nonNavSeen = 0;
   for (const part of parts) {
-    const partColumn = Math.max(1, line.raw.indexOf(part, searchOffset) + 1);
-    searchOffset = Math.max(searchOffset, partColumn - 1 + part.length);
+    const column = partColumn(part.start);
+    const anchorSeen = nonNavParts.slice(0, nonNavSeen).filter((candidate) => !isInlineRepeatSuffixToken(candidate.text)).length;
+    const nonNavAfter = anchorParts.length - anchorSeen;
 
-    if ((MARKERS as readonly string[]).includes(part)) {
-      if (marker !== undefined) {
+    if ((DEPRECATED_NAVS as readonly string[]).includes(part.text)) {
+      errors.push({
+        line: line.lineNumber,
+        column,
+        message: part.text === "@da-capo" ? "Use `@dc` instead of `@da-capo`" : "Use `@ds` instead of `@dal-segno`",
+      });
+      continue;
+    }
+
+    if ((START_NAVS as readonly string[]).includes(part.text)) {
+      if (startNav !== undefined) {
         errors.push({
           line: line.lineNumber,
-          column: partColumn,
-          message: "Measure contains multiple markers",
+          column,
+          message: "Measure contains multiple start-side navigation markers",
         });
         continue;
       }
-      marker = part as (typeof MARKERS)[number];
-      continue;
-    }
-    if ((JUMPS as readonly string[]).includes(part)) {
-      if (jump !== undefined) {
+
+      const kind = part.text.slice(1) as StartNavKind;
+      if (kind === "coda") {
+        if (!pureNavigationMeasure && anchorSeen !== 0) {
+          errors.push({
+            line: line.lineNumber,
+            column,
+            message: "`@coda` may appear only at the beginning of a measure",
+          });
+          continue;
+        }
+        startNav = { kind: "coda", anchor: "left-edge" };
+        continue;
+      }
+
+      if (!pureNavigationMeasure && nonNavAfter === 0) {
         errors.push({
           line: line.lineNumber,
-          column: partColumn,
-          message: "Measure contains multiple jumps",
+          column,
+          message: "`@segno` may not appear at the end of a measure",
         });
         continue;
       }
-      jump = part as (typeof JUMPS)[number];
+
+      startNav = pureNavigationMeasure || anchorSeen === 0
+        ? { kind: "segno", anchor: "left-edge" }
+        : { kind: "segno", anchor: { tokenAfter: anchorSeen } };
       continue;
     }
-    remaining.push(part);
+
+    if ((END_NAVS as readonly string[]).includes(part.text)) {
+      if (endNav !== undefined) {
+        errors.push({
+          line: line.lineNumber,
+          column,
+          message: "Measure contains multiple end-side navigation instructions",
+        });
+        continue;
+      }
+
+      const kind = part.text.slice(1) as EndNavKind;
+      if (kind === "to-coda") {
+        if (!pureNavigationMeasure && anchorSeen === 0) {
+          errors.push({
+            line: line.lineNumber,
+            column,
+            message: "`@to-coda` may not appear at the beginning of a measure",
+          });
+          continue;
+        }
+        endNav = pureNavigationMeasure || nonNavAfter === 0
+          ? { kind: "to-coda", anchor: "right-edge" }
+          : { kind: "to-coda", anchor: { tokenBefore: anchorSeen - 1 } };
+        continue;
+      }
+
+      if (!pureNavigationMeasure && nonNavAfter !== 0) {
+        errors.push({
+          line: line.lineNumber,
+          column,
+          message: `\`${part.text}\` may appear only at the end of a measure`,
+        });
+        continue;
+      }
+
+      endNav = { kind, anchor: "right-edge" } as ParsedEndNav;
+      continue;
+    }
+
+    remaining.push(part.text);
+    nonNavSeen += 1;
   }
 
   return {
     content: remaining.join(" "),
-    marker: marker?.slice(1),
-    jump: jump?.slice(1),
+    startNav,
+    endNav,
   };
 }
 
@@ -866,8 +986,8 @@ function parseTrackLine(line: PreprocessedLine, errors: ParseError[]): ParsedTra
           repeatEnd: measure.repeatEnd,
           repeatTimes: measure.repeatTimes,
           barline: measure.barline,
-          marker: navigation.marker as ParsedMeasure["marker"],
-          jump: navigation.jump as ParsedMeasure["jump"],
+          startNav: navigation.startNav,
+          endNav: navigation.endNav,
           voltaIndices: measure.voltaIndices,
           voltaTerminator: measure.voltaTerminator,
           measureRepeatSlashes: measureRepeatMatch[1].length,
@@ -902,8 +1022,8 @@ function parseTrackLine(line: PreprocessedLine, errors: ParseError[]): ParsedTra
           repeatEnd: measure.repeatEnd,
           repeatTimes: measure.repeatTimes,
           barline: measure.barline,
-          marker: navigation.marker as ParsedMeasure["marker"],
-          jump: navigation.jump as ParsedMeasure["jump"],
+          startNav: navigation.startNav,
+          endNav: navigation.endNav,
           voltaIndices: measure.voltaIndices,
           voltaTerminator: measure.voltaTerminator,
           multiRestCount: count,
@@ -935,8 +1055,8 @@ function parseTrackLine(line: PreprocessedLine, errors: ParseError[]): ParsedTra
               repeatEnd: i === repeatCount - 1 ? measure.repeatEnd : false,
               repeatTimes: i === repeatCount - 1 ? measure.repeatTimes : undefined,
               barline: i === repeatCount - 1 ? measure.barline : undefined,
-              marker: i === 0 ? navigation.marker as ParsedMeasure["marker"] : undefined,
-              jump: i === repeatCount - 1 ? navigation.jump as ParsedMeasure["jump"] : undefined,
+              startNav: i === 0 ? navigation.startNav : undefined,
+              endNav: i === repeatCount - 1 ? navigation.endNav : undefined,
               voltaIndices: i === 0 ? measure.voltaIndices : undefined,
               voltaTerminator: i === repeatCount - 1 ? measure.voltaTerminator : undefined,
             });
@@ -974,8 +1094,8 @@ function parseTrackLine(line: PreprocessedLine, errors: ParseError[]): ParsedTra
             repeatEnd: i === count - 1 ? measure.repeatEnd : false,
             repeatTimes: i === count - 1 ? measure.repeatTimes : undefined,
             barline: i === count - 1 ? measure.barline : undefined,
-            marker: i === 0 ? navigation.marker as ParsedMeasure["marker"] : undefined,
-            jump: i === count - 1 ? navigation.jump as ParsedMeasure["jump"] : undefined,
+            startNav: i === 0 ? navigation.startNav : undefined,
+            endNav: i === count - 1 ? navigation.endNav : undefined,
             voltaIndices: i === 0 ? measure.voltaIndices : undefined,
             voltaTerminator: i === count - 1 ? measure.voltaTerminator : undefined,
           });
@@ -1016,8 +1136,8 @@ function parseTrackLine(line: PreprocessedLine, errors: ParseError[]): ParsedTra
         repeatEnd: measure.repeatEnd,
         repeatTimes: measure.repeatTimes,
         barline: measure.barline,
-        marker: navigation.marker as ParsedMeasure["marker"],
-        jump: navigation.jump as ParsedMeasure["jump"],
+        startNav: navigation.startNav,
+        endNav: navigation.endNav,
         voltaIndices: measure.voltaIndices,
         voltaTerminator: measure.voltaTerminator,
         multiRestCount: measure.multiRestCount,

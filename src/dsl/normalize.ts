@@ -10,11 +10,15 @@ import {
   fractionsEqual,
 } from "./logic";
 import {
+  type EndNav,
   type Fraction,
   type NormalizedEvent,
   type NormalizedHeader,
   type NormalizedScore,
+  type ParsedEndNav,
+  type ParsedStartNav,
   type ScoreAst,
+  type StartNav,
   type TrackFamily,
   type NormalizedTrack,
   type TrackName,
@@ -110,6 +114,28 @@ function gcd(a: number, b: number): number {
     y = next;
   }
   return x || 1;
+}
+
+function resolveParsedStartNav(nav: ParsedStartNav | undefined, tokenStarts: Fraction[]): StartNav | undefined {
+  if (!nav) return undefined;
+  if (nav.anchor === "left-edge") return nav;
+  return {
+    kind: "segno",
+    anchor: { eventAfter: tokenStarts[nav.anchor.tokenAfter]! },
+  };
+}
+
+function resolveParsedEndNav(nav: ParsedEndNav | undefined, tokenStarts: Fraction[]): EndNav | undefined {
+  if (!nav) return undefined;
+  if (nav.anchor === "right-edge") return nav;
+  return {
+    kind: "to-coda",
+    anchor: { eventBefore: tokenStarts[nav.anchor.tokenBefore]! },
+  };
+}
+
+function navKey(nav: StartNav | EndNav | undefined): string | undefined {
+  return nav ? JSON.stringify(nav) : undefined;
 }
 
 function getTrackFamily(track: TrackName): TrackFamily {
@@ -336,33 +362,7 @@ export function normalizeScoreAst(ast: ScoreAst): NormalizedScore {
       const trackMeasures = paragraph.tracks
         .map((trackLine) => trackLine.measures[measureInParagraph])
         .filter((measure): measure is NonNullable<typeof measure> => measure !== undefined);
-      const mergedRepeatStart = trackMeasures.some((measure) => measure.repeatStart);
-      const mergedRepeatEnd = trackMeasures.some((measure) => measure.repeatEnd);
-      const mergedMeasureRepeat = trackMeasures.find((measure) => measure.measureRepeat !== undefined)?.measureRepeat;
-      const mergedMultiRest = trackMeasures.find((measure) => measure.multiRest !== undefined)?.multiRest;
-      const mergedBarline =
-        mergedRepeatStart && mergedRepeatEnd
-          ? "repeat-both"
-          : mergedRepeatStart
-            ? "repeat-start"
-            : mergedRepeatEnd
-              ? "repeat-end"
-              : trackMeasures.find((measure) => measure.barline === "final")?.barline
-                ?? trackMeasures.find((measure) => measure.barline === "double")?.barline
-                ?? trackMeasures.find((measure) => measure.barline !== undefined)?.barline;
-      const measureMeta = trackMeasures.length === 0
-        ? undefined
-        : {
-            generated: trackMeasures.every((measure) => measure.generated),
-            barline: mergedBarline,
-            marker: trackMeasures.find((measure) => measure.marker !== undefined)?.marker,
-            jump: trackMeasures.find((measure) => measure.jump !== undefined)?.jump,
-            volta: trackMeasures.find((measure) => measure.volta !== undefined)?.volta,
-            voltaTerminator: trackMeasures.some((measure) => measure.voltaTerminator === true),
-            measureRepeat: mergedMeasureRepeat,
-            multiRest: mergedMultiRest,
-            multiRestCount: mergedMultiRest?.count,
-          };
+      const resolvedTrackNavs: Array<{ startNav?: StartNav; endNav?: EndNav; sourceLine: number }> = [];
 
       for (const trackLine of paragraph.tracks) {
         const measure = trackLine.measures[measureInParagraph];
@@ -382,6 +382,7 @@ export function normalizeScoreAst(ast: ScoreAst): NormalizedScore {
 
         let currentSlotOffset: Fraction = { numerator: 0, denominator: 1 };
         const divisionsFrac: Fraction = { numerator: divisions, denominator: 1 };
+        const tokenStarts: Fraction[] = [];
         
         for (const token of measure.tokens) {
           validateModifierLegality(token, trackLine.track as TrackName | "ANONYMOUS", ast.errors, measure.sourceLine || 0);
@@ -389,6 +390,7 @@ export function normalizeScoreAst(ast: ScoreAst): NormalizedScore {
           const weight = calculateTokenWeightAsFraction(token);
           const tokenStart = multiplyFractions(slotDuration, currentSlotOffset);
           const tokenDuration = multiplyFractions(slotDuration, weight);
+          tokenStarts.push(tokenStart);
 
           // Validation: Check grouping boundaries
           const startSlot = currentSlotOffset;
@@ -435,7 +437,89 @@ export function normalizeScoreAst(ast: ScoreAst): NormalizedScore {
             message: `Track \`${trackLine.track}\` measure ${measureInParagraph + 1} has invalid duration: used ${currentSlotOffset.numerator}/${currentSlotOffset.denominator} slots, expected ${divisions}`,
           });
         }
+
+        resolvedTrackNavs.push({
+          startNav: resolveParsedStartNav(measure.startNav, tokenStarts),
+          endNav: resolveParsedEndNav(measure.endNav, tokenStarts),
+          sourceLine: measure.sourceLine || sourceLine,
+        });
       }
+
+      const mergedRepeatStart = trackMeasures.some((measure) => measure.repeatStart);
+      const mergedRepeatEnd = trackMeasures.some((measure) => measure.repeatEnd);
+      const mergedMeasureRepeat = trackMeasures.find((measure) => measure.measureRepeat !== undefined)?.measureRepeat;
+      const mergedMultiRest = trackMeasures.find((measure) => measure.multiRest !== undefined)?.multiRest;
+      let mergedBarline =
+        mergedRepeatStart && mergedRepeatEnd
+          ? "repeat-both"
+          : mergedRepeatStart
+            ? "repeat-start"
+            : mergedRepeatEnd
+              ? "repeat-end"
+              : trackMeasures.find((measure) => measure.barline === "final")?.barline
+                ?? trackMeasures.find((measure) => measure.barline === "double")?.barline
+                ?? trackMeasures.find((measure) => measure.barline !== undefined)?.barline;
+
+      const startNavKey = new Set(resolvedTrackNavs.map((item) => navKey(item.startNav)).filter((value): value is string => value !== undefined));
+      const endNavKey = new Set(resolvedTrackNavs.map((item) => navKey(item.endNav)).filter((value): value is string => value !== undefined));
+
+      if (startNavKey.size > 1) {
+        ast.errors.push({
+          line: resolvedTrackNavs[0]?.sourceLine ?? sourceLine,
+          column: 1,
+          message: `Conflicting start-side navigation at bar ${globalMeasureIndex + 1}`,
+        });
+      }
+
+      if (endNavKey.size > 1) {
+        ast.errors.push({
+          line: resolvedTrackNavs[0]?.sourceLine ?? sourceLine,
+          column: 1,
+          message: `Conflicting end-side navigation at bar ${globalMeasureIndex + 1}`,
+        });
+      }
+
+      const mergedStartNav = resolvedTrackNavs.find((item) => item.startNav !== undefined)?.startNav;
+      const mergedEndNav = resolvedTrackNavs.find((item) => item.endNav !== undefined)?.endNav;
+
+      if (
+        mergedEndNav !== undefined &&
+        mergedEndNav.kind !== "to-coda" &&
+        (mergedBarline === "repeat-end" || mergedBarline === "repeat-both")
+      ) {
+        ast.errors.push({
+          line: resolvedTrackNavs.find((item) => item.endNav !== undefined)?.sourceLine ?? sourceLine,
+          column: 1,
+          message: `End-side navigation \`${mergedEndNav.kind}\` cannot appear on a repeat-ending bar ${globalMeasureIndex + 1}`,
+        });
+      }
+
+      if (mergedEndNav?.kind === "fine") {
+        mergedBarline = "final";
+      } else if (
+        mergedEndNav
+        && mergedEndNav.kind !== "to-coda"
+        && mergedBarline !== "final"
+        && mergedBarline !== "double"
+        && mergedBarline !== "repeat-end"
+        && mergedBarline !== "repeat-both"
+      ) {
+        mergedBarline = "double";
+      }
+
+      const measureMeta = trackMeasures.length === 0
+        ? undefined
+        : {
+            generated: trackMeasures.every((measure) => measure.generated),
+            barline: mergedBarline,
+            startNav: mergedStartNav,
+            endNav: mergedEndNav,
+            volta: trackMeasures.find((measure) => measure.volta !== undefined)?.volta,
+            voltaTerminator: trackMeasures.some((measure) => measure.voltaTerminator === true),
+            measureRepeat: mergedMeasureRepeat,
+            multiRest: mergedMultiRest,
+            multiRestCount: mergedMultiRest?.count,
+          };
 
       measures.push({
         index: globalMeasureIndex,
@@ -446,8 +530,8 @@ export function normalizeScoreAst(ast: ScoreAst): NormalizedScore {
         events,
         generated: measureMeta?.generated,
         barline: measureMeta?.barline,
-        marker: measureMeta?.marker,
-        jump: measureMeta?.jump,
+        startNav: measureMeta?.startNav,
+        endNav: measureMeta?.endNav,
         volta: measureMeta?.volta,
         measureRepeat: measureMeta?.measureRepeat,
         multiRest: measureMeta?.multiRest,

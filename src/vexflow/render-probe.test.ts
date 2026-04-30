@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 
 import { describe, expect, it } from "vitest";
+import { Glyphs } from "vexflow";
 import { buildNormalizedScore } from "../dsl/normalize";
 import { renderScoreToSvg } from "./renderer";
 
@@ -31,7 +32,7 @@ grouping 1+1+1+1+1+1+1+1+1
     const score = buildNormalizedScore(`time 4/4
 divisions 4
 
-|: x x x x :| @segno % |1. x - - - | @to-coda --2-- |.`);
+| @segno x - - - | x - - - @to-coda |`);
 
     const svg = await renderScoreToSvg(score, {
       mode: "preview",
@@ -45,8 +46,32 @@ divisions 4
     });
 
     expect(svg).toContain("<svg");
-    expect(svg).toContain("Segno");
-    expect(svg).toContain("To Coda");
+    expect(svg).toContain(Glyphs.segno);
+    expect(svg).toContain("To");
+    expect(svg).toContain(Glyphs.coda);
+  });
+
+  it("renders fine and dc/ds family navigation above the stave on the same row as symbols", async () => {
+    const score = buildNormalizedScore(`time 4/4
+divisions 4
+
+| @segno x x x x | x x x x @fine | x x x x @dc | x x x x @ds |`);
+
+    const svg = await renderScoreToSvg(score, {
+      mode: "preview",
+      pagePadding: { top: 24, right: 18, bottom: 24, left: 18 },
+      pageScale: 1.0,
+      titleTopPadding: 3.6,
+      titleSubtitleGap: 1.2,
+      titleStaffGap: 2.8,
+      systemSpacing: 1,
+      hideVoice2Rests: true,
+    });
+
+    expect(svg).toMatch(/font-size="10pt" x="[^"]+" y="140">Fine<\/text>/);
+    expect(svg).toMatch(/font-size="10pt" x="[^"]+" y="140">D\.C\.<\/text>/);
+    expect(svg).toMatch(/font-size="10pt" x="[^"]+" y="140">D\.S\.<\/text>/);
+    expect(svg).toMatch(/font-family="Bravura" font-size="20pt" x="[^"]+" y="140"><\/text>/);
   });
 
   it("continues a volta across systems when the ending spans multiple measures", async () => {

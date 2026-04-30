@@ -1133,3 +1133,520 @@ SD | - - - - | - - - - | %% |
 ```
 
 This is invalid because the third logical bar mixes global measure-repeat intent with ordinary content on another track.
+
+## Addendum 2026-04-30: Multi-Marker Navigation Measures
+
+### Status
+
+Proposed
+
+### Scope
+
+This addendum refines Section 9.5 Markers and Jumps. It supersedes only the single-marker restriction there. All other navigation rules remain in force unless explicitly stated below.
+
+### Revised Rules
+
+- A single logical measure may contain zero or more navigation markers.
+- Supported markers remain `@segno`, `@coda`, and `@fine`.
+- A single logical measure may still contain at most one navigation jump.
+- Supported jumps remain `@to-coda`, `@da-capo`, `@dal-segno`, `@dc-al-fine`, `@dc-al-coda`, `@ds-al-fine`, and `@ds-al-coda`.
+- Marker multiplicity is local set union, not overwrite semantics. If the same marker is declared multiple times on the same logical measure, the canonical result still contains that marker only once.
+
+### Global Merge Rule
+
+- Markers are global bar-level metadata, like repeat barlines and voltas.
+- If multiple tracks declare markers on the same logical bar, the canonical normalized result stores the union of those markers.
+- Cross-track disagreement is therefore only an error for jumps, not for markers, unless the representation itself becomes ambiguous in a future extension.
+
+### Render and Export Rule
+
+- Markers continue to render at the start side of the logical measure.
+- If a measure contains multiple markers, consumers must preserve all of them rather than dropping later ones.
+- Jumps continue to render at the end side of the logical measure and remain singleton metadata.
+
+### Examples
+
+```drummark
+HH | @coda x x @fine - - |
+```
+
+This is valid. The logical measure carries both the `coda` marker and the `fine` marker.
+
+```drummark
+HH | @segno x x x x |
+SD | @fine d - - - |
+```
+
+This is valid. The canonical logical bar carries both `segno` and `fine`.
+
+```drummark
+HH | @to-coda x x x x |
+SD | @ds-al-coda d - - - |
+```
+
+This is invalid because a logical measure still may not contain more than one jump.
+
+## Addendum 2026-04-30B: Multi-Marker Canonical Representation Clarification
+
+### Status
+
+Proposed
+
+### Scope
+
+This addendum refines and operationalizes the immediately preceding addendum on multi-marker navigation measures. Where the earlier addendum is ambiguous, this addendum controls.
+
+### Canonical IR Change
+
+- The singular canonical measure field `marker` is superseded by `markers`.
+- `markers` is an ordered array of zero or more `MarkerType` values.
+- `jump` remains a singleton field.
+- The canonical `MarkerType` domain remains:
+  - `segno`
+  - `coda`
+  - `fine`
+
+### Canonical Ordering Rule
+
+- `markers` must be stored, rendered, and exported in this fixed canonical order:
+  1. `segno`
+  2. `coda`
+  3. `fine`
+- Duplicate declarations of the same marker on one logical bar collapse to one element in `markers`.
+- Source token order does not override canonical ordering.
+
+### Conflict Rule Replacement
+
+- This addendum explicitly replaces the old Section 9.5 rule that a logical measure may contain at most one marker.
+- New rule:
+  - A logical measure may contain any number of markers from the supported marker set.
+  - A logical measure may still contain at most one jump.
+  - Multiple jump declarations on one logical bar are a hard error.
+- Marker-plus-jump combinations remain legal. A logical measure may contain any valid marker set together with one jump.
+
+### Global Merge Rule
+
+- Marker declarations merge across tracks by set union on the logical bar.
+- The merged canonical result is then sorted by the canonical ordering rule above.
+- Jump declarations merge across tracks only if they are identical.
+- If two tracks declare different jumps on the same logical bar, that is a hard error.
+- If one or more tracks declare markers and another track declares one jump on the same logical bar, the merged logical bar carries both the marker set and the jump.
+
+### Structural Propagation Rule
+
+- Markers are left-edge structural metadata.
+- Jumps are right-edge structural metadata.
+- For inline repeat expansion using `*N`:
+  - the entire marker set is attached only to the first generated logical measure
+  - the jump, if present, is attached only to the last generated logical measure
+- For bare `*N` expansion, the same left-edge and right-edge propagation rule applies.
+- For measure-repeat and multi-rest shorthand bars, the marker set remains attached to the destination logical bar exactly as written and is not inherited from referenced bars.
+
+### Render and Export Rule
+
+- Consumers must preserve the entire ordered marker set.
+- VexFlow rendering places marker labels at the start side of the measure in canonical order.
+- MusicXML export emits one `<direction>` block per marker in canonical order before note content for that measure.
+- Jumps continue to render and export independently at the end side of the measure.
+
+### Canonical Examples
+
+```drummark
+HH | @coda x x @fine - - @to-coda |
+```
+
+Canonical logical-bar metadata:
+
+```json
+{
+  "markers": ["coda", "fine"],
+  "jump": "to-coda"
+}
+```
+
+```drummark
+HH | @segno x x x x |
+SD | @fine d - - - |
+BD | - - @to-coda b - |
+```
+
+Canonical logical-bar metadata:
+
+```json
+{
+  "markers": ["segno", "fine"],
+  "jump": "to-coda"
+}
+```
+
+```drummark
+HH | @segno @fine x - - - *3 |
+```
+
+This expands to three logical bars. The canonical metadata distribution is:
+
+1. bar 1: `markers = ["segno", "fine"]`
+2. bar 2: no markers, no jump
+3. bar 3: no markers, no jump
+
+### Review Round 2
+
+- The multi-marker design is approved.
+- Canonical representation uses ordered `markers` arrays rather than a singular `marker` field.
+- Cross-track marker merge is set union followed by canonical ordering.
+- Jumps remain singleton metadata and still hard-fail on conflicting declarations.
+- Inline repeat propagation remains directional: markers on the first generated bar, jumps on the last generated bar.
+
+STATUS: APPROVED
+
+## Addendum 2026-04-30C: Positional Navigation Anchors and Barline Forcing
+
+### Status
+
+Proposed
+
+### Scope
+
+This addendum refines navigation syntax and rendering semantics for `segno`, `coda`, `fine`, `dc`, `ds`, and `to-coda`. Where this addendum conflicts with earlier marker/jump rules, this addendum controls.
+
+### Spelling Changes
+
+- `@da-capo` is removed and replaced by `@dc`.
+- `@dal-segno` is removed and replaced by `@ds`.
+- `@dc-al-fine`, `@dc-al-coda`, `@ds-al-fine`, and `@ds-al-coda` remain supported.
+- `@to-coda` remains supported.
+
+### Positional Rule Summary
+
+- `@segno` may appear anywhere in a measure except the final token position.
+- `@coda` may appear only at the beginning of a measure.
+- `@fine` may appear only at the end of a measure.
+- `@dc` and `@ds` may appear only at the end of a measure.
+- `@to-coda` may appear anywhere except the beginning of a measure.
+
+### Anchor Semantics
+
+- `@segno`
+  - At measure start: anchors to the left barline of the measure.
+  - In measure interior: anchors to the immediately following event.
+  - At measure end: invalid.
+- `@coda`
+  - Anchors to the left edge of the measure only.
+- `@fine`
+  - Anchors to the right edge of the measure only.
+- `@dc` and `@ds`
+  - Anchor to the right edge of the measure only.
+- `@to-coda`
+  - In measure interior: anchors to the immediately preceding event.
+  - At measure end: anchors to the right edge of the measure.
+  - At measure start: invalid.
+
+### Cardinality Rule
+
+- A measure may contain at most one start-side navigation marker.
+- The start-side marker set is:
+  - `segno`
+  - `coda`
+- A measure may contain at most one end-side navigation instruction.
+- The end-side instruction set is:
+  - `fine`
+  - `dc`
+  - `ds`
+  - `dc-al-fine`
+  - `dc-al-coda`
+  - `ds-al-fine`
+  - `ds-al-coda`
+  - `to-coda`
+- Therefore:
+  - `segno` and `coda` may not coexist on one logical bar.
+  - `fine`, `dc`, `ds`, and `to-coda` may not coexist with one another on one logical bar.
+
+### Canonical Representation
+
+- Canonical normalized IR no longer treats navigation as unordered marker sets.
+- Canonical normalized measures must preserve positional navigation metadata with explicit anchor class.
+- The minimum required normalized semantics are:
+  - one optional start-side marker: `segno` or `coda`
+  - one optional end-side instruction: `fine`, `dc`, `ds`, `dc-al-fine`, `dc-al-coda`, `ds-al-fine`, `ds-al-coda`, or `to-coda`
+  - when needed by a consumer, enough anchor information to distinguish left-edge, right-edge, event-after, and event-before placement
+
+### Barline Forcing Rule
+
+- `@fine` forces the measure's right barline to `final`.
+- `@dc` and `@ds` force the measure's right barline to at least `double` when no explicit right-side double or final barline is present.
+- `@dc-al-fine`, `@dc-al-coda`, `@ds-al-fine`, and `@ds-al-coda` follow the same right-edge forcing rule as `@dc` and `@ds`: if the measure does not already end with an explicit `double` or `final` barline, normalize it to `double`.
+- `@to-coda` does not force a barline change by itself.
+
+### Render Rule
+
+- `@segno`
+  - At measure start: render above the left barline.
+  - On the first measure of a system where no visible left attachment is available, consumers may align it to the first sounded event while preserving start-of-measure semantics.
+  - In measure interior: render above the immediately following event.
+- `@coda`
+  - Render above the left barline.
+  - If the measure is first in a rendered system and no visible left attachment is available, render above the first beat event.
+- `@fine`
+  - Render at the measure end and pair it with a final barline.
+- `@dc` and `@ds`
+  - Render at the measure end and pair them with a double barline unless a final barline is already present.
+- `@to-coda`
+  - Render as `To` plus the coda symbol.
+  - In measure interior: center the symbol block on the immediately preceding event.
+  - At measure end: center the symbol block on the right barline.
+
+### Global Merge Rule
+
+- Navigation declarations remain global bar-level metadata.
+- If different tracks declare compatible start-side and end-side navigation on the same logical bar, they merge.
+- If different tracks declare incompatible start-side navigation on the same logical bar, that is a hard error.
+- If different tracks declare incompatible end-side navigation on the same logical bar, that is a hard error.
+
+### Deprecation Rule
+
+- `@da-capo` and `@dal-segno` are immediately invalid in this revision.
+- Parsers must reject them with a directive to use `@dc` or `@ds`.
+
+### Examples
+
+```drummark
+HH | @segno x x x x |
+```
+
+Valid. `segno` is a start-side marker anchored to the measure start.
+
+```drummark
+HH | x @segno x x x |
+```
+
+Valid. `segno` is anchored to the following event.
+
+```drummark
+HH | @coda x x x x |
+```
+
+Valid. `coda` is a start-side marker anchored to the measure start.
+
+```drummark
+HH | x x x @fine |
+```
+
+Valid. `fine` is an end-side instruction and forces a final barline.
+
+```drummark
+HH | x x x @dc |
+```
+
+Valid. `dc` is an end-side instruction and forces a double barline unless the bar already ends with a final barline.
+
+```drummark
+HH | x x @to-coda x |
+HH | x x x @to-coda |
+```
+
+Both are valid. The first anchors `to-coda` to the preceding event; the second anchors it to the right edge.
+
+## Addendum 2026-04-30D: Positional Navigation Canonical Schema Clarification
+
+### Status
+
+Proposed
+
+### Scope
+
+This addendum operationalizes Addendum 2026-04-30C and explicitly supersedes any incompatible multi-marker examples or rules from Addendum 2026-04-30B.
+
+### Superseded Prior Cases
+
+- The following previously legalized combinations are no longer valid:
+  - `segno` plus `coda` on one logical bar
+  - `fine` plus `to-coda` on one logical bar
+  - `fine` plus `dc` or `ds` family instructions on one logical bar
+- Addendum 2026-04-30B remains in force only where it does not conflict with 2026-04-30C or this clarification.
+
+### Canonical Navigation Schema
+
+- Canonical normalized measures must expose positional navigation through two explicit fields:
+  - `startNav?: StartNav`
+  - `endNav?: EndNav`
+- `StartNav`:
+  - `kind: "segno" | "coda"`
+  - `anchor: "left-edge" | { eventAfter: Fraction }`
+- `EndNav`:
+  - `kind: "fine" | "dc" | "ds" | "dc-al-fine" | "dc-al-coda" | "ds-al-fine" | "ds-al-coda" | "to-coda"`
+  - `anchor: "right-edge" | { eventBefore: Fraction }`
+- `Fraction` here refers to the rhythmic start position of the anchored event within the normalized measure.
+- Event-relative navigation anchors attach to rhythmic position, not to one specific expanded event instance inside a chord, combined hit, or multi-track brace.
+
+### Position Legality After Navigation Extraction
+
+- Position legality is evaluated after removing navigation tokens from the measure token stream.
+- Therefore:
+  - `@segno` at start means no non-navigation token precedes it.
+  - `@segno` in interior means at least one non-navigation token follows it.
+  - `@coda` at start means no non-navigation token precedes it.
+  - `@fine`, `@dc`, `@ds`, `@dc-al-fine`, `@dc-al-coda`, `@ds-al-fine`, and `@ds-al-coda` at end mean no non-navigation token follows them.
+  - `@to-coda` in interior means at least one non-navigation token precedes it.
+  - `@to-coda` at end means no non-navigation token follows it.
+- On shorthand measures such as `%`, `%%`, or `--N--`, the shorthand token counts as a non-navigation token for these legality checks.
+
+### Merge Rule
+
+- A logical bar may merge declarations from multiple tracks only if they resolve to at most one `startNav` and at most one `endNav`.
+- Compatible duplicates collapse:
+  - same `kind`
+  - same `anchor`
+- Incompatible declarations are a hard error:
+  - two different start-side kinds
+  - two different end-side kinds
+  - same kind with different anchors
+
+### Barline Interaction Rule
+
+- `@fine`, `@dc`, `@ds`, `@dc-al-fine`, `@dc-al-coda`, `@ds-al-fine`, and `@ds-al-coda` are not permitted on measures whose right boundary is already a repeat end:
+  - `repeat-end`
+  - `repeat-both`
+  - compact repeat-end-plus-volta forms such as `:|2.`
+- This is a hard error, not a precedence fight.
+- `@to-coda` is permitted on repeat-ending measures because it does not force a barline rewrite.
+
+### Barline Forcing Semantics
+
+- `@fine` changes the canonical right barline of that logical measure to `final`, even if later logical measures still exist in the score.
+- `@dc`, `@ds`, `@dc-al-fine`, `@dc-al-coda`, `@ds-al-fine`, and `@ds-al-coda` change the canonical right barline of that logical measure to `double` unless an explicit `final` or `double` barline is already present.
+- Existing explicit `final` remains `final`.
+- `|.` remains only a volta terminator and does not itself create `double` or `final`.
+
+### Renderer Fallback Rule
+
+- Canonical semantics are determined only by `startNav` / `endNav` and their anchors.
+- When a renderer cannot physically attach a left-edge symbol to a visible left barline because the measure begins a new rendered system, it may fall back visually to the first event position while preserving the canonical `left-edge` anchor semantics.
+
+### Examples
+
+```drummark
+HH | @segno x x x x |
+```
+
+Canonical metadata:
+
+```json
+{
+  "startNav": { "kind": "segno", "anchor": "left-edge" }
+}
+```
+
+```drummark
+HH | x @segno x x x |
+```
+
+Canonical metadata:
+
+```json
+{
+  "startNav": { "kind": "segno", "anchor": { "eventAfter": { "numerator": 1, "denominator": 4 } } }
+}
+```
+
+```drummark
+HH | x x @to-coda x |
+```
+
+Canonical metadata:
+
+```json
+{
+  "endNav": { "kind": "to-coda", "anchor": { "eventBefore": { "numerator": 1, "denominator": 4 } } }
+}
+```
+
+```drummark
+HH | x x x @fine |
+```
+
+Canonical metadata:
+
+```json
+{
+  "endNav": { "kind": "fine", "anchor": "right-edge" },
+  "barline": "final"
+}
+```
+
+## Addendum 2026-04-30E: Tagged Navigation Union Refinement
+
+### Status
+
+Proposed
+
+### Scope
+
+This addendum replaces the over-permissive navigation schema in Addendum 2026-04-30D with kind-specific tagged unions. Where D and this addendum differ, this addendum controls.
+
+### Refined Canonical Schema
+
+- `StartNav` must be exactly one of:
+  - `{ kind: "coda", anchor: "left-edge" }`
+  - `{ kind: "segno", anchor: "left-edge" | { eventAfter: Fraction } }`
+- `EndNav` must be exactly one of:
+  - `{ kind: "to-coda", anchor: "right-edge" | { eventBefore: Fraction } }`
+  - `{ kind: "fine", anchor: "right-edge" }`
+  - `{ kind: "dc", anchor: "right-edge" }`
+  - `{ kind: "ds", anchor: "right-edge" }`
+  - `{ kind: "dc-al-fine", anchor: "right-edge" }`
+  - `{ kind: "dc-al-coda", anchor: "right-edge" }`
+  - `{ kind: "ds-al-fine", anchor: "right-edge" }`
+  - `{ kind: "ds-al-coda", anchor: "right-edge" }`
+
+### Consequence
+
+- The following canonical states are impossible and therefore invalid:
+  - `{ kind: "coda", anchor: { eventAfter: ... } }`
+  - `{ kind: "fine", anchor: { eventBefore: ... } }`
+  - `{ kind: "dc", anchor: { eventBefore: ... } }`
+  - `{ kind: "ds", anchor: { eventBefore: ... } }`
+  - any `dc/ds-al-*` form with `{ eventBefore: ... }`
+
+### Review Round 5
+
+- This tagged-union refinement is intended to close the final schema gap from Review Round 4 by making legal anchor kinds enforceable directly in canonical IR shape rather than only by surrounding prose.
+
+## Addendum 2026-04-30F: Pure Navigation Measure Default Anchors
+
+### Status
+
+Proposed
+
+### Scope
+
+This addendum refines positional legality for measures that contain navigation syntax only and no non-navigation content tokens after navigation extraction.
+
+### Rule
+
+- If a measure contains no non-navigation content tokens after navigation extraction, it is a pure navigation measure.
+- In a pure navigation measure:
+  - `@segno` and `@coda` default to measure-start semantics.
+  - `@fine`, `@to-coda`, `@dc`, `@ds`, `@dc-al-fine`, `@dc-al-coda`, `@ds-al-fine`, and `@ds-al-coda` default to measure-end semantics.
+- Therefore the following are valid in pure navigation measures:
+  - `| @segno |`
+  - `| @coda |`
+  - `| @fine |`
+  - `| @to-coda |`
+  - `| @dc |`
+  - `| @ds |`
+
+### Canonical Consequence
+
+- In pure navigation measures:
+  - `@segno` normalizes to `{ kind: "segno", anchor: "left-edge" }`
+  - `@coda` normalizes to `{ kind: "coda", anchor: "left-edge" }`
+  - `@fine` normalizes to `{ kind: "fine", anchor: "right-edge" }`
+  - `@to-coda` normalizes to `{ kind: "to-coda", anchor: "right-edge" }`
+  - `@dc` normalizes to `{ kind: "dc", anchor: "right-edge" }`
+  - `@ds` normalizes to `{ kind: "ds", anchor: "right-edge" }`
+
+### Non-Change
+
+- Cardinality rules remain unchanged:
+  - at most one start-side navigation marker
+  - at most one end-side navigation instruction

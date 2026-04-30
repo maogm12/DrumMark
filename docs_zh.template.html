@@ -356,8 +356,10 @@
                                         <li><strong>Volta：</strong> <code>|1.</code> 是一房，<code>|1,2.</code> 表示共用结尾。volta 终止于新的 volta、<code>:|</code> 或 <code>|.</code>。</li>
                                         <li><strong>小节反复：</strong> <code>%</code> 重复前 1 个逻辑小节，<code>%%</code> 重复前 2 个逻辑小节；如果前面的逻辑小节本身也是 measure-repeat，则递归解析其内容。</li>
                                         <li><strong>小节反复作用域：</strong> <code>%</code> 和 <code>%%</code> 必须单独占满整个小节；一旦某条轨在该小节声明 measure-repeat，其他轨在同一个逻辑小节里就必须留空，不能再写普通音符内容。</li>
-                                        <li><strong>导航标记：</strong> 支持 <code>@segno</code>、<code>@coda</code>、<code>@fine</code>、<code>@to-coda</code>、<code>@da-capo</code>、<code>@dal-segno</code>、<code>@dc-al-fine</code>、<code>@dc-al-coda</code>、<code>@ds-al-fine</code>、<code>@ds-al-coda</code>。</li>
-                                        <li><strong>冲突规则：</strong> 同一小节最多一个 marker、最多一个 jump。v1 不允许嵌套反复或交叉反复。</li>
+                                        <li><strong>导航标记：</strong> 支持 <code>@segno</code>、<code>@coda</code>、<code>@fine</code>、<code>@to-coda</code>、<code>@dc</code>、<code>@ds</code>、<code>@dc-al-fine</code>、<code>@dc-al-coda</code>、<code>@ds-al-fine</code>、<code>@ds-al-coda</code>。旧写法 <code>@da-capo</code> 和 <code>@dal-segno</code> 会直接报错。</li>
+                                        <li><strong>位置规则：</strong> <code>@segno</code> 可以写在小节开头或中间，但不能作为最后一个 token；<code>@coda</code> 只能写在开头；<code>@fine</code>、<code>@dc</code>、<code>@ds</code> 以及各类 <code>dc/ds-al-*</code> 只能写在结尾；<code>@to-coda</code> 可以写在中间或结尾，但不能写在开头。</li>
+                                        <li><strong>纯导航小节：</strong> 如果一个小节去掉导航 token 后没有任何内容，start-side 形式默认挂在左边界，end-side 形式默认挂在右边界。</li>
+                                        <li><strong>冲突规则：</strong> 同一小节最多一个 start-side 导航标记（<code>segno</code> 或 <code>coda</code>），最多一个 end-side 导航指令（<code>fine</code>、<code>to-coda</code>、<code>dc</code>、<code>ds</code> 或任意 <code>dc/ds-al-*</code>）。v1 不允许嵌套反复或交叉反复。</li>
                                     </ul>
                                 </div>
                             </div>

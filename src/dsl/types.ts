@@ -141,8 +141,8 @@ export type ParsedMeasure = {
   repeatTimes?: number;
   repeatCount?: number;
   barline?: BarlineType;
-  marker?: MarkerType;
-  jump?: JumpType;
+  startNav?: ParsedStartNav;
+  endNav?: ParsedEndNav;
   voltaIndices?: number[];
   voltaTerminator?: boolean;
   measureRepeatSlashes?: number;
@@ -281,19 +281,33 @@ export type BarlineType =
   | "repeat-end"
   | "repeat-both";
 
-export type MarkerType =
+export type StartNavKind =
   | "segno"
-  | "coda"
-  | "fine";
+  | "coda";
 
-export type JumpType =
-  | "da-capo"
-  | "dal-segno"
+export type EndNavKind =
+  | "fine"
+  | "dc"
+  | "ds"
   | "dc-al-fine"
   | "dc-al-coda"
   | "ds-al-fine"
   | "ds-al-coda"
   | "to-coda";
+
+export type ParsedStartNav =
+  | { kind: "coda"; anchor: "left-edge" }
+  | { kind: "segno"; anchor: "left-edge" | { tokenAfter: number } };
+
+export type ParsedEndNav =
+  | { kind: "to-coda"; anchor: "right-edge" | { tokenBefore: number } }
+  | { kind: "fine"; anchor: "right-edge" }
+  | { kind: "dc"; anchor: "right-edge" }
+  | { kind: "ds"; anchor: "right-edge" }
+  | { kind: "dc-al-fine"; anchor: "right-edge" }
+  | { kind: "dc-al-coda"; anchor: "right-edge" }
+  | { kind: "ds-al-fine"; anchor: "right-edge" }
+  | { kind: "ds-al-coda"; anchor: "right-edge" };
 
 export type TupletSpec = {
   actual: number;
@@ -340,13 +354,27 @@ export type NormalizedMeasure = {
   events: NormalizedEvent[];
   generated?: boolean;
   barline?: BarlineType;
-  marker?: MarkerType;
-  jump?: JumpType;
+  startNav?: StartNav;
+  endNav?: EndNav;
   volta?: VoltaIntent;
   measureRepeat?: MeasureRepeatIntent;
   multiRest?: MultiRestIntent;
   multiRestCount?: number;
 };
+
+export type StartNav =
+  | { kind: "coda"; anchor: "left-edge" }
+  | { kind: "segno"; anchor: "left-edge" | { eventAfter: Fraction } };
+
+export type EndNav =
+  | { kind: "to-coda"; anchor: "right-edge" | { eventBefore: Fraction } }
+  | { kind: "fine"; anchor: "right-edge" }
+  | { kind: "dc"; anchor: "right-edge" }
+  | { kind: "ds"; anchor: "right-edge" }
+  | { kind: "dc-al-fine"; anchor: "right-edge" }
+  | { kind: "dc-al-coda"; anchor: "right-edge" }
+  | { kind: "ds-al-fine"; anchor: "right-edge" }
+  | { kind: "ds-al-coda"; anchor: "right-edge" };
 
 export type NormalizedHeader = {
   title?: string;

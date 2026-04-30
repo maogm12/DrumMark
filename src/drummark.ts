@@ -25,12 +25,14 @@ const jumpMarkers = [
   "@coda",
   "@fine",
   "@to-coda",
-  "@da-capo",
-  "@dal-segno",
+  "@dc",
+  "@ds",
   "@dc-al-fine",
   "@dc-al-coda",
   "@ds-al-fine",
   "@ds-al-coda",
+  "@da-capo",
+  "@dal-segno",
 ] as const;
 
 function startState(): DslState {

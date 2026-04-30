@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { Glyphs, VoltaType } from "vexflow";
 import type { NormalizedScore } from "../dsl/types";
-import { jumpText, markerText, measureRepeatGlyph, voltaTypeForMeasure } from "./renderer";
+import { endNavText, measureRepeatGlyph, startNavText, voltaTypeForMeasure } from "./renderer";
 
 function makeScore(): NormalizedScore {
   return {
@@ -58,11 +58,11 @@ function makeScore(): NormalizedScore {
 
 describe("vexflow structural helpers", () => {
   it("maps navigation metadata to stave text labels", () => {
-    expect(markerText("segno")).toBe("Segno");
-    expect(markerText("coda")).toBe("Coda");
-    expect(markerText("fine")).toBe("Fine");
-    expect(jumpText("to-coda")).toBe("To Coda");
-    expect(jumpText("dc-al-fine")).toBe("D.C. al Fine");
+    expect(startNavText({ kind: "segno", anchor: "left-edge" })).toBe("Segno");
+    expect(startNavText({ kind: "coda", anchor: "left-edge" })).toBe("Coda");
+    expect(endNavText({ kind: "fine", anchor: "right-edge" })).toBe("Fine");
+    expect(endNavText({ kind: "to-coda", anchor: "right-edge" })).toBe("To Coda");
+    expect(endNavText({ kind: "dc-al-fine", anchor: "right-edge" })).toBe("D.C. al Fine");
   });
 
   it("maps measure-repeat intent to VexFlow repeat glyphs", () => {

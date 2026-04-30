@@ -125,19 +125,32 @@ BD | d - - - d - - - |`);
     const score = buildNormalizedScore(`time 4/4
 divisions 4
 
-|: x x x x :| @segno % |1. x - - - | @to-coda --2-- |.`);
+|: x x x x :| @segno % |1. x - - - | --2-- @to-coda |.`);
 
     const xml = buildMusicXml(score);
 
     expect(xml).toContain('<barline location="left"><repeat direction="forward"/></barline>');
     expect(xml).toContain('<barline location="right"><repeat direction="backward"/></barline>');
     expect(xml).toContain("<direction placement=\"above\"><direction-type><segno/></direction-type></direction>");
-    expect(xml).toContain("<direction placement=\"above\"><direction-type><words>To Coda</words></direction-type></direction>");
     expect(xml).toContain("<measure-style><measure-repeat type=\"start\" slashes=\"1\">1</measure-repeat></measure-style>");
     expect(xml).toContain("<measure-style><measure-repeat type=\"stop\"></measure-repeat></measure-style>");
     expect(xml).toContain('<ending number="1" type="start"/>');
     expect(xml).toContain('<ending number="1" type="stop"/>');
     expect(xml).toContain("<measure-style><multiple-rest>2</multiple-rest></measure-style>");
+  });
+
+  it("exports supported start-side and end-side navigation", () => {
+    const score = buildNormalizedScore(`time 4/4
+divisions 4
+
+HH | @segno x x x x | x x x @fine | x x x @dc |`);
+
+    expect(score.errors).toEqual([]);
+
+    const xml = buildMusicXml(score);
+    expect(xml).toContain("<segno/>");
+    expect(xml).toContain("<words>Fine</words>");
+    expect(xml).toContain("<words>D.C.</words>");
   });
 
   it("stops a volta at `|.` without exporting a final bar-style unless the score actually ends there", () => {

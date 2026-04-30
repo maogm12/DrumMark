@@ -241,12 +241,12 @@ divisions 4
 
     expect(doc.errors).toEqual([]);
     expect(doc.paragraphs[0].lines[0].measures[0]).toMatchObject({
-      marker: "segno",
-      jump: undefined,
+      startNav: { kind: "segno", anchor: "left-edge" },
+      endNav: undefined,
     });
     expect(doc.paragraphs[0].lines[1].measures[0]).toMatchObject({
-      marker: undefined,
-      jump: "ds-al-coda",
+      startNav: undefined,
+      endNav: { kind: "ds-al-coda", anchor: "right-edge" },
     });
     expect(doc.paragraphs[0].lines[0].measures[0].tokens[0]).toMatchObject({ kind: "basic", value: "d" });
   });
@@ -254,17 +254,23 @@ divisions 4
   it("allows navigation metadata on shorthand measures", () => {
     const doc = parseDocumentSkeleton(`time 4/4
 divisions 4
-| @fine % |
-| @to-coda --2-- |`);
+| @fine |
+| @to-coda |
+| @dc |
+| @ds |`);
 
     expect(doc.errors).toEqual([]);
     expect(doc.paragraphs[0].lines[0].measures[0]).toMatchObject({
-      marker: "fine",
-      measureRepeatSlashes: 1,
+      endNav: { kind: "fine", anchor: "right-edge" },
     });
     expect(doc.paragraphs[0].lines[1].measures[0]).toMatchObject({
-      jump: "to-coda",
-      multiRestCount: 2,
+      endNav: { kind: "to-coda", anchor: "right-edge" },
+    });
+    expect(doc.paragraphs[0].lines[2].measures[0]).toMatchObject({
+      endNav: { kind: "dc", anchor: "right-edge" },
+    });
+    expect(doc.paragraphs[0].lines[3].measures[0]).toMatchObject({
+      endNav: { kind: "ds", anchor: "right-edge" },
     });
   });
 

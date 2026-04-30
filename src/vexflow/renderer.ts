@@ -51,28 +51,27 @@ const {
   RendererBackends
 } = VexFlow;
 
-export function jumpText(jump?: NormalizedScore["measures"][number]["jump"]): string | null {
-  if (!jump) return null;
+export function endNavText(endNav?: NormalizedScore["measures"][number]["endNav"]): string | null {
+  if (!endNav) return null;
+  if (endNav.kind === "fine") return "Fine";
+  if (endNav.kind === "to-coda") return "To Coda";
 
   return {
-    "da-capo": "D.C.",
-    "dal-segno": "D.S.",
+    dc: "D.C.",
+    ds: "D.S.",
     "dc-al-fine": "D.C. al Fine",
     "dc-al-coda": "D.C. al Coda",
     "ds-al-fine": "D.S. al Fine",
     "ds-al-coda": "D.S. al Coda",
-    "to-coda": "To Coda",
-  }[jump];
+  }[endNav.kind];
 }
 
-export function markerText(marker?: NormalizedScore["measures"][number]["marker"]): string | null {
-  if (!marker) return null;
-
+export function startNavText(startNav?: NormalizedScore["measures"][number]["startNav"]): string | null {
+  if (!startNav) return null;
   return {
     segno: "Segno",
     coda: "Coda",
-    fine: "Fine",
-  }[marker];
+  }[startNav.kind];
 }
 
 export function voltaTypeForMeasure(score: NormalizedScore, measure: NormalizedScore["measures"][number]): number | null {
@@ -118,8 +117,8 @@ function buildRenderMeasures(score: NormalizedScore): RenderMeasure[] {
       expanded.push({
         measure: {
           ...measure,
-          marker: measure.marker,
-          jump: undefined,
+          startNav: measure.startNav,
+          endNav: undefined,
           barline: leftEdgeBarline(measure.barline),
         },
         kind: "measure-repeat-2-start",
@@ -127,8 +126,8 @@ function buildRenderMeasures(score: NormalizedScore): RenderMeasure[] {
       expanded.push({
         measure: {
           ...measure,
-          marker: undefined,
-          jump: measure.jump,
+          startNav: undefined,
+          endNav: measure.endNav,
           barline: rightEdgeBarline(measure.barline),
         },
         kind: "measure-repeat-2-stop",
@@ -145,7 +144,12 @@ function buildRenderMeasures(score: NormalizedScore): RenderMeasure[] {
   return expanded;
 }
 
-function applyStructuralModifiers(stave: any, score: NormalizedScore, measure: NormalizedScore["measures"][number]) {
+function applyStructuralModifiers(
+  stave: any,
+  score: NormalizedScore,
+  measure: NormalizedScore["measures"][number],
+  _isFirstMeasureInSystem: boolean,
+) {
   switch (measure.barline) {
     case "repeat-start":
       stave.setBegBarType(BarlineType.REPEAT_BEGIN);
@@ -173,17 +177,131 @@ function applyStructuralModifiers(stave: any, score: NormalizedScore, measure: N
     volta.setPosition(Modifier.Position.ABOVE);
     stave.addModifier(volta);
   }
+}
 
-  const marker = markerText(measure.marker);
-  if (marker) {
-    stave.setStaveText(marker, Modifier.Position.ABOVE, { shiftY: -8 });
+function navAnchorKeys(navAnchors: Map<string, any>): string[] {
+  return [...navAnchors.keys()].sort((a, b) => {
+    const [an, ad] = a.split("/").map(Number);
+    const [bn, bd] = b.split("/").map(Number);
+    return an / ad - bn / bd;
+  });
+}
+
+function firstNavAnchor(navAnchors: Map<string, any>) {
+  const firstKey = navAnchorKeys(navAnchors)[0];
+  return firstKey ? navAnchors.get(firstKey) : undefined;
+}
+
+function lastNavAnchor(navAnchors: Map<string, any>) {
+  const keys = navAnchorKeys(navAnchors);
+  const lastKey = keys[keys.length - 1];
+  return lastKey ? navAnchors.get(lastKey) : undefined;
+}
+
+function addTextAnnotation(
+  note: any,
+  text: string,
+  vertical: "above" | "below",
+  justification: "left" | "center" | "right",
+  xShift = 0,
+  yShift = 0,
+) {
+  const annotation = new Annotation(text)
+    .setJustification(justification)
+    .setVerticalJustification(vertical);
+  annotation.setXShift(xShift);
+  annotation.setYShift(yShift);
+  note.addModifier(annotation, 0);
+}
+
+function addGlyphAnnotation(
+  note: any,
+  glyph: string,
+  vertical: "above" | "below",
+  justification: "left" | "center" | "right",
+  xShift = 0,
+  yShift = 0,
+) {
+  const annotation = new Annotation(glyph)
+    .setFont("Bravura", 20, "")
+    .setJustification(justification)
+    .setVerticalJustification(vertical);
+  annotation.setXShift(xShift);
+  annotation.setYShift(yShift);
+  note.addModifier(annotation, 0);
+}
+
+function renderStartNavigation(
+  stave: any,
+  measure: NormalizedScore["measures"][number],
+  navAnchors: Map<string, any>,
+) {
+  if (!measure.startNav) return;
+
+  if (measure.startNav.anchor === "left-edge") {
+    const note = firstNavAnchor(navAnchors);
+    if (!note) return;
+
+    const glyph = measure.startNav.kind === "segno" ? Glyphs.segno : Glyphs.coda;
+    const shift = -(stave.getNoteStartX() - stave.getX()) - 6;
+    addGlyphAnnotation(note, glyph, "above", "left", shift);
+    return;
   }
 
-  const jump = jumpText(measure.jump);
-  if (jump) {
-    stave.setStaveText(jump, Modifier.Position.ABOVE, { shiftX: 24, shiftY: -8 });
-  }
+  const key = `${measure.startNav.anchor.eventAfter.numerator}/${measure.startNav.anchor.eventAfter.denominator}`;
+  const note = navAnchors.get(key);
+  if (!note) return;
 
+  const glyph = measure.startNav.kind === "segno" ? Glyphs.segno : Glyphs.coda;
+  addGlyphAnnotation(note, glyph, "above", "center");
+}
+
+function renderEndNavigation(
+  measure: NormalizedScore["measures"][number],
+  navAnchors: Map<string, any>,
+) {
+  if (!measure.endNav) return;
+
+  const note =
+    measure.endNav.anchor === "right-edge"
+      ? lastNavAnchor(navAnchors)
+      : navAnchors.get(`${measure.endNav.anchor.eventBefore.numerator}/${measure.endNav.anchor.eventBefore.denominator}`);
+  if (!note) return;
+
+  const vertical = "above";
+  const codaTextShift = 44;
+
+  switch (measure.endNav.kind) {
+    case "fine":
+      addTextAnnotation(note, "Fine", vertical, "right");
+      break;
+    case "to-coda":
+      addTextAnnotation(note, "To", vertical, "right", codaTextShift);
+      addGlyphAnnotation(note, Glyphs.coda, vertical, "right");
+      break;
+    case "dc":
+      addTextAnnotation(note, "D.C.", vertical, "right");
+      break;
+    case "ds":
+      addTextAnnotation(note, "D.S.", vertical, "right");
+      break;
+    case "dc-al-fine":
+      addTextAnnotation(note, "D.C. al Fine", vertical, "right");
+      break;
+    case "dc-al-coda":
+      addTextAnnotation(note, "D.C. al", vertical, "right", codaTextShift);
+      addGlyphAnnotation(note, Glyphs.coda, vertical, "right");
+      break;
+    case "ds-al-fine":
+      addTextAnnotation(note, "D.S. al Fine", vertical, "right");
+      break;
+    case "ds-al-coda":
+      addTextAnnotation(note, "D.S. al", vertical, "right", codaTextShift);
+      addGlyphAnnotation(note, Glyphs.coda, vertical, "right");
+      break;
+    default:
+      break;
+  }
 }
 
 async function ensureVexFlowFonts() {
@@ -325,12 +443,12 @@ function renderSystem(context: any, score: NormalizedScore, measures: RenderMeas
       }
     }
 
-    applyStructuralModifiers(stave, score, measure);
+    applyStructuralModifiers(stave, score, measure, i === 0);
 
     stave.setContext(context).draw();
     staves.push(stave);
 
-    const { voices, beams, tuplets, drawables } = renderMeasureVoices(score, renderMeasure, stave, stickings, options);
+    const { voices, beams, tuplets, drawables } = renderMeasureVoices(score, renderMeasure, stave, stickings, options, i === 0);
     allVoices.push(...voices);
     allBeams.push(...beams);
     allTuplets.push(...tuplets);
@@ -381,7 +499,8 @@ function renderMeasureVoices(
   renderMeasure: RenderMeasure,
   stave: any,
   stickings: Map<string, string>,
-  options: VexflowRenderOptions
+  options: VexflowRenderOptions,
+  _isFirstMeasureInSystem: boolean,
 ) {
   const measure = renderMeasure.measure;
   const measureDuration = {
@@ -418,8 +537,9 @@ function renderMeasureVoices(
 
   const beams: any[] = [];
   const tuplets: any[] = [];
+  const navAnchors = new Map<string, any>();
 
-  const v1Notes = createVexNotes(score, upEntries, 1, measureStart, stickings, beams, tuplets);
+  const v1Notes = createVexNotes(score, upEntries, 1, measureStart, stickings, beams, tuplets, navAnchors);
   const voice1 = new Voice({ numBeats: measureDuration.numerator, beatValue: measureDuration.denominator }).setStrict(false).addTickables(v1Notes);
   (voice1 as any)._stave = stave;
 
@@ -428,10 +548,15 @@ function renderMeasureVoices(
   // Only create voice 2 if there are actual events or if we are not hiding rests
   const hasV2Events = downEvents.length > 0;
   if (hasV2Events || !options.hideVoice2Rests) {
-    const v2Notes = createVexNotes(score, downEntries, 2, measureStart, stickings, beams, tuplets, options.hideVoice2Rests);
+    const v2Notes = createVexNotes(score, downEntries, 2, measureStart, stickings, beams, tuplets, navAnchors, options.hideVoice2Rests);
     const voice2 = new Voice({ numBeats: measureDuration.numerator, beatValue: measureDuration.denominator }).setStrict(false).addTickables(v2Notes);
     (voice2 as any)._stave = stave;
     voices.push(voice2);
+  }
+
+  if (measure.startNav || measure.endNav) {
+    renderStartNavigation(stave, measure, navAnchors);
+    renderEndNavigation(measure, navAnchors);
   }
 
   return { voices, beams, tuplets, drawables: [] };
@@ -445,6 +570,7 @@ function createVexNotes(
   stickings: Map<string, string>,
   allBeams: any[],
   allTuplets: any[],
+  navAnchors: Map<string, any>,
   hideRests = false
 ): any[] {
   const notes: any[] = [];
@@ -470,6 +596,12 @@ function createVexNotes(
       
       for (let d = 0; d < durInfo.dots; d++) {
         Dot.buildAndAttach([note], { all: true });
+      }
+
+      const relativeStart = subtractFractions(entry.start, measureStart);
+      const relativeKey = `${relativeStart.numerator}/${relativeStart.denominator}`;
+      if (!navAnchors.has(relativeKey)) {
+        navAnchors.set(relativeKey, note);
       }
 
       // Fix: Encountering a rest should break the current beam
@@ -539,6 +671,12 @@ function createVexNotes(
         const relativeStart = subtractFractions(entry.start, measureStart);
         const stick = stickings.get(`${relativeStart.numerator}/${relativeStart.denominator}`);
         if (stick) note.addModifier(new Annotation(stick).setPosition(ModifierPosition.ABOVE), 0);
+      }
+
+      const relativeStart = subtractFractions(entry.start, measureStart);
+      const relativeKey = `${relativeStart.numerator}/${relativeStart.denominator}`;
+      if (!navAnchors.has(relativeKey)) {
+        navAnchors.set(relativeKey, note);
       }
 
       const segment = groupingSegmentIndex(score, subtractFractions(entry.start, measureStart));

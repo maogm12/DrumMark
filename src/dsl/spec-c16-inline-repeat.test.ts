@@ -15,8 +15,8 @@ divisions 4
     expect(doc.paragraphs[0].lines[0].measures).toHaveLength(1);
     expect(doc.paragraphs[0].lines[0].measures[0]).toMatchObject({
       content: "d - - -",
-      marker: "segno",
-      jump: "ds-al-coda",
+      startNav: { kind: "segno", anchor: "left-edge" },
+      endNav: { kind: "ds-al-coda", anchor: "right-edge" },
       voltaIndices: [1],
       barline: undefined,
     });
@@ -25,10 +25,10 @@ divisions 4
     expect(score.errors).toEqual([]);
     expect(score.measures).toHaveLength(1);
     expect(score.measures[0]).toMatchObject({
-      marker: "segno",
-      jump: "ds-al-coda",
+      startNav: { kind: "segno", anchor: "left-edge" },
+      endNav: { kind: "ds-al-coda", anchor: "right-edge" },
       volta: { indices: [1] },
-      barline: "final",
+      barline: "double",
     });
   });
 
@@ -43,29 +43,29 @@ divisions 4
     expect(doc.paragraphs[0].lines[0].measures).toHaveLength(3);
     expect(doc.paragraphs[0].lines[0].measures.map((measure) => ({
       content: measure.content,
-      marker: measure.marker,
-      jump: measure.jump,
+      startNav: measure.startNav,
+      endNav: measure.endNav,
       voltaIndices: measure.voltaIndices,
       barline: measure.barline,
     }))).toEqual([
       {
         content: "d - - -",
-        marker: "segno",
-        jump: undefined,
+        startNav: { kind: "segno", anchor: "left-edge" },
+        endNav: undefined,
         voltaIndices: [2],
         barline: undefined,
       },
       {
         content: "d - - -",
-        marker: undefined,
-        jump: undefined,
+        startNav: undefined,
+        endNav: undefined,
         voltaIndices: undefined,
         barline: undefined,
       },
       {
         content: "d - - -",
-        marker: undefined,
-        jump: "ds-al-coda",
+        startNav: undefined,
+        endNav: { kind: "ds-al-coda", anchor: "right-edge" },
         voltaIndices: undefined,
         barline: undefined,
       },
@@ -75,26 +75,26 @@ divisions 4
     expect(ast.errors).toEqual([]);
     expect(ast.paragraphs[0].tracks[0].measures).toHaveLength(3);
     expect(ast.paragraphs[0].tracks[0].measures.map((measure) => ({
-      marker: measure.marker,
-      jump: measure.jump,
+      startNav: measure.startNav,
+      endNav: measure.endNav,
       volta: measure.volta,
       barline: measure.barline,
     }))).toEqual([
       {
-        marker: "segno",
-        jump: undefined,
+        startNav: { kind: "segno", anchor: "left-edge" },
+        endNav: undefined,
         volta: { indices: [2] },
         barline: "regular",
       },
       {
-        marker: undefined,
-        jump: undefined,
+        startNav: undefined,
+        endNav: undefined,
         volta: undefined,
         barline: "regular",
       },
       {
-        marker: undefined,
-        jump: "ds-al-coda",
+        startNav: undefined,
+        endNav: { kind: "ds-al-coda", anchor: "right-edge" },
         volta: undefined,
         barline: "regular",
       },
@@ -111,12 +111,12 @@ SD | @segno d - - - *3 |.`);
     expect(score.errors).toEqual([]);
     expect(score.measures).toHaveLength(3);
     expect(score.measures.map((measure) => ({
-      marker: measure.marker,
+      startNav: measure.startNav,
       barline: measure.barline,
     }))).toEqual([
-      { marker: "segno", barline: "regular" },
-      { marker: undefined, barline: "regular" },
-      { marker: undefined, barline: "final" },
+      { startNav: { kind: "segno", anchor: "left-edge" }, barline: "regular" },
+      { startNav: undefined, barline: "regular" },
+      { startNav: undefined, barline: "final" },
     ]);
   });
 

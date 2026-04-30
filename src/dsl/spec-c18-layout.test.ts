@@ -97,11 +97,11 @@ SD   |   d   -   -   -   |`);
     expect(aligned.paragraphs[0].lines[0].measures[0].barline).toBe(
       compact.paragraphs[0].lines[0].measures[0].barline,
     );
-    expect(aligned.paragraphs[0].lines[0].measures[0].marker).toBe(
-      compact.paragraphs[0].lines[0].measures[0].marker,
+    expect(aligned.paragraphs[0].lines[0].measures[0].startNav).toEqual(
+      compact.paragraphs[0].lines[0].measures[0].startNav,
     );
-    expect(aligned.paragraphs[0].lines[0].measures[0].jump).toBe(
-      compact.paragraphs[0].lines[0].measures[0].jump,
+    expect(aligned.paragraphs[0].lines[0].measures[0].endNav).toEqual(
+      compact.paragraphs[0].lines[0].measures[0].endNav,
     );
   });
 

@@ -308,8 +308,6 @@ function validateAndBuildRepeats(
 }
 
 function validateMeasureMetadata(paragraphs: ScoreParagraph[], errors: ParseError[]): void {
-  const markersByBar = new Map<number, string>();
-  const jumpsByBar = new Map<number, string>();
   const voltasByBar = new Map<number, string>();
   const measuresByBar = new Map<number, ScoreMeasure[]>();
 
@@ -319,24 +317,6 @@ function validateMeasureMetadata(paragraphs: ScoreParagraph[], errors: ParseErro
         const currentMeasures = measuresByBar.get(measure.globalIndex) ?? [];
         currentMeasures.push(measure);
         measuresByBar.set(measure.globalIndex, currentMeasures);
-
-        if (measure.marker) {
-          const existing = markersByBar.get(measure.globalIndex);
-          if (existing && existing !== measure.marker) {
-            pushError(errors, paragraph.startLine, `Conflicting markers at bar ${measure.globalIndex + 1}`);
-          } else {
-            markersByBar.set(measure.globalIndex, measure.marker);
-          }
-        }
-
-        if (measure.jump) {
-          const existing = jumpsByBar.get(measure.globalIndex);
-          if (existing && existing !== measure.jump) {
-            pushError(errors, paragraph.startLine, `Conflicting jumps at bar ${measure.globalIndex + 1}`);
-          } else {
-            jumpsByBar.set(measure.globalIndex, measure.jump);
-          }
-        }
 
         if (measure.volta) {
           const serialized = measure.volta.indices.join(",");

@@ -49,33 +49,35 @@ function rightEdgeBarline(barline: NormalizedScore["measures"][number]["barline"
   return undefined;
 }
 
-function markerDirectionXml(marker?: NormalizedScore["measures"][number]["marker"]): string {
-  if (!marker) return "";
+function startNavDirectionXml(startNav?: NormalizedScore["measures"][number]["startNav"]): string {
+  if (!startNav) return "";
 
-  switch (marker) {
+  switch (startNav.kind) {
     case "segno":
       return '<direction placement="above"><direction-type><segno/></direction-type></direction>';
     case "coda":
       return '<direction placement="above"><direction-type><coda/></direction-type></direction>';
-    case "fine":
-      return '<direction placement="above"><direction-type><words>Fine</words></direction-type></direction>';
     default:
       return "";
   }
 }
 
-function jumpDirectionXml(jump?: NormalizedScore["measures"][number]["jump"]): string {
-  if (!jump) return "";
+function endNavDirectionXml(endNav?: NormalizedScore["measures"][number]["endNav"]): string {
+  if (!endNav) return "";
+
+  if (endNav.kind === "fine") {
+    return '<direction placement="above"><direction-type><words>Fine</words></direction-type></direction>';
+  }
 
   const label = {
-    "da-capo": "D.C.",
-    "dal-segno": "D.S.",
+    dc: "D.C.",
+    ds: "D.S.",
     "dc-al-fine": "D.C. al Fine",
     "dc-al-coda": "D.C. al Coda",
     "ds-al-fine": "D.S. al Fine",
     "ds-al-coda": "D.S. al Coda",
     "to-coda": "To Coda",
-  }[jump];
+  }[endNav.kind];
 
   return `<direction placement="above"><direction-type><words>${xmlEscape(label)}</words></direction-type></direction>`;
 }
@@ -554,8 +556,8 @@ function measureXml(score: NormalizedScore, exportMeasure: ExportMeasure, divisi
             : "",
         ].filter(Boolean).join("")
       : "";
-  const markerDirection = markerDirectionXml(measure.marker);
-  const jumpDirection = jumpDirectionXml(measure.jump);
+  const markerDirection = startNavDirectionXml(measure.startNav);
+  const jumpDirection = endNavDirectionXml(measure.endNav);
   const repeatStart = leftBarlineXml(measure, previousMeasure);
   const repeatEnd = rightBarlineXml(measure, nextMeasure);
   const print = exportMeasure.outputIndex === 0
@@ -754,8 +756,8 @@ function buildExportMeasures(score: NormalizedScore): ExportMeasure[] {
           measure: {
             ...measure,
             measureRepeat: isFirst ? measure.measureRepeat : undefined,
-            marker: isFirst ? measure.marker : undefined,
-            jump: isLast ? measure.jump : undefined,
+            startNav: isFirst ? measure.startNav : undefined,
+            endNav: isLast ? measure.endNav : undefined,
             barline: isFirst
               ? leftEdgeBarline(measure.barline)
               : isLast
@@ -780,8 +782,8 @@ function buildExportMeasures(score: NormalizedScore): ExportMeasure[] {
           measure: {
             ...measure,
             multiRest: isFirst ? measure.multiRest : undefined,
-            marker: isFirst ? measure.marker : undefined,
-            jump: isLast ? measure.jump : undefined,
+            startNav: isFirst ? measure.startNav : undefined,
+            endNav: isLast ? measure.endNav : undefined,
             barline: isFirst
               ? leftEdgeBarline(measure.barline)
               : isLast

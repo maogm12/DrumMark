@@ -86,7 +86,7 @@ HH |: x x x x :|`);
     const score = buildScoreAst(`time 4/4
 divisions 4
 
-|: x x x x :| @segno % |1. x - - - | @to-coda --2-- |.`);
+|: x x x x :| @segno % |1. x - - - | --2-- @to-coda |.`);
 
     expect(score.errors).toEqual([]);
     const measures = score.paragraphs[0].tracks[0].measures;
@@ -94,14 +94,14 @@ divisions 4
       barline: "repeat-both",
     });
     expect(measures[1]).toMatchObject({
-      marker: "segno",
+      startNav: { kind: "segno", anchor: "left-edge" },
       measureRepeat: { slashes: 1 },
     });
     expect(measures[2]).toMatchObject({
       volta: { indices: [1] },
     });
     expect(measures[3]).toMatchObject({
-      jump: "to-coda",
+      endNav: { kind: "to-coda", anchor: "right-edge" },
       multiRest: { count: 2 },
       voltaTerminator: true,
     });
@@ -138,15 +138,19 @@ divisions 4
     expect(score.errors).toEqual([]);
   });
 
-  it("rejects conflicting navigation declarations on the same bar", () => {
+  it("preserves per-track positional navigation declarations before global merge", () => {
     const score = buildScoreAst(`time 4/4
 divisions 4
 
 HH | @segno d - - - |
-SD | @coda d - - - |`);
+SD | d - - - @to-coda |`);
 
-    expect(score.errors).toContainEqual(expect.objectContaining({
-      message: "Conflicting markers at bar 1",
-    }));
+    expect(score.errors).toEqual([]);
+    expect(score.paragraphs[0].tracks[0].measures[0]).toMatchObject({
+      startNav: { kind: "segno", anchor: "left-edge" },
+    });
+    expect(score.paragraphs[0].tracks[1].measures[0]).toMatchObject({
+      endNav: { kind: "to-coda", anchor: "right-edge" },
+    });
   });
 });

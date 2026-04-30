@@ -213,3 +213,8 @@ If the app is served from a sub-directory (e.g., `/drum_notation/`):
 - **For a basic docs page, nested scroll containers are unnecessary complexity:** once the content is already pre-rendered into static HTML, using a locked body plus an inner scrolling pane only fights the browser's native history restoration and anchor behavior.
 - **Hash navigation and back/forward restoration become simplest when `window` is the only scroller:** letting the document itself scroll removes the need for custom scroll bookkeeping, first-paint masking, and hash-specific repair logic.
 - **Keep docs runtime JS minimal and non-musical:** the browser docs entrypoint should ideally handle only lightweight UI affordances like the mobile menu, not parsing, rendering, active-nav tracking, or scroll management.
+
+## 36. Docs Width Constraints Belong On Content, Not The Full Shell (2026-04-30)
+
+- **Do not cap the outer docs shell with `max-width`:** when the sidebar owns a distinct background color, constraining `.docs-container` leaves exposed body background on ultrawide screens and visually breaks the left rail.
+- **Constrain only the reading column:** keep the overall docs layout full-width and let `.docs-page` define the readable text width, so the sidebar and header chrome can extend naturally to the viewport edges.

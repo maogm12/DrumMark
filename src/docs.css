@@ -71,8 +71,7 @@
 .docs-container {
   display: flex; /* Changed from grid to flex for better control */
   align-items: flex-start;
-  max-width: 1400px;
-  margin: 0 auto;
+  width: 100%;
 }
 
 .docs-sidebar {

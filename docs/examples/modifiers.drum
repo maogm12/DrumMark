@@ -4,6 +4,14 @@ time 4/4
 divisions 16
 grouping 2+2
 
-HH | d:open - d:close - d:ghost - d:accent - |
+HH | d:open - d:close - d:ghost - d:dead - |
+
+RC | d:bell - d:drag - d:roll - - |
+
+C  | d:choke:accent - - - - - - - |
+
 SD | d:accent - d:rim - d:cross - d:flam - |
+
+T1 | d:ghost - d:drag - d:roll - d:dead - |
+
 BD | d:roll - d:dead - d - d |

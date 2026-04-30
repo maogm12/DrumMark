@@ -218,19 +218,29 @@
                                 <p>Adding detail and articulation to your hits.</p>
                             </div>
                             <div class="docs-description">
-                                <p>Add extra details to your hits by putting a colon after the note, then the technique name. You can chain several together if you need to.</p>
+                                <p>Add extra details to your hits by putting a colon after the note, then the technique name. Modifier legality depends on the resolved target track, so not every modifier works everywhere.</p>
                                 <div class="docs-section-body">
+                                    <table class="docs-table">
+                                        <thead><tr><th>Track / Family</th><th>Allowed Modifiers</th><th>Typical Use</th></tr></thead>
+                                        <tbody>
+                                            <tr><td><code>All hit tracks</code></td><td><code>accent</code></td><td>Universal emphasis mark.</td></tr>
+                                            <tr><td><code>HH</code></td><td><code>open</code>, <code>half-open</code>, <code>ghost</code>, <code>drag</code>, <code>roll</code>, <code>dead</code></td><td>Hi-hat state changes and hand articulations.</td></tr>
+                                            <tr><td><code>HF</code></td><td><code>close</code>, <code>accent</code></td><td>Foot-close articulations on the hi-hat pedal line.</td></tr>
+                                            <tr><td><code>RC</code>, <code>RC2</code></td><td><code>bell</code>, <code>choke</code>, <code>drag</code>, <code>roll</code></td><td>Ride bell and cymbal articulations.</td></tr>
+                                            <tr><td><code>C</code>, <code>C2</code>, <code>SPL</code>, <code>CHN</code></td><td><code>choke</code></td><td>Cymbal mute after the strike.</td></tr>
+                                            <tr><td><code>SD</code></td><td><code>rim</code>, <code>cross</code>, <code>flam</code>, <code>ghost</code>, <code>drag</code>, <code>roll</code>, <code>dead</code></td><td>Snare-specific stick placement and grace-note figures.</td></tr>
+                                            <tr><td><code>T1</code> - <code>T4</code></td><td><code>flam</code>, <code>ghost</code>, <code>drag</code>, <code>roll</code>, <code>dead</code></td><td>Tom grace notes, rolls, and muted strokes.</td></tr>
+                                            <tr><td><code>BD</code>, <code>BD2</code></td><td><code>roll</code>, <code>dead</code></td><td>Sustained pedal tremolo or muted kick articulation.</td></tr>
+                                            <tr><td><code>CB</code>, <code>WB</code>, <code>CL</code></td><td><code>accent</code></td><td>No extra technique modifiers beyond accent.</td></tr>
+                                        </tbody>
+                                    </table>
+                                    <p><strong>Syntax:</strong> <code>&lt;token&gt;:&lt;modifier&gt;</code> or <code>Track:d:&lt;modifier&gt;</code>. You can chain legal combinations such as <code>SD:d:rim:accent</code> or <code>RC:d:bell:accent</code>.</p>
                                     <ul class="docs-list">
-                                        <li><code>:accent</code>: Accent — heavier attack, rendered with <code>&gt;</code>.</li>
-                                        <li><code>:ghost</code>: Ghost note — soft, parenthesized.</li>
-                                        <li><code>:flam</code>: Flam — a 16th-note grace note preceding the main hit.</li>
-                                        <li><code>:drag</code>: Drag — two 16th-note grace notes preceding the main hit.</li>
-                                        <li><code>:roll</code>: Roll — tremolo, indicated with slashes on the stem.</li>
-                                        <li><code>:dead</code>: Dead stroke — muted, small x notehead.</li>
-                                        <li><code>:open</code> / <code>:half-open</code>: Hi-hat pedal state (open / half-open).</li>
-                                        <li><code>:bell</code>: Ride bell — hit the raised center of the cymbal.</li>
-                                        <li><code>:choke</code>: Choke — mute the cymbal immediately after striking.</li>
-                                        <li><code>:rim</code> / <code>:cross</code>: Snare rimshot or cross-stick.</li>
+                                        <li><strong>Hi-hat:</strong> <code>HH | d:open - d:close - d:ghost - d:dead - |</code></li>
+                                        <li><strong>Ride / Cymbals:</strong> <code>RC | d:bell - d:drag - d:roll - - |</code> and <code>C | d:choke:accent - - - - - - - |</code></li>
+                                        <li><strong>Snare:</strong> <code>SD | d:accent - d:rim - d:cross - d:flam - |</code></li>
+                                        <li><strong>Toms:</strong> <code>T1 | d:ghost - d:drag - d:roll - d:dead - |</code></li>
+                                        <li><strong>Bass drum:</strong> <code>BD | d:roll - d:dead - d - d |</code></li>
                                     </ul>
                                 </div>
                             </div>

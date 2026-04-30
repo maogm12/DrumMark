@@ -218,19 +218,29 @@
                                 <p>为击打添加细节和发音方式。</p>
                             </div>
                             <div class="docs-description">
-                                <p>在音符后面加冒号再写技巧名称，可以为您的击打添加额外的细节。如果需要，您可以链接多个技巧名称。</p>
+                                <p>在音符后面加冒号再写技巧名称，可以为您的击打添加额外的细节。modifier 是否合法取决于最终解析到的目标轨道，所以不是每个 modifier 都能用于所有 track。</p>
                                 <div class="docs-section-body">
+                                    <table class="docs-table">
+                                        <thead><tr><th>轨道 / 家族</th><th>允许的 Modifiers</th><th>典型用途</th></tr></thead>
+                                        <tbody>
+                                            <tr><td><code>所有击打轨道</code></td><td><code>accent</code></td><td>通用重音标记。</td></tr>
+                                            <tr><td><code>HH</code></td><td><code>open</code>, <code>half-open</code>, <code>ghost</code>, <code>drag</code>, <code>roll</code>, <code>dead</code></td><td>踩镲开合状态与手部发音变化。</td></tr>
+                                            <tr><td><code>HF</code></td><td><code>close</code>, <code>accent</code></td><td>踩镲脚踏闭合类动作。</td></tr>
+                                            <tr><td><code>RC</code>, <code>RC2</code></td><td><code>bell</code>, <code>choke</code>, <code>drag</code>, <code>roll</code></td><td>叮叮镲镲帽与镲片发音。</td></tr>
+                                            <tr><td><code>C</code>, <code>C2</code>, <code>SPL</code>, <code>CHN</code></td><td><code>choke</code></td><td>敲击后立刻闷音。</td></tr>
+                                            <tr><td><code>SD</code></td><td><code>rim</code>, <code>cross</code>, <code>flam</code>, <code>ghost</code>, <code>drag</code>, <code>roll</code>, <code>dead</code></td><td>军鼓专属的边击、cross-stick、装饰音与滚奏。</td></tr>
+                                            <tr><td><code>T1</code> - <code>T4</code></td><td><code>flam</code>, <code>ghost</code>, <code>drag</code>, <code>roll</code>, <code>dead</code></td><td>通鼓装饰音、滚奏与闷音击打。</td></tr>
+                                            <tr><td><code>BD</code>, <code>BD2</code></td><td><code>roll</code>, <code>dead</code></td><td>持续脚踏滚奏或闷音底鼓。</td></tr>
+                                            <tr><td><code>CB</code>, <code>WB</code>, <code>CL</code></td><td><code>accent</code></td><td>除了重音外没有额外技巧 modifier。</td></tr>
+                                        </tbody>
+                                    </table>
+                                    <p><strong>语法：</strong><code>&lt;token&gt;:&lt;modifier&gt;</code> 或 <code>Track:d:&lt;modifier&gt;</code>。可以链式写合法组合，例如 <code>SD:d:rim:accent</code> 或 <code>RC:d:bell:accent</code>。</p>
                                     <ul class="docs-list">
-                                        <li><code>:accent</code>: 重音——加强攻击，渲染为 <code>&gt;</code>。</li>
-                                        <li><code>:ghost</code>: 鬼音——轻柔，用括号标出。</li>
-                                        <li><code>:flam</code>: Flam——主音前一个十六分音符的装饰音。</li>
-                                        <li><code>:drag</code>: Drag——主音前两个十六分音符的装饰音。</li>
-                                        <li><code>:roll</code>: 滚奏——在符干上画斜线表示。</li>
-                                        <li><code>:dead</code>: 闷音击打——小 x 音符头。</li>
-                                        <li><code>:open</code> / <code>:half-open</code>: 踩镲踏板状态（开放/半开）。</li>
-                                        <li><code>:bell</code>: 叮叮镲镲帽——敲击镲片中间凸起的部分。</li>
-                                        <li><code>:choke</code>: 闷音——敲击后立即用手按住镲片。</li>
-                                        <li><code>:rim</code> / <code>:cross</code>: 军鼓 rimshot 或 cross-stick。</li>
+                                        <li><strong>踩镲：</strong><code>HH | d:open - d:close - d:ghost - d:dead - |</code></li>
+                                        <li><strong>叮叮镲 / 其他镲片：</strong><code>RC | d:bell - d:drag - d:roll - - |</code> 与 <code>C | d:choke:accent - - - - - - - |</code></li>
+                                        <li><strong>军鼓：</strong><code>SD | d:accent - d:rim - d:cross - d:flam - |</code></li>
+                                        <li><strong>通鼓：</strong><code>T1 | d:ghost - d:drag - d:roll - d:dead - |</code></li>
+                                        <li><strong>底鼓：</strong><code>BD | d:roll - d:dead - d - d |</code></li>
                                     </ul>
                                 </div>
                             </div>

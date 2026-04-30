@@ -117,7 +117,9 @@ grouping <a+b+c+...>
 
 ### 3.2 Grouping Inference
 
-| time | inferred grouping |
+If the `grouping` header is omitted, the compiler infers a default grouping based on the `time` signature:
+
+| Time | Inferred Grouping |
 |------|-------------------|
 | `2/4` | `1+1` |
 | `3/4` | `1+1+1` |
@@ -128,7 +130,10 @@ grouping <a+b+c+...>
 | `9/8` | `3+3+3` |
 | `12/8` | `3+3+3+3` |
 
-Irregular meters (`5/8`, `7/8`, `5/4`, etc.) require explicit `grouping`.
+**Rules**:
+- **Spaces**: Spaces are optional around the `/` in `time` (e.g., `4 / 4`) and around the `+` in `grouping` (e.g., `1 + 1 + 1 + 1`).
+- **Sum**: For an explicit `grouping`, the sum of all parts must exactly equal the numerator of the `time` signature.
+- **Irregular Meters**: Signatures like `5/8`, `7/8`, or `5/4` have no default inference and **require** an explicit `grouping` header (e.g., `grouping 3+2`).
 
 ---
 

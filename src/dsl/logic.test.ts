@@ -121,4 +121,40 @@ describe("dsl logic helpers", () => {
     expect(entries.map((entry) => entry.kind)).toEqual(["notes", "notes", "rest"]);
     expect(entries[2]?.duration).toEqual({ numerator: 1, denominator: 2 });
   });
+
+  it("handles identical relative event patterns across different measure starts", () => {
+    // This replicates the reported bug where the second measure rendered incorrectly.
+    // Input: SD | - - d - - - [2:dddd] |
+    // divisions 8, grouping 1+1+1+1
+    // "d" is at index 2 (1/4 into measure).
+    // [2:dddd] starts at index 6 (3/4 into measure).
+    
+    const time = { beats: 4, beatUnit: 4 };
+    const grouping = [1, 1, 1, 1];
+    const measureDuration = { numerator: 1, denominator: 1 };
+    
+    const relativeEvents = [
+      makeEvent({ numerator: 1, denominator: 4 }, { numerator: 1, denominator: 8 }),
+      makeEvent({ numerator: 3, denominator: 4 }, { numerator: 1, denominator: 16 }),
+      makeEvent({ numerator: 13, denominator: 16 }, { numerator: 1, denominator: 16 }),
+      makeEvent({ numerator: 7, denominator: 8 }, { numerator: 1, denominator: 16 }),
+      makeEvent({ numerator: 15, denominator: 16 }, { numerator: 1, denominator: 16 }),
+    ];
+    
+    const groups = groupVoiceEvents(relativeEvents);
+    
+    // Measure 1 (start 0/1)
+    const entries1 = buildVoiceEntries(groups, { numerator: 0, denominator: 1 }, measureDuration, grouping, time);
+    
+    // Measure 2 (start 1/1)
+    const entries2 = buildVoiceEntries(groups, { numerator: 1, denominator: 1 }, measureDuration, grouping, time);
+    
+    // Both measures should have the same structure
+    expect(entries1.map(e => e.kind)).toEqual(entries2.map(e => e.kind));
+    expect(entries1.map(e => e.duration)).toEqual(entries2.map(e => e.duration));
+    
+    // Specifically, Measure 2 should NOT start with notes if it has leading rests
+    expect(entries2[0].kind).toBe("rest");
+    expect(entries2[0].duration).toEqual({ numerator: 1, denominator: 4 });
+  });
 });

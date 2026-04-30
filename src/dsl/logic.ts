@@ -279,20 +279,21 @@ export function buildVoiceEntries(
   const time = timeSignature ?? { beats: 4, beatUnit: 4 };
 
   for (const group of groups) {
-    if (compareFractions(group.start, cursor) > 0) {
+    const absoluteGroupStart = addFractions(measureStart, group.start);
+    if (compareFractions(absoluteGroupStart, cursor) > 0) {
       // Gap before this group - split at grouping boundaries
-      const gapEnd = group.start;
+      const gapEnd = absoluteGroupStart;
       cursor = addRestsForSegment(entries, cursor, gapEnd, measureStart, measureDuration, grouping, time);
     }
 
     entries.push({
       kind: "notes",
-      start: group.start,
+      start: absoluteGroupStart,
       duration: group.duration,
       events: group.events,
     });
 
-    cursor = addFractions(group.start, group.duration);
+    cursor = addFractions(absoluteGroupStart, group.duration);
   }
 
   const measureEnd = addFractions(measureStart, measureDuration);

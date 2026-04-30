@@ -1039,6 +1039,8 @@ This tool allows for rapid inspection of the internal state and output of the Dr
 npm run drummark -- <input-file> [--format ir|xml|svg] [--output <path>]
 ```
 
+If `--output` is not specified for `xml` or `svg` formats, it defaults to `<input-file>.<format>`.
+
 **Formats**:
 - `ir` (default): Dumps the normalized Intermediate Representation (JSON). Useful for verifying parsing and normalization logic.
 - `xml`: Generates MusicXML output. Useful for verifying MusicXML export logic.

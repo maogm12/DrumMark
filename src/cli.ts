@@ -61,11 +61,16 @@ async function main() {
   const source = fs.readFileSync(path.resolve(params.input), "utf-8");
   const score = buildNormalizedScore(source);
 
+  if (score.errors.length > 0) {
+    console.warn("Parser warnings/errors:");
+    score.errors.forEach(e => console.warn(`Line ${e.line}, Col ${e.column}: ${e.message}`));
+  }
+
   let result = "";
   if (params.format === "ir") {
-    // Strip the AST for cleaner JSON if requested, or keep it
+    // Strip the AST for cleaner JSON
     const output = { ...score };
-    delete (output as any).ast; // Optional: AST is very large
+    delete (output as any).ast;
     result = JSON.stringify(output, null, 2);
   } else if (params.format === "xml") {
     result = buildMusicXml(score);
@@ -80,6 +85,11 @@ async function main() {
       systemSpacing: 1.0,
       hideVoice2Rests: false
     });
+  }
+
+  if (!params.output && params.format !== "ir") {
+    // For XML and SVG, if no output is specified, default to <input>.<ext>
+    params.output = params.input.replace(/\.[^/.]+$/, "") + (params.format === "xml" ? ".xml" : ".svg");
   }
 
   if (params.output) {

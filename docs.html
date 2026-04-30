@@ -42,7 +42,6 @@
                     <div class="docs-nav-group">
                         <span class="docs-nav-group-title">Introduction</span>
                         <a href="#overview" class="docs-nav-link">Overview</a>
-                        <a href="#architecture" class="docs-nav-link">Architecture</a>
                     </div>
                     <div class="docs-nav-group">
                         <span class="docs-nav-group-title">Core Syntax</span>
@@ -50,11 +49,12 @@
                         <a href="#tracks" class="docs-nav-link">Tracks & Instruments</a>
                         <a href="#tokens" class="docs-nav-link">Tokens & Rhythms</a>
                         <a href="#modifiers" class="docs-nav-link">Modifiers & Techniques</a>
+                        <a href="#groups" class="docs-nav-link">Rhythmic Groups</a>
                         <a href="#combined-hits" class="docs-nav-link">Combined Hits</a>
                         <a href="#sticking" class="docs-nav-link">Sticking</a>
                     </div>
                     <div class="docs-nav-group">
-                        <span class="docs-nav-group-title">Structure</span>
+                        <span class="docs-nav-group-title">Structure & Flow</span>
                         <a href="#repeats" class="docs-nav-link">Repeats & Jumps</a>
                         <a href="#multi-rest" class="docs-nav-link">Multi-Measure Rests</a>
                         <a href="#inline-repeat" class="docs-nav-link">Inline Repeats</a>
@@ -63,7 +63,6 @@
                         <span class="docs-nav-group-title">Advanced</span>
                         <a href="#validation" class="docs-nav-link">Validation</a>
                         <a href="#ir" class="docs-nav-link">Intermediate Representation</a>
-                        <a href="#musicxml" class="docs-nav-link">MusicXML Export</a>
                         <a href="#full-example" class="docs-nav-link">Full Example</a>
                     </div>
                 </nav>
@@ -72,7 +71,7 @@
                 <div class="docs-page">
                     <div class="docs-hero">
                         <span class="docs-kicker">Getting Started</span>
-                        <h1>Drum Notation Guide</h1>
+                        <h1>DrumMark Guide</h1>
                         <p>A text-first way to write professional drum scores. Fast, human-readable, and deterministic.</p>
                     </div>
                     <div class="docs-sections">
@@ -111,48 +110,22 @@
             </div>
                         </article>
 
-                        <article class="docs-section-card" id="architecture">
-                            <div class="docs-section-header">
-                                <h2>Architecture</h2>
-                                <p>The compilation pipeline from source to notation.</p>
-                            </div>
-                            <div class="docs-description">
-                                <p>The pipeline transforms DSL Source into an AST, then into a Normalized IR, which finally feeds the VexFlow Renderer or MusicXML Exporter.</p>
-                            </div>
-                            
-            <div class="docs-section-body">
-                <div class="docs-section-pane">
-                    <div class="docs-pane-title">Example</div>
-                    <div class="docs-code-block">
-                        <pre class="dsl-code-block"><span class="dsl-identifier">DSL</span> <span class="dsl-identifier">-&gt;</span> <span class="dsl-identifier">Parser</span> <span class="dsl-identifier">-&gt;</span> <span class="dsl-identifier">Normalizer</span> <span class="dsl-identifier">-&gt;</span> <span class="dsl-identifier">IR</span> <span class="dsl-identifier">-&gt;</span> <span class="dsl-identifier">VexFlow/MusicXML</span></pre>
-                    </div>
-                </div>
-                <div class="docs-section-pane">
-                    <div class="docs-pane-title">Score Result</div>
-                    <div class="docs-preview-shell">
-                        <div class="docs-preview-frame">
-                            <div class="staff-preview-container">
-                                <div class="staff-preview"><svg pointer-events="none" stroke-width="1" stroke-dasharray="none" fill="black" stroke="black" shadowColor="black" font-family="Bravura,Academico" font-size="10pt" font-weight="normal" font-style="normal" width="900" height="200" viewBox="0 0 900 200"></svg></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-                        </article>
-
                         <article class="docs-section-card" id="headers">
                             <div class="docs-section-header">
                                 <h2>Headers & Metadata</h2>
                                 <p>Defining the technical foundation of your score.</p>
                             </div>
                             <div class="docs-description">
-                                <ul>
-                                    <li><code>title</code>, <code>subtitle</code>, <code>composer</code>: Score information.</li>
-                                    <li><code>tempo</code>: Quarter-note BPM (default: 120).</li>
-                                    <li><code>time</code>: Meter (e.g., 4/4, 6/8) - <strong>Required</strong>.</li>
-                                    <li><code>divisions</code>: Grid resolution per measure - <strong>Required</strong>.</li>
-                                    <li><code>grouping</code>: Beat structure (e.g., 2+2).</li>
-                                </ul>
+                                <p>Metadata fields control the score's identity and global rhythmic logic:</p>
+                                <div class="docs-section-body">
+                                    <ul class="docs-list">
+                                        <li><strong>title / subtitle / composer:</strong> Optional text fields rendered on the first page.</li>
+                                        <li><strong>tempo:</strong> Quarter-note BPM (default 120). Impacts playback and tempo markings.</li>
+                                        <li><strong>time:</strong> (Required) The meter (e.g., <code>4/4</code>, <code>6/8</code>). Defines measure length.</li>
+                                        <li><strong>divisions:</strong> (Required) Total grid units per measure. Defines the "weight" of a basic hit.</li>
+                                        <li><strong>grouping:</strong> Defines the beat structure (e.g., <code>2+2</code> for 4/4). Controls default accents and beaming logic.</li>
+                                    </ul>
+                                </div>
                             </div>
                             
             <div class="docs-section-body">
@@ -184,7 +157,23 @@
                                 <p>Mapping notes to specific drum kit components.</p>
                             </div>
                             <div class="docs-description">
-                                <p>Each instrument is a track. Supported tracks include <code>BD</code>, <code>SD</code>, <code>HH</code>, <code>RC</code>, <code>C</code>, <code>T1-T4</code>, <code>HF</code>, and more. Use braces <code>{}</code> for routing scopes.</p>
+                                <p>Each track represents a specific instrument or voice. Supported tracks include:</p>
+                                <div class="docs-section-body">
+                                    <table class="docs-table">
+                                        <thead><tr><th>ID</th><th>Description</th><th>Family</th></tr></thead>
+                                        <tbody>
+                                            <tr><td><code>BD</code> / <code>BD2</code></td><td>Bass Drum / Double Bass</td><td>Drum</td></tr>
+                                            <tr><td><code>SD</code></td><td>Snare Drum</td><td>Drum</td></tr>
+                                            <tr><td><code>T1</code> - <code>T4</code></td><td>Toms (High to Low)</td><td>Drum</td></tr>
+                                            <tr><td><code>HH</code> / <code>HF</code></td><td>Hi-Hat (Hands) / Hi-Hat Foot</td><td>Cymbal/Pedal</td></tr>
+                                            <tr><td><code>RC</code> / <code>RC2</code></td><td>Ride Cymbals</td><td>Cymbal</td></tr>
+                                            <tr><td><code>C</code> / <code>C2</code></td><td>Crash Cymbals</td><td>Cymbal</td></tr>
+                                            <tr><td><code>SPL</code> / <code>CHN</code></td><td>Splash / China Cymbals</td><td>Cymbal</td></tr>
+                                            <tr><td><code>CB</code> / <code>WB</code> / <code>CL</code></td><td>Cowbell / Wood Block / Claps</td><td>Percussion</td></tr>
+                                            <tr><td><code>ST</code></td><td>Sticking annotations (R/L)</td><td>Auxiliary</td></tr>
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
                             
             <div class="docs-section-body">
@@ -215,7 +204,20 @@
                                 <p>The atomic building blocks of your notation.</p>
                             </div>
                             <div class="docs-description">
-                                <p>Tokens like <code>d</code> (hit), <code>x</code> (cymbal), and <code>-</code> (rest) are used to build patterns. Use <code>.</code> for dotted notes and <code>/</code> for halving duration. Square brackets <code>[...]</code> create rhythmic groups or tuplets.</p>
+                                <p>Atomic tokens represent specific hits or rests. Visual glyphs are derived from the token and context:</p>
+                                <div class="docs-section-body">
+                                    <ul class="docs-list">
+                                        <li><code>d</code>: Standard hit (filled circle or X based on track).</li>
+                                        <li><code>-</code>: A rest.</li>
+                                        <li><code>x</code>: Cymbal or Cross-stick glyph.</li>
+                                        <li><code>s</code> / <code>b</code> / <code>r</code> / <code>c</code>: Shorthand for Snare, Bass, Ride, and Crash.</li>
+                                        <li><code>o</code>: Open Hi-Hat.</li>
+                                        <li><code>p</code>: Pedal Hi-Hat or local instrument hit.</li>
+                                        <li><code>g</code>: Ghost note (parenthesized).</li>
+                                        <li><code>t1</code> - <code>t4</code>: Tom hits.</li>
+                                    </ul>
+                                    <p><strong>Duration:</strong> Use <code>.</code> to dot a note (1.5x) and <code>/</code> to halve it (0.5x).</p>
+                                </div>
                             </div>
                             
             <div class="docs-section-body">
@@ -245,7 +247,21 @@
                                 <p>Adding detail and articulation to your hits.</p>
                             </div>
                             <div class="docs-description">
-                                <p>Apply <code>:accent</code>, <code>:ghost</code>, <code>:flam</code>, <code>:open</code>, <code>:close</code>, <code>:roll</code>, and more. Modifiers are validated against track legality.</p>
+                                <p>Modifiers are appended using <code>:</code> (e.g., <code>d:accent</code>). They describe specific techniques for the drummer:</p>
+                                <div class="docs-section-body">
+                                    <ul class="docs-list">
+                                        <li><code>:accent</code>: Stronger attack, rendered with <code>&gt;</code>.</li>
+                                        <li><code>:ghost</code>: Soft "ghost" note, parenthesized.</li>
+                                        <li><code>:flam</code>: 16th-note grace note preceding the main hit.</li>
+                                        <li><code>:drag</code>: Two 16th-note grace notes preceding the hit.</li>
+                                        <li><code>:roll</code>: Tremolo/roll marks on the note stem.</li>
+                                        <li><code>:dead</code>: Muted "dead" stroke, small <code>x</code> notehead.</li>
+                                        <li><code>:open</code> / <code>:half-open</code>: Hi-hat sizzle/open state.</li>
+                                        <li><code>:bell</code>: Ride cymbal bell (rendered as a dot or <code>B</code>).</li>
+                                        <li><code>:choke</code>: Muted cymbal hit (rendered with <code>+</code>).</li>
+                                        <li><code>:rim</code> / <code>:cross</code>: Snare rimshot or cross-stick technique.</li>
+                                    </ul>
+                                </div>
                             </div>
                             
             <div class="docs-section-body">
@@ -269,13 +285,31 @@
             </div>
                         </article>
 
+                        <article class="docs-section-card" id="groups">
+                            <div class="docs-section-header">
+                                <h2>Rhythmic Groups</h2>
+                                <p>Tuplets and custom rhythmic subdivisions.</p>
+                            </div>
+                            <div class="docs-description">
+                                <p>Use square brackets to group items into a specific time span:</p>
+                                <div class="docs-section-body">
+                                    <ul class="docs-list">
+                                        <li><code>[span: item1 item2 ...]</code>: Distributes items across <code>span</code> units.</li>
+                                        <li><code>[item1 item2 item3]</code>: Shorthand for a tuplet (span 1).</li>
+                                        <li><strong>Nested Tuplets:</strong> Groups can be nested for complex rhythms like triplets within triplets.</li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <div class="example-inject" data-example="groups"></div>
+                        </article>
+
                         <article class="docs-section-card" id="combined-hits">
                             <div class="docs-section-header">
                                 <h2>Combined Hits</h2>
                                 <p>Playing multiple parts simultaneously.</p>
                             </div>
                             <div class="docs-description">
-                                <p>Use <code>+</code> to combine hits from different tracks or instruments at the same rhythmic position.</p>
+                                <p>Use <code>+</code> to combine hits from different tracks or instruments at the same rhythmic position (e.g., <code>b+x</code> for Bass and Hi-Hat).</p>
                             </div>
                             
             <div class="docs-section-body">
@@ -304,7 +338,7 @@
                                 <p>Hand assignments for complex patterns.</p>
                             </div>
                             <div class="docs-description">
-                                <p>The <code>ST</code> track is used for <code>R</code> and <code>L</code> annotations. These align with notes at the same start position.</p>
+                                <p>The <code>ST</code> track is used for <code>R</code> and <code>L</code> annotations. These align with notes at the same start position to guide hand coordination.</p>
                             </div>
                             
             <div class="docs-section-body">
@@ -334,7 +368,15 @@
                                 <p>Structural navigation and alternative endings.</p>
                             </div>
                             <div class="docs-description">
-                                <p>Supports repeat barlines <code>|: :|</code>, voltas <code>|1.</code>, and navigation markers like <code>@segno</code>, <code>@coda</code>, <code>@ds-al-coda</code>.</p>
+                                <p>DrumMark supports standard and complex score navigation:</p>
+                                <div class="docs-section-body">
+                                    <ul class="docs-list">
+                                        <li><strong>Barlines:</strong> <code>|:</code> (start repeat), <code>:|</code> (end repeat), <code>|1.</code> (volta/ending).</li>
+                                        <li><strong>Measure Repeat:</strong> A <code>%</code> token repeats the entire preceding measure.</li>
+                                        <li><strong>Markers:</strong> <code>@segno</code>, <code>@coda</code>, <code>@fine</code> mark specific locations.</li>
+                                        <li><strong>Jumps:</strong> <code>@to-coda</code>, <code>@da-capo</code> (D.C.), <code>@dal-segno</code> (D.S.) guide the flow.</li>
+                                    </ul>
+                                </div>
                             </div>
                             
             <div class="docs-section-body">
@@ -363,7 +405,7 @@
                                 <p>Standard notation for extended periods of silence.</p>
                             </div>
                             <div class="docs-description">
-                                <p>Use <code>|--N--|</code> to specify a rest spanning N measures.</p>
+                                <p>Use <code>|--N--|</code> to specify a rest spanning N measures. This renders as a single multi-measure rest symbol.</p>
                             </div>
                             
             <div class="docs-section-body">
@@ -392,7 +434,7 @@
                                 <p>Quickly Duplicate measures in place.</p>
                             </div>
                             <div class="docs-description">
-                                <p>Append <code>*N</code> to a measure to repeat it N times during compilation.</p>
+                                <p>Append <code>*N</code> to a measure boundary (e.g., <code>| d d d d *4 |</code>) to repeat that specific measure N times during compilation.</p>
                             </div>
                             
             <div class="docs-section-body">
@@ -421,7 +463,14 @@
                                 <p>Ensuring musical and logical consistency.</p>
                             </div>
                             <div class="docs-description">
-                                <p>The compiler strictly validates measure durations, grouping alignment, and modifier legality.</p>
+                                <p>The compiler strictly validates your score to prevent errors in the final notation:</p>
+                                <div class="docs-section-body">
+                                    <ul class="docs-list">
+                                        <li><strong>Measure Duration:</strong> Sum of hits/rests must exactly match <code>divisions</code>.</li>
+                                        <li><strong>Grouping Alignment:</strong> Notes cannot cross beat boundaries defined in <code>grouping</code>.</li>
+                                        <li><strong>Legality:</strong> Modifiers like <code>:open</code> are only allowed on hi-hat tracks.</li>
+                                    </ul>
+                                </div>
                             </div>
                             
             <div class="docs-section-body">
@@ -454,7 +503,7 @@
                                 <p>The data structure behind the notation.</p>
                             </div>
                             <div class="docs-description">
-                                <p>A JSON-based format that explicitly defines headers, tracks, and measures with normalized rhythmic events.</p>
+                                <p>A JSON-based format that explicitly defines headers, tracks, and measures with normalized rhythmic events. It serves as the single source of truth for all renderers.</p>
                             </div>
                             
             <div class="docs-section-body">
@@ -477,42 +526,13 @@
             </div>
                         </article>
 
-                        <article class="docs-section-card" id="musicxml">
-                            <div class="docs-section-header">
-                                <h2>MusicXML Export</h2>
-                                <p>Interoperability with standard notation tools.</p>
-                            </div>
-                            <div class="docs-description">
-                                <p>Export your DrumMark scores to MusicXML to open them in MuseScore, Sibelius, or Finale.</p>
-                            </div>
-                            
-            <div class="docs-section-body">
-                <div class="docs-section-pane">
-                    <div class="docs-pane-title">Example</div>
-                    <div class="docs-code-block">
-                        <pre class="dsl-code-block"><span class="dsl-comment"># Logic maps tracks to MIDI notes</span></pre>
-                    </div>
-                </div>
-                <div class="docs-section-pane">
-                    <div class="docs-pane-title">Score Result</div>
-                    <div class="docs-preview-shell">
-                        <div class="docs-preview-frame">
-                            <div class="staff-preview-container">
-                                <div class="staff-preview"><svg pointer-events="none" stroke-width="1" stroke-dasharray="none" fill="black" stroke="black" shadowColor="black" font-family="Bravura,Academico" font-size="10pt" font-weight="normal" font-style="normal" width="900" height="200" viewBox="0 0 900 200"></svg></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-                        </article>
-
                         <article class="docs-section-card" id="full-example">
                             <div class="docs-section-header">
                                 <h2>Full Example</h2>
                                 <p>Bringing it all together.</p>
                             </div>
                             <div class="docs-description">
-                                <p>A complete Funk Study demonstrating multiple tracks, modifiers, and rhythmic groups.</p>
+                                <p>A complete score demonstrating multiple tracks, complex modifiers, and rhythmic groups.</p>
                             </div>
                             
             <div class="docs-section-body">

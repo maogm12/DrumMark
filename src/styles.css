@@ -702,115 +702,202 @@ input:checked + .toggle-slider:before {
   box-shadow: var(--shadow-sm);
 }
 
+/* --- Documentation Page Styles (Consolidated) --- */
+
+.docs-layout {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100%;
+}
+
+.docs-header-bar {
+  flex: 0 0 auto;
+  height: 64px;
+  background: white;
+  border-bottom: 1px solid var(--border-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  z-index: 100;
+}
+
+.docs-container {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  overflow: hidden;
+}
+
+.docs-sidebar {
+  background: white;
+  border-right: 1px solid var(--border-subtle);
+  padding: 32px 16px;
+  overflow-y: auto;
+}
+
 .docs-main {
-  position: relative;
+  background: white;
   overflow-y: auto;
   scroll-behavior: smooth;
-  background: #f8fafc; /* Light background to make white cards pop */
 }
 
 .docs-page {
-  max-width: 1100px;
+  max-width: 1200px;
   margin: 0 auto;
-  padding: 48px 32px 120px;
+  padding: 64px 60px 120px;
 }
-
-/* ... existing floating action, hero, kicker ... */
 
 .docs-sections {
   display: flex;
   flex-direction: column;
-  gap: 48px;
+  gap: 100px; /* Large vertical spacing between sections */
 }
 
 .docs-section-card {
   display: flex;
   flex-direction: column;
   gap: 24px;
-  padding: 32px;
-  background: white;
-  border-radius: 16px;
-  border: 1px solid var(--border-subtle);
-  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+  /* CLEAN: No card styles here */
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
 }
 
 .docs-section-header h2 {
-  margin: 0 0 12px;
-  font-size: 1.75rem;
+  font-size: 2.25rem;
   font-weight: 800;
   color: var(--text-main);
-  letter-spacing: -0.02em;
+  letter-spacing: -0.03em;
+  margin: 0 0 16px 0;
+  padding-bottom: 16px;
+  border-bottom: 2px solid var(--border-subtle);
 }
 
 .docs-section-header p {
-  margin: 0;
+  font-size: 1.15rem;
   color: var(--text-muted);
-  font-size: 1.05rem;
   line-height: 1.6;
-  max-width: 800px;
+  margin: 0;
 }
 
-/* ... existing points ... */
+.docs-description {
+  font-size: 1.05rem;
+  line-height: 1.75;
+  color: var(--text-main);
+}
+
+.docs-description ul {
+  padding-left: 1.5rem;
+  margin: 1.5rem 0;
+}
+
+.docs-description li {
+  margin-bottom: 0.75rem;
+}
+
+.docs-description code {
+  background: #f1f5f9;
+  color: var(--accent-primary);
+  padding: 0.2rem 0.4rem;
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+}
 
 .docs-section-body {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: 1fr 1.2fr; /* Slightly favor the result pane width */
   gap: 32px;
+  margin-top: 12px;
 }
 
 .docs-section-pane {
   min-width: 0;
-}
-
-.docs-pane-title {
-  margin-bottom: 12px;
-  font-size: 0.75rem;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: var(--text-muted);
-}
-
-.docs-code-block {
-  background: white;
-  border-radius: 12px;
-  border: 1px solid var(--border-strong);
-  overflow: auto;
-  box-shadow: var(--shadow-sm);
-}
-
-.docs-code-block pre {
-  margin: 0;
-  padding: 20px;
-  font-family: var(--font-mono);
-  font-size: 0.8rem;
-  line-height: 1.6;
-}
-
-.docs-preview-shell {
-  background: white;
-  border-radius: 12px;
-  border: 1px solid var(--border-strong);
-  overflow: hidden;
   display: flex;
   flex-direction: column;
 }
 
+.docs-pane-title {
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  letter-spacing: 0.1em;
+  margin-bottom: 12px;
+}
+
+/* CARDS: Only Code Blocks and Preview Shells look like cards */
+.docs-code-block, 
+.docs-preview-shell {
+  background: white;
+  border: 1px solid var(--border-strong);
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.docs-code-block {
+  background: #fafafa;
+}
+
+.docs-code-block pre {
+  margin: 0;
+  padding: 24px;
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  line-height: 1.6;
+  overflow: auto;
+}
+
 .docs-preview-frame {
   flex: 1;
-  padding: 4px;
+  padding: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .docs-preview-frame .staff-preview {
-  gap: 0;
+  width: 100%;
 }
 
 .docs-preview-frame .staff-preview-page {
-  padding: 8px 16px !important;
-  min-height: 0 !important;
-  height: auto !important;
+  padding: 12px !important;
   border: 0 !important;
   box-shadow: none !important;
+  height: auto !important;
+  min-height: 0 !important;
+}
+
+/* Mobile Responsive */
+@media (max-width: 900px) {
+  .docs-container {
+    display: block;
+    overflow-y: auto;
+  }
+  
+  .docs-sidebar {
+    display: none;
+  }
+  
+  .docs-page {
+    padding: 32px 20px 80px;
+  }
+
+  .docs-section-body {
+    grid-template-columns: 1fr;
+    gap: 40px;
+  }
+
+  .docs-section-header h2 {
+    font-size: 1.75rem;
+  }
 }
 
 .docs-code-line {
@@ -1345,3 +1432,43 @@ input:checked + .toggle-slider:before {
 .dsl-bool { color: #0f766e; }
 .dsl-name { color: #475569; }
 .dsl-identifier { color: #475569; }
+
+/* Responsive Documentation Overrides */
+@media (max-width: 768px) {
+  .docs-container {
+    display: block;
+    overflow: visible;
+  }
+
+  .docs-sidebar {
+    display: none;
+  }
+
+  .docs-main {
+    width: 100%;
+    padding: 20px 16px;
+    background: #f8fafc;
+    overflow: visible;
+  }
+
+  .docs-page {
+    padding: 0 0 60px 0;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .docs-hero h1 {
+    font-size: 2rem;
+  }
+
+  .docs-section-card {
+    padding: 20px;
+    gap: 16px;
+    border-radius: 12px;
+  }
+
+  .docs-section-body {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+}

@@ -45,6 +45,7 @@ const {
   Tremolo,
   GlyphNote,
   Glyphs,
+  MultiMeasureRest,
   VoltaType,
   Volta,
   RendererBackends
@@ -132,9 +133,6 @@ function applyStructuralModifiers(stave: any, score: NormalizedScore, measure: N
     stave.setStaveText(jump, Modifier.Position.ABOVE, { shiftX: 24, shiftY: -8 });
   }
 
-  if (measure.multiRest) {
-    stave.setStaveText(`rest x${measure.multiRest.count}`, Modifier.Position.ABOVE, { shiftY: -8 });
-  }
 }
 
 async function ensureVexFlowFonts() {
@@ -254,6 +252,7 @@ function renderSystem(context: any, score: NormalizedScore, measures: any[], sys
   const allVoices: any[] = [];
   const allBeams: any[] = [];
   const allTuplets: any[] = [];
+  const overlayDrawables: any[] = [];
 
   for (let i = 0; i < measures.length; i++) {
     const measure = measures[i];
@@ -277,10 +276,11 @@ function renderSystem(context: any, score: NormalizedScore, measures: any[], sys
     stave.setContext(context).draw();
     staves.push(stave);
 
-    const { voices, beams, tuplets } = renderMeasureVoices(score, measure, stave, stickings, options);
+    const { voices, beams, tuplets, drawables } = renderMeasureVoices(score, measure, stave, stickings, options);
     allVoices.push(...voices);
     allBeams.push(...beams);
     allTuplets.push(...tuplets);
+    overlayDrawables.push(...drawables);
   }
 
   const formatter = new Formatter();
@@ -303,6 +303,7 @@ function renderSystem(context: any, score: NormalizedScore, measures: any[], sys
 
   allBeams.forEach(b => b.setContext(context).draw());
   allTuplets.forEach(t => t.setContext(context).draw());
+  overlayDrawables.forEach((drawable) => drawable.setContext(context).draw());
 }
 
 function renderMeasureVoices(
@@ -318,11 +319,20 @@ function renderMeasureVoices(
   };
   const measureStart = multiplyFraction(measureDuration, measure.globalIndex);
 
+  if (measure.multiRest) {
+    const multiMeasureRest = new MultiMeasureRest(measure.multiRest.count, {
+      useSymbols: false,
+      showNumber: true,
+    });
+    multiMeasureRest.setStave(stave);
+    return { voices: [], beams: [], tuplets: [], drawables: [multiMeasureRest] };
+  }
+
   if (measure.measureRepeat) {
     const repeatNote = new GlyphNote(measureRepeatGlyph(measure.measureRepeat.slashes), { duration: "w" }, { line: 4 });
     const voice = new Voice({ numBeats: measureDuration.numerator, beatValue: measureDuration.denominator }).setStrict(false).addTickables([repeatNote]);
     (voice as any)._stave = stave;
-    return { voices: [voice], beams: [], tuplets: [] };
+    return { voices: [voice], beams: [], tuplets: [], drawables: [] };
   }
 
   const upEvents = measure.events.filter((e: any) => voiceForTrack(e.track) === 1 && e.track !== "ST");
@@ -349,7 +359,7 @@ function renderMeasureVoices(
     voices.push(voice2);
   }
 
-  return { voices, beams, tuplets };
+  return { voices, beams, tuplets, drawables: [] };
 }
 
 function createVexNotes(

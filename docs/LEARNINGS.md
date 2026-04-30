@@ -185,3 +185,14 @@ If the app is served from a sub-directory (e.g., `/drum_notation/`):
 - **User-facing docs were missing several spec-critical syntax layers:** the biggest gaps were resolution priority, anonymous-track routing semantics, `TRACK { ... }` scopes, auto-registration/auto-fill, group legality boundaries, and the full repeat/navigation rule surface.
 - **Docs for drummers should describe notation intent, not basic instrument education:** phrasing works better when it assumes the reader already understands barlines, grouping, articulations, grace-note figures, and sticking, and focuses on how DrumMark encodes those concepts textually.
 - **Header syntax needs explicit callouts because prose tends to drift into pseudo-YAML:** user docs should state clearly that headers use `field value` form, optional whitespace around `time` and `grouping`, and that `grouping` sums must match the meter numerator.
+
+## 31. Multi-Measure Rest Backend Learnings (2026-04-30)
+
+- **`IR` was already correct; the regression lived entirely in export/render backends:** `npm run drummark -- --format ir` preserved `multiRest.count` with no generated note events, so the parser and normalization layers were not the source of the bad rendering.
+- **MusicXML `<multiple-rest>` is not "expand into N duplicated `<measure>` tags":** the exporter must emit one logical `<measure>` carrying `<measure-style><multiple-rest>N</multiple-rest></measure-style>`, optionally with a whole-measure rest note, instead of cloning the same measure N times.
+- **VexFlow 5 already ships a native `MultiMeasureRest` element:** rendering multi-rests as `stave.setStaveText("rest xN")` plus a normal whole rest violates the score-rendering rule and bypasses the actual glyph/line rendering API that exists in `vexflow/src/multimeasurerest`.
+
+## 32. Multi-Measure Rest MusicXML Follow-Up (2026-04-30)
+
+- **Official MusicXML wording implies physical measure coverage, not logical collapse:** the W3C reference says `<part>` contains `<measure>` elements, and `<measure-style>` / `<multiple-rest>` indicate the number of measures "covered in the element content". In practice that means keeping the covered measure sequence in the export, with the style declared on the first covered measure.
+- **The previous exporter bug was not expansion itself, but malformed expansion:** repeating the same measure N times with the same measure number and the same terminal barline on every copy is wrong. Placeholder measures need sequential physical numbering, only the first copy should carry `<multiple-rest>`, and right-edge barlines belong on the last covered measure.

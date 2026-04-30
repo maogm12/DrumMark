@@ -31,6 +31,17 @@ type ExportMeasure = {
   outputIndex: number;
 };
 
+function leftEdgeBarline(barline: NormalizedScore["measures"][number]["barline"]) {
+  if (barline === "repeat-start" || barline === "repeat-both") return "repeat-start";
+  return undefined;
+}
+
+function rightEdgeBarline(barline: NormalizedScore["measures"][number]["barline"]) {
+  if (barline === "repeat-end" || barline === "repeat-both") return "repeat-end";
+  if (barline === "double" || barline === "final") return barline;
+  return undefined;
+}
+
 function markerDirectionXml(marker?: NormalizedScore["measures"][number]["marker"]): string {
   if (!marker) return "";
 
@@ -701,7 +712,7 @@ function measureXml(score: NormalizedScore, exportMeasure: ExportMeasure, divisi
   const content = isPurelyEmpty ? [emptyMeasureContent] : voiceContent;
 
   return [
-    `<measure number="${measure.globalIndex + 1}">`,
+    `<measure number="${exportMeasure.outputIndex + 1}">`,
     print,
     attributes,
     repeatStart,
@@ -716,26 +727,26 @@ function measureXml(score: NormalizedScore, exportMeasure: ExportMeasure, divisi
 function buildExportMeasures(score: NormalizedScore): ExportMeasure[] {
   const expanded: ExportMeasure[] = [];
 
-  let index = 0;
-  while (index < score.measures.length) {
-    const measure = score.measures[index];
-    if (!measure) {
-      index++;
-      continue;
-    }
-
-    // Handle multi-measure rests - output N measures with <multiple-rest> on first
+  for (const measure of score.measures) {
     if (measure.multiRest && measure.multiRest.count > 1) {
       for (let i = 0; i < measure.multiRest.count; i++) {
+        const isFirst = i === 0;
+        const isLast = i === measure.multiRest.count - 1;
         expanded.push({
           measure: {
             ...measure,
-            multiRest: i === 0 ? measure.multiRest : undefined,
+            multiRest: isFirst ? measure.multiRest : undefined,
+            marker: isFirst ? measure.marker : undefined,
+            jump: isLast ? measure.jump : undefined,
+            barline: isFirst
+              ? leftEdgeBarline(measure.barline)
+              : isLast
+                ? rightEdgeBarline(measure.barline)
+                : undefined,
           },
           outputIndex: expanded.length,
         });
       }
-      index++;
       continue;
     }
 
@@ -743,7 +754,6 @@ function buildExportMeasures(score: NormalizedScore): ExportMeasure[] {
       measure,
       outputIndex: expanded.length,
     });
-    index++;
   }
 
   return expanded;

@@ -138,4 +138,23 @@ divisions 4
     expect(xml).toContain('<ending number="1" type="stop"/>');
     expect(xml).toContain("<measure-style><multiple-rest>2</multiple-rest></measure-style>");
   });
+
+  it("exports a multi-measure rest as physical placeholder measures with style only on the first one", () => {
+    const score = buildNormalizedScore(`title Extended Rest
+time 4/4
+divisions 4
+grouping 4
+
+| --16-- |`);
+
+    const xml = buildMusicXml(score);
+    const measureTags = xml.match(/<measure number="/g) ?? [];
+    const multipleRests = xml.match(/<multiple-rest>16<\/multiple-rest>/g) ?? [];
+
+    expect(measureTags).toHaveLength(16);
+    expect(multipleRests).toHaveLength(1);
+    expect(xml).toContain('<measure number="1">');
+    expect(xml).toContain('<measure number="16">');
+    expect(xml).toContain('<rest measure="yes"/>');
+  });
 });

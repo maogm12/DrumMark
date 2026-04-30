@@ -49,6 +49,30 @@ divisions 4
     expect(svg).toContain("To Coda");
   });
 
+  it("renders a native multi-measure rest instead of a text label plus whole-rest note", async () => {
+    const score = buildNormalizedScore(`title Extended Rest
+time 4/4
+divisions 4
+grouping 4
+
+| --16-- |`);
+
+    const svg = await renderScoreToSvg(score, {
+      mode: "preview",
+      pagePadding: { top: 24, right: 18, bottom: 24, left: 18 },
+      pageScale: 1.0,
+      titleTopPadding: 3.6,
+      titleSubtitleGap: 1.2,
+      titleStaffGap: 2.8,
+      systemSpacing: 1,
+      hideVoice2Rests: true,
+    });
+
+    expect(svg).toContain("<svg");
+    expect(svg).not.toContain("rest x16");
+    expect(svg).not.toContain("vf-stavenote");
+  });
+
   it("renders triplet beams without VexFlow beam errors", async () => {
     // Single-slot triplet [1: d d d] with divisions=8: each item is 1/3 of a slot
     // which is 1/24 of the measure (16th note triplet, denominator 24).

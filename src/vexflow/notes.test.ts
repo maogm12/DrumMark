@@ -39,11 +39,12 @@ describe("vexflow note helpers", () => {
     expect(instrumentForTrack("CL")).toMatchObject({ displayStep: "G", displayOctave: 4 });
   });
 
-  it("treats the expanded cymbal family as x-notehead instruments", () => {
+  it("treats the expanded cymbal family and HF as x-notehead instruments", () => {
     expect(getVexNotehead(makeEvent("RC2"), instrumentForTrack("RC2"))).toBe("X");
     expect(getVexNotehead(makeEvent("C2"), instrumentForTrack("C2"))).toBe("X");
     expect(getVexNotehead(makeEvent("SPL"), instrumentForTrack("SPL"))).toBe("X");
     expect(getVexNotehead(makeEvent("CHN"), instrumentForTrack("CHN"))).toBe("X");
+    expect(getVexNotehead(makeEvent("HF"), instrumentForTrack("HF"))).toBe("X");
     expect(getVexNotehead(makeEvent("RC2", ["bell"]), instrumentForTrack("RC2"))).toBe("D2");
   });
 

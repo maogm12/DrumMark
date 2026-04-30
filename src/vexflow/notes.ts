@@ -88,6 +88,7 @@ export function getVexNotehead(event: NormalizedEvent, _instrument: InstrumentSp
 
   if (
     event.track === "HH" ||
+    event.track === "HF" ||
     event.track === "RC" ||
     event.track === "RC2" ||
     event.track === "C" ||

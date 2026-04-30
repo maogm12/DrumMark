@@ -169,3 +169,8 @@ If the app is served from a sub-directory (e.g., `/drum_notation/`):
 
 - **Isolate the Pipeline:** When a bug is reported, use the `drummark` CLI to dump the Intermediate Representation (IR), MusicXML, and SVG separately. This allows you to immediately determine if the bug is in the **Parser/Normalization** phase (incorrect IR), the **Exporter** (incorrect XML), or the **Renderer** (incorrect SVG/VexFlow logic).
 - **Reproduction Scripts:** Creating a minimal `.drum` file and running it through `npm run drummark` is faster and more reliable for verification than manual testing in the full web application.
+
+## 28. VexFlow `ST` Cross-Measure Alignment (2026-04-30)
+
+- **Keep sticking maps measure-relative:** normalized `ST` events carry measure-relative `start` values, but `buildVoiceEntries()` converts rendered note entries to absolute score time. If VexFlow aggregates sticking annotations by relative start, the lookup must use `entry.start - measureStart`, and the map should be built per measure rather than per system.
+- **Bar 1 can hide the bug:** in the first measure, absolute and relative starts are identical because `measureStart = 0`, so an incorrect lookup still appears to work. The failure only becomes visible from the second measure onward, where `ST` annotations silently disappear.

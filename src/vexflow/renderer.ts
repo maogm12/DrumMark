@@ -255,11 +255,10 @@ function renderSystem(context: any, score: NormalizedScore, measures: any[], sys
   const allBeams: any[] = [];
   const allTuplets: any[] = [];
 
-  const stickings = stickingsByStart(measures.flatMap(m => m.events));
-
   for (let i = 0; i < measures.length; i++) {
     const measure = measures[i];
     const stave = new Stave(x + i * measureWidth, y, measureWidth);
+    const stickings = stickingsByStart(measure.events);
 
     if (i === 0) {
         stave.addClef("percussion");
@@ -441,7 +440,8 @@ function createVexNotes(
       });
 
       if (voiceId === 1) {
-        const stick = stickings.get(`${entry.start.numerator}/${entry.start.denominator}`);
+        const relativeStart = subtractFractions(entry.start, measureStart);
+        const stick = stickings.get(`${relativeStart.numerator}/${relativeStart.denominator}`);
         if (stick) note.addModifier(new Annotation(stick).setPosition(ModifierPosition.ABOVE), 0);
       }
 

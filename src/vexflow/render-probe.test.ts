@@ -73,4 +73,27 @@ T1 | [1: d d d] - - - - - - - |`);
     expect(svg).toContain("<svg");
     expect(svg).toContain("vf-stavenote");
   });
+
+  it("renders sticking annotations across multiple measures without collapsing to the first bar", async () => {
+    const score = buildNormalizedScore(`time 4/4
+divisions 4
+
+SD | d - d - | d - d - |
+ST | R - L - | R - L - |`);
+
+    const svg = await renderScoreToSvg(score, {
+      mode: "preview",
+      pagePadding: { top: 24, right: 18, bottom: 24, left: 18 },
+      pageScale: 1.0,
+      titleTopPadding: 3.6,
+      titleSubtitleGap: 1.2,
+      titleStaffGap: 2.8,
+      systemSpacing: 1,
+      hideVoice2Rests: true,
+    });
+
+    expect(svg).toContain("<svg");
+    expect(svg.match(/>R<\/text>/g)?.length ?? 0).toBeGreaterThanOrEqual(2);
+    expect(svg.match(/>L<\/text>/g)?.length ?? 0).toBeGreaterThanOrEqual(2);
+  });
 });

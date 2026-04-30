@@ -121,6 +121,103 @@ ST | R - L - | R - L - |`);
     expect(svg.match(/>L<\/text>/g)?.length ?? 0).toBeGreaterThanOrEqual(2);
   });
 
+  it("forces a new system when a blank line starts a new paragraph", async () => {
+    const score = buildNormalizedScore(`time 4/4
+divisions 4
+
+HH | x - - - |
+BD | b - - - |
+
+HH | x x - - |
+BD | b - b - |`);
+
+    const svg = await renderScoreToSvg(score, {
+      mode: "preview",
+      pagePadding: { top: 24, right: 18, bottom: 24, left: 18 },
+      pageScale: 1.0,
+      titleTopPadding: 3.6,
+      titleSubtitleGap: 1.2,
+      titleStaffGap: 2.8,
+      systemSpacing: 1,
+      hideVoice2Rests: false,
+    });
+
+    const staffLineYs = [...svg.matchAll(/<path fill="none" d="M50 ([0-9.]+)L850 \1"><\/path>/g)]
+      .map((match) => Number(match[1]));
+
+    expect(staffLineYs).toContain(190.5);
+    expect(staffLineYs).toContain(390.5);
+  });
+
+  it("centers a one-bar repeat within its physical measure", async () => {
+    const score = buildNormalizedScore(`time 4/4
+divisions 4
+
+HH | x - - - | % |
+BD | b - - - | % |`);
+
+    const svg = await renderScoreToSvg(score, {
+      mode: "preview",
+      pagePadding: { top: 24, right: 18, bottom: 24, left: 18 },
+      pageScale: 1.0,
+      titleTopPadding: 3.6,
+      titleSubtitleGap: 1.2,
+      titleStaffGap: 2.8,
+      systemSpacing: 1,
+      hideVoice2Rests: false,
+    });
+
+    const staveMatches = [...svg.matchAll(/<path fill="none" d="M([0-9.]+) 190\.5L([0-9.]+) 190\.5"><\/path>/g)];
+    const repeatMatch = svg.match(/<g class="vf-glyphNote"[^>]*><text[^>]*x="([0-9.]+)" y="210"><\/text><\/g>/);
+
+    expect(staveMatches).toHaveLength(2);
+    expect(repeatMatch).not.toBeNull();
+
+    const secondStaveStart = Number(staveMatches[1]?.[1]);
+    const secondStaveEnd = Number(staveMatches[1]?.[2]);
+    const repeatX = Number(repeatMatch?.[1]);
+    const secondStaveWidth = secondStaveEnd - secondStaveStart;
+    const relativeX = (repeatX - secondStaveStart) / secondStaveWidth;
+
+    expect(relativeX).toBeGreaterThan(0.4);
+    expect(relativeX).toBeLessThan(0.55);
+  });
+
+  it("expands a two-bar repeat into two physical measures and centers the symbol across the pair", async () => {
+    const score = buildNormalizedScore(`time 4/4
+divisions 4
+
+HH | x - - - | x x - - | %% |
+SD | - - - - | - - s - | %% |
+BD | b - - - | b - b - | %% |`);
+
+    const svg = await renderScoreToSvg(score, {
+      mode: "preview",
+      pagePadding: { top: 24, right: 18, bottom: 24, left: 18 },
+      pageScale: 1.0,
+      titleTopPadding: 3.6,
+      titleSubtitleGap: 1.2,
+      titleStaffGap: 2.8,
+      systemSpacing: 1,
+      hideVoice2Rests: false,
+    });
+
+    const staveMatches = [...svg.matchAll(/<path fill="none" d="M([0-9.]+) 190\.5L([0-9.]+) 190\.5"><\/path>/g)];
+    const repeatMatch = svg.match(/<g class="vf-glyphNote"[^>]*><text[^>]*x="([0-9.]+)" y="210"><\/text><\/g>/);
+
+    expect(staveMatches).toHaveLength(4);
+    expect(repeatMatch).not.toBeNull();
+
+    const thirdStaveStart = Number(staveMatches[2]?.[1]);
+    const fourthStaveEnd = Number(staveMatches[3]?.[2]);
+    const repeatX = Number(repeatMatch?.[1]);
+    const pairWidth = fourthStaveEnd - thirdStaveStart;
+    const relativeX = (repeatX - thirdStaveStart) / pairWidth;
+
+    expect(relativeX).toBeGreaterThan(0.4);
+    expect(relativeX).toBeLessThan(0.55);
+  });
+
   it("keeps lower-voice dotted rests aligned to the correct eighth-note slot", async () => {
     const score = buildNormalizedScore(`time 4/4
 divisions 8

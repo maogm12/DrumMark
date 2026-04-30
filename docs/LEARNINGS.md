@@ -119,6 +119,11 @@ If the app is served from a sub-directory (e.g., `/drum_notation/`):
 - **Section 9.5 has two distinct conflict layers:** cross-track disagreements belong in AST validation as bar-global conflicts (`Conflicting markers/jumps at bar N`), but duplicate navigation tokens inside one physical measure must be rejected earlier in the parser before the second token is silently overwritten.
 - **Marker and jump are independent singleton channels:** one measure may legally carry one marker and one jump together, and both should survive normalization even when declared on a non-leading track or in a later paragraph. The invalid cases are only marker-vs-marker and jump-vs-jump multiplicity within the same global bar.
 
+## 19. Measure-Repeat Rendering & MusicXML Learnings (2026-04-30)
+
+- **Two-bar repeat is a physical-layout expansion problem, not just a glyph swap:** `%%` cannot be rendered as one logical measure with a left-aligned `repeat2Bars` glyph. The display needs two physical bars, with the repeat symbol centered across the pair so its internal divider aligns to the shared barline.
+- **MusicXML measure-repeat is appearance metadata layered on top of fully expanded music:** per the MusicXML 4.0 reference, `<measure-repeat>` does not replace note content. Export must repeat the referenced measures as actual `<note>` data, attach `type="start"` to the first displayed repeat measure, and place `type="stop"` on the first following measure when one exists.
+
 ## 19. Multi-Measure-Rest Learnings (2026-04-29)
 
 - **Current enforced minimum count is `2`, not the base spec's `>= 1`:** parser behavior is already hardened by the suite to reject `--1--` with `Multi-measure rest count must be at least 2`. New section 10 tests should align with that enforced rule until the spec and implementation are deliberately reconciled.

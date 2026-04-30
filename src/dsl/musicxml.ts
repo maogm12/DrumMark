@@ -28,7 +28,13 @@ type VoiceTrack = {
 
 type ExportMeasure = {
   measure: NormalizedScore["measures"][number];
+  contentMeasure: NormalizedScore["measures"][number];
   outputIndex: number;
+  measureRepeatStyles?: {
+    type: "start" | "stop";
+    count?: number;
+    slashes?: number;
+  }[];
 };
 
 function leftEdgeBarline(barline: NormalizedScore["measures"][number]["barline"]) {
@@ -73,15 +79,19 @@ function jumpDirectionXml(jump?: NormalizedScore["measures"][number]["jump"]): s
   return `<direction placement="above"><direction-type><words>${xmlEscape(label)}</words></direction-type></direction>`;
 }
 
-function measureStyleXml(measure: NormalizedScore["measures"][number]): string {
+function measureStyleXml(measure: ExportMeasure): string {
   const styles: string[] = [];
 
-  if (measure.measureRepeat) {
-    styles.push(`<measure-repeat type="start">${measure.measureRepeat.slashes}</measure-repeat>`);
+  for (const repeatStyle of measure.measureRepeatStyles ?? []) {
+    const slashesAttr = repeatStyle.slashes !== undefined
+      ? ` slashes="${repeatStyle.slashes}"`
+      : "";
+    const count = repeatStyle.count ?? "";
+    styles.push(`<measure-repeat type="${repeatStyle.type}"${slashesAttr}>${count}</measure-repeat>`);
   }
 
-  if (measure.multiRest) {
-    styles.push(`<multiple-rest>${measure.multiRest.count}</multiple-rest>`);
+  if (measure.measure.multiRest) {
+    styles.push(`<multiple-rest>${measure.measure.multiRest.count}</multiple-rest>`);
   }
 
   return styles.length > 0 ? `<measure-style>${styles.join("")}</measure-style>` : "";
@@ -507,6 +517,7 @@ function stickingsByStart(events: NormalizedEvent[]): Map<string, string> {
 
 function measureXml(score: NormalizedScore, exportMeasure: ExportMeasure, divisions: number, forceLineBreak: boolean, hideVoice2Rests: boolean): string {
   const measure = exportMeasure.measure;
+  const contentMeasure = exportMeasure.contentMeasure;
   const measureDuration = {
     numerator: score.header.timeSignature.beats,
     denominator: score.header.timeSignature.beatUnit,
@@ -514,8 +525,8 @@ function measureXml(score: NormalizedScore, exportMeasure: ExportMeasure, divisi
   const measureStart = multiplyFraction(measureDuration, measure.globalIndex);
   const previousMeasure = score.measures[measure.globalIndex - 1];
   const nextMeasure = score.measures[measure.globalIndex + 1];
-  const upEvents = measure.events.filter((event) => logicVoiceForTrack(event.track) === 1 && event.track !== "ST");
-  const downEvents = measure.events.filter((event) => logicVoiceForTrack(event.track) === 2 && event.track !== "ST");
+  const upEvents = contentMeasure.events.filter((event) => logicVoiceForTrack(event.track) === 1 && event.track !== "ST");
+  const downEvents = contentMeasure.events.filter((event) => logicVoiceForTrack(event.track) === 2 && event.track !== "ST");
   
   const upEntries = upEvents.length > 0
     ? buildVoiceEntries(groupVoiceEvents(upEvents), measureStart, measureDuration, score.header.grouping)
@@ -524,8 +535,8 @@ function measureXml(score: NormalizedScore, exportMeasure: ExportMeasure, divisi
     ? buildVoiceEntries(groupVoiceEvents(downEvents), measureStart, measureDuration, score.header.grouping)
     : [];
     
-  const stickings = stickingsByStart(measure.events);
-  const styleXml = measureStyleXml(measure);
+  const stickings = stickingsByStart(contentMeasure.events);
+  const styleXml = measureStyleXml(exportMeasure);
   const showAttributes = exportMeasure.outputIndex === 0 || styleXml.length > 0;
   const attributes = showAttributes
       ? [
@@ -694,7 +705,7 @@ function measureXml(score: NormalizedScore, exportMeasure: ExportMeasure, divisi
 
   // If a measure is entirely empty, output a 'Whole Measure Rest'.
   // This is required for OSMD's auto-merge logic.
-  const isPurelyEmpty = measure.generated || measure.measureRepeat !== undefined || measure.multiRest !== undefined || (
+  const isPurelyEmpty = measure.multiRest !== undefined || (
     upEntries.every(e => e.kind === "rest") &&
     downEntries.every(e => e.kind === "rest")
   );
@@ -728,6 +739,35 @@ function buildExportMeasures(score: NormalizedScore): ExportMeasure[] {
   const expanded: ExportMeasure[] = [];
 
   for (const measure of score.measures) {
+    if (measure.measureRepeat && measure.measureRepeat.slashes > 1) {
+      for (let i = 0; i < measure.measureRepeat.slashes; i++) {
+        const sourceMeasure = score.measures[measure.globalIndex - measure.measureRepeat.slashes + i];
+        if (!sourceMeasure) continue;
+        const isFirst = i === 0;
+        const isLast = i === measure.measureRepeat.slashes - 1;
+
+        expanded.push({
+          measure: {
+            ...measure,
+            measureRepeat: isFirst ? measure.measureRepeat : undefined,
+            marker: isFirst ? measure.marker : undefined,
+            jump: isLast ? measure.jump : undefined,
+            barline: isFirst
+              ? leftEdgeBarline(measure.barline)
+              : isLast
+                ? rightEdgeBarline(measure.barline)
+                : undefined,
+          },
+          contentMeasure: sourceMeasure,
+          outputIndex: expanded.length,
+          measureRepeatStyles: isFirst
+            ? [{ type: "start", count: measure.measureRepeat.slashes, slashes: measure.measureRepeat.slashes }]
+            : undefined,
+        });
+      }
+      continue;
+    }
+
     if (measure.multiRest && measure.multiRest.count > 1) {
       for (let i = 0; i < measure.multiRest.count; i++) {
         const isFirst = i === 0;
@@ -744,6 +784,7 @@ function buildExportMeasures(score: NormalizedScore): ExportMeasure[] {
                 ? rightEdgeBarline(measure.barline)
                 : undefined,
           },
+          contentMeasure: measure,
           outputIndex: expanded.length,
         });
       }
@@ -752,8 +793,22 @@ function buildExportMeasures(score: NormalizedScore): ExportMeasure[] {
 
     expanded.push({
       measure,
+      contentMeasure: measure.measureRepeat?.slashes === 1
+        ? score.measures[measure.globalIndex - 1] ?? measure
+        : measure,
       outputIndex: expanded.length,
+      measureRepeatStyles: measure.measureRepeat?.slashes === 1
+        ? [{ type: "start", count: 1, slashes: 1 }]
+        : undefined,
     });
+  }
+
+  for (let i = 0; i < expanded.length; i += 1) {
+    const repeatStart = expanded[i]?.measureRepeatStyles?.find((style) => style.type === "start");
+    if (!repeatStart?.count) continue;
+    const stopTarget = expanded[i + repeatStart.count];
+    if (!stopTarget) continue;
+    stopTarget.measureRepeatStyles = [...(stopTarget.measureRepeatStyles ?? []), { type: "stop" }];
   }
 
   return expanded;

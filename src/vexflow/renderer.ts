@@ -43,8 +43,8 @@ const {
   Modifier,
   Tuplet,
   Tremolo,
-  GlyphNote,
   Glyphs,
+  RepeatNote,
   MultiMeasureRest,
   VoltaType,
   Volta,
@@ -92,6 +92,57 @@ export function voltaTypeForMeasure(score: NormalizedScore, measure: NormalizedS
 
 export function measureRepeatGlyph(slashes: number): string {
   return slashes === 2 ? Glyphs.repeat2Bars : Glyphs.repeat1Bar;
+}
+
+type RenderMeasure = {
+  measure: NormalizedScore["measures"][number];
+  kind: "normal" | "measure-repeat-1" | "measure-repeat-2-start" | "measure-repeat-2-stop";
+};
+
+function leftEdgeBarline(barline: NormalizedScore["measures"][number]["barline"]) {
+  if (barline === "repeat-start" || barline === "repeat-both") return "repeat-start";
+  return undefined;
+}
+
+function rightEdgeBarline(barline: NormalizedScore["measures"][number]["barline"]) {
+  if (barline === "repeat-end" || barline === "repeat-both") return "repeat-end";
+  if (barline === "double" || barline === "final") return barline;
+  return undefined;
+}
+
+function buildRenderMeasures(score: NormalizedScore): RenderMeasure[] {
+  const expanded: RenderMeasure[] = [];
+
+  for (const measure of score.measures) {
+    if (measure.measureRepeat?.slashes === 2) {
+      expanded.push({
+        measure: {
+          ...measure,
+          marker: measure.marker,
+          jump: undefined,
+          barline: leftEdgeBarline(measure.barline),
+        },
+        kind: "measure-repeat-2-start",
+      });
+      expanded.push({
+        measure: {
+          ...measure,
+          marker: undefined,
+          jump: measure.jump,
+          barline: rightEdgeBarline(measure.barline),
+        },
+        kind: "measure-repeat-2-stop",
+      });
+      continue;
+    }
+
+    expanded.push({
+      measure,
+      kind: measure.measureRepeat?.slashes === 1 ? "measure-repeat-1" : "normal",
+    });
+  }
+
+  return expanded;
 }
 
 function applyStructuralModifiers(stave: any, score: NormalizedScore, measure: NormalizedScore["measures"][number]) {
@@ -165,12 +216,13 @@ export async function renderScoreToSvg(score: NormalizedScore, options: VexflowR
   const staffHeight = 100;
   const systemSpacing = options.systemSpacing * 100; 
   
-  const allSystems: any[][] = [];
-  let currentSystem: any[] = [];
-  for (const m of score.measures) {
+  const renderMeasures = buildRenderMeasures(score);
+  const allSystems: RenderMeasure[][] = [];
+  let currentSystem: RenderMeasure[] = [];
+  for (const m of renderMeasures) {
     if (currentSystem.length > 0) {
       const last = currentSystem[currentSystem.length - 1];
-      if (m.paragraphIndex !== last.paragraphIndex || currentSystem.length >= 4) {
+      if (m.measure.paragraphIndex !== last.measure.paragraphIndex || currentSystem.length >= 4) {
         allSystems.push(currentSystem);
         currentSystem = [];
       }
@@ -244,7 +296,7 @@ interface SystemOptions {
   options: VexflowRenderOptions;
 }
 
-function renderSystem(context: any, score: NormalizedScore, measures: any[], sysOpts: SystemOptions) {
+function renderSystem(context: any, score: NormalizedScore, measures: RenderMeasure[], sysOpts: SystemOptions) {
   const { x, y, width, isFirstSystem, options } = sysOpts;
   const measureWidth = width / measures.length;
 
@@ -253,9 +305,11 @@ function renderSystem(context: any, score: NormalizedScore, measures: any[], sys
   const allBeams: any[] = [];
   const allTuplets: any[] = [];
   const overlayDrawables: any[] = [];
+  const repeatTwoBarOverlays: { start: any; end: any }[] = [];
 
   for (let i = 0; i < measures.length; i++) {
-    const measure = measures[i];
+    const renderMeasure = measures[i];
+    const measure = renderMeasure.measure;
     const stave = new Stave(x + i * measureWidth, y, measureWidth);
     const stickings = stickingsByStart(measure.events);
 
@@ -276,11 +330,19 @@ function renderSystem(context: any, score: NormalizedScore, measures: any[], sys
     stave.setContext(context).draw();
     staves.push(stave);
 
-    const { voices, beams, tuplets, drawables } = renderMeasureVoices(score, measure, stave, stickings, options);
+    const { voices, beams, tuplets, drawables } = renderMeasureVoices(score, renderMeasure, stave, stickings, options);
     allVoices.push(...voices);
     allBeams.push(...beams);
     allTuplets.push(...tuplets);
     overlayDrawables.push(...drawables);
+
+    if (renderMeasure.kind === "measure-repeat-2-start") {
+      const next = measures[i + 1];
+      if (next?.kind === "measure-repeat-2-stop") {
+        const nextStave = new Stave(x + (i + 1) * measureWidth, y, measureWidth);
+        repeatTwoBarOverlays.push({ start: stave, end: nextStave });
+      }
+    }
   }
 
   const formatter = new Formatter();
@@ -304,15 +366,24 @@ function renderSystem(context: any, score: NormalizedScore, measures: any[], sys
   allBeams.forEach(b => b.setContext(context).draw());
   allTuplets.forEach(t => t.setContext(context).draw());
   overlayDrawables.forEach((drawable) => drawable.setContext(context).draw());
+  repeatTwoBarOverlays.forEach(({ start, end }) => {
+    const overlayStave = new Stave(start.getX(), start.getY(), start.getWidth() + end.getWidth());
+    overlayStave.setContext(context);
+    const repeatNote = new RepeatNote("2", { duration: "w" }, { line: 2 });
+    const voice = new Voice({ numBeats: score.header.timeSignature.beats, beatValue: score.header.timeSignature.beatUnit }).setStrict(false).addTickables([repeatNote]);
+    new Formatter().joinVoices([voice]).format([voice], overlayStave.getWidth() - 10);
+    voice.draw(context, overlayStave);
+  });
 }
 
 function renderMeasureVoices(
   score: NormalizedScore,
-  measure: any,
+  renderMeasure: RenderMeasure,
   stave: any,
   stickings: Map<string, string>,
   options: VexflowRenderOptions
 ) {
+  const measure = renderMeasure.measure;
   const measureDuration = {
     numerator: score.header.timeSignature.beats,
     denominator: score.header.timeSignature.beatUnit,
@@ -328,11 +399,15 @@ function renderMeasureVoices(
     return { voices: [], beams: [], tuplets: [], drawables: [multiMeasureRest] };
   }
 
-  if (measure.measureRepeat) {
-    const repeatNote = new GlyphNote(measureRepeatGlyph(measure.measureRepeat.slashes), { duration: "w" }, { line: 4 });
+  if (renderMeasure.kind === "measure-repeat-1") {
+    const repeatNote = new RepeatNote("1", { duration: "w" }, { line: 2 });
     const voice = new Voice({ numBeats: measureDuration.numerator, beatValue: measureDuration.denominator }).setStrict(false).addTickables([repeatNote]);
     (voice as any)._stave = stave;
     return { voices: [voice], beams: [], tuplets: [], drawables: [] };
+  }
+
+  if (renderMeasure.kind === "measure-repeat-2-start" || renderMeasure.kind === "measure-repeat-2-stop") {
+    return { voices: [], beams: [], tuplets: [], drawables: [] };
   }
 
   const upEvents = measure.events.filter((e: any) => voiceForTrack(e.track) === 1 && e.track !== "ST");
@@ -505,12 +580,13 @@ export async function renderScorePagesToSvgs(score: NormalizedScore, options: Ve
   if (options.mode === "preview") return [await renderScoreToSvg(score, options)];
   await ensureVexFlowFonts();
 
-  const allSystems: any[][] = [];
-  let currentSystem: any[] = [];
-  for (const m of score.measures) {
+  const renderMeasures = buildRenderMeasures(score);
+  const allSystems: RenderMeasure[][] = [];
+  let currentSystem: RenderMeasure[] = [];
+  for (const m of renderMeasures) {
     if (currentSystem.length > 0) {
       const last = currentSystem[currentSystem.length - 1];
-      if (m.paragraphIndex !== last.paragraphIndex || currentSystem.length >= 4) {
+      if (m.measure.paragraphIndex !== last.measure.paragraphIndex || currentSystem.length >= 4) {
         allSystems.push(currentSystem);
         currentSystem = [];
       }

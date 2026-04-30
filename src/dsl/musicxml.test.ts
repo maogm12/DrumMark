@@ -133,7 +133,8 @@ divisions 4
     expect(xml).toContain('<barline location="right"><repeat direction="backward"/></barline>');
     expect(xml).toContain("<direction placement=\"above\"><direction-type><segno/></direction-type></direction>");
     expect(xml).toContain("<direction placement=\"above\"><direction-type><words>To Coda</words></direction-type></direction>");
-    expect(xml).toContain("<measure-style><measure-repeat type=\"start\">1</measure-repeat></measure-style>");
+    expect(xml).toContain("<measure-style><measure-repeat type=\"start\" slashes=\"1\">1</measure-repeat></measure-style>");
+    expect(xml).toContain("<measure-style><measure-repeat type=\"stop\"></measure-repeat></measure-style>");
     expect(xml).toContain('<ending number="1" type="start"/>');
     expect(xml).toContain('<ending number="1" type="stop"/>');
     expect(xml).toContain("<measure-style><multiple-rest>2</multiple-rest></measure-style>");
@@ -156,5 +157,24 @@ grouping 4
     expect(xml).toContain('<measure number="1">');
     expect(xml).toContain('<measure number="16">');
     expect(xml).toContain('<rest measure="yes"/>');
+  });
+
+  it("exports a two-bar measure repeat as two physical measures with repeated content and a later stop marker", () => {
+    const score = buildNormalizedScore(`time 4/4
+divisions 4
+
+HH | x - - - | x x - - | %% | x - x - |
+SD | - - - - | - - s - | %% | - - s - |
+BD | b - - - | b - b - | %% | b - - - |`);
+
+    const xml = buildMusicXml(score);
+    const measureTags = xml.match(/<measure number="/g) ?? [];
+
+    expect(measureTags).toHaveLength(5);
+    expect(xml).toContain('<measure number="3"><attributes><measure-style><measure-repeat type="start" slashes="2">2</measure-repeat></measure-style></attributes>');
+    expect(xml).toContain('<measure number="5"><attributes><measure-style><measure-repeat type="stop"></measure-repeat></measure-style></attributes>');
+    expect(xml).toContain('<measure number="3"><attributes><measure-style><measure-repeat type="start" slashes="2">2</measure-repeat></measure-style></attributes><note><unpitched><display-step>G</display-step><display-octave>5</display-octave></unpitched><duration>4</duration>');
+    expect(xml).toContain('<measure number="4"><note><unpitched><display-step>G</display-step><display-octave>5</display-octave></unpitched><duration>4</duration>');
+    expect(xml).not.toContain('<measure number="3"><attributes><measure-style><measure-repeat type="start" slashes="2">2</measure-repeat></measure-style></attributes><note><rest measure="yes"/>');
   });
 });

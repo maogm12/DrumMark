@@ -1,6 +1,26 @@
-import { buildNormalizedScore } from "./dsl";
-import { renderScoreToSvg } from "./vexflow";
-import { highlightDslStatic } from "./drummark";
+type DocsRenderDeps = {
+  buildNormalizedScore: typeof import("./dsl")["buildNormalizedScore"];
+  renderScoreToSvg: typeof import("./vexflow")["renderScoreToSvg"];
+  highlightDslStatic: typeof import("./drummark")["highlightDslStatic"];
+};
+
+let docsRenderDepsPromise: Promise<DocsRenderDeps> | null = null;
+
+async function loadDocsRenderDeps(): Promise<DocsRenderDeps> {
+  if (!docsRenderDepsPromise) {
+    docsRenderDepsPromise = Promise.all([
+      import("./dsl"),
+      import("./vexflow"),
+      import("./drummark"),
+    ]).then(([dsl, vexflow, drummark]) => ({
+      buildNormalizedScore: dsl.buildNormalizedScore,
+      renderScoreToSvg: vexflow.renderScoreToSvg,
+      highlightDslStatic: drummark.highlightDslStatic,
+    }));
+  }
+
+  return docsRenderDepsPromise;
+}
 
 async function initDocs() {
   const menuToggle = document.getElementById("menu-toggle");
@@ -50,6 +70,7 @@ async function initDocs() {
 
   // 3. Score Rendering
   const codeBlocks = document.querySelectorAll<HTMLElement>(".dsl-code-block");
+  let renderDeps: DocsRenderDeps | null = null;
   
   for (const block of codeBlocks) {
     const dsl = block.textContent ?? "";
@@ -61,6 +82,9 @@ async function initDocs() {
       if (container.innerHTML.trim() !== "") {
         continue;
       }
+
+      renderDeps ??= await loadDocsRenderDeps();
+      const { buildNormalizedScore, renderScoreToSvg, highlightDslStatic } = renderDeps;
 
       // Apply syntax highlighting
       block.innerHTML = highlightDslStatic(dsl);

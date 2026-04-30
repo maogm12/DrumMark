@@ -196,3 +196,8 @@ If the app is served from a sub-directory (e.g., `/drum_notation/`):
 
 - **Official MusicXML wording implies physical measure coverage, not logical collapse:** the W3C reference says `<part>` contains `<measure>` elements, and `<measure-style>` / `<multiple-rest>` indicate the number of measures "covered in the element content". In practice that means keeping the covered measure sequence in the export, with the style declared on the first covered measure.
 - **The previous exporter bug was not expansion itself, but malformed expansion:** repeating the same measure N times with the same measure number and the same terminal barline on every copy is wrong. Placeholder measures need sequential physical numbering, only the first copy should carry `<multiple-rest>`, and right-edge barlines belong on the last covered measure.
+
+## 33. Static Docs Startup Path (2026-04-30)
+
+- **Pre-rendered docs should not eagerly load the render stack:** `docs.html` and `docs_zh.html` already embed highlighted DSL and SVG previews at build time, so the browser docs entrypoint should avoid top-level imports of DSL parsing, VexFlow rendering, and static highlighting helpers.
+- **Dynamic rendering dependencies belong behind the empty-preview fallback path:** lazy-loading those modules only when a preview container is actually empty reduces unnecessary startup work and avoids extra visible first-paint jitter on the static documentation pages.

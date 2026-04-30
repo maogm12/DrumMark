@@ -31,9 +31,27 @@ divisions 4
       content: "b",
       repeatStart: false,
       repeatEnd: false,
-      barline: "final",
+      barline: undefined,
       voltaTerminator: true,
     });
+  });
+
+  it("treats `|.` as a volta terminator without forcing a final barline", () => {
+    const score = buildNormalizedScore(`time 4/4
+divisions 4
+
+|1. x - - - |. x - - - |`);
+
+    expect(score.errors).toEqual([]);
+    expect(score.measures).toHaveLength(2);
+    expect(score.measures[0]).toMatchObject({
+      barline: "regular",
+      volta: { indices: [1] },
+    });
+    expect(score.measures[1]).toMatchObject({
+      barline: "final",
+    });
+    expect(score.measures[1]?.volta).toBeUndefined();
   });
 
   it("treats `|: :|` as a single repeat-both empty measure", () => {

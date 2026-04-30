@@ -657,7 +657,17 @@ function parseMeasureTail(remainder: string, line: PreprocessedLine, errors: Par
     double?: boolean;
     final?: boolean;
   } | null => {
-    const voltaStartMatch = remainder.slice(index).match(/^\|(\d+(?:,\d+)*)\./);
+    const repeatEndWithVoltaMatch = remainder.slice(index).match(/^:\|\s*(\d+(?:,\d+)*)\./);
+    if (repeatEndWithVoltaMatch?.[1] !== undefined) {
+      return {
+        length: repeatEndWithVoltaMatch[0].length,
+        kind: "repeat_end",
+        times: 2,
+        voltaIndices: repeatEndWithVoltaMatch[1].split(",").map(Number),
+      };
+    }
+
+    const voltaStartMatch = remainder.slice(index).match(/^\|\s*(\d+(?:,\d+)*)\./);
     if (voltaStartMatch?.[1] !== undefined) {
       return {
         length: voltaStartMatch[0].length,
@@ -667,7 +677,7 @@ function parseMeasureTail(remainder: string, line: PreprocessedLine, errors: Par
     }
 
     if (remainder.startsWith("|.", index)) {
-      return { length: 2, kind: "barline", voltaTerminator: true, final: true };
+      return { length: 2, kind: "barline", voltaTerminator: true };
     }
 
     if (remainder.startsWith("|:", index)) {
@@ -731,7 +741,7 @@ function parseMeasureTail(remainder: string, line: PreprocessedLine, errors: Par
       cursor += startBoundary.length;
     }
 
-    const endBoundaryMatch = remainder.slice(cursor).match(/\|\d+(?:,\d+)*\.|\|\.|\|:|:\|x\d+|:\||\|/);
+    const endBoundaryMatch = remainder.slice(cursor).match(/:\|\s*\d+(?:,\d+)*\.|\|\s*\d+(?:,\d+)*\.|\|\.|\|:|:\|x\d+|:\||\|/);
 
     if (!endBoundaryMatch || endBoundaryMatch.index === undefined) {
       errors.push({

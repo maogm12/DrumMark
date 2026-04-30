@@ -356,16 +356,19 @@ function validateMeasureMetadata(paragraphs: ScoreParagraph[], errors: ParseErro
     if (measureRepeat) {
       if (barIndex < measureRepeat.slashes) {
         pushError(errors, measures[0]?.sourceLine ?? 1, `Measure repeat at bar ${barIndex + 1} does not have ${measureRepeat.slashes} preceding measure(s)`);
-        continue;
       }
 
-      for (let offset = 1; offset <= measureRepeat.slashes; offset += 1) {
-        const referenced = measuresByBar.get(barIndex - offset);
-        const referencedRepeat = referenced?.find((measure) => measure.measureRepeat?.slashes !== undefined);
-        if (referencedRepeat) {
-          pushError(errors, measures[0]?.sourceLine ?? 1, `Measure repeat at bar ${barIndex + 1} cannot chain another measure-repeat bar`);
-          break;
-        }
+      const conflictingMeasure = measures.find((measure) =>
+        !measure.generated
+        && measure.measureRepeat?.slashes === undefined
+        && (measure.tokens.length > 0 || measure.multiRest !== undefined),
+      );
+      if (conflictingMeasure) {
+        pushError(
+          errors,
+          conflictingMeasure.sourceLine ?? measures[0]?.sourceLine ?? 1,
+          `Measure repeat at bar ${barIndex + 1} cannot coexist with ordinary content on another track`,
+        );
       }
     }
   }

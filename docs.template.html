@@ -350,10 +350,12 @@
                                 <p>Structural markings are score-global, not private to one track. You may write them on any track line, but they apply to the shared global measure.</p>
                                 <div class="docs-section-body">
                                     <ul class="docs-list">
-                                        <li><strong>Barlines:</strong> <code>|</code> is normal; <code>|:</code> starts a repeat; <code>:|</code> ends a repeat; <code>||</code> is a double barline; <code>|.</code> explicitly ends the current volta bracket.</li>
+                                        <li><strong>Barlines:</strong> <code>|</code> is normal; <code>|:</code> starts a repeat; <code>:|</code> ends a repeat; <code>||</code> is a double barline; <code>|.</code> explicitly ends the current volta bracket without forcing a final barline.</li>
+                                        <li><strong>Final barline:</strong> the score automatically ends with a final barline on the last measure, so you do not need separate syntax just to draw the ending line.</li>
                                         <li><strong>Whitespace matters:</strong> <code>||</code> means a double barline with no empty measure inside it, while <code>|  |</code> means there is an actual empty measure between the two barlines.</li>
                                         <li><strong>Voltas:</strong> <code>|1.</code> is first ending, and <code>|1,2.</code> is a shared ending. A volta ends at a new volta, at <code>:|</code>, or at <code>|.</code>.</li>
-                                        <li><strong>Measure repeats:</strong> <code>%</code> repeats the previous measure and <code>%%</code> repeats two measures back. It must occupy the entire measure by itself and may not chain-reference another repeat measure.</li>
+                                        <li><strong>Measure repeats:</strong> <code>%</code> repeats the previous logical measure and <code>%%</code> repeats the previous two logical measures, recursively resolving earlier measure-repeat bars when needed.</li>
+                                        <li><strong>Measure-repeat scope:</strong> <code>%</code> and <code>%%</code> must occupy the whole measure, and if one track declares them on a bar, other tracks on that same bar must stay empty instead of providing ordinary note content.</li>
                                         <li><strong>Navigation markers:</strong> supported forms are <code>@segno</code>, <code>@coda</code>, <code>@fine</code>, <code>@to-coda</code>, <code>@da-capo</code>, <code>@dal-segno</code>, <code>@dc-al-fine</code>, <code>@dc-al-coda</code>, <code>@ds-al-fine</code>, and <code>@ds-al-coda</code>.</li>
                                         <li><strong>Conflict rules:</strong> one measure may contain at most one marker and at most one jump. Nested or crossing repeat structures are not allowed in v1.</li>
                                     </ul>

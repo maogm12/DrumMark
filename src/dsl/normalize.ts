@@ -325,6 +325,8 @@ function validateModifierLegality(
 
 export function normalizeScoreAst(ast: ScoreAst): NormalizedScore {
   const measures: NormalizedScore["measures"] = [];
+  const voltaSeeds: (NormalizedScore["measures"][number]["volta"] | undefined)[] = [];
+  const voltaTerminators: boolean[] = [];
   let globalMeasureIndex = 0;
 
   for (const [paragraphIndex, paragraph] of ast.paragraphs.entries()) {
@@ -356,6 +358,7 @@ export function normalizeScoreAst(ast: ScoreAst): NormalizedScore {
             marker: trackMeasures.find((measure) => measure.marker !== undefined)?.marker,
             jump: trackMeasures.find((measure) => measure.jump !== undefined)?.jump,
             volta: trackMeasures.find((measure) => measure.volta !== undefined)?.volta,
+            voltaTerminator: trackMeasures.some((measure) => measure.voltaTerminator === true),
             measureRepeat: mergedMeasureRepeat,
             multiRest: mergedMultiRest,
             multiRestCount: mergedMultiRest?.count,
@@ -450,7 +453,28 @@ export function normalizeScoreAst(ast: ScoreAst): NormalizedScore {
         multiRest: measureMeta?.multiRest,
         multiRestCount: measureMeta?.multiRestCount,
       });
+      voltaSeeds.push(measureMeta?.volta ? { indices: [...measureMeta.volta.indices] } : undefined);
+      voltaTerminators.push(measureMeta?.voltaTerminator === true);
       globalMeasureIndex++;
+    }
+  }
+
+  let activeVolta: NormalizedScore["measures"][number]["volta"] | undefined;
+  for (let index = 0; index < measures.length; index += 1) {
+    const measure = measures[index];
+    const seed = voltaSeeds[index];
+    if (seed) {
+      activeVolta = { indices: [...seed.indices] };
+    }
+
+    measure.volta = activeVolta ? { indices: [...activeVolta.indices] } : undefined;
+
+    if (
+      voltaTerminators[index]
+      || measure.barline === "repeat-end"
+      || measure.barline === "repeat-both"
+    ) {
+      activeVolta = undefined;
     }
   }
 

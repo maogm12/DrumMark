@@ -350,10 +350,12 @@
                                 <p>结构性记号是全谱级别的，不是单轨私有信息。它们可以写在任意一轨，但会作用于同一全局小节。</p>
                                 <div class="docs-section-body">
                                     <ul class="docs-list">
-                                        <li><strong>小节线：</strong> <code>|</code> 常规；<code>|:</code> 反复开始；<code>:|</code> 反复结束；<code>||</code> 双小节线；<code>|.</code> 明确结束当前 volta bracket。</li>
+                                        <li><strong>小节线：</strong> <code>|</code> 常规；<code>|:</code> 反复开始；<code>:|</code> 反复结束；<code>||</code> 双小节线；<code>|.</code> 明确结束当前 volta bracket，但不会强制画终止粗线。</li>
+                                        <li><strong>结尾小节线：</strong> 最后一个小节会自动补终止小节线，所以不需要为了画结尾线再写额外语法。</li>
                                         <li><strong>空白有语义：</strong> <code>||</code> 表示“没有夹小节”的双线；<code>|  |</code> 中间若有空白，则表示中间存在一个空小节。</li>
                                         <li><strong>Volta：</strong> <code>|1.</code> 是一房，<code>|1,2.</code> 表示共用结尾。volta 终止于新的 volta、<code>:|</code> 或 <code>|.</code>。</li>
-                                        <li><strong>小节反复：</strong> <code>%</code> 重复前 1 小节，<code>%%</code> 重复前 2 小节。它必须单独占满整个小节，且不能链式引用另一个反复小节。</li>
+                                        <li><strong>小节反复：</strong> <code>%</code> 重复前 1 个逻辑小节，<code>%%</code> 重复前 2 个逻辑小节；如果前面的逻辑小节本身也是 measure-repeat，则递归解析其内容。</li>
+                                        <li><strong>小节反复作用域：</strong> <code>%</code> 和 <code>%%</code> 必须单独占满整个小节；一旦某条轨在该小节声明 measure-repeat，其他轨在同一个逻辑小节里就必须留空，不能再写普通音符内容。</li>
                                         <li><strong>导航标记：</strong> 支持 <code>@segno</code>、<code>@coda</code>、<code>@fine</code>、<code>@to-coda</code>、<code>@da-capo</code>、<code>@dal-segno</code>、<code>@dc-al-fine</code>、<code>@dc-al-coda</code>、<code>@ds-al-fine</code>、<code>@ds-al-coda</code>。</li>
                                         <li><strong>冲突规则：</strong> 同一小节最多一个 marker、最多一个 jump。v1 不允许嵌套反复或交叉反复。</li>
                                     </ul>

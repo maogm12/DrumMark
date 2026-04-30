@@ -18,7 +18,7 @@ divisions 4
       marker: "segno",
       jump: "ds-al-coda",
       voltaIndices: [1],
-      barline: "final",
+      barline: undefined,
     });
 
     const score = buildNormalizedScore(source);
@@ -67,7 +67,7 @@ divisions 4
         marker: undefined,
         jump: "ds-al-coda",
         voltaIndices: undefined,
-        barline: "final",
+        barline: undefined,
       },
     ]);
 
@@ -96,7 +96,7 @@ divisions 4
         marker: undefined,
         jump: "ds-al-coda",
         volta: undefined,
-        barline: "final",
+        barline: "regular",
       },
     ]);
   });

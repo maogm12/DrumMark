@@ -34,17 +34,13 @@ divisions 4
     });
   });
 
-  it("rejects chained measure-repeat references in AST validation", () => {
+  it("allows chained measure-repeat references in AST validation", () => {
     const score = buildScoreAst(`time 4/4
 divisions 4
 
 | d d d d | % | %% |`);
 
-    expect(score.errors).toContainEqual({
-      line: 4,
-      column: 1,
-      message: "Measure repeat at bar 3 cannot chain another measure-repeat bar",
-    });
+    expect(score.errors).toEqual([]);
   });
 
   it("rejects measure-repeat bars that do not have enough preceding source measures", () => {
@@ -60,11 +56,11 @@ divisions 4
     });
   });
 
-  it("preserves canonical measure-repeat intent in normalized measures even from a non-leading track", () => {
+  it("preserves canonical measure-repeat intent when declared on a non-leading track and other tracks leave the bar empty", () => {
     const score = buildNormalizedScore(`time 4/4
 divisions 4
 
-HH | x - - - | x - - - | - - - - |
+HH | x - - - | x - - - | |
 SD | - - - - | - - - - | %% |`);
 
     expect(score.errors).toEqual([]);
@@ -73,6 +69,20 @@ SD | - - - - | - - - - | %% |`);
       measureRepeat: { slashes: 2 },
       events: [],
       barline: "final",
+    });
+  });
+
+  it("rejects a measure-repeat bar when another track provides ordinary content on the same global bar", () => {
+    const score = buildScoreAst(`time 4/4
+divisions 4
+
+HH | x - - - | x - - - | x - - - |
+SD | - - - - | - - - - | %% |`);
+
+    expect(score.errors).toContainEqual({
+      line: 4,
+      column: 1,
+      message: "Measure repeat at bar 3 cannot coexist with ordinary content on another track",
     });
   });
 });

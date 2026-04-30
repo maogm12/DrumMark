@@ -125,4 +125,24 @@ divisions 4
       multiRest: { count: 2 },
     });
   });
+
+  it("propagates volta metadata until a terminator, new volta, or repeat end", () => {
+    const score = buildNormalizedScore(`time 4/4
+divisions 4
+
+|: x x x x |1. x - - - | x - - - :|2. o - - - | x - - - |. x - - - |`);
+
+    expect(score.errors).toEqual([]);
+    expect(score.measures.map((measure) => ({
+      barline: measure.barline,
+      volta: measure.volta?.indices,
+    }))).toEqual([
+      { barline: "repeat-start", volta: undefined },
+      { barline: "regular", volta: [1] },
+      { barline: "repeat-end", volta: [1] },
+      { barline: "regular", volta: [2] },
+      { barline: "regular", volta: [2] },
+      { barline: "final", volta: undefined },
+    ]);
+  });
 });

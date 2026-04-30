@@ -49,6 +49,28 @@ divisions 4
     expect(svg).toContain("To Coda");
   });
 
+  it("continues a volta across systems when the ending spans multiple measures", async () => {
+    const score = buildNormalizedScore(`time 4/4
+divisions 4
+
+| x - - - | x - - - |1. x - - - | x - - - | x - - - |. x - - - |`);
+
+    const svg = await renderScoreToSvg(score, {
+      mode: "preview",
+      pagePadding: { top: 24, right: 18, bottom: 24, left: 18 },
+      pageScale: 1.0,
+      titleTopPadding: 3.6,
+      titleSubtitleGap: 1.2,
+      titleStaffGap: 2.8,
+      systemSpacing: 1,
+      hideVoice2Rests: true,
+    });
+
+    expect(svg).toContain(">1.</text>");
+    expect(svg).toMatch(/<rect x="[^"]+" y="125" width="[^"]+" height="1" fill="#333" stroke="none"><\/rect>/);
+    expect(svg).toMatch(/<rect x="[^"]+" y="325" width="[^"]+" height="1" fill="#333" stroke="none"><\/rect>/);
+  });
+
   it("renders a native multi-measure rest instead of a text label plus whole-rest note", async () => {
     const score = buildNormalizedScore(`title Extended Rest
 time 4/4

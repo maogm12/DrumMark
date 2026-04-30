@@ -15,6 +15,7 @@ import {
   groupVoiceEvents,
   isBeamable,
   groupingSegmentIndex,
+  resolveMeasureRepeatContentMeasure,
   type InstrumentSpec,
   type VoiceEntry,
 } from "./logic";
@@ -741,7 +742,10 @@ function buildExportMeasures(score: NormalizedScore): ExportMeasure[] {
   for (const measure of score.measures) {
     if (measure.measureRepeat && measure.measureRepeat.slashes > 1) {
       for (let i = 0; i < measure.measureRepeat.slashes; i++) {
-        const sourceMeasure = score.measures[measure.globalIndex - measure.measureRepeat.slashes + i];
+        const sourceMeasure = resolveMeasureRepeatContentMeasure(
+          score,
+          score.measures[measure.globalIndex - measure.measureRepeat.slashes + i],
+        );
         if (!sourceMeasure) continue;
         const isFirst = i === 0;
         const isLast = i === measure.measureRepeat.slashes - 1;
@@ -794,7 +798,7 @@ function buildExportMeasures(score: NormalizedScore): ExportMeasure[] {
     expanded.push({
       measure,
       contentMeasure: measure.measureRepeat?.slashes === 1
-        ? score.measures[measure.globalIndex - 1] ?? measure
+        ? resolveMeasureRepeatContentMeasure(score, score.measures[measure.globalIndex - 1]) ?? measure
         : measure,
       outputIndex: expanded.length,
       measureRepeatStyles: measure.measureRepeat?.slashes === 1

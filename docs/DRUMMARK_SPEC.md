@@ -1071,3 +1071,65 @@ The following are intentionally absent — they are concerns of specific consume
 - **Notehead shape per track/modifier**: Looked up by renderer from the Track Registry appearance table.
 - **Expanded playback sequence**: (Repeat/volta unfolded) computed by playback engine as a separate pass.
 - **Visual positioning data**: (X/Y coordinates) computed by the renderer during layout.
+
+---
+
+## Addendum 2026-04-30: Chained Measure Repeat Resolution
+
+### Status
+
+Proposed
+
+### Scope
+
+This addendum refines Section 9.4 Measure Repeat (`%`) and supersedes only the no-chaining restriction there. All other measure-repeat rules remain in force unless explicitly stated below.
+
+### Revised Rules
+
+- Chained measure-repeat shorthand is allowed.
+- `%` resolves to the immediately preceding logical measure in score order after recursively resolving measure-repeat content.
+- `%%` resolves to the previous two logical measures in score order after recursively resolving measure-repeat content.
+- Resolution is based on logical score order only. It is not based on playback order, and it does not unfold repeat, volta, or jump navigation.
+- `%` and `%%` must still occupy the entire measure by themselves.
+- A measure-repeat bar still requires the referenced number of preceding logical measures to exist.
+
+### Exclusivity Rule
+
+- Measure-repeat intent is a global bar-level construct.
+- If any track declares `%` or `%%` on a given logical bar, no other track on that same logical bar may contain ordinary musical content or multi-measure-rest content.
+- Other tracks may leave that bar empty so the global measure-repeat intent can be merged canonically.
+
+### Metadata Rule
+
+- Recursive measure-repeat resolution copies musical content only.
+- Structural metadata remains local to the destination logical bar and is not inherited from referenced bars. This includes barline, volta, marker, jump, multi-rest, and measure-repeat metadata itself.
+
+### Consumer Rule
+
+- Canonical normalized IR may continue storing measure-repeat as intent metadata rather than expanded events.
+- Any consumer that needs referenced content, such as MusicXML export, must resolve measure-repeat content recursively from prior logical measures rather than reading unresolved repeat-intent bars as literal empty-event bars.
+
+### Examples
+
+```drummark
+HH | x - - - | % | % |
+```
+
+This is valid and resolves logically to three consecutive bars with the same musical content.
+
+```drummark
+HH | x - - - | % | %% |
+```
+
+This is valid and resolves logically to:
+
+1. bar 1 -> original content
+2. bar 2 -> copy of bar 1
+3. bar 3 -> copy of bars 1 and 2 as logical antecedents
+
+```drummark
+HH | x - - - | x - - - | x - - - |
+SD | - - - - | - - - - | %% |
+```
+
+This is invalid because the third logical bar mixes global measure-repeat intent with ordinary content on another track.

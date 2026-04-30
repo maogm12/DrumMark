@@ -102,6 +102,20 @@ export function compareFractions(left: Fraction, right: Fraction): number {
   return leftValue - rightValue;
 }
 
+export function resolveMeasureRepeatContentMeasure(
+  score: NormalizedScore,
+  measure: NormalizedScore["measures"][number] | undefined,
+  slashHint?: number,
+): NormalizedScore["measures"][number] | undefined {
+  if (!measure) return undefined;
+  const slashes = slashHint ?? measure.measureRepeat?.slashes;
+  if (!slashes) return measure;
+  if (slashes === 1) {
+    return resolveMeasureRepeatContentMeasure(score, score.measures[measure.globalIndex - 1]);
+  }
+  return resolveMeasureRepeatContentMeasure(score, score.measures[measure.globalIndex - slashes]);
+}
+
 // --- Musical Logic ---
 
 export type VoiceId = 1 | 2;
@@ -364,4 +378,3 @@ export function getGroupingBoundaries(
 
   return boundaries;
 }
-

@@ -107,11 +107,11 @@ function inferGrouping(beats: number, beatUnit: number): number[] | null {
 }
 
 function parseGroupingValue(value: string): number[] | null {
-  if (!/^\d+(?:\+\d+)*$/.test(value)) {
+  if (!/^\d+(?:\s*\+\s*\d+)*$/.test(value)) {
     return null;
   }
 
-  const values = value.split("+").map(Number);
+  const values = value.split("+").map(s => Number(s.trim()));
   return values.every((item) => item > 0) ? values : null;
 }
 
@@ -139,7 +139,7 @@ function parseHeaderLine(line: PreprocessedLine, headers: HeaderAccumulator, err
     return true;
   }
 
-  if (!isMetadataField(field) && /\s/.test(value)) {
+  if (!isMetadataField(field) && field !== "grouping" && /\s/.test(value)) {
     errors.push({
       line: line.lineNumber,
       column: 1,

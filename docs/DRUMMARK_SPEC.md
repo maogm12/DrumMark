@@ -113,7 +113,7 @@ grouping <a+b+c+...>
 - `tempo`: optional, positive integer, default `120`, interpreted as quarter-note BPM.
 - `time`: required, e.g. `4/4`, `3/4`, `6/8`.
 - `divisions`: required, positive integer, defines the grid resolution per measure.
-- `grouping`: optional, sum must equal numerator of `time`. Controls beat structure, default accents, beaming. Defaults inferred from `time` if absent.
+- `grouping`: optional, e.g. `2+2` or `1 + 1 + 1 + 1`. Sum must equal numerator of `time`. Controls beat structure, default accents, beaming. Defaults inferred from `time` if absent.
 
 ### 3.2 Grouping Inference
 

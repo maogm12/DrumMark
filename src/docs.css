@@ -220,7 +220,7 @@
 }
 
 .docs-preview-frame {
-  padding: 32px;
+  padding: 0;
   background: white;
   display: flex;
   justify-content: center;

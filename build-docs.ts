@@ -79,7 +79,7 @@ async function buildDocs(templatePath: string, outputPath: string) {
             const score = buildNormalizedScore(dsl);
             renderedSvg = await renderScoreToSvg(score, {
                 mode: "preview",
-                pagePadding: { top: 10, right: 10, bottom: 10, left: 10 },
+                pagePadding: { top: 24, right: 24, bottom: 24, left: 24 },
                 pageScale: 0.8,
                 titleTopPadding: 0,
                 titleSubtitleGap: 0,

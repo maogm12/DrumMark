@@ -267,4 +267,15 @@ divisions 4
       multiRestCount: 2,
     });
   });
+
+  it("permits optional spaces in the grouping header", () => {
+    const doc = parseDocumentSkeleton(`time 4/4
+divisions 4
+grouping 1 + 1 + 1 + 1
+
+| d |`);
+
+    expect(doc.errors).toEqual([]);
+    expect(doc.headers.grouping.values).toEqual([1, 1, 1, 1]);
+  });
 });

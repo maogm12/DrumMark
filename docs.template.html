@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DrumMark Documentation</title>
+    <link rel="stylesheet" href="/src/styles.css">
+</head>
+<body class="docs-body">
+    <div class="docs-layout">
+        <header class="docs-header-bar">
+            <div class="docs-header-left">
+                <button id="menu-toggle" class="docs-menu-button"><span></span><span></span><span></span></button>
+                <div class="docs-sidebar-brand">
+                    <svg aria-hidden="true" class="app-logo" width="24" height="24" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M19 22V6C19 6 24 7 24 12" stroke="var(--accent-primary)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        <circle cx="12" cy="22" r="7" stroke="var(--text-main)" stroke-width="2"/>
+                        <circle cx="12" cy="22" r="8.5" stroke="var(--text-main)" stroke-width="0.5" stroke-opacity="0.4"/>
+                        <circle cx="12" cy="13.5" r="1" fill="var(--text-main)"/>
+                        <circle cx="12" cy="30.5" r="1" fill="var(--text-main)"/>
+                        <circle cx="3.5" cy="22" r="1" fill="var(--text-main)"/>
+                        <circle cx="20.5" cy="22" r="1" fill="var(--text-main)"/>
+                        <line x1="7" y1="20" x2="17" y2="20" stroke="var(--text-main)" stroke-width="0.5" stroke-opacity="0.6"/>
+                        <line x1="7" y1="22" x2="17" y2="22" stroke="var(--text-main)" stroke-width="0.5" stroke-opacity="0.6"/>
+                        <line x1="7" y1="24" x2="17" y2="24" stroke="var(--text-main)" stroke-width="0.5" stroke-opacity="0.6"/>
+                    </svg>
+                    <h1>DrumMark</h1>
+                </div>
+            </div>
+            <div class="docs-header-right">
+                <a class="export-button primary" href="./">Open Editor</a>
+            </div>
+        </header>
+        <div class="docs-container">
+            <div id="mobile-overlay" class="docs-mobile-overlay"></div>
+            <aside id="sidebar" class="docs-sidebar">
+                <nav class="docs-nav">
+                    <div class="docs-nav-group">
+                        <span class="docs-nav-group-title">Language</span>
+                        <a href="./docs_zh.html" class="docs-nav-link">中文文档</a>
+                    </div>
+                    <div class="docs-nav-group">
+                        <span class="docs-nav-group-title">Introduction</span>
+                        <a href="#overview" class="docs-nav-link">Overview</a>
+                        <a href="#architecture" class="docs-nav-link">Architecture</a>
+                    </div>
+                    <div class="docs-nav-group">
+                        <span class="docs-nav-group-title">Core Syntax</span>
+                        <a href="#headers" class="docs-nav-link">Headers & Metadata</a>
+                        <a href="#tracks" class="docs-nav-link">Tracks & Instruments</a>
+                        <a href="#tokens" class="docs-nav-link">Tokens & Rhythms</a>
+                        <a href="#modifiers" class="docs-nav-link">Modifiers & Techniques</a>
+                        <a href="#combined-hits" class="docs-nav-link">Combined Hits</a>
+                        <a href="#sticking" class="docs-nav-link">Sticking</a>
+                    </div>
+                    <div class="docs-nav-group">
+                        <span class="docs-nav-group-title">Structure</span>
+                        <a href="#repeats" class="docs-nav-link">Repeats & Jumps</a>
+                        <a href="#multi-rest" class="docs-nav-link">Multi-Measure Rests</a>
+                        <a href="#inline-repeat" class="docs-nav-link">Inline Repeats</a>
+                    </div>
+                    <div class="docs-nav-group">
+                        <span class="docs-nav-group-title">Advanced</span>
+                        <a href="#validation" class="docs-nav-link">Validation</a>
+                        <a href="#ir" class="docs-nav-link">Intermediate Representation</a>
+                        <a href="#musicxml" class="docs-nav-link">MusicXML Export</a>
+                        <a href="#full-example" class="docs-nav-link">Full Example</a>
+                    </div>
+                </nav>
+            </aside>
+            <main class="docs-main">
+                <div class="docs-page">
+                    <div class="docs-hero">
+                        <span class="docs-kicker">Getting Started</span>
+                        <h1>Drum Notation Guide</h1>
+                        <p>A text-first way to write professional drum scores. Fast, human-readable, and deterministic.</p>
+                    </div>
+                    <div class="docs-sections">
+                        <article class="docs-section-card" id="overview">
+                            <div class="docs-section-header">
+                                <h2>Overview</h2>
+                                <p>DrumMark is designed for musicians who want to write scores as fast as they type.</p>
+                            </div>
+                            <div class="docs-description">
+                                <p>It follows four core principles: <strong>Human-first</strong> (readable without tools), <strong>Deterministic</strong> (consistent output), <strong>Validatable</strong> (strict error reporting), and <strong>Renderer-agnostic</strong>.</p>
+                            </div>
+                            <div class="example-inject" data-example="overview"></div>
+                        </article>
+
+                        <article class="docs-section-card" id="architecture">
+                            <div class="docs-section-header">
+                                <h2>Architecture</h2>
+                                <p>The compilation pipeline from source to notation.</p>
+                            </div>
+                            <div class="docs-description">
+                                <p>The pipeline transforms DSL Source into an AST, then into a Normalized IR, which finally feeds the VexFlow Renderer or MusicXML Exporter.</p>
+                            </div>
+                            <div class="example-inject" data-example="architecture"></div>
+                        </article>
+
+                        <article class="docs-section-card" id="headers">
+                            <div class="docs-section-header">
+                                <h2>Headers & Metadata</h2>
+                                <p>Defining the technical foundation of your score.</p>
+                            </div>
+                            <div class="docs-description">
+                                <ul>
+                                    <li><code>title</code>, <code>subtitle</code>, <code>composer</code>: Score information.</li>
+                                    <li><code>tempo</code>: Quarter-note BPM (default: 120).</li>
+                                    <li><code>time</code>: Meter (e.g., 4/4, 6/8) - <strong>Required</strong>.</li>
+                                    <li><code>divisions</code>: Grid resolution per measure - <strong>Required</strong>.</li>
+                                    <li><code>grouping</code>: Beat structure (e.g., 2+2).</li>
+                                </ul>
+                            </div>
+                            <div class="example-inject" data-example="headers"></div>
+                        </article>
+
+                        <article class="docs-section-card" id="tracks">
+                            <div class="docs-section-header">
+                                <h2>Tracks & Instruments</h2>
+                                <p>Mapping notes to specific drum kit components.</p>
+                            </div>
+                            <div class="docs-description">
+                                <p>Each instrument is a track. Supported tracks include <code>BD</code>, <code>SD</code>, <code>HH</code>, <code>RC</code>, <code>C</code>, <code>T1-T4</code>, <code>HF</code>, and more. Use braces <code>{}</code> for routing scopes.</p>
+                            </div>
+                            <div class="example-inject" data-example="tracks"></div>
+                        </article>
+
+                        <article class="docs-section-card" id="tokens">
+                            <div class="docs-section-header">
+                                <h2>Tokens & Rhythms</h2>
+                                <p>The atomic building blocks of your notation.</p>
+                            </div>
+                            <div class="docs-description">
+                                <p>Tokens like <code>d</code> (hit), <code>x</code> (cymbal), and <code>-</code> (rest) are used to build patterns. Use <code>.</code> for dotted notes and <code>/</code> for halving duration. Square brackets <code>[...]</code> create rhythmic groups or tuplets.</p>
+                            </div>
+                            <div class="example-inject" data-example="tokens"></div>
+                        </article>
+
+                        <article class="docs-section-card" id="modifiers">
+                            <div class="docs-section-header">
+                                <h2>Modifiers & Techniques</h2>
+                                <p>Adding detail and articulation to your hits.</p>
+                            </div>
+                            <div class="docs-description">
+                                <p>Apply <code>:accent</code>, <code>:ghost</code>, <code>:flam</code>, <code>:open</code>, <code>:close</code>, <code>:roll</code>, and more. Modifiers are validated against track legality.</p>
+                            </div>
+                            <div class="example-inject" data-example="modifiers"></div>
+                        </article>
+
+                        <article class="docs-section-card" id="combined-hits">
+                            <div class="docs-section-header">
+                                <h2>Combined Hits</h2>
+                                <p>Playing multiple parts simultaneously.</p>
+                            </div>
+                            <div class="docs-description">
+                                <p>Use <code>+</code> to combine hits from different tracks or instruments at the same rhythmic position.</p>
+                            </div>
+                            <div class="example-inject" data-example="combined-hits"></div>
+                        </article>
+
+                        <article class="docs-section-card" id="sticking">
+                            <div class="docs-section-header">
+                                <h2>Sticking</h2>
+                                <p>Hand assignments for complex patterns.</p>
+                            </div>
+                            <div class="docs-description">
+                                <p>The <code>ST</code> track is used for <code>R</code> and <code>L</code> annotations. These align with notes at the same start position.</p>
+                            </div>
+                            <div class="example-inject" data-example="sticking"></div>
+                        </article>
+
+                        <article class="docs-section-card" id="repeats">
+                            <div class="docs-section-header">
+                                <h2>Repeats & Jumps</h2>
+                                <p>Structural navigation and alternative endings.</p>
+                            </div>
+                            <div class="docs-description">
+                                <p>Supports repeat barlines <code>|: :|</code>, voltas <code>|1.</code>, and navigation markers like <code>@segno</code>, <code>@coda</code>, <code>@ds-al-coda</code>.</p>
+                            </div>
+                            <div class="example-inject" data-example="repeats"></div>
+                        </article>
+
+                        <article class="docs-section-card" id="multi-rest">
+                            <div class="docs-section-header">
+                                <h2>Multi-Measure Rests</h2>
+                                <p>Standard notation for extended periods of silence.</p>
+                            </div>
+                            <div class="docs-description">
+                                <p>Use <code>|--N--|</code> to specify a rest spanning N measures.</p>
+                            </div>
+                            <div class="example-inject" data-example="multi-rest"></div>
+                        </article>
+
+                        <article class="docs-section-card" id="inline-repeat">
+                            <div class="docs-section-header">
+                                <h2>Inline Repeats</h2>
+                                <p>Quickly Duplicate measures in place.</p>
+                            </div>
+                            <div class="docs-description">
+                                <p>Append <code>*N</code> to a measure to repeat it N times during compilation.</p>
+                            </div>
+                            <div class="example-inject" data-example="inline-repeat"></div>
+                        </article>
+
+                        <article class="docs-section-card" id="validation">
+                            <div class="docs-section-header">
+                                <h2>Validation</h2>
+                                <p>Ensuring musical and logical consistency.</p>
+                            </div>
+                            <div class="docs-description">
+                                <p>The compiler strictly validates measure durations, grouping alignment, and modifier legality.</p>
+                            </div>
+                            <div class="example-inject" data-example="validation"></div>
+                        </article>
+
+                        <article class="docs-section-card" id="ir">
+                            <div class="docs-section-header">
+                                <h2>Intermediate Representation</h2>
+                                <p>The data structure behind the notation.</p>
+                            </div>
+                            <div class="docs-description">
+                                <p>A JSON-based format that explicitly defines headers, tracks, and measures with normalized rhythmic events.</p>
+                            </div>
+                            <div class="example-inject" data-example="ir"></div>
+                        </article>
+
+                        <article class="docs-section-card" id="musicxml">
+                            <div class="docs-section-header">
+                                <h2>MusicXML Export</h2>
+                                <p>Interoperability with standard notation tools.</p>
+                            </div>
+                            <div class="docs-description">
+                                <p>Export your DrumMark scores to MusicXML to open them in MuseScore, Sibelius, or Finale.</p>
+                            </div>
+                            <div class="example-inject" data-example="musicxml"></div>
+                        </article>
+
+                        <article class="docs-section-card" id="full-example">
+                            <div class="docs-section-header">
+                                <h2>Full Example</h2>
+                                <p>Bringing it all together.</p>
+                            </div>
+                            <div class="docs-description">
+                                <p>A complete Funk Study demonstrating multiple tracks, modifiers, and rhythmic groups.</p>
+                            </div>
+                            <div class="example-inject" data-example="full-example"></div>
+                        </article>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+    <script type="module" src="/src/docsVanilla.ts"></script>
+</body>
+</html>

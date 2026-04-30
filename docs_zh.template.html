@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DrumMark 文档</title>
+    <link rel="stylesheet" href="/src/styles.css">
+</head>
+<body class="docs-body">
+    <div class="docs-layout">
+        <header class="docs-header-bar">
+            <div class="docs-header-left">
+                <button id="menu-toggle" class="docs-menu-button"><span></span><span></span><span></span></button>
+                <div class="docs-sidebar-brand">
+                    <svg aria-hidden="true" class="app-logo" width="24" height="24" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M19 22V6C19 6 24 7 24 12" stroke="var(--accent-primary)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        <circle cx="12" cy="22" r="7" stroke="var(--text-main)" stroke-width="2"/>
+                        <circle cx="12" cy="22" r="8.5" stroke="var(--text-main)" stroke-width="0.5" stroke-opacity="0.4"/>
+                        <circle cx="12" cy="13.5" r="1" fill="var(--text-main)"/>
+                        <circle cx="12" cy="30.5" r="1" fill="var(--text-main)"/>
+                        <circle cx="3.5" cy="22" r="1" fill="var(--text-main)"/>
+                        <circle cx="20.5" cy="22" r="1" fill="var(--text-main)"/>
+                        <line x1="7" y1="20" x2="17" y2="20" stroke="var(--text-main)" stroke-width="0.5" stroke-opacity="0.6"/>
+                        <line x1="7" y1="22" x2="17" y2="22" stroke="var(--text-main)" stroke-width="0.5" stroke-opacity="0.6"/>
+                        <line x1="7" y1="24" x2="17" y2="24" stroke="var(--text-main)" stroke-width="0.5" stroke-opacity="0.6"/>
+                    </svg>
+                    <h1>DrumMark</h1>
+                </div>
+            </div>
+            <div class="docs-header-right">
+                <a class="export-button primary" href="./">打开编辑器</a>
+            </div>
+        </header>
+        <div class="docs-container">
+            <div id="mobile-overlay" class="docs-mobile-overlay"></div>
+            <aside id="sidebar" class="docs-sidebar">
+                <nav class="docs-nav">
+                    <div class="docs-nav-group">
+                        <span class="docs-nav-group-title">语言切换</span>
+                        <a href="./docs.html" class="docs-nav-link">English Docs</a>
+                    </div>
+                    <div class="docs-nav-group">
+                        <span class="docs-nav-group-title">简介</span>
+                        <a href="#overview" class="docs-nav-link">概览</a>
+                        <a href="#architecture" class="docs-nav-link">架构</a>
+                    </div>
+                    <div class="docs-nav-group">
+                        <span class="docs-nav-group-title">核心语法</span>
+                        <a href="#headers" class="docs-nav-link">头部与元数据</a>
+                        <a href="#tracks" class="docs-nav-link">轨道与乐器</a>
+                        <a href="#tokens" class="docs-nav-link">符号与节奏</a>
+                        <a href="#modifiers" class="docs-nav-link">修饰符与技巧</a>
+                        <a href="#combined-hits" class="docs-nav-link">组合击打</a>
+                        <a href="#sticking" class="docs-nav-link">粘滞 (Sticking)</a>
+                    </div>
+                    <div class="docs-nav-group">
+                        <span class="docs-nav-group-title">结构</span>
+                        <a href="#repeats" class="docs-nav-link">重复与跳转</a>
+                        <a href="#multi-rest" class="docs-nav-link">多小节休止</a>
+                        <a href="#inline-repeat" class="docs-nav-link">内联重复</a>
+                    </div>
+                    <div class="docs-nav-group">
+                        <span class="docs-nav-group-title">高级进阶</span>
+                        <a href="#validation" class="docs-nav-link">校验</a>
+                        <a href="#ir" class="docs-nav-link">中间表示 (IR)</a>
+                        <a href="#musicxml" class="docs-nav-link">MusicXML 导出</a>
+                        <a href="#full-example" class="docs-nav-link">完整示例</a>
+                    </div>
+                </nav>
+            </aside>
+            <main class="docs-main">
+                <div class="docs-page">
+                    <div class="docs-hero">
+                        <span class="docs-kicker">快速入门</span>
+                        <h1>鼓谱记谱指南</h1>
+                        <p>为现代鼓手设计的“文本优先”记谱方式。快速、易读、确定性强。</p>
+                    </div>
+                    <div class="docs-sections">
+                        <article class="docs-section-card" id="overview">
+                            <div class="docs-section-header">
+                                <h2>概览</h2>
+                                <p>DrumMark 为追求打字速度般的记谱体验的音乐家而设计。</p>
+                            </div>
+                            <div class="docs-description">
+                                <p>它遵循四个核心原则：<strong>人类优先</strong>（无需工具即可阅读）、<strong>确定性</strong>（输出结果一致）、<strong>可验证性</strong>（严格的错误报告）和<strong>渲染器无关</strong>。</p>
+                            </div>
+                            <div class="example-inject" data-example="overview"></div>
+                        </article>
+
+                        <article class="docs-section-card" id="architecture">
+                            <div class="docs-section-header">
+                                <h2>架构</h2>
+                                <p>从源码到记谱的编译流水线。</p>
+                            </div>
+                            <div class="docs-description">
+                                <p>流水线将 DSL 源码转换为 AST，然后转换为归一化的 IR，最后提供给 VexFlow 渲染器或 MusicXML 导出器。</p>
+                            </div>
+                            <div class="example-inject" data-example="architecture"></div>
+                        </article>
+
+                        <article class="docs-section-card" id="headers">
+                            <div class="docs-section-header">
+                                <h2>头部与元数据</h2>
+                                <p>定义乐谱的技术基础。</p>
+                            </div>
+                            <div class="docs-description">
+                                <ul>
+                                    <li><code>title</code>, <code>subtitle</code>, <code>composer</code>: 乐谱信息。</li>
+                                    <li><code>tempo</code>: 四分音符 BPM（默认：120）。</li>
+                                    <li><code>time</code>: 拍号（如 4/4, 6/8） - <strong>必填</strong>。</li>
+                                    <li><code>divisions</code>: 每小节的网格细分数 - <strong>必填</strong>。</li>
+                                    <li><code>grouping</code>: 拍子结构（如 2+2）。</li>
+                                </ul>
+                            </div>
+                            <div class="example-inject" data-example="headers"></div>
+                        </article>
+
+                        <article class="docs-section-card" id="tracks">
+                            <div class="docs-section-header">
+                                <h2>轨道与乐器</h2>
+                                <p>将音符映射到具体的鼓组组件。</p>
+                            </div>
+                            <div class="docs-description">
+                                <p>每种乐器都是一个轨道。支持的轨道 include <code>BD</code>, <code>SD</code>, <code>HH</code>, <code>RC</code>, <code>C</code>, <code>T1-T4</code>, <code>HF</code> 等。使用花括号 <code>{}</code> 开启路由作用域。</p>
+                            </div>
+                            <div class="example-inject" data-example="tracks"></div>
+                        </article>
+
+                        <article class="docs-section-card" id="tokens">
+                            <div class="docs-section-header">
+                                <h2>符号与节奏</h2>
+                                <p>记谱的基础原子单元。</p>
+                            </div>
+                            <div class="docs-description">
+                                <p>使用 <code>d</code>（击打）、<code>x</code>（镲片）和 <code>-</code>（休止）等符号构建模式。使用 <code>.</code> 表示附点，使用 <code>/</code> 表示时长减半。方括号 <code>[...]</code> 用于创建节奏组或连音符。</p>
+                            </div>
+                            <div class="example-inject" data-example="tokens"></div>
+                        </article>
+
+                        <article class="docs-section-card" id="modifiers">
+                            <div class="docs-section-header">
+                                <h2>修饰符与技巧</h2>
+                                <p>为击打添加细节和发音方式。</p>
+                            </div>
+                            <div class="docs-description">
+                                <p>应用 <code>:accent</code>, <code>:ghost</code>, <code>:flam</code>, <code>:open</code>, <code>:close</code>, <code>:roll</code> 等。修饰符会根据轨道合法性进行验证。</p>
+                            </div>
+                            <div class="example-inject" data-example="modifiers"></div>
+                        </article>
+
+                        <article class="docs-section-card" id="combined-hits">
+                            <div class="docs-section-header">
+                                <h2>组合击打</h2>
+                                <p>同时演奏多个声部。</p>
+                            </div>
+                            <div class="docs-description">
+                                <p>使用 <code>+</code> 组合来自不同轨道或乐器在同一节奏位置的击打。</p>
+                            </div>
+                            <div class="example-inject" data-example="combined-hits"></div>
+                        </article>
+
+                        <article class="docs-section-card" id="sticking">
+                            <div class="docs-section-header">
+                                <h2>粘滞 (Sticking)</h2>
+                                <p>为复杂模式分配左右手。</p>
+                            </div>
+                            <div class="docs-description">
+                                <p><code>ST</code> 轨道用于 <code>R</code> and <code>L</code> 标注。它们与同一起始位置的音符对齐。</p>
+                            </div>
+                            <div class="example-inject" data-example="sticking"></div>
+                        </article>
+
+                        <article class="docs-section-card" id="repeats">
+                            <div class="docs-section-header">
+                                <h2>重复与跳转</h2>
+                                <p>结构化导航和替代结尾。</p>
+                            </div>
+                            <div class="docs-description">
+                                <p>支持重复小节线 <code>|: :|</code>，房子 <code>|1.</code>，以及导航标记如 <code>@segno</code>, <code>@coda</code>, <code>@ds-al-coda</code>。</p>
+                            </div>
+                            <div class="example-inject" data-example="repeats"></div>
+                        </article>
+
+                        <article class="docs-section-card" id="multi-rest">
+                            <div class="docs-section-header">
+                                <h2>多小节休止</h2>
+                                <p>长段沉默的标准记谱方式。</p>
+                            </div>
+                            <div class="docs-description">
+                                <p>使用 <code>|--N--|</code> 指定跨越 N 个小节的休止。</p>
+                            </div>
+                            <div class="example-inject" data-example="multi-rest"></div>
+                        </article>
+
+                        <article class="docs-section-card" id="inline-repeat">
+                            <div class="docs-section-header">
+                                <h2>内联重复</h2>
+                                <p>快速就地复制小节。</p>
+                            </div>
+                            <div class="docs-description">
+                                <p>在小节后附加 <code>*N</code>，在编译期间将其重复 N 次。</p>
+                            </div>
+                            <div class="example-inject" data-example="inline-repeat"></div>
+                        </article>
+
+                        <article class="docs-section-card" id="validation">
+                            <div class="docs-section-header">
+                                <h2>校验</h2>
+                                <p>确保音乐和逻辑的一致性。</p>
+                            </div>
+                            <div class="docs-description">
+                                <p>编译器严格校验小节时长、分组对齐以及修饰符的合法性。</p>
+                            </div>
+                            <div class="example-inject" data-example="validation"></div>
+                        </article>
+
+                        <article class="docs-section-card" id="ir">
+                            <div class="docs-section-header">
+                                <h2>中间表示 (IR)</h2>
+                                <p>记谱背后的数据结构。</p>
+                            </div>
+                            <div class="docs-description">
+                                <p>基于 JSON 的格式，明确定义了包含归一化节奏事件的头部、轨道和小节。</p>
+                            </div>
+                            <div class="example-inject" data-example="ir"></div>
+                        </article>
+
+                        <article class="docs-section-card" id="musicxml">
+                            <div class="docs-section-header">
+                                <h2>MusicXML 导出</h2>
+                                <p>与标准记谱工具的互操作性。</p>
+                            </div>
+                            <div class="docs-description">
+                                <p>将您的 DrumMark 乐谱导出为 MusicXML，以便在 MuseScore、Sibelius 或 Finale 中打开。</p>
+                            </div>
+                            <div class="example-inject" data-example="musicxml"></div>
+                        </article>
+
+                        <article class="docs-section-card" id="full-example">
+                            <div class="docs-section-header">
+                                <h2>完整示例</h2>
+                                <p>集大成者。</p>
+                            </div>
+                            <div class="docs-description">
+                                <p>一个完整的 Funk 研究，展示了多轨道、修饰符和节奏组的应用。</p>
+                            </div>
+                            <div class="example-inject" data-example="full-example"></div>
+                        </article>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+    <script type="module" src="/src/docsVanilla.ts"></script>
+</body>
+</html>

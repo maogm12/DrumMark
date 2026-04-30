@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite --host",
     "build": "tsc -b && vite build && npm run prerender",
-    "prerender": "tsx prerender-node.ts",
+    "prerender": "tsx build-docs.ts",
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",

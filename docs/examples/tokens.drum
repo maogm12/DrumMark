@@ -1,2 +1,8 @@
-SD | d. d/ [2: d d d] d |
-HH | x x x x |
+title Hit Types
+time 4/4
+divisions 8
+grouping 4
+
+HH | x - x - x - x - |
+SD | s - d - s - d - |
+BD | b - b - b - b - |

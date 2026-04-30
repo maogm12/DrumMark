@@ -1,9 +1,15 @@
-title Funk Study No. 1
-tempo 96
+title Funk Groove
+subtitle Section A - Main Theme
+composer Your Name
+tempo 108
 time 4/4
 divisions 16
 grouping 2+2
 
-HH |: d - d - o - d - | d - d:close - d:accent - d - :|
-SD | - - d:cross - d - | d:rim:accent - [2: d d:flam d] - - - |
-BD | d - - - d - - - | d - d - - - d - |
+HH |: x x x x x x x x | x x x x x x o x |
+HF | - - - - - - p - | - - - - - - p - |
+SD | - - d - - - D - | - - d - - - D:g - |
+BD | b - - - b - - - | b - - - B - - - |
+C  | - - - - - - - c | - - - - - - - - |
+
+| d d d d *3 |

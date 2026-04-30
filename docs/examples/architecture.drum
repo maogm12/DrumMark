@@ -1,1 +1,8 @@
-DSL -> Parser -> Normalizer -> IR -> VexFlow/MusicXML
+title Flow Pattern
+time 4/4
+divisions 8
+grouping 4
+
+HH | x x x x x x x x |
+SD | - - d - - - d - |
+BD | b - - - b - - - |

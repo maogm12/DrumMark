@@ -1,2 +1,8 @@
-SD | d d d d |
-ST | R L R L |
+title Hand Coordination
+tempo 90
+time 4/4
+divisions 8
+grouping 4
+
+SD | d d d d d d d d |
+ST | R L R L R L R L |

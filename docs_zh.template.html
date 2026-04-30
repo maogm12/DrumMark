@@ -42,7 +42,6 @@
                     <div class="docs-nav-group">
                         <span class="docs-nav-group-title">简介</span>
                         <a href="#overview" class="docs-nav-link">概览</a>
-                        <a href="#architecture" class="docs-nav-link">架构</a>
                     </div>
                     <div class="docs-nav-group">
                         <span class="docs-nav-group-title">核心语法</span>
@@ -50,11 +49,12 @@
                         <a href="#tracks" class="docs-nav-link">轨道与乐器</a>
                         <a href="#tokens" class="docs-nav-link">符号与节奏</a>
                         <a href="#modifiers" class="docs-nav-link">修饰符与技巧</a>
+                        <a href="#groups" class="docs-nav-link">节奏组</a>
                         <a href="#combined-hits" class="docs-nav-link">组合击打</a>
-                        <a href="#sticking" class="docs-nav-link">粘滞 (Sticking)</a>
+                        <a href="#sticking" class="docs-nav-link">左右手</a>
                     </div>
                     <div class="docs-nav-group">
-                        <span class="docs-nav-group-title">结构</span>
+                        <span class="docs-nav-group-title">结构与流向</span>
                         <a href="#repeats" class="docs-nav-link">重复与跳转</a>
                         <a href="#multi-rest" class="docs-nav-link">多小节休止</a>
                         <a href="#inline-repeat" class="docs-nav-link">内联重复</a>
@@ -62,8 +62,6 @@
                     <div class="docs-nav-group">
                         <span class="docs-nav-group-title">高级进阶</span>
                         <a href="#validation" class="docs-nav-link">校验</a>
-                        <a href="#ir" class="docs-nav-link">中间表示 (IR)</a>
-                        <a href="#musicxml" class="docs-nav-link">MusicXML 导出</a>
                         <a href="#full-example" class="docs-nav-link">完整示例</a>
                     </div>
                 </nav>
@@ -71,9 +69,8 @@
             <main class="docs-main">
                 <div class="docs-page">
                     <div class="docs-hero">
-                        <span class="docs-kicker">快速入门</span>
                         <h1>鼓谱记谱指南</h1>
-                        <p>为现代鼓手设计的“文本优先”记谱方式。快速、易读、确定性强。</p>
+                        <p>为现代鼓手设计的"文本优先"记谱方式。</p>
                     </div>
                     <div class="docs-sections">
                         <article class="docs-section-card" id="overview">
@@ -82,20 +79,10 @@
                                 <p>DrumMark 为追求打字速度般的记谱体验的音乐家而设计。</p>
                             </div>
                             <div class="docs-description">
-                                <p>它遵循四个核心原则：<strong>人类优先</strong>（无需工具即可阅读）、<strong>确定性</strong>（输出结果一致）、<strong>可验证性</strong>（严格的错误报告）和<strong>渲染器无关</strong>。</p>
+                                <p>DrumMark 让您可以用简单的文本来编写鼓谱。您写下的就是您想要听到的声音，系统会把它转换成专业的乐谱。</p>
+                                <p>这个格式的设计原则是<strong>易于阅读</strong>——即使没有电脑，您也可以看懂 DrumMark 文档中的节奏。它也是<strong>可靠的</strong>：同样的输入总是产生同样的输出，您完全可以预期得到什么结果。</p>
                             </div>
                             <div class="example-inject" data-example="overview"></div>
-                        </article>
-
-                        <article class="docs-section-card" id="architecture">
-                            <div class="docs-section-header">
-                                <h2>架构</h2>
-                                <p>从源码到记谱的编译流水线。</p>
-                            </div>
-                            <div class="docs-description">
-                                <p>流水线将 DSL 源码转换为 AST，然后转换为归一化的 IR，最后提供给 VexFlow 渲染器或 MusicXML 导出器。</p>
-                            </div>
-                            <div class="example-inject" data-example="architecture"></div>
                         </article>
 
                         <article class="docs-section-card" id="headers">
@@ -104,13 +91,16 @@
                                 <p>定义乐谱的技术基础。</p>
                             </div>
                             <div class="docs-description">
-                                <ul>
-                                    <li><code>title</code>, <code>subtitle</code>, <code>composer</code>: 乐谱信息。</li>
-                                    <li><code>tempo</code>: 四分音符 BPM（默认：120）。</li>
-                                    <li><code>time</code>: 拍号（如 4/4, 6/8） - <strong>必填</strong>。</li>
-                                    <li><code>divisions</code>: 每小节的网格细分数 - <strong>必填</strong>。</li>
-                                    <li><code>grouping</code>: 拍子结构（如 2+2）。</li>
-                                </ul>
+                                <p>每首乐曲都以几个基本事实开头，这些信息告诉系统如何解读您的音乐。它们放在文档最顶部，在任何音符之前。</p>
+                                <div class="docs-section-body">
+                                    <ul class="docs-list">
+                                        <li><strong>title / subtitle / composer:</strong> 乐曲的名称和作者信息。这些会印在乐谱上。</li>
+                                        <li><strong>tempo:</strong> 四分音符 BPM。如不指定默认为 120。</li>
+                                        <li><strong>time:</strong> 拍号（如 <code>4/4</code>、<code>3/4</code>、<code>6/8</code>）。必填。</li>
+                                        <li><strong>divisions:</strong> 每小节的总网格单位。必填。数值越高节奏越精细——标准精度用 16，复杂切分用 32。</li>
+                                        <li><strong>grouping:</strong> 定义小节内的节拍结构。如省略，DrumMark 会根据拍号推断：<code>4/4</code> → <code>2+2</code>，<code>6/8</code> → <code>3+3</code>，<code>3/4</code> → <code>1+1+1</code>。不规则拍号如 <code>5/8</code> 必须显式指定 grouping。</li>
+                                    </ul>
+                                </div>
                             </div>
                             <div class="example-inject" data-example="headers"></div>
                         </article>
@@ -121,7 +111,24 @@
                                 <p>将音符映射到具体的鼓组组件。</p>
                             </div>
                             <div class="docs-description">
-                                <p>每种乐器都是一个轨道。支持的轨道 include <code>BD</code>, <code>SD</code>, <code>HH</code>, <code>RC</code>, <code>C</code>, <code>T1-T4</code>, <code>HF</code> 等。使用花括号 <code>{}</code> 开启路由作用域。</p>
+                                <p>乐谱中的每一行代表一个乐器。您先写乐器名称，然后跟一个竖线，后面是那个乐器在这个小节中的所有音符。</p>
+                                <div class="docs-section-body">
+                                    <table class="docs-table">
+                                        <thead><tr><th>名称</th><th>演奏什么</th><th>类别</th></tr></thead>
+                                        <tbody>
+                                            <tr><td><code>HH</code></td><td>踩镲——您用脚和鼓棒演奏的金属镲</td><td>镲片</td></tr>
+                                            <tr><td><code>HF</code></td><td>踩镲脚踏——您的脚跟或脚尖踩踏板的动作</td><td>踏板</td></tr>
+                                            <tr><td><code>SD</code></td><td>军鼓——底下有响线的那个主要的鼓</td><td>鼓</td></tr>
+                                            <tr><td><code>BD</code> / <code>BD2</code></td><td>底鼓——您用脚踩的大鼓，或双踩（两只脚）</td><td>鼓</td></tr>
+                                            <tr><td><code>T1</code> - <code>T4</code></td><td>通通鼓——安装在底鼓上的鼓，从高到低</td><td>鼓</td></tr>
+                                            <tr><td><code>RC</code> / <code>RC2</code></td><td>叮叮镲——您通常用右手演奏的大镲</td><td>镲片</td></tr>
+                                            <tr><td><code>C</code> / <code>C2</code></td><td>碎镲——在重要节拍上重击的点缀镲片</td><td>镲片</td></tr>
+                                            <tr><td><code>SPL</code> / <code>CHN</code></td><td>水镲和中国镲——特殊效果镲</td><td>镲片</td></tr>
+                                            <tr><td><code>CB</code> / <code>WB</code> / <code>CL</code></td><td>牛铃、木鱼和击掌——额外的打击乐声音</td><td>打击乐</td></tr>
+                                            <tr><td><code>ST</code></td><td>左右手标注——显示哪只手演奏哪个音符（R = 右手，L = 左手）</td><td>标注</td></tr>
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
                             <div class="example-inject" data-example="tracks"></div>
                         </article>
@@ -132,7 +139,20 @@
                                 <p>记谱的基础原子单元。</p>
                             </div>
                             <div class="docs-description">
-                                <p>使用 <code>d</code>（击打）、<code>x</code>（镲片）和 <code>-</code>（休止）等符号构建模式。使用 <code>.</code> 表示附点，使用 <code>/</code> 表示时长减半。方括号 <code>[...]</code> 用于创建节奏组或连音符。</p>
+                                <p>小节中的每个符号代表一次击打或一次休止。同样的符号在不同的乐器上会看起来不同——这就是为什么您不需要为每个音符都指定"镲片"或"鼓"。</p>
+                                <div class="docs-section-body">
+                                    <ul class="docs-list">
+                                        <li><code>d</code>: 普通击打。鼓上显示为实心音符头，镲上显示为 X。</li>
+                                        <li><code>-</code>: 休止符。</li>
+                                        <li><code>x</code>: 镲片击打，或军鼓 cross-stick（棒尖在边铁上，鼓面不发声）。</li>
+                                        <li><code>s</code> / <code>b</code> / <code>r</code> / <code>c</code>: 快捷写法，分别代表军鼓、底鼓、叮叮镲和碎镲。<code>s</code> 等同于 <code>SD:d</code>，<code>b</code> 等同于 <code>BD:d</code>。</li>
+                                        <li><code>o</code>: 开镲。</li>
+                                        <li><code>p</code>: 踩镲脚踏（只踩踏板，不用鼓棒）。</li>
+                                        <li><code>g</code>: 鬼音——轻柔，用括号标出。</li>
+                                        <li><code>t1</code> - <code>t4</code>: 通通鼓（从高到低）。</li>
+                                    </ul>
+                                    <p><strong>时值修饰：</strong> 尾部加圆点延长一半（附点），加斜杠缩短一半（四分音符为基准时等于十六分音符）。</p>
+                                </div>
                             </div>
                             <div class="example-inject" data-example="tokens"></div>
                         </article>
@@ -143,9 +163,42 @@
                                 <p>为击打添加细节和发音方式。</p>
                             </div>
                             <div class="docs-description">
-                                <p>应用 <code>:accent</code>, <code>:ghost</code>, <code>:flam</code>, <code>:open</code>, <code>:close</code>, <code>:roll</code> 等。修饰符会根据轨道合法性进行验证。</p>
+                                <p>在音符后面加冒号再写技巧名称，可以为您的击打添加额外的细节。如果需要，您可以链接多个技巧名称。</p>
+                                <div class="docs-section-body">
+                                    <ul class="docs-list">
+                                        <li><code>:accent</code>: 重音——加强攻击，渲染为 <code>&gt;</code>。</li>
+                                        <li><code>:ghost</code>: 鬼音——轻柔，用括号标出。</li>
+                                        <li><code>:flam</code>: Flam——主音前一个十六分音符的装饰音。</li>
+                                        <li><code>:drag</code>: Drag——主音前两个十六分音符的装饰音。</li>
+                                        <li><code>:roll</code>: 滚奏——在符干上画斜线表示。</li>
+                                        <li><code>:dead</code>: 闷音击打——小 x 音符头。</li>
+                                        <li><code>:open</code> / <code>:half-open</code>: 踩镲踏板状态（开放/半开）。</li>
+                                        <li><code>:bell</code>: 叮叮镲镲帽——敲击镲片中间凸起的部分。</li>
+                                        <li><code>:choke</code>: 闷音——敲击后立即用手按住镲片。</li>
+                                        <li><code>:rim</code> / <code>:cross</code>: 军鼓 rimshot 或 cross-stick。</li>
+                                    </ul>
+                                </div>
                             </div>
                             <div class="example-inject" data-example="modifiers"></div>
+                        </article>
+
+                        <article class="docs-section-card" id="groups">
+                            <div class="docs-section-header">
+                                <h2>节奏组</h2>
+                                <p>连音符和自定义节奏细分。</p>
+                            </div>
+                            <div class="docs-description">
+                                <p>有时您需要一个不符合常规网格的节奏——比如在两个拍的空间里放三个音符。使用方括号将音符分组，然后将它们拉伸或压缩以适应您的时间跨度。</p>
+                                <div class="docs-section-body">
+                                    <ul class="docs-list">
+                                        <li><code>[note1 note2 note3]</code>: 三个音符在一个拍的空间内均匀演奏。这是三连音的简写形式。</li>
+                                        <li><code>[3: note1 note2 note3]</code>: 同样的意思——三个音符在三个单位的时间内演奏。<code>3:</code> 表示"把这些塞进三个槽位"。</li>
+                                        <li><code>[5: note1 note2]</code>: 把两个音符塞进五个槽位——这会拉伸它们超过正常长度。</li>
+                                        <li><strong>嵌套节奏：</strong> 您可以把组放在组里面来实现非常复杂的模式，比如三连音里面的三连音。</li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <div class="example-inject" data-example="groups"></div>
                         </article>
 
                         <article class="docs-section-card" id="combined-hits">
@@ -154,18 +207,20 @@
                                 <p>同时演奏多个声部。</p>
                             </div>
                             <div class="docs-description">
-                                <p>使用 <code>+</code> 组合来自不同轨道或乐器在同一节奏位置的击打。</p>
+                                <p>当您想让多个乐器同时演奏时，用加号把它们写在一起。这叫做组合击打。两个音符同时开始，演奏时长也相同。</p>
+                                <p>比如，<code>x+s</code> 表示踩镲和军鼓一起演奏。您也可以组合三个或更多乐器：<code>x+s+b</code> 表示踩镲、军鼓和底鼓同时击打。</p>
                             </div>
                             <div class="example-inject" data-example="combined-hits"></div>
                         </article>
 
                         <article class="docs-section-card" id="sticking">
                             <div class="docs-section-header">
-                                <h2>粘滞 (Sticking)</h2>
+                                <h2>左右手</h2>
                                 <p>为复杂模式分配左右手。</p>
                             </div>
                             <div class="docs-description">
-                                <p><code>ST</code> 轨道用于 <code>R</code> and <code>L</code> 标注。它们与同一起始位置的音符对齐。</p>
+                                <p>当您需要显示哪只手演奏哪个音符时，使用 <code>ST</code> 行。写 <code>R</code> 表示右手，<code>L</code> 表示左手。它们与上方的音符对齐，这样演奏者就知道该怎么做。</p>
+                                <p>ST 标注对于复杂的节奏、爵士乐谱或手部动作很重要的音乐特别有用。</p>
                             </div>
                             <div class="example-inject" data-example="sticking"></div>
                         </article>
@@ -176,7 +231,15 @@
                                 <p>结构化导航和替代结尾。</p>
                             </div>
                             <div class="docs-description">
-                                <p>支持重复小节线 <code>|: :|</code>，房子 <code>|1.</code>，以及导航标记如 <code>@segno</code>, <code>@coda</code>, <code>@ds-al-coda</code>。</p>
+                                <p>DrumMark 支持所有标准的音乐重复和跳转方式：</p>
+                                <div class="docs-section-body">
+                                    <ul class="docs-list">
+                                        <li><strong>反复记号：</strong> <code>|:</code> 开始反复，<code>:|</code> 结束反复。当音乐到达结束记号时，它会返回到开始处。默认播放两次。</li>
+                                        <li><strong>跳过结尾：</strong> 反复之后可以有多个结尾。用 <code>|1.</code> 表示第一个结尾，<code>|2.</code> 表示第二个。演奏者先演奏结尾1，然后反复，再演奏结尾2。</li>
+                                        <li><strong>小节反复：</strong> 单独写一个 <code>%</code> 表示重复整个前一小节。用 <code>%%</code> 表示重复前两个小节。</li>
+                                        <li><strong>导航标记：</strong> 您可以用 <code>@segno</code>（segno记号）、<code>@coda</code>（coda记号）或 <code>@fine</code>（结束）标记位置。然后使用跳转如 <code>@da-capo</code>（返回开头）、<code>@dal-segno</code>（返回到segno）或 <code>@to-coda</code>（跳到coda）。</li>
+                                    </ul>
+                                </div>
                             </div>
                             <div class="example-inject" data-example="repeats"></div>
                         </article>
@@ -187,7 +250,7 @@
                                 <p>长段沉默的标准记谱方式。</p>
                             </div>
                             <div class="docs-description">
-                                <p>使用 <code>|--N--|</code> 指定跨越 N 个小节的休止。</p>
+                                <p>当整个乐队需要休止多个小节时，使用多小节休止。写一条横线，中间放小节数：<code>|--8--|</code> 表示"休止8小节"。这会渲染为一个单一的、高大的休止符号，横跨所有八个小节。</p>
                             </div>
                             <div class="example-inject" data-example="multi-rest"></div>
                         </article>
@@ -198,7 +261,7 @@
                                 <p>快速就地复制小节。</p>
                             </div>
                             <div class="docs-description">
-                                <p>在小节后附加 <code>*N</code>，在编译期间将其重复 N 次。</p>
+                                <p>当您需要同一小节连续出现多次时，您可以只写一次然后重复。在小节末尾写 <code>*4</code> 表示重复四次。这对于完全重复的模式很方便，比如一个重复的四小节乐句。</p>
                             </div>
                             <div class="example-inject" data-example="inline-repeat"></div>
                         </article>
@@ -209,31 +272,16 @@
                                 <p>确保音乐和逻辑的一致性。</p>
                             </div>
                             <div class="docs-description">
-                                <p>编译器严格校验小节时长、分组对齐以及修饰符的合法性。</p>
+                                <p>DrumMark 会检查您的音乐是否有错误，这样您就不会得到令人困惑或无法演奏的乐谱。系统会验证：</p>
+                                <div class="docs-section-body">
+                                    <ul class="docs-list">
+                                        <li><strong>小节长度：</strong> 小节中所有的音符和休止加起来必须正好等于规定的时长。如果您用了太多或太少，系统会告诉您。</li>
+                                        <li><strong>节拍边界：</strong> 音符不能"跨越"到下一个节拍区域。这可以保持节奏清晰易读。</li>
+                                        <li><strong>技巧规则：</strong> 有些技巧只在某些乐器上有效。比如，<code>:open</code> 只在踩镲上有意义——如果您把它写在军鼓上，DrumMark 会提醒您。</li>
+                                    </ul>
+                                </div>
                             </div>
                             <div class="example-inject" data-example="validation"></div>
-                        </article>
-
-                        <article class="docs-section-card" id="ir">
-                            <div class="docs-section-header">
-                                <h2>中间表示 (IR)</h2>
-                                <p>记谱背后的数据结构。</p>
-                            </div>
-                            <div class="docs-description">
-                                <p>基于 JSON 的格式，明确定义了包含归一化节奏事件的头部、轨道和小节。</p>
-                            </div>
-                            <div class="example-inject" data-example="ir"></div>
-                        </article>
-
-                        <article class="docs-section-card" id="musicxml">
-                            <div class="docs-section-header">
-                                <h2>MusicXML 导出</h2>
-                                <p>与标准记谱工具的互操作性。</p>
-                            </div>
-                            <div class="docs-description">
-                                <p>将您的 DrumMark 乐谱导出为 MusicXML，以便在 MuseScore、Sibelius 或 Finale 中打开。</p>
-                            </div>
-                            <div class="example-inject" data-example="musicxml"></div>
                         </article>
 
                         <article class="docs-section-card" id="full-example">
@@ -242,7 +290,7 @@
                                 <p>集大成者。</p>
                             </div>
                             <div class="docs-description">
-                                <p>一个完整的 Funk 研究，展示了多轨道、修饰符和节奏组的应用。</p>
+                                <p>一个完整的乐谱展示，包含多轨道、复杂修饰符和节奏组的应用。</p>
                             </div>
                             <div class="example-inject" data-example="full-example"></div>
                         </article>

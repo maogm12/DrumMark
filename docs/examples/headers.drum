@@ -1,4 +1,9 @@
-title Funk Study
+title Metadata Demo
+tempo 96
 time 4/4
 divisions 16
 grouping 2+2
+
+HH | x x x x x x x x |
+SD | - - d - - - d - |
+BD | b - - - b - - - |

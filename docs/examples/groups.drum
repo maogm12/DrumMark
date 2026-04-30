@@ -1,9 +1,8 @@
-title Basic Groove
-tempo 120
+title Rhythmic Groups
 time 4/4
 divisions 8
 grouping 4
 
 HH | x x x x x x x x |
-SD | - - d - - - d - |
+SD | - - [2: d d d] - - - - |
 BD | b - - - b - - - |

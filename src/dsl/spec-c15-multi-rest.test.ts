@@ -89,7 +89,7 @@ SD | --4-- |`);
     expect(score.measures).toHaveLength(1);
     expect(score.measures[0]).toMatchObject({
       generated: false,
-      barline: "regular",
+      barline: "final",
       multiRest: { count: 4 },
       multiRestCount: 4,
       events: [],

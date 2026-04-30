@@ -72,7 +72,7 @@ SD | - - - - | - - - - | %% |`);
     expect(score.measures[2]).toMatchObject({
       measureRepeat: { slashes: 2 },
       events: [],
-      barline: "regular",
+      barline: "final",
     });
   });
 });

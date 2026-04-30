@@ -70,7 +70,7 @@ BD | - - @ds-al-fine b - |`);
     expect(score.measures[1]).toMatchObject({
       marker: undefined,
       jump: "ds-al-fine",
-      barline: "regular",
+      barline: "final",
     });
   });
 

@@ -454,6 +454,14 @@ export function normalizeScoreAst(ast: ScoreAst): NormalizedScore {
     }
   }
 
+  // Ensure the last measure has a final barline if not otherwise specified
+  if (measures.length > 0) {
+    const lastMeasure = measures[measures.length - 1];
+    if (lastMeasure.barline === undefined || lastMeasure.barline === "regular") {
+      lastMeasure.barline = "final";
+    }
+  }
+
   const header: NormalizedHeader = {
     ...(ast.headers.title ? { title: ast.headers.title.value } : {}),
     ...(ast.headers.subtitle ? { subtitle: ast.headers.subtitle.value } : {}),

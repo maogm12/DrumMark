@@ -68,7 +68,7 @@ divisions 4
       generated: false,
     });
     expect(score.measures[1]).toMatchObject({
-      barline: "regular",
+      barline: "final",
       generated: false,
     });
   });
@@ -91,7 +91,7 @@ divisions 4
     });
     expect(score.measures[1].events).toEqual([]);
     expect(score.measures[2]).toMatchObject({
-      barline: "regular",
+      barline: "final",
       generated: false,
     });
   });

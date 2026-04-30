@@ -231,8 +231,8 @@ function drawHeader(context: any, score: NormalizedScore, width: number) {
     context.fillText(subtitle, width / 2 - context.measureText(subtitle).width / 2, 70);
   }
   if (composer) {
-    context.setFont("Arial", 12);
-    context.fillText(composer, width - context.measureText(composer).width - 50, 40);
+    context.setFont("Arial", 12, "normal");
+    context.fillText(composer, width - context.measureText(composer).width - 50, 70);
   }
   context.restore();
 }

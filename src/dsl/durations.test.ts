@@ -53,7 +53,7 @@ HH | x. -/ x x |`);
     // 3/8 * 8*4 = 12? No, 3/8 of a bar. 
     // Let's just check the relative types which are more stable.
     expect(xml).toContain("<type>quarter</type><dot/>");
-    expect(xml).toContain("<rest/>");
+    expect(xml).toContain("<rest><display-step>B</display-step><display-octave>4</display-octave></rest>");
     expect(xml).toContain("<type>eighth</type>");
   });
 

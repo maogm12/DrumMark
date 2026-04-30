@@ -31,7 +31,7 @@ export function drawPdfHeaderText({
       ? { text: subtitle, y: 680, size: 14, font: fonts.bold, align: "center" as const }
       : undefined,
     composer
-      ? { text: composer, y: 655, size: 12, font: fonts.bold, align: "right" as const }
+      ? { text: composer, y: 680, size: 12, font: fonts.bold, align: "right" as const }
       : undefined,
   ].filter((row): row is NonNullable<typeof row> => Boolean(row));
 

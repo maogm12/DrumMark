@@ -368,12 +368,19 @@ function createVexNotes(
   let tupletNotes: any[] = [];
   let activeTuplet: any = null;
 
+  function vfDuration(code: string, dots: number, rest = false): string {
+    return `${code}${"d".repeat(dots)}${rest ? "r" : ""}`;
+  }
+
   for (const entry of entries) {
     let note: any;
     const durInfo = durationCode(entry.kind === "rest" ? entry.duration : visualDurationForEvent(entry.events[0]!, entry.duration));
 
     if (entry.kind === "rest") {
-      note = new StaveNote({ keys: [voiceId === 1 ? "B/4" : "F/4"], duration: durInfo.code + "r" });
+      note = new StaveNote({
+        keys: [voiceId === 1 ? "B/4" : "F/4"],
+        duration: vfDuration(durInfo.code, durInfo.dots, true),
+      });
       if (hideRests && voiceId === 2) note.setStyle({ fillStyle: "transparent", strokeStyle: "transparent" });
       
       for (let d = 0; d < durInfo.dots; d++) {
@@ -394,7 +401,11 @@ function createVexNotes(
       const keys = instrumentSpecs.map(item => makeNoteKey(item.event, item.spec));
       const visualDur = visualDurationForEvent(firstEvent, entry.duration);
 
-      note = new StaveNote({ keys, duration: durInfo.code, autoStem: false });
+      note = new StaveNote({
+        keys,
+        duration: vfDuration(durInfo.code, durInfo.dots),
+        autoStem: false,
+      });
       note.setStemDirection(voiceId === 1 ? 1 : -1);
 
       for (let d = 0; d < durInfo.dots; d++) {

@@ -96,4 +96,34 @@ ST | R - L - | R - L - |`);
     expect(svg.match(/>R<\/text>/g)?.length ?? 0).toBeGreaterThanOrEqual(2);
     expect(svg.match(/>L<\/text>/g)?.length ?? 0).toBeGreaterThanOrEqual(2);
   });
+
+  it("keeps lower-voice dotted rests aligned to the correct eighth-note slot", async () => {
+    const score = buildNormalizedScore(`time 4/4
+divisions 8
+
+HH | x x x x x x x x |
+BD | p - - - p - - - |`);
+
+    const svg = await renderScoreToSvg(score, {
+      mode: "preview",
+      pagePadding: { top: 24, right: 18, bottom: 24, left: 18 },
+      pageScale: 1.0,
+      titleTopPadding: 3.6,
+      titleSubtitleGap: 1.2,
+      titleStaffGap: 2.8,
+      systemSpacing: 1,
+      hideVoice2Rests: false,
+    });
+
+    const hhNoteXs = [...svg.matchAll(/<text[^>]*x="([0-9.]+)" y="185"><\/text>/g)]
+      .map((match) => Number(match[1]));
+
+    const bdNoteXs = [...svg.matchAll(/<text[^>]*x="([0-9.]+)" y="225"><\/text>/g)]
+      .map((match) => Number(match[1]));
+
+    expect(hhNoteXs).toHaveLength(8);
+    expect(bdNoteXs).toHaveLength(2);
+    expect(bdNoteXs[0]).toBeCloseTo(hhNoteXs[0]!, 2);
+    expect(bdNoteXs[1]).toBeCloseTo(hhNoteXs[4]!, 2);
+  });
 });

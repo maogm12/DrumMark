@@ -174,3 +174,8 @@ If the app is served from a sub-directory (e.g., `/drum_notation/`):
 
 - **Keep sticking maps measure-relative:** normalized `ST` events carry measure-relative `start` values, but `buildVoiceEntries()` converts rendered note entries to absolute score time. If VexFlow aggregates sticking annotations by relative start, the lookup must use `entry.start - measureStart`, and the map should be built per measure rather than per system.
 - **Bar 1 can hide the bug:** in the first measure, absolute and relative starts are identical because `measureStart = 0`, so an incorrect lookup still appears to work. The failure only becomes visible from the second measure onward, where `ST` annotations silently disappear.
+
+## 29. VexFlow Dots Must Affect Ticks, Not Only Glyphs (2026-04-30)
+
+- **`Dot.buildAndAttach()` is visual-only for our current renderer path:** attaching dot modifiers after constructing a `StaveNote` does not retroactively change that note's intrinsic ticks. If the constructor only receives `duration: "q"` and a dot is added later, VexFlow still spaces it like a quarter note, not a dotted quarter.
+- **Pass dot count in the note duration itself:** for correct horizontal spacing, dotted notes and rests must be constructed with dotted duration syntax such as `qd`, `qdr`, or equivalent constructor dots metadata, and then the visual dot modifier can still be attached for rendering consistency.

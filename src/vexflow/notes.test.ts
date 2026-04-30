@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { NormalizedEvent } from "../dsl/types";
-import { getVexNotehead, instrumentForTrack, makeNoteKey } from "./notes";
+import { durationCode, getVexNotehead, instrumentForTrack, makeNoteKey } from "./notes";
 
 function makeEvent(track: NormalizedEvent["track"], modifiers: NormalizedEvent["modifiers"] = []): NormalizedEvent {
   return {
@@ -19,6 +19,14 @@ function makeEvent(track: NormalizedEvent["track"], modifiers: NormalizedEvent["
 }
 
 describe("vexflow note helpers", () => {
+  it("maps fractions to VexFlow duration codes and dots", () => {
+    expect(durationCode({ numerator: 1, denominator: 4 })).toEqual({ code: "q", dots: 0 });
+    expect(durationCode({ numerator: 3, denominator: 8 })).toEqual({ code: "q", dots: 1 });
+    expect(durationCode({ numerator: 7, denominator: 16 })).toEqual({ code: "q", dots: 2 });
+    expect(durationCode({ numerator: 1, denominator: 8 })).toEqual({ code: "8", dots: 0 });
+    expect(durationCode({ numerator: 3, denominator: 16 })).toEqual({ code: "8", dots: 1 });
+  });
+
   it("maps the expanded track registry to stave positions", () => {
     expect(instrumentForTrack("BD2")).toMatchObject({ displayStep: "E", displayOctave: 4 });
     expect(instrumentForTrack("T4")).toMatchObject({ displayStep: "G", displayOctave: 4 });

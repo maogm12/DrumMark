@@ -107,6 +107,20 @@ grouping 1+1+1+1+1+1+1+1+1
     expect(xNoteheads).toHaveLength(4);
   });
 
+  it("exports rests with explicit vertical positioning and dots", () => {
+    const score = buildNormalizedScore(`time 4/4
+divisions 8
+HH | x x x x x x x x |
+BD | d - - - d - - - |`);
+
+    const xml = buildMusicXml(score);
+    
+    // Voice 2 should have a dotted quarter rest (duration 12 if divisions=8)
+    expect(xml).toContain("<voice>2</voice>");
+    expect(xml).toContain("<type>quarter</type><dot/>");
+    expect(xml).toContain("<rest><display-step>F</display-step><display-octave>4</display-octave></rest>");
+  });
+
   it("exports canonical measure-level repeat, volta, and navigation metadata", () => {
     const score = buildNormalizedScore(`time 4/4
 divisions 4

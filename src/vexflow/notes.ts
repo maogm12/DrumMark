@@ -1,13 +1,22 @@
 import type { Fraction, NormalizedEvent, TrackName } from "../dsl/types";
 import { simplify, type InstrumentSpec } from "../dsl/logic";
 
-// Duration code mapping from Fraction to VexFlow duration string
-export function durationCode(duration: Fraction): string {
+// Duration information including VexFlow duration string and dot count
+export type DurationInfo = {
+  code: string;
+  dots: number;
+};
+
+// Duration code mapping from Fraction to VexFlow duration string and dots
+export function durationCode(duration: Fraction): DurationInfo {
   const normalized = simplify(duration);
   const base: Record<number, string> = {
     1: "w", 2: "h", 4: "q", 8: "8", 16: "16", 32: "32", 64: "64",
   };
+  
   let code = base[normalized.denominator];
+  let dots = 0;
+
   if (!code) {
     // For denominators not directly representable (e.g., 24 = 1/24 triplet),
     // find the next shorter duration that is beamable (denominator >= 8).
@@ -20,11 +29,22 @@ export function durationCode(duration: Fraction): string {
     }
     code = code ?? "q";
   }
+
   if (normalized.numerator === 3) {
     const baseDenom = normalized.denominator / 2;
-    if (base[baseDenom]) code = base[baseDenom] + "d";
+    if (base[baseDenom]) {
+      code = base[baseDenom];
+      dots = 1;
+    }
+  } else if (normalized.numerator === 7) {
+    const baseDenom = normalized.denominator / 4;
+    if (base[baseDenom]) {
+      code = base[baseDenom];
+      dots = 2;
+    }
   }
-  return code;
+  
+  return { code, dots };
 }
 
 export function instrumentForTrack(track: TrackName, _glyph?: string): InstrumentSpec {

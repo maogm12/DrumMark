@@ -307,9 +307,12 @@ function noteheadXml(event: NormalizedEvent, instrument: InstrumentSpec): string
 function restXml(duration: Fraction, divisions: number, voice: VoiceTrack): string {
   const shape = noteShapeForFraction(duration);
   const dots = Array.from({ length: shape.dots }, () => "<dot/>").join("");
+  const displayStep = voice.voice === 1 ? "B" : "F";
+  const displayOctave = "4";
+  
   return [
     "<note>",
-    "<rest/>",
+    `<rest><display-step>${displayStep}</display-step><display-octave>${displayOctave}</display-octave></rest>`,
     `<duration>${fractionToDivisions(duration, divisions)}</duration>`,
     `<voice>${voice.voice}</voice>`,
     `<type>${shape.type}</type>`,
@@ -320,9 +323,11 @@ function restXml(duration: Fraction, divisions: number, voice: VoiceTrack): stri
 }
 
 function wholeMeasureRestXml(divisions: number, voice: VoiceTrack): string {
+  const displayStep = voice.voice === 1 ? "B" : "F";
+  const displayOctave = "4";
   return [
     "<note>",
-    "<rest measure=\"yes\"/>",
+    `<rest measure="yes"><display-step>${displayStep}</display-step><display-octave>${displayOctave}</display-octave></rest>`,
     `<duration>${divisions}</duration>`,
     `<voice>${voice.voice}</voice>`,
     "<type>whole</type>",

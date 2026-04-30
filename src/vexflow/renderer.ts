@@ -33,6 +33,7 @@ const {
   Formatter, 
   Voice, 
   StaveNote, 
+  Dot,
   Beam, 
   Articulation, 
   GraceNote, 
@@ -370,10 +371,16 @@ function createVexNotes(
 
   for (const entry of entries) {
     let note: any;
+    const durInfo = durationCode(entry.kind === "rest" ? entry.duration : visualDurationForEvent(entry.events[0]!, entry.duration));
+
     if (entry.kind === "rest") {
-      note = new StaveNote({ keys: [voiceId === 1 ? "B/4" : "F/4"], duration: durationCode(entry.duration) + "r" });
+      note = new StaveNote({ keys: [voiceId === 1 ? "B/4" : "F/4"], duration: durInfo.code + "r" });
       if (hideRests && voiceId === 2) note.setStyle({ fillStyle: "transparent", strokeStyle: "transparent" });
       
+      for (let d = 0; d < durInfo.dots; d++) {
+        Dot.buildAndAttach([note], { all: true });
+      }
+
       // Fix: Encountering a rest should break the current beam
       if (currentBeamNotes.length > 1) allBeams.push(new Beam(currentBeamNotes));
       currentBeamNotes = [];
@@ -388,8 +395,12 @@ function createVexNotes(
       const keys = instrumentSpecs.map(item => makeNoteKey(item.event, item.spec));
       const visualDur = visualDurationForEvent(firstEvent, entry.duration);
 
-      note = new StaveNote({ keys, duration: durationCode(visualDur), autoStem: false });
+      note = new StaveNote({ keys, duration: durInfo.code, autoStem: false });
       note.setStemDirection(voiceId === 1 ? 1 : -1);
+
+      for (let d = 0; d < durInfo.dots; d++) {
+        Dot.buildAndAttach([note], { all: true });
+      }
 
       // Explicitly set notehead for each key in the chord if it's a raw SMuFL ID or ghost
       instrumentSpecs.forEach((item, index) => {

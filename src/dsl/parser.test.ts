@@ -278,4 +278,14 @@ grouping 1 + 1 + 1 + 1
     expect(doc.errors).toEqual([]);
     expect(doc.headers.grouping.values).toEqual([1, 1, 1, 1]);
   });
+
+  it("permits optional spaces in the time header", () => {
+    const doc = parseDocumentSkeleton(`time 4 / 4
+divisions 4
+
+| d |`);
+
+    expect(doc.errors).toEqual([]);
+    expect(doc.headers.time).toMatchObject({ beats: 4, beatUnit: 4 });
+  });
 });

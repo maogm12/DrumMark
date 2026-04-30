@@ -139,7 +139,7 @@ function parseHeaderLine(line: PreprocessedLine, headers: HeaderAccumulator, err
     return true;
   }
 
-  if (!isMetadataField(field) && field !== "grouping" && /\s/.test(value)) {
+  if (!isMetadataField(field) && field !== "grouping" && field !== "time" && /\s/.test(value)) {
     errors.push({
       line: line.lineNumber,
       column: 1,
@@ -198,7 +198,7 @@ function parseHeaderLine(line: PreprocessedLine, headers: HeaderAccumulator, err
         return true;
       }
 
-      const match = value.match(/^(\d+)\/(\d+)$/);
+      const match = value.match(/^(\d+)\s*\/\s*(\d+)$/);
 
       if (!match) {
         errors.push({

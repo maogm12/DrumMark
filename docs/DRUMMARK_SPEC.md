@@ -111,7 +111,7 @@ grouping <a+b+c+...>
 **Rules**:
 - `title`, `subtitle`, `composer`: optional, free text.
 - `tempo`: optional, positive integer, default `120`, interpreted as quarter-note BPM.
-- `time`: required, e.g. `4/4`, `3/4`, `6/8`.
+- `time`: required, e.g. `4/4` or `4 / 4`.
 - `divisions`: required, positive integer, defines the grid resolution per measure.
 - `grouping`: optional, e.g. `2+2` or `1 + 1 + 1 + 1`. Sum must equal numerator of `time`. Controls beat structure, default accents, beaming. Defaults inferred from `time` if absent.
 

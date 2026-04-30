@@ -513,12 +513,12 @@ export function highlightDslStatic(code: string): string {
     } as any);
     
     while (!stream.eol()) {
+      const pos = stream.pos;
       if (stream.eatSpace()) {
-        html += " ";
+        html += escapeHtml(line.slice(pos, stream.pos));
         continue;
       }
 
-      const pos = stream.pos;
       const token = drumMarkStreamParser.token(stream, state);
       const content = line.slice(pos, stream.pos);
 

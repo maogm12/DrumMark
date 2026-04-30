@@ -67,7 +67,7 @@ async function buildDocs(templatePath: string, outputPath: string) {
             continue;
         }
 
-        const dsl = fs.readFileSync(drumFile, 'utf8').trim();
+        const dsl = fs.readFileSync(drumFile, 'utf8');
         
         // 1. Highlight
         const highlightedDsl = highlightDslStatic(dsl);

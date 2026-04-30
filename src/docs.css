@@ -214,10 +214,7 @@
 
 .docs-section-body {
   margin-top: 24px;
-  display: flex;
-  flex-direction: row; /* Desktop: side-by-side */
-  gap: 24px;
-  align-items: flex-start;
+  display: block;
 }
 
 .docs-section-pane {
@@ -226,9 +223,6 @@
 }
 
 @media (max-width: 1100px) {
-  .docs-section-body {
-    flex-direction: column; /* Tablet/Mobile: stacked */
-  }
   .docs-section-pane {
     width: 100%;
   }

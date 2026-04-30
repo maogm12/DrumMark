@@ -136,20 +136,22 @@
                                 <p>Each line in your score represents one instrument. You write the instrument name followed by a vertical bar, then the notes for that instrument across the measure.</p>
                                 <div class="docs-section-body">
                                     <table class="docs-table">
-                                        <thead><tr><th>Name</th><th>What It Plays</th><th>Category</th></tr></thead>
+                                        <thead><tr><th>Name</th><th>What It Plays</th><th>Category</th><th>Notes</th></tr></thead>
                                         <tbody>
-                                            <tr><td><code>HH</code></td><td>Hi-hat (the metal cymbals you play with your foot and sticks)</td><td>Cymbal</td></tr>
-                                            <tr><td><code>HF</code></td><td>Hi-hat foot — the heel or toe of your foot pressing the pedal</td><td>Pedal</td></tr>
-                                            <tr><td><code>SD</code></td><td>Snare drum — the main drum with wires underneath</td><td>Drum</td></tr>
-                                            <tr><td><code>BD</code> / <code>BD2</code></td><td>Bass drum — the big drum you play with your foot, or both feet</td><td>Drum</td></tr>
-                                            <tr><td><code>T1</code> - <code>T4</code></td><td>Tom-toms — the drums mounted on the bass drum, from highest to lowest</td><td>Drum</td></tr>
-                                            <tr><td><code>RC</code> / <code>RC2</code></td><td>Ride cymbal — the larger cymbal you usually play with your right hand</td><td>Cymbal</td></tr>
-                                            <tr><td><code>C</code> / <code>C2</code></td><td>Crash cymbal — the accent cymbals you crash on important beats</td><td>Cymbal</td></tr>
-                                            <tr><td><code>SPL</code> / <code>CHN</code></td><td>Splash and China cymbals — special effect cymbals</td><td>Cymbal</td></tr>
-                                            <tr><td><code>CB</code> / <code>WB</code> / <code>CL</code></td><td>Cowbell, wood block, and hand claps — extra percussion sounds</td><td>Percussion</td></tr>
-                                            <tr><td><code>ST</code></td><td>Sticking — shows which hand plays which note (R = right, L = left)</td><td>Annotation</td></tr>
+                                            <tr><td><code>HH</code></td><td>Hi-hat (the metal cymbals you play with your foot and sticks)</td><td>Cymbal</td><td></td></tr>
+                                            <tr><td><code>HF</code></td><td>Hi-hat foot — the heel or toe of your foot pressing the pedal</td><td>Pedal</td><td></td></tr>
+                                            <tr><td><code>SD</code></td><td>Snare drum — the main drum with wires underneath</td><td>Drum</td><td></td></tr>
+                                            <tr><td><code>BD</code> / <code>BD2</code></td><td>Bass drum — the big drum you play with your foot, or both feet</td><td>Drum</td><td></td></tr>
+                                            <tr><td><code>T1</code> - <code>T4</code></td><td>Tom-toms — the drums mounted on the bass drum, from highest to lowest</td><td>Drum</td><td></td></tr>
+                                            <tr><td><code>RC</code> / <code>RC2</code></td><td>Ride cymbal — the larger cymbal you usually play with your right hand</td><td>Cymbal</td><td></td></tr>
+                                            <tr><td><code>C</code> / <code>C2</code></td><td>Crash cymbal — the accent cymbals you crash on important beats</td><td>Cymbal</td><td></td></tr>
+                                            <tr><td><code>SPL</code> / <code>CHN</code></td><td>Splash and China cymbals — special effect cymbals</td><td>Cymbal</td><td></td></tr>
+                                            <tr><td><code>CB</code> / <code>WB</code> / <code>CL</code></td><td>Cowbell, wood block, and hand claps — extra percussion sounds</td><td>Percussion</td><td></td></tr>
+                                            <tr><td><code>ST</code></td><td>Sticking — shows which hand plays which note (R = right, L = left)</td><td>Annotation</td><td></td></tr>
+                                            <tr><td><code>| ... |</code></td><td>Anonymous track line with no named track header</td><td>Routing Context</td><td>Bare context-dependent hits such as <code>d</code> and <code>x</code> default to <code>HH</code>.</td></tr>
                                         </tbody>
                                     </table>
+                                    <p>Anonymous tracks are useful when you want to write drum-tab style patterns quickly without repeating track names on every line. You can still route individual notes explicitly with prefixes like <code>SD:d</code>, <code>BD:d</code>, or <code>ST:R</code>, and you can mix those with combined hits such as <code>x+s+b</code>.</p>
                                 </div>
                             </div>
                             <div class="example-inject" data-example="tracks"></div>
@@ -161,19 +163,50 @@
                                 <p>The atomic building blocks of your notation.</p>
                             </div>
                             <div class="docs-description">
-                                <p>Each symbol in a measure represents one hit or one rest. The same symbol can look different depending on which instrument it's for — that's why you don't need to specify "cymbal" or "drum" for every note.</p>
+                                <p>Each symbol in a measure represents one hit or one rest. Many tokens resolve differently depending on track context, while the static magic tokens always target a fixed instrument from the spec.</p>
                                 <div class="docs-section-body">
-                                    <ul class="docs-list">
-                                        <li><code>d</code>: A normal hit. Shows as a filled notehead on drums, or an X on cymbals.</li>
-                                        <li><code>-</code>: A rest.</li>
-                                        <li><code>x</code>: A cymbal hit, or cross-stick on snare (stick tip on rim, head silent).</li>
-                                        <li><code>s</code> / <code>b</code> / <code>r</code> / <code>c</code>: Shortcuts for snare, bass drum, ride, and crash. <code>s</code> is equivalent to <code>SD:d</code>, <code>b</code> to <code>BD:d</code>.</li>
-                                        <li><code>o</code>: Open hi-hat.</li>
-                                        <li><code>p</code>: Pedal hi-hat (heel-down, no stick).</li>
-                                        <li><code>g</code>: Ghost note — soft, parenthesized.</li>
-                                        <li><code>t1</code> - <code>t4</code>: Tom hits (high to low).</li>
-                                    </ul>
-                                    <p><strong>Duration modifiers:</strong> A trailing dot extends the note by half its value (dotted). A slash halves it (sixteenth note when the base is a quarter).</p>
+                                    <table class="docs-table">
+                                        <thead>
+                                            <tr><th>Token</th><th>Resolves To</th><th>Notes</th></tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr><td><code>d</code> / <code>D</code></td><td>Local hit / local accented hit</td><td>Uses the current track. In cymbal tracks it renders as an X notehead.</td></tr>
+                                            <tr><td><code>-</code></td><td>Rest</td><td>One base rhythmic slot before any duration modifiers.</td></tr>
+                                            <tr><td><code>x</code></td><td>Context-aware hit</td><td>Cymbal hit in cymbal context, snare cross-stick in drum context, hi-hat hit in anonymous context.</td></tr>
+                                            <tr><td><code>s</code> / <code>S</code></td><td><code>SD:d</code> / <code>SD:d:accent</code></td><td>Static snare magic token.</td></tr>
+                                            <tr><td><code>b</code> / <code>B</code></td><td><code>BD:d</code> / <code>BD:d:accent</code></td><td>Static bass drum magic token.</td></tr>
+                                            <tr><td><code>b2</code> / <code>B2</code></td><td><code>BD2:d</code> / <code>BD2:d:accent</code></td><td>Secondary bass drum.</td></tr>
+                                            <tr><td><code>r</code> / <code>R</code></td><td><code>RC:d</code> / <code>RC:d:accent</code></td><td>Ride cymbal shortcut. Bare <code>R</code> means ride accent unless used in <code>ST</code>.</td></tr>
+                                            <tr><td><code>r2</code> / <code>R2</code></td><td><code>RC2:d</code> / <code>RC2:d:accent</code></td><td>Secondary ride cymbal.</td></tr>
+                                            <tr><td><code>c</code> / <code>C</code></td><td><code>C:d</code> / <code>C:d:accent</code></td><td>Crash cymbal shortcut.</td></tr>
+                                            <tr><td><code>c2</code> / <code>C2</code></td><td><code>C2:d</code> / <code>C2:d:accent</code></td><td>Secondary crash cymbal.</td></tr>
+                                            <tr><td><code>t1</code> / <code>T1</code></td><td><code>T1:d</code> / <code>T1:d:accent</code></td><td>High tom.</td></tr>
+                                            <tr><td><code>t2</code> / <code>T2</code></td><td><code>T2:d</code> / <code>T2:d:accent</code></td><td>High-mid tom.</td></tr>
+                                            <tr><td><code>t3</code> / <code>T3</code></td><td><code>T3:d</code> / <code>T3:d:accent</code></td><td>Low-mid tom.</td></tr>
+                                            <tr><td><code>t4</code> / <code>T4</code></td><td><code>T4:d</code> / <code>T4:d:accent</code></td><td>Low tom.</td></tr>
+                                            <tr><td><code>o</code> / <code>O</code></td><td><code>HH:d:open</code> / <code>HH:d:open:accent</code></td><td>Open hi-hat hit.</td></tr>
+                                            <tr><td><code>spl</code> / <code>SPL</code></td><td><code>SPL:d</code> / <code>SPL:d:accent</code></td><td>Splash cymbal.</td></tr>
+                                            <tr><td><code>chn</code> / <code>CHN</code></td><td><code>CHN:d</code> / <code>CHN:d:accent</code></td><td>China cymbal.</td></tr>
+                                            <tr><td><code>cb</code> / <code>CB</code></td><td><code>CB:d</code> / <code>CB:d:accent</code></td><td>Cowbell.</td></tr>
+                                            <tr><td><code>wb</code> / <code>WB</code></td><td><code>WB:d</code> / <code>WB:d:accent</code></td><td>Wood block.</td></tr>
+                                            <tr><td><code>cl</code> / <code>CL</code></td><td><code>CL:d</code> / <code>CL:d:accent</code></td><td>Hand clap.</td></tr>
+                                            <tr><td><code>p</code> / <code>P</code></td><td>Local pedal hit / accented local pedal hit</td><td>Usually hi-hat foot in anonymous context; resolves to the local pedal-capable track when available.</td></tr>
+                                            <tr><td><code>g</code> / <code>G</code></td><td>Local ghost hit / accented local ghost hit</td><td>Ghost-note shorthand. In anonymous context it falls back to snare ghosting.</td></tr>
+                                            <tr><td><code>R</code> / <code>L</code></td><td><code>ST</code> sticking</td><td>Only sticking inside the <code>ST</code> track or with an explicit <code>ST:</code> override.</td></tr>
+                                        </tbody>
+                                    </table>
+                                    <div class="docs-mini-table-container">
+                                        <table class="docs-table">
+                                            <thead>
+                                                <tr><th>Duration Modifier</th><th>Effect</th></tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr><td><code>.</code></td><td>Adds half of the current value. You can repeat it: <code>d.</code>, <code>d..</code>, <code>d...</code>.</td></tr>
+                                                <tr><td><code>/</code></td><td>Halves the current value. You can repeat it: <code>d/</code>, <code>d//</code>, <code>d///</code>.</td></tr>
+                                                <tr><td><code>./</code> combinations</td><td>Can be chained on the same token, such as <code>d./</code> or <code>d.///</code>.</td></tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
                                 </div>
                             </div>
                             <div class="example-inject" data-example="tokens"></div>

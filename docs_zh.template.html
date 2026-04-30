@@ -136,20 +136,22 @@
                                 <p>乐谱中的每一行代表一个乐器。您先写乐器名称，然后跟一个竖线，后面是那个乐器在这个小节中的所有音符。</p>
                                 <div class="docs-section-body">
                                     <table class="docs-table">
-                                        <thead><tr><th>名称</th><th>演奏什么</th><th>类别</th></tr></thead>
+                                        <thead><tr><th>名称</th><th>演奏什么</th><th>类别</th><th>说明</th></tr></thead>
                                         <tbody>
-                                            <tr><td><code>HH</code></td><td>踩镲——您用脚和鼓棒演奏的金属镲</td><td>镲片</td></tr>
-                                            <tr><td><code>HF</code></td><td>踩镲脚踏——您的脚跟或脚尖踩踏板的动作</td><td>踏板</td></tr>
-                                            <tr><td><code>SD</code></td><td>军鼓——底下有响线的那个主要的鼓</td><td>鼓</td></tr>
-                                            <tr><td><code>BD</code> / <code>BD2</code></td><td>底鼓——您用脚踩的大鼓，或双踩（两只脚）</td><td>鼓</td></tr>
-                                            <tr><td><code>T1</code> - <code>T4</code></td><td>通通鼓——安装在底鼓上的鼓，从高到低</td><td>鼓</td></tr>
-                                            <tr><td><code>RC</code> / <code>RC2</code></td><td>叮叮镲——您通常用右手演奏的大镲</td><td>镲片</td></tr>
-                                            <tr><td><code>C</code> / <code>C2</code></td><td>碎镲——在重要节拍上重击的点缀镲片</td><td>镲片</td></tr>
-                                            <tr><td><code>SPL</code> / <code>CHN</code></td><td>水镲和中国镲——特殊效果镲</td><td>镲片</td></tr>
-                                            <tr><td><code>CB</code> / <code>WB</code> / <code>CL</code></td><td>牛铃、木鱼和击掌——额外的打击乐声音</td><td>打击乐</td></tr>
-                                            <tr><td><code>ST</code></td><td>左右手标注——显示哪只手演奏哪个音符（R = 右手，L = 左手）</td><td>标注</td></tr>
+                                            <tr><td><code>HH</code></td><td>踩镲——您用脚和鼓棒演奏的金属镲</td><td>镲片</td><td></td></tr>
+                                            <tr><td><code>HF</code></td><td>踩镲脚踏——您的脚跟或脚尖踩踏板的动作</td><td>踏板</td><td></td></tr>
+                                            <tr><td><code>SD</code></td><td>军鼓——底下有响线的那个主要的鼓</td><td>鼓</td><td></td></tr>
+                                            <tr><td><code>BD</code> / <code>BD2</code></td><td>底鼓——您用脚踩的大鼓，或双踩（两只脚）</td><td>鼓</td><td></td></tr>
+                                            <tr><td><code>T1</code> - <code>T4</code></td><td>通通鼓——安装在底鼓上的鼓，从高到低</td><td>鼓</td><td></td></tr>
+                                            <tr><td><code>RC</code> / <code>RC2</code></td><td>叮叮镲——您通常用右手演奏的大镲</td><td>镲片</td><td></td></tr>
+                                            <tr><td><code>C</code> / <code>C2</code></td><td>碎镲——在重要节拍上重击的点缀镲片</td><td>镲片</td><td></td></tr>
+                                            <tr><td><code>SPL</code> / <code>CHN</code></td><td>水镲和中国镲——特殊效果镲</td><td>镲片</td><td></td></tr>
+                                            <tr><td><code>CB</code> / <code>WB</code> / <code>CL</code></td><td>牛铃、木鱼和击掌——额外的打击乐声音</td><td>打击乐</td><td></td></tr>
+                                            <tr><td><code>ST</code></td><td>左右手标注——显示哪只手演奏哪个音符（R = 右手，L = 左手）</td><td>标注</td><td></td></tr>
+                                            <tr><td><code>| ... |</code></td><td>没有轨道名表头的匿名轨道行</td><td>路由上下文</td><td>像 <code>d</code>、<code>x</code> 这样的裸上下文 token 默认路由到 <code>HH</code>。</td></tr>
                                         </tbody>
                                     </table>
+                                    <p>匿名轨适合在不想每一行都重复写轨道名时，像 drum tab 一样快速记谱。您仍然可以用 <code>SD:d</code>、<code>BD:d</code>、<code>ST:R</code> 这类前缀把单个音符显式路由到指定轨道，也可以和 <code>x+s+b</code> 这样的组合击打混写。</p>
                                 </div>
                             </div>
                             <div class="example-inject" data-example="tracks"></div>
@@ -161,19 +163,50 @@
                                 <p>记谱的基础原子单元。</p>
                             </div>
                             <div class="docs-description">
-                                <p>小节中的每个符号代表一次击打或一次休止。同样的符号在不同的乐器上会看起来不同——这就是为什么您不需要为每个音符都指定"镲片"或"鼓"。</p>
+                                <p>小节中的每个符号代表一次击打或一次休止。有些 token 会随轨道上下文变化，有些静态 magic token 则始终映射到规范里固定的乐器。</p>
                                 <div class="docs-section-body">
-                                    <ul class="docs-list">
-                                        <li><code>d</code>: 普通击打。鼓上显示为实心音符头，镲上显示为 X。</li>
-                                        <li><code>-</code>: 休止符。</li>
-                                        <li><code>x</code>: 镲片击打，或军鼓 cross-stick（棒尖在边铁上，鼓面不发声）。</li>
-                                        <li><code>s</code> / <code>b</code> / <code>r</code> / <code>c</code>: 快捷写法，分别代表军鼓、底鼓、叮叮镲和碎镲。<code>s</code> 等同于 <code>SD:d</code>，<code>b</code> 等同于 <code>BD:d</code>。</li>
-                                        <li><code>o</code>: 开镲。</li>
-                                        <li><code>p</code>: 踩镲脚踏（只踩踏板，不用鼓棒）。</li>
-                                        <li><code>g</code>: 鬼音——轻柔，用括号标出。</li>
-                                        <li><code>t1</code> - <code>t4</code>: 通通鼓（从高到低）。</li>
-                                    </ul>
-                                    <p><strong>时值修饰：</strong> 尾部加圆点延长一半（附点），加斜杠缩短一半（四分音符为基准时等于十六分音符）。</p>
+                                    <table class="docs-table">
+                                        <thead>
+                                            <tr><th>Token</th><th>解析结果</th><th>说明</th></tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr><td><code>d</code> / <code>D</code></td><td>本轨普通击打 / 本轨重音击打</td><td>使用当前轨道；在镲类轨道上会渲染成 X 音头。</td></tr>
+                                            <tr><td><code>-</code></td><td>休止</td><td>基础时值占一个 rhythmic slot。</td></tr>
+                                            <tr><td><code>x</code></td><td>上下文相关击打</td><td>在镲类上下文中是镲片击打，在鼓类上下文中是军鼓 cross-stick，在匿名轨默认是踩镲击打。</td></tr>
+                                            <tr><td><code>s</code> / <code>S</code></td><td><code>SD:d</code> / <code>SD:d:accent</code></td><td>静态军鼓 magic token。</td></tr>
+                                            <tr><td><code>b</code> / <code>B</code></td><td><code>BD:d</code> / <code>BD:d:accent</code></td><td>静态底鼓 magic token。</td></tr>
+                                            <tr><td><code>b2</code> / <code>B2</code></td><td><code>BD2:d</code> / <code>BD2:d:accent</code></td><td>第二底鼓。</td></tr>
+                                            <tr><td><code>r</code> / <code>R</code></td><td><code>RC:d</code> / <code>RC:d:accent</code></td><td>叮叮镲快捷写法；裸 <code>R</code> 只有在 <code>ST</code> 中才表示 sticking。</td></tr>
+                                            <tr><td><code>r2</code> / <code>R2</code></td><td><code>RC2:d</code> / <code>RC2:d:accent</code></td><td>第二叮叮镲。</td></tr>
+                                            <tr><td><code>c</code> / <code>C</code></td><td><code>C:d</code> / <code>C:d:accent</code></td><td>碎镲快捷写法。</td></tr>
+                                            <tr><td><code>c2</code> / <code>C2</code></td><td><code>C2:d</code> / <code>C2:d:accent</code></td><td>第二碎镲。</td></tr>
+                                            <tr><td><code>t1</code> / <code>T1</code></td><td><code>T1:d</code> / <code>T1:d:accent</code></td><td>高音通通鼓。</td></tr>
+                                            <tr><td><code>t2</code> / <code>T2</code></td><td><code>T2:d</code> / <code>T2:d:accent</code></td><td>高中音通通鼓。</td></tr>
+                                            <tr><td><code>t3</code> / <code>T3</code></td><td><code>T3:d</code> / <code>T3:d:accent</code></td><td>低中音通通鼓。</td></tr>
+                                            <tr><td><code>t4</code> / <code>T4</code></td><td><code>T4:d</code> / <code>T4:d:accent</code></td><td>低音通通鼓。</td></tr>
+                                            <tr><td><code>o</code> / <code>O</code></td><td><code>HH:d:open</code> / <code>HH:d:open:accent</code></td><td>开镲击打。</td></tr>
+                                            <tr><td><code>spl</code> / <code>SPL</code></td><td><code>SPL:d</code> / <code>SPL:d:accent</code></td><td>Splash 镲。</td></tr>
+                                            <tr><td><code>chn</code> / <code>CHN</code></td><td><code>CHN:d</code> / <code>CHN:d:accent</code></td><td>China 镲。</td></tr>
+                                            <tr><td><code>cb</code> / <code>CB</code></td><td><code>CB:d</code> / <code>CB:d:accent</code></td><td>牛铃。</td></tr>
+                                            <tr><td><code>wb</code> / <code>WB</code></td><td><code>WB:d</code> / <code>WB:d:accent</code></td><td>木鱼 / wood block。</td></tr>
+                                            <tr><td><code>cl</code> / <code>CL</code></td><td><code>CL:d</code> / <code>CL:d:accent</code></td><td>拍手。</td></tr>
+                                            <tr><td><code>p</code> / <code>P</code></td><td>本轨踏板击打 / 本轨重音踏板击打</td><td>匿名轨里通常回退为踩镲脚踏；在支持踏板的本地轨道中按本轨解析。</td></tr>
+                                            <tr><td><code>g</code> / <code>G</code></td><td>本轨鬼音 / 本轨重音鬼音</td><td>鬼音快捷写法；匿名轨默认回退到军鼓鬼音。</td></tr>
+                                            <tr><td><code>R</code> / <code>L</code></td><td><code>ST</code> 左右手标注</td><td>只有在 <code>ST</code> 轨道中，或使用显式 <code>ST:</code> 覆盖时，才表示 sticking。</td></tr>
+                                        </tbody>
+                                    </table>
+                                    <div class="docs-mini-table-container">
+                                        <table class="docs-table">
+                                            <thead>
+                                                <tr><th>时值修饰</th><th>效果</th></tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr><td><code>.</code></td><td>在当前时值基础上增加一半。可重复使用，如 <code>d.</code>、<code>d..</code>、<code>d...</code>。</td></tr>
+                                                <tr><td><code>/</code></td><td>将当前时值减半。可重复使用，如 <code>d/</code>、<code>d//</code>、<code>d///</code>。</td></tr>
+                                                <tr><td><code>./</code> 组合</td><td>可以链式写在同一个 token 后面，例如 <code>d./</code> 或 <code>d.///</code>。</td></tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
                                 </div>
                             </div>
                             <div class="example-inject" data-example="tokens"></div>

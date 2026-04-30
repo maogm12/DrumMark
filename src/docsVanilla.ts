@@ -52,7 +52,7 @@ async function initDocs() {
   const codeBlocks = document.querySelectorAll<HTMLElement>(".dsl-code-block");
   
   for (const block of codeBlocks) {
-    const dsl = block.textContent?.trim() || "";
+    const dsl = block.textContent ?? "";
     const container = block.closest('.docs-section-card')?.querySelector(".staff-preview-container");
     
     if (dsl && container) {

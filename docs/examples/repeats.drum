@@ -1,6 +1,16 @@
 title Repeat Structure
 time 4/4
 divisions 8
-grouping 4
+grouping 1+1+1+1
 
-HH |: x x x x |1. x x x x :|2. x x x x |
+HH |: x x x x x x x x |1. x - x - x - x - :|2. x x - - x x - - |
+SD |: - - s - - - s - |1. - - s - - - s - :|2. - - - - s - - - |
+BD |: b - - - b - - - |1. b - - - b - - - :|2. b - b - b - b - |
+
+HH | x - x - x - x - | % | %% |
+SD | - - s - - - s - | % | %% |
+BD | b - - - b - - - | % | %% |
+
+HH | @segno x x x x x x x x | x - x - @to-coda x - x - | @coda x x x x @fine - - - |
+SD | - - s - - - s - | - - s - - - s - | - - s - - - - - |
+BD | b - - - b - - - | b - - - b - - - | b - - - b - - - |

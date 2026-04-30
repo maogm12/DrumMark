@@ -179,3 +179,9 @@ If the app is served from a sub-directory (e.g., `/drum_notation/`):
 
 - **`Dot.buildAndAttach()` is visual-only for our current renderer path:** attaching dot modifiers after constructing a `StaveNote` does not retroactively change that note's intrinsic ticks. If the constructor only receives `duration: "q"` and a dot is added later, VexFlow still spaces it like a quarter note, not a dotted quarter.
 - **Pass dot count in the note duration itself:** for correct horizontal spacing, dotted notes and rests must be constructed with dotted duration syntax such as `qd`, `qdr`, or equivalent constructor dots metadata, and then the visual dot modifier can still be attached for rendering consistency.
+
+## 30. Docs Coverage Learnings (2026-04-30)
+
+- **User-facing docs were missing several spec-critical syntax layers:** the biggest gaps were resolution priority, anonymous-track routing semantics, `TRACK { ... }` scopes, auto-registration/auto-fill, group legality boundaries, and the full repeat/navigation rule surface.
+- **Docs for drummers should describe notation intent, not basic instrument education:** phrasing works better when it assumes the reader already understands barlines, grouping, articulations, grace-note figures, and sticking, and focuses on how DrumMark encodes those concepts textually.
+- **Header syntax needs explicit callouts because prose tends to drift into pseudo-YAML:** user docs should state clearly that headers use `field value` form, optional whitespace around `time` and `grouping`, and that `grouping` sums must match the meter numerator.

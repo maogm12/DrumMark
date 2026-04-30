@@ -83,11 +83,18 @@
                         <article class="docs-section-card" id="overview">
                             <div class="docs-section-header">
                                 <h2>概览</h2>
-                                <p>DrumMark 为追求打字速度般的记谱体验的音乐家而设计。</p>
+                                <p>DrumMark 面向已经懂拍号、分组、装饰音和常见套鼓记谱的鼓手。</p>
                             </div>
                             <div class="docs-description">
-                                <p>DrumMark 让您可以用简单的文本来编写鼓谱。您写下的就是您想要听到的声音，系统会把它转换成专业的乐谱。</p>
-                                <p>这个格式的设计原则是<strong>易于阅读</strong>——即使没有电脑，您也可以看懂 DrumMark 文档中的节奏。它也是<strong>可靠的</strong>：同样的输入总是产生同样的输出，您完全可以预期得到什么结果。</p>
+                                <p>DrumMark 用纯文本描述套鼓谱面。您写的是节奏、分工和发音法，系统再把它编译成标准鼓谱。</p>
+                                <p>它的目标不是替代乐理，而是把鼓手已经熟悉的拍号、分拍、重音、装饰音、反复和 sticking，用尽量短的文本稳定表达出来。</p>
+                                <div class="docs-section-body">
+                                    <ul class="docs-list">
+                                        <li><strong>注释：</strong><code>#</code> 之后到行尾都是注释。</li>
+                                        <li><strong>空白：</strong> 空格和 Tab 只负责分隔 token，不改变节奏含义；<code>HH|d-d-|</code> 与 <code>HH | d - d - |</code> 等价。</li>
+                                        <li><strong>段落：</strong> 头部之后，空行分段。段落只影响排版换系统，不改变音乐时间线。</li>
+                                    </ul>
+                                </div>
                             </div>
                             <div class="example-inject" data-example="overview"></div>
                         </article>
@@ -98,7 +105,7 @@
                                 <p>定义乐谱的技术基础。</p>
                             </div>
                             <div class="docs-description">
-                                <p>每首乐曲都以几个基本事实开头，这些信息告诉系统如何解读您的音乐。它们放在文档最顶部，在任何音符之前。</p>
+                                <p>头部写在所有谱面内容之前，用来定义拍号、内部分拍和输入分辨率。</p>
                                 <div class="docs-section-body">
                                     <ul class="docs-list">
                                         <li><strong>title / subtitle / composer:</strong> 乐曲的名称和作者信息。这些会印在乐谱上。</li>
@@ -119,8 +126,13 @@
                                                     </tbody>
                                                 </table>
                                             </div>
-                                            <p>对于不规则拍号如 <code>5/8</code> 或 <code>7/8</code>，必须显式指定 <code>grouping</code>（例如 <code>grouping: 3+2</code>）。</p>
+                                            <p>对于不规则拍号如 <code>5/8</code> 或 <code>7/8</code>，必须显式指定 <code>grouping</code>（例如 <code>grouping 3+2</code>）。</p>
                                         </li>
+                                    </ul>
+                                    <ul class="docs-list">
+                                        <li><strong>语法形式：</strong> 头部是 <code>字段名 空格 值</code>，不是 JSON，也不需要逗号。可写 <code>time 4/4</code>，也可写 <code>time 4 / 4</code>。</li>
+                                        <li><strong>grouping 规则：</strong> 显式写出的每一组相加必须严格等于拍号分子。比如 <code>7/8</code> 可以写 <code>grouping 3+2+2</code>。</li>
+                                        <li><strong>divisions 的意义：</strong> 它定义每小节输入网格总数。校验时所有 token 的时值总和必须刚好等于这个总网格。</li>
                                     </ul>
                                 </div>
                             </div>
@@ -133,25 +145,36 @@
                                 <p>将音符映射到具体的鼓组组件。</p>
                             </div>
                             <div class="docs-description">
-                                <p>乐谱中的每一行代表一个乐器。您先写乐器名称，然后跟一个竖线，后面是那个乐器在这个小节中的所有音符。</p>
+                                <p>命名轨写法是 <code>&lt;TRACK&gt; | ... |</code>。每一行给出该轨在当前段落中的小节内容。</p>
                                 <div class="docs-section-body">
                                     <table class="docs-table">
-                                        <thead><tr><th>名称</th><th>演奏什么</th><th>类别</th><th>说明</th></tr></thead>
+                                        <thead><tr><th>名称</th><th>谱面对象</th><th>类别</th></tr></thead>
                                         <tbody>
-                                            <tr><td><code>HH</code></td><td>踩镲——您用脚和鼓棒演奏的金属镲</td><td>镲片</td><td></td></tr>
-                                            <tr><td><code>HF</code></td><td>踩镲脚踏——您的脚跟或脚尖踩踏板的动作</td><td>踏板</td><td></td></tr>
-                                            <tr><td><code>SD</code></td><td>军鼓——底下有响线的那个主要的鼓</td><td>鼓</td><td></td></tr>
-                                            <tr><td><code>BD</code> / <code>BD2</code></td><td>底鼓——您用脚踩的大鼓，或双踩（两只脚）</td><td>鼓</td><td></td></tr>
-                                            <tr><td><code>T1</code> - <code>T4</code></td><td>通通鼓——安装在底鼓上的鼓，从高到低</td><td>鼓</td><td></td></tr>
-                                            <tr><td><code>RC</code> / <code>RC2</code></td><td>叮叮镲——您通常用右手演奏的大镲</td><td>镲片</td><td></td></tr>
-                                            <tr><td><code>C</code> / <code>C2</code></td><td>碎镲——在重要节拍上重击的点缀镲片</td><td>镲片</td><td></td></tr>
-                                            <tr><td><code>SPL</code> / <code>CHN</code></td><td>水镲和中国镲——特殊效果镲</td><td>镲片</td><td></td></tr>
-                                            <tr><td><code>CB</code> / <code>WB</code> / <code>CL</code></td><td>牛铃、木鱼和击掌——额外的打击乐声音</td><td>打击乐</td><td></td></tr>
-                                            <tr><td><code>ST</code></td><td>左右手标注——显示哪只手演奏哪个音符（R = 右手，L = 左手）</td><td>标注</td><td></td></tr>
-                                            <tr><td><code>| ... |</code></td><td>没有轨道名表头的匿名轨道行</td><td>路由上下文</td><td>像 <code>d</code>、<code>x</code> 这样的裸上下文 token 默认路由到 <code>HH</code>。</td></tr>
+                                            <tr><td><code>HH</code></td><td>Hi-hat 手击</td><td>镲片</td></tr>
+                                            <tr><td><code>HF</code></td><td>Hi-hat foot</td><td>踏板</td></tr>
+                                            <tr><td><code>SD</code></td><td>Snare</td><td>鼓</td></tr>
+                                            <tr><td><code>BD</code><br><code>BD2</code></td><td>Bass drum<br>Second bass drum</td><td>鼓</td></tr>
+                                            <tr><td><code>T1</code><br><code>T2</code><br><code>T3</code><br><code>T4</code></td><td>Tom 1<br>Tom 2<br>Tom 3<br>Tom 4<br>由高到低</td><td>鼓</td></tr>
+                                            <tr><td><code>RC</code><br><code>RC2</code></td><td>Ride cymbal<br>Second ride cymbal</td><td>镲片</td></tr>
+                                            <tr><td><code>C</code><br><code>C2</code></td><td>Crash cymbal<br>Second crash cymbal</td><td>镲片</td></tr>
+                                            <tr><td><code>SPL</code><br><code>CHN</code></td><td>Splash<br>China</td><td>镲片</td></tr>
+                                            <tr><td><code>CB</code><br><code>WB</code><br><code>CL</code></td><td>Cowbell<br>Wood block<br>Clap</td><td>打击乐</td></tr>
                                         </tbody>
                                     </table>
-                                    <p>匿名轨适合在不想每一行都重复写轨道名时，像 drum tab 一样快速记谱。您仍然可以用 <code>SD:d</code>、<code>BD:d</code>、<code>ST:R</code> 这类前缀把单个音符显式路由到指定轨道，也可以和 <code>x+s+b</code> 这样的组合击打混写。</p>
+                                    <table class="docs-table">
+                                        <thead><tr><th>特殊轨道</th><th>用途</th><th>语义</th></tr></thead>
+                                        <tbody>
+                                            <tr><td><code>ST</code></td><td>Sticking 标注</td><td><code>R</code> 和 <code>L</code> 只在此轨或显式 <code>ST:</code> 覆盖中表示左右手。</td></tr>
+                                            <tr><td><code>| ... |</code></td><td>匿名轨</td><td>裸上下文 token 按匿名轨上下文解析；未指定时默认落到 <code>HH</code>。</td></tr>
+                                        </tbody>
+                                    </table>
+                                    <ul class="docs-list">
+                                        <li><strong>匿名轨：</strong> 直接以小节线开头，例如 <code>| x - s - x - s |</code>。适合像 drum tab 一样快速录入。</li>
+                                        <li><strong>显式召唤：</strong> 用 <code>Track:token</code> 强制把单个音符送到指定轨道，例如 <code>SD:d</code>、<code>BD:d</code>、<code>RC:d:bell</code>、<code>ST:R</code>。</li>
+                                        <li><strong>路由块：</strong> 用 <code>TRACK { ... }</code> 批量指定一段内容的目标轨道，例如 <code>| RC { x x x x } |</code> 或 <code>SD { [3: d d d] }</code>。</li>
+                                        <li><strong>自动注册：</strong> 轨道只要在行表头、路由块或 <code>Track:</code> 前缀里出现过，就会进入整首谱的轨道列表，并按首次出现顺序固定下来。</li>
+                                        <li><strong>自动补休止：</strong> 某个已注册轨道如果在后面的段落里没写，系统会自动补整小节休止。</li>
+                                    </ul>
                                 </div>
                             </div>
                             <div class="example-inject" data-example="tracks"></div>
@@ -163,38 +186,51 @@
                                 <p>记谱的基础原子单元。</p>
                             </div>
                             <div class="docs-description">
-                                <p>小节中的每个符号代表一次击打或一次休止。有些 token 会随轨道上下文变化，有些静态 magic token 则始终映射到规范里固定的乐器。</p>
+                                <p>token 是 DrumMark 的最小记谱单位。它既可以表示击打，也可以表示休止，还可以携带时值修饰与路由信息。</p>
                                 <div class="docs-section-body">
-                                    <table class="docs-table">
+                                    <table class="docs-table docs-table-compact">
                                         <thead>
-                                            <tr><th>Token</th><th>解析结果</th><th>说明</th></tr>
+                                            <tr><th>基础 Token</th><th>解析结果</th><th>说明</th></tr>
                                         </thead>
                                         <tbody>
-                                            <tr><td><code>d</code> / <code>D</code></td><td>本轨普通击打 / 本轨重音击打</td><td>使用当前轨道；在镲类轨道上会渲染成 X 音头。</td></tr>
+                                            <tr><td><code>d</code></td><td>本轨普通击打</td><td>使用当前轨道；在镲类轨道上会渲染成 X 音头。</td></tr>
+                                            <tr><td><code>D</code></td><td>本轨重音击打</td><td>和 <code>d</code> 相同，但自动附带 <code>:accent</code> 语义。</td></tr>
                                             <tr><td><code>-</code></td><td>休止</td><td>基础时值占一个 rhythmic slot。</td></tr>
-                                            <tr><td><code>x</code></td><td>上下文相关击打</td><td>在镲类上下文中是镲片击打，在鼓类上下文中是军鼓 cross-stick，在匿名轨默认是踩镲击打。</td></tr>
-                                            <tr><td><code>s</code> / <code>S</code></td><td><code>SD:d</code> / <code>SD:d:accent</code></td><td>静态军鼓 magic token。</td></tr>
-                                            <tr><td><code>b</code> / <code>B</code></td><td><code>BD:d</code> / <code>BD:d:accent</code></td><td>静态底鼓 magic token。</td></tr>
-                                            <tr><td><code>b2</code> / <code>B2</code></td><td><code>BD2:d</code> / <code>BD2:d:accent</code></td><td>第二底鼓。</td></tr>
-                                            <tr><td><code>r</code> / <code>R</code></td><td><code>RC:d</code> / <code>RC:d:accent</code></td><td>叮叮镲快捷写法；裸 <code>R</code> 只有在 <code>ST</code> 中才表示 sticking。</td></tr>
-                                            <tr><td><code>r2</code> / <code>R2</code></td><td><code>RC2:d</code> / <code>RC2:d:accent</code></td><td>第二叮叮镲。</td></tr>
-                                            <tr><td><code>c</code> / <code>C</code></td><td><code>C:d</code> / <code>C:d:accent</code></td><td>碎镲快捷写法。</td></tr>
-                                            <tr><td><code>c2</code> / <code>C2</code></td><td><code>C2:d</code> / <code>C2:d:accent</code></td><td>第二碎镲。</td></tr>
-                                            <tr><td><code>t1</code> / <code>T1</code></td><td><code>T1:d</code> / <code>T1:d:accent</code></td><td>高音通通鼓。</td></tr>
-                                            <tr><td><code>t2</code> / <code>T2</code></td><td><code>T2:d</code> / <code>T2:d:accent</code></td><td>高中音通通鼓。</td></tr>
-                                            <tr><td><code>t3</code> / <code>T3</code></td><td><code>T3:d</code> / <code>T3:d:accent</code></td><td>低中音通通鼓。</td></tr>
-                                            <tr><td><code>t4</code> / <code>T4</code></td><td><code>T4:d</code> / <code>T4:d:accent</code></td><td>低音通通鼓。</td></tr>
-                                            <tr><td><code>o</code> / <code>O</code></td><td><code>HH:d:open</code> / <code>HH:d:open:accent</code></td><td>开镲击打。</td></tr>
-                                            <tr><td><code>spl</code> / <code>SPL</code></td><td><code>SPL:d</code> / <code>SPL:d:accent</code></td><td>Splash 镲。</td></tr>
-                                            <tr><td><code>chn</code> / <code>CHN</code></td><td><code>CHN:d</code> / <code>CHN:d:accent</code></td><td>China 镲。</td></tr>
-                                            <tr><td><code>cb</code> / <code>CB</code></td><td><code>CB:d</code> / <code>CB:d:accent</code></td><td>牛铃。</td></tr>
-                                            <tr><td><code>wb</code> / <code>WB</code></td><td><code>WB:d</code> / <code>WB:d:accent</code></td><td>木鱼 / wood block。</td></tr>
-                                            <tr><td><code>cl</code> / <code>CL</code></td><td><code>CL:d</code> / <code>CL:d:accent</code></td><td>拍手。</td></tr>
-                                            <tr><td><code>p</code> / <code>P</code></td><td>本轨踏板击打 / 本轨重音踏板击打</td><td>匿名轨里通常回退为踩镲脚踏；在支持踏板的本地轨道中按本轨解析。</td></tr>
-                                            <tr><td><code>g</code> / <code>G</code></td><td>本轨鬼音 / 本轨重音鬼音</td><td>鬼音快捷写法；匿名轨默认回退到军鼓鬼音。</td></tr>
-                                            <tr><td><code>R</code> / <code>L</code></td><td><code>ST</code> 左右手标注</td><td>只有在 <code>ST</code> 轨道中，或使用显式 <code>ST:</code> 覆盖时，才表示 sticking。</td></tr>
                                         </tbody>
                                     </table>
+                                    <table class="docs-table docs-table-compact">
+                                        <thead>
+                                            <tr><th>快捷 Token</th><th>解析结果</th><th>说明</th></tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr><td><code>x</code></td><td>上下文相关击打</td><td>镲类上下文是镲片击打；鼓类上下文是军鼓 cross-stick；匿名轨默认是 hi-hat。</td></tr>
+                                            <tr><td><code>s</code><br><code>S</code></td><td><code>SD:d</code><br><code>SD:d:accent</code></td><td>军鼓快捷写法。</td></tr>
+                                            <tr><td><code>b</code><br><code>B</code></td><td><code>BD:d</code><br><code>BD:d:accent</code></td><td>底鼓快捷写法。</td></tr>
+                                            <tr><td><code>b2</code><br><code>B2</code></td><td><code>BD2:d</code><br><code>BD2:d:accent</code></td><td>第二底鼓。</td></tr>
+                                            <tr><td><code>r</code><br><code>R</code></td><td><code>RC:d</code><br><code>RC:d:accent</code></td><td>Ride 快捷写法；裸 <code>R</code> 只有在 <code>ST</code> 中才表示 sticking。</td></tr>
+                                            <tr><td><code>r2</code><br><code>R2</code></td><td><code>RC2:d</code><br><code>RC2:d:accent</code></td><td>第二 ride。</td></tr>
+                                            <tr><td><code>c</code><br><code>C</code></td><td><code>C:d</code><br><code>C:d:accent</code></td><td>Crash 快捷写法。</td></tr>
+                                            <tr><td><code>c2</code><br><code>C2</code></td><td><code>C2:d</code><br><code>C2:d:accent</code></td><td>第二 crash。</td></tr>
+                                            <tr><td><code>t1</code><br><code>T1</code></td><td><code>T1:d</code><br><code>T1:d:accent</code></td><td>Tom 1。</td></tr>
+                                            <tr><td><code>t2</code><br><code>T2</code></td><td><code>T2:d</code><br><code>T2:d:accent</code></td><td>Tom 2。</td></tr>
+                                            <tr><td><code>t3</code><br><code>T3</code></td><td><code>T3:d</code><br><code>T3:d:accent</code></td><td>Tom 3。</td></tr>
+                                            <tr><td><code>t4</code><br><code>T4</code></td><td><code>T4:d</code><br><code>T4:d:accent</code></td><td>Tom 4。</td></tr>
+                                            <tr><td><code>o</code><br><code>O</code></td><td><code>HH:d:open</code><br><code>HH:d:open:accent</code></td><td>开镲击打。</td></tr>
+                                            <tr><td><code>spl</code><br><code>SPL</code></td><td><code>SPL:d</code><br><code>SPL:d:accent</code></td><td>Splash。</td></tr>
+                                            <tr><td><code>chn</code><br><code>CHN</code></td><td><code>CHN:d</code><br><code>CHN:d:accent</code></td><td>China。</td></tr>
+                                            <tr><td><code>cb</code><br><code>CB</code></td><td><code>CB:d</code><br><code>CB:d:accent</code></td><td>Cowbell。</td></tr>
+                                            <tr><td><code>wb</code><br><code>WB</code></td><td><code>WB:d</code><br><code>WB:d:accent</code></td><td>Wood block。</td></tr>
+                                            <tr><td><code>cl</code><br><code>CL</code></td><td><code>CL:d</code><br><code>CL:d:accent</code></td><td>Clap。</td></tr>
+                                            <tr><td><code>p</code><br><code>P</code></td><td>本轨踏板击打<br>本轨重音踏板击打</td><td>本地回退 token；匿名轨默认回退到 <code>HF</code>。</td></tr>
+                                            <tr><td><code>g</code><br><code>G</code></td><td>本轨鬼音<br>本轨重音鬼音</td><td>本地回退 token；匿名轨默认回退到 <code>SD:d:ghost</code>。</td></tr>
+                                            <tr><td><code>R</code><br><code>L</code></td><td><code>ST</code> 右手<br><code>ST</code> 左手</td><td>只有在 <code>ST</code> 轨道中，或使用显式 <code>ST:</code> 覆盖时，才表示 sticking。</td></tr>
+                                        </tbody>
+                                    </table>
+                                    <ul class="docs-list">
+                                        <li><strong>解析优先级 1：</strong> 显式覆盖最高，<code>RC:d</code> 永远发到 <code>RC</code>。</li>
+                                        <li><strong>解析优先级 2：</strong> 静态 magic token 次之，像 <code>s</code>、<code>b</code>、<code>r</code>、<code>c</code> 不会因为你写在别的轨里就改目标轨。</li>
+                                        <li><strong>解析优先级 3：</strong> 最后才使用上下文回退。像 <code>d</code>、<code>x</code> 这种裸 token 才依赖当前命名轨或匿名轨上下文。</li>
+                                    </ul>
                                     <div class="docs-mini-table-container">
                                         <table class="docs-table">
                                             <thead>
@@ -207,6 +243,10 @@
                                             </tbody>
                                         </table>
                                     </div>
+                                    <ul class="docs-list">
+                                        <li><strong>基础时值：</strong> <code>d</code> 与 <code>-</code> 的基础长度都是 1 个输入槽位。</li>
+                                        <li><strong>精确时值：</strong> 系统内部用精确分数计算时值，而不是浮点近似。所以 <code>d..</code>、<code>d///</code>、<code>d.//</code> 都会严格相加后再做整小节校验。</li>
+                                    </ul>
                                 </div>
                             </div>
                             <div class="example-inject" data-example="tokens"></div>
@@ -224,7 +264,7 @@
                                         <thead><tr><th>轨道 / 家族</th><th>允许的 Modifiers</th><th>典型用途</th></tr></thead>
                                         <tbody>
                                             <tr><td><code>所有击打轨道</code></td><td><code>accent</code></td><td>通用重音标记。</td></tr>
-                                            <tr><td><code>HH</code></td><td><code>open</code>, <code>half-open</code>, <code>ghost</code>, <code>drag</code>, <code>roll</code>, <code>dead</code></td><td>踩镲开合状态与手部发音变化。</td></tr>
+                                            <tr><td><code>HH</code></td><td><code>open</code>, <code>half-open</code>, <code>close</code>, <code>ghost</code>, <code>drag</code>, <code>roll</code>, <code>dead</code></td><td>踩镲开合状态与手部发音变化。</td></tr>
                                             <tr><td><code>HF</code></td><td><code>close</code>, <code>accent</code></td><td>踩镲脚踏闭合类动作。</td></tr>
                                             <tr><td><code>RC</code>, <code>RC2</code></td><td><code>bell</code>, <code>choke</code>, <code>drag</code>, <code>roll</code></td><td>叮叮镲镲帽与镲片发音。</td></tr>
                                             <tr><td><code>C</code>, <code>C2</code>, <code>SPL</code>, <code>CHN</code></td><td><code>choke</code></td><td>敲击后立刻闷音。</td></tr>
@@ -234,7 +274,7 @@
                                             <tr><td><code>CB</code>, <code>WB</code>, <code>CL</code></td><td><code>accent</code></td><td>除了重音外没有额外技巧 modifier。</td></tr>
                                         </tbody>
                                     </table>
-                                    <p><strong>语法：</strong><code>&lt;token&gt;:&lt;modifier&gt;</code> 或 <code>Track:d:&lt;modifier&gt;</code>。可以链式写合法组合，例如 <code>SD:d:rim:accent</code> 或 <code>RC:d:bell:accent</code>。</p>
+                                    <p><strong>语法：</strong><code>&lt;token&gt;:&lt;modifier&gt;</code> 或 <code>Track:d:&lt;modifier&gt;</code>。modifier 合法性看“最终解析到的物理轨道”，不是看它写在哪一行。可以链式写合法组合，例如 <code>SD:d:rim:accent</code> 或 <code>RC:d:bell:accent</code>。</p>
                                     <ul class="docs-list">
                                         <li><strong>踩镲：</strong><code>HH | d:open - d:close - d:ghost - d:dead - |</code></li>
                                         <li><strong>叮叮镲 / 其他镲片：</strong><code>RC | d:bell - d:drag - d:roll - - |</code> 与 <code>C | d:choke:accent - - - - - - - |</code></li>
@@ -253,13 +293,24 @@
                                 <p>连音符和自定义节奏细分。</p>
                             </div>
                             <div class="docs-description">
-                                <p>有时您需要一个不符合常规网格的节奏——比如在两个拍的空间里放三个音符。使用方括号将音符分组，然后将它们拉伸或压缩以适应您的时间跨度。</p>
+                                <p>group 用来表达不落在常规网格上的节奏压缩与拉伸，比如三连音、五连音，或者“两个音占三格”这种记法。</p>
                                 <div class="docs-section-body">
                                     <ul class="docs-list">
-                                        <li><code>[note1 note2 note3]</code>: 三个音符在一个拍的空间内均匀演奏。这是三连音的简写形式。</li>
-                                        <li><code>[3: note1 note2 note3]</code>: 同样的意思——三个音符在三个单位的时间内演奏。<code>3:</code> 表示"把这些塞进三个槽位"。</li>
-                                        <li><code>[5: note1 note2]</code>: 把两个音符塞进五个槽位——这会拉伸它们超过正常长度。</li>
-                                        <li><strong>嵌套节奏：</strong> 您可以把组放在组里面来实现非常复杂的模式，比如三连音里面的三连音。</li>
+                                        <li><strong>基本语法：</strong><code>[span: item1 item2 ...]</code>。省略 <code>span</code> 时，<code>[a b c]</code> 等价于 <code>[1: a b c]</code>。</li>
+                                        <li><strong>含义：</strong> 组内每个 item 的时值 = 当前槽位时值 × <code>span / itemCount</code>。</li>
+                                        <li><strong>拉伸组：</strong> 当 <code>itemCount ≤ span</code> 时，属于把音值拉长；只有结果能落在标准音值、附点音值或合法连音上时才允许。</li>
+                                        <li><strong>压缩组：</strong> 当 <code>itemCount &gt; span</code> 时，<code>2:1</code> 与 <code>4:1</code> 这类会被视为普通细分，其它比值按 tuplet 处理。</li>
+                                        <li><strong>不支持的情况：</strong> 任何需要系统自动拆成 tie 才能成立的 group，都会直接报错。</li>
+                                        <li><strong>可嵌套：</strong> group 里可以再放 group，但极小音值不保证低于 64 分音符仍有良好支持。</li>
+                                    </ul>
+                                    <ul class="docs-list">
+                                        <li><code>[d d d]</code>：省略 span 的最简写法，等价于 <code>[1: d d d]</code>。</li>
+                                        <li><code>[3: d d d]</code>：3 个音分 3 格，常用于直接指定组宽。</li>
+                                        <li><code>[2: d d d]</code>：3 个音压进 2 格，典型压缩组。</li>
+                                        <li><code>[3: d d]</code>：2 个音占 3 格，属于拉伸组。</li>
+                                        <li><code>[5: d d]</code>：2 个音占 5 格，只有结果能合法落谱时才允许。</li>
+                                        <li><code>[2: d d d d]</code>：4 个音压进 2 格，会被当成普通细分而不是 tuplet。</li>
+                                        <li><code>[3: d [2: d d d] d]</code>：嵌套 group，适合表达更复杂的内部细分。</li>
                                     </ul>
                                 </div>
                             </div>
@@ -272,8 +323,8 @@
                                 <p>同时演奏多个声部。</p>
                             </div>
                             <div class="docs-description">
-                                <p>当您想让多个乐器同时演奏时，用加号把它们写在一起。这叫做组合击打。两个音符同时开始，演奏时长也相同。</p>
-                                <p>比如，<code>x+s</code> 表示踩镲和军鼓一起演奏。您也可以组合三个或更多乐器：<code>x+s+b</code> 表示踩镲、军鼓和底鼓同时击打。</p>
+                                <p>组合击打用 <code>+</code> 连接。每个组成项在同一拍点开始，默认共享同一时值。</p>
+                                <p><code>x+s</code> 是最常见的 hat+snare，<code>x+s+b</code> 是三件同时击打；也可以写显式形式如 <code>HH:d + SD:d</code>。<code>+</code> 两侧可留空格，也可以不留。</p>
                             </div>
                             <div class="example-inject" data-example="combined-hits"></div>
                         </article>
@@ -281,11 +332,11 @@
                         <article class="docs-section-card" id="sticking">
                             <div class="docs-section-header">
                                 <h2>左右手</h2>
-                                <p>为复杂模式分配左右手。</p>
+                                <p>用于演奏标注、教学提示和 sticking 说明。</p>
                             </div>
                             <div class="docs-description">
-                                <p>当您需要显示哪只手演奏哪个音符时，使用 <code>ST</code> 行。写 <code>R</code> 表示右手，<code>L</code> 表示左手。它们与上方的音符对齐，这样演奏者就知道该怎么做。</p>
-                                <p>ST 标注对于复杂的节奏、爵士乐谱或手部动作很重要的音乐特别有用。</p>
+                                <p><code>ST</code> 轨主要用来补充“怎么打”，而不是“打什么”。在练习谱、教材、rudiment 分配、爵士 ride/snare 配手，或者需要明确 sticking 的段落里尤其有用。</p>
+                                <p>写 <code>R</code> 表示右手，<code>L</code> 表示左手。它会附着到同一拍点上的所有实际音符；如果某个 <code>ST</code> 拍点没有任何实际音符，导出时会被忽略。</p>
                             </div>
                             <div class="example-inject" data-example="sticking"></div>
                         </article>
@@ -296,13 +347,15 @@
                                 <p>结构化导航和替代结尾。</p>
                             </div>
                             <div class="docs-description">
-                                <p>DrumMark 支持所有标准的音乐重复和跳转方式：</p>
+                                <p>结构性记号是全谱级别的，不是单轨私有信息。它们可以写在任意一轨，但会作用于同一全局小节。</p>
                                 <div class="docs-section-body">
                                     <ul class="docs-list">
-                                        <li><strong>反复记号：</strong> <code>|:</code> 开始反复，<code>:|</code> 结束反复。当音乐到达结束记号时，它会返回到开始处。默认播放两次。</li>
-                                        <li><strong>跳过结尾：</strong> 反复之后可以有多个结尾。用 <code>|1.</code> 表示第一个结尾，<code>|2.</code> 表示第二个。演奏者先演奏结尾1，然后反复，再演奏结尾2。</li>
-                                        <li><strong>小节反复：</strong> 单独写一个 <code>%</code> 表示重复整个前一小节。用 <code>%%</code> 表示重复前两个小节。</li>
-                                        <li><strong>导航标记：</strong> 您可以用 <code>@segno</code>（segno记号）、<code>@coda</code>（coda记号）或 <code>@fine</code>（结束）标记位置。然后使用跳转如 <code>@da-capo</code>（返回开头）、<code>@dal-segno</code>（返回到segno）或 <code>@to-coda</code>（跳到coda）。</li>
+                                        <li><strong>小节线：</strong> <code>|</code> 常规；<code>|:</code> 反复开始；<code>:|</code> 反复结束；<code>||</code> 双小节线；<code>|.</code> 明确结束当前 volta bracket。</li>
+                                        <li><strong>空白有语义：</strong> <code>||</code> 表示“没有夹小节”的双线；<code>|  |</code> 中间若有空白，则表示中间存在一个空小节。</li>
+                                        <li><strong>Volta：</strong> <code>|1.</code> 是一房，<code>|1,2.</code> 表示共用结尾。volta 终止于新的 volta、<code>:|</code> 或 <code>|.</code>。</li>
+                                        <li><strong>小节反复：</strong> <code>%</code> 重复前 1 小节，<code>%%</code> 重复前 2 小节。它必须单独占满整个小节，且不能链式引用另一个反复小节。</li>
+                                        <li><strong>导航标记：</strong> 支持 <code>@segno</code>、<code>@coda</code>、<code>@fine</code>、<code>@to-coda</code>、<code>@da-capo</code>、<code>@dal-segno</code>、<code>@dc-al-fine</code>、<code>@dc-al-coda</code>、<code>@ds-al-fine</code>、<code>@ds-al-coda</code>。</li>
+                                        <li><strong>冲突规则：</strong> 同一小节最多一个 marker、最多一个 jump。v1 不允许嵌套反复或交叉反复。</li>
                                     </ul>
                                 </div>
                             </div>
@@ -315,7 +368,7 @@
                                 <p>长段沉默的标准记谱方式。</p>
                             </div>
                             <div class="docs-description">
-                                <p>当整个乐队需要休止多个小节时，使用多小节休止。写一条横线，中间放小节数：<code>|--8--|</code> 表示"休止8小节"。这会渲染为一个单一的、高大的休止符号，横跨所有八个小节。</p>
+                                <p>多小节休止只接受 <code>|--N--|</code> 这一种写法，例如 <code>|--8--|</code>。数字两侧至少各要有一个 <code>-</code>，并且整个结构必须完整落在单个小节里。</p>
                             </div>
                             <div class="example-inject" data-example="multi-rest"></div>
                         </article>
@@ -326,7 +379,7 @@
                                 <p>快速就地复制小节。</p>
                             </div>
                             <div class="docs-description">
-                                <p>当您需要同一小节连续出现多次时，您可以只写一次然后重复。在小节末尾写 <code>*4</code> 表示重复四次。这对于完全重复的模式很方便，比如一个重复的四小节乐句。</p>
+                                <p><code>*N</code> 写在小节末尾，表示把当前小节扩展成总共连续 <code>N</code> 个相同小节，而不是“再重复 N 次”。例如 <code>*4</code> 的结果是总共 4 小节。</p>
                             </div>
                             <div class="example-inject" data-example="inline-repeat"></div>
                         </article>
@@ -337,12 +390,13 @@
                                 <p>确保音乐和逻辑的一致性。</p>
                             </div>
                             <div class="docs-description">
-                                <p>DrumMark 会检查您的音乐是否有错误，这样您就不会得到令人困惑或无法演奏的乐谱。系统会验证：</p>
+                                <p>DrumMark 的校验重点是“谱面逻辑必须唯一、时值必须闭合”。系统会验证：</p>
                                 <div class="docs-section-body">
                                     <ul class="docs-list">
-                                        <li><strong>小节长度：</strong> 小节中所有的音符和休止加起来必须正好等于规定的时长。如果您用了太多或太少，系统会告诉您。</li>
-                                        <li><strong>节拍边界：</strong> 音符不能"跨越"到下一个节拍区域。这可以保持节奏清晰易读。</li>
-                                        <li><strong>技巧规则：</strong> 有些技巧只在某些乐器上有效。比如，<code>:open</code> 只在踩镲上有意义——如果您把它写在军鼓上，DrumMark 会提醒您。</li>
+                                        <li><strong>整小节时值：</strong> 每小节里所有 token 的精确时值总和必须刚好等于拍号与 <code>divisions</code> 共同定义的整小节长度。</li>
+                                        <li><strong>grouping 边界：</strong> token 或整个 group 都不能跨越 <code>grouping</code> 定义的分拍边界。</li>
+                                        <li><strong>modifier 合法性：</strong> modifier 是否允许，取决于最终解析目标轨。例如 <code>:open</code> 只能用于 hi-hat 语义。</li>
+                                        <li><strong>结构冲突：</strong> 冲突的反复、volta、marker/jump、非法 group，以及未知轨道或未知 token 都会直接报错。</li>
                                     </ul>
                                 </div>
                             </div>

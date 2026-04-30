@@ -56,9 +56,9 @@ async function initDocs() {
     const container = block.closest('.docs-section-card')?.querySelector(".staff-preview-container");
     
     if (dsl && container) {
-      // 如果容器里已经有内容了（说明是预渲染的），我们只做语法高亮
+      // Static docs are already highlighted and pre-rendered at build time.
+      // Rewriting them on load causes visible layout jitter.
       if (container.innerHTML.trim() !== "") {
-        block.innerHTML = highlightDslStatic(dsl);
         continue;
       }
 
@@ -86,13 +86,6 @@ async function initDocs() {
     }
   }
 
-  // 4. Handle initial hash scroll
-  const hash = window.location.hash;
-  if (hash) {
-    setTimeout(() => {
-      document.querySelector(hash)?.scrollIntoView();
-    }, 500);
-  }
 }
 
 if (document.readyState === "loading") {

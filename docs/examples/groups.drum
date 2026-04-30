@@ -1,8 +1,32 @@
 title Rhythmic Groups
 time 4/4
 divisions 8
-grouping 4
+grouping 1+1+1+1
+
+HH | [d d d] x x x x x x x |
+SD | - - - - - - - - |
+BD | b - - - b - - - |
+
+HH | x x x x x x x x |
+SD | - - [3: d d d] - - - |
+BD | b - - - b - - - |
 
 HH | x x x x x x x x |
 SD | - - [2: d d d] - - - - |
+BD | b - - - b - - - |
+
+HH | x x x x x x x x |
+SD | - - [3: d d] - - - |
+BD | b - - - b - - - |
+
+HH | x x x x x x x x |
+SD | [5: d d] - - - |
+BD | b - - - b - - - |
+
+HH | x x x x x x x x |
+SD | - - [2: d d d d] - - - - |
+BD | b - - - b - - - |
+
+HH | x x x x x x x x |
+SD | - - [3: d [2: d d d] d] - - - |
 BD | b - - - b - - - |

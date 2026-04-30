@@ -1326,3 +1326,42 @@ input:checked + .toggle-slider:before {
   overflow: hidden !important;
   z-index: 1000 !important;
 }
+
+/* DrumMark DSL Syntax Highlighting (Shared with Editor) */
+.dsl-comment { color: #94a3b8; font-style: italic; }
+.dsl-header-meta { color: #0f766e; font-weight: 700; }
+.dsl-header-struct { color: #0284c7; font-weight: 600; }
+.dsl-header-text { color: #0f172a; }
+.dsl-header-number { color: #059669; }
+.dsl-header-divider { color: #94a3b8; }
+.dsl-header-operator { color: #0f766e; font-weight: 600; }
+.dsl-track { color: #0f172a; font-weight: 700; }
+.dsl-track-sticking { color: #0f766e; font-weight: 700; }
+.dsl-sticking-note { color: #2563eb; font-weight: 600; }
+.dsl-tom-note { color: #7c3aed; font-weight: 600; }
+.dsl-repeat { color: #f43f5e; font-weight: 700; }
+.dsl-controlOperator { color: #e11d48; font-weight: 700; }
+.dsl-separator { color: #f43f5e; font-weight: 700; }
+.dsl-repeat-count { color: #be123c; }
+.dsl-annotation { color: #be123c; }
+.dsl-barline { color: #f43f5e; font-weight: 700; }
+.dsl-measure-repeat { color: #e11d48; font-weight: 700; }
+.dsl-jump-marker { color: #7c3aed; font-style: italic; }
+.dsl-group-bracket { color: #fb7185; font-weight: 700; }
+.dsl-group-count { color: #059669; }
+.dsl-hit-combinator { color: #0284c7; font-weight: 700; }
+.dsl-operator { color: #0284c7; font-weight: 700; }
+.dsl-punctuation { color: #94a3b8; }
+.dsl-modifier { color: #7c3aed; font-style: italic; }
+.dsl-duration-modifier { color: #0f766e; font-weight: 600; }
+.dsl-rest { color: #cbd5e1; }
+.dsl-atom { color: #1e293b; }
+.dsl-strong { font-weight: 800; }
+.dsl-accent-note { color: #1e293b; font-weight: 800; }
+.dsl-note { color: #1e293b; }
+.dsl-cymbal-note { color: #0369a1; }
+.dsl-ride-note { color: #0369a1; }
+.dsl-kick-note { color: #0f766e; }
+.dsl-bool { color: #0f766e; }
+.dsl-name { color: #475569; }
+.dsl-identifier { color: #475569; }

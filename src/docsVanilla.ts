@@ -1,5 +1,6 @@
 import { buildNormalizedScore } from "./dsl";
 import { renderScoreToSvg } from "./vexflow";
+import { highlightDslStatic } from "./drummark";
 
 async function initDocs() {
   const menuToggle = document.getElementById("menu-toggle");
@@ -57,12 +58,12 @@ async function initDocs() {
     if (dsl && container) {
       // 如果容器里已经有内容了（说明是预渲染的），我们只做语法高亮
       if (container.innerHTML.trim() !== "") {
-        block.innerHTML = highlightDsl(dsl);
+        block.innerHTML = highlightDslStatic(dsl);
         continue;
       }
 
       // Apply syntax highlighting
-      block.innerHTML = highlightDsl(dsl);
+      block.innerHTML = highlightDslStatic(dsl);
       
       try {
         const score = buildNormalizedScore(dsl);
@@ -92,14 +93,6 @@ async function initDocs() {
       document.querySelector(hash)?.scrollIntoView();
     }, 500);
   }
-}
-
-function highlightDsl(dsl: string): string {
-  return dsl
-    .replace(/(#[^\n]*)/g, '<span class="docs-token dsl-comment">$1</span>')
-    .replace(/\b(title|subtitle|composer|tempo|time|divisions|grouping)\b/g, '<span class="docs-token dsl-header">$1</span>')
-    .replace(/\b(HH|HF|DR|SD|BD|T1|T2|T3|RC|C|ST)\b/g, '<span class="docs-token dsl-track">$1</span>')
-    .replace(/(\|:|:\||\|)/g, '<span class="docs-token dsl-barline">$1</span>');
 }
 
 if (document.readyState === "loading") {

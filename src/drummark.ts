@@ -1,5 +1,5 @@
 import { EditorView } from "@codemirror/view";
-import { HighlightStyle, StreamLanguage, syntaxHighlighting, type StreamParser, type StringStream } from "@codemirror/language";
+import { HighlightStyle, StreamLanguage, syntaxHighlighting, StringStream, type StreamParser } from "@codemirror/language";
 import { tags } from "@lezer/highlight";
 import { TRACKS, MODIFIERS } from "./dsl/types";
 
@@ -499,3 +499,48 @@ export const drumMarkEditorTheme = EditorView.theme({
 }, { dark: false });
 
 export const drumMarkSyntaxHighlighting = syntaxHighlighting(drumMarkHighlightStyle);
+
+export function highlightDslStatic(code: string): string {
+  const state = drumMarkStreamParser.startState!();
+  const lines = code.split("\n");
+  let html = "";
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const stream = new StringStream(line, 2, {
+      tabSize: 2,
+      lineSeparator: undefined
+    } as any);
+    
+    while (!stream.eol()) {
+      if (stream.eatSpace()) {
+        html += " ";
+        continue;
+      }
+
+      const pos = stream.pos;
+      const token = drumMarkStreamParser.token(stream, state);
+      const content = line.slice(pos, stream.pos);
+
+      if (token) {
+        // 将 token 转换为 CSS 类，支持空格分隔的多个 token
+        const classes = token.split(" ").map(t => `dsl-${t}`).join(" ");
+        html += `<span class="${classes}">${escapeHtml(content)}</span>`;
+      } else {
+        html += escapeHtml(content);
+      }
+    }
+    if (i < lines.length - 1) html += "\n";
+  }
+
+  return html;
+}
+
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}

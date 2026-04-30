@@ -1026,6 +1026,26 @@ The following features are defined in the spec but not yet implemented or not st
 
 ---
 
+## 20. Developer Tooling
+
+To aid in the development and verification of DrumMark compilers and renderers, a CLI tool is provided.
+
+### `drummark` CLI
+
+This tool allows for rapid inspection of the internal state and output of the DrumMark engine.
+
+**Usage**:
+```bash
+npm run drummark -- <input-file> [--format ir|xml|svg] [--output <path>]
+```
+
+**Formats**:
+- `ir` (default): Dumps the normalized Intermediate Representation (JSON). Useful for verifying parsing and normalization logic.
+- `xml`: Generates MusicXML output. Useful for verifying MusicXML export logic.
+- `svg`: Generates VexFlow SVG rendering. Useful for verifying visual rendering and layout.
+
+---
+
 ## 19. Implementation Responsibilities
 
 ### 19.1 Responsibilities of Each Consumer

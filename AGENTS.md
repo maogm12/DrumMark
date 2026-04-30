@@ -38,3 +38,10 @@ To ensure technical integrity and historical traceability, all formal specificat
 - **Total Delegation:** All score rendering (staves, notes, headers, titles, tempo) must be handled exclusively by VexFlow.
 - **No Manual Simulation:** Do not add custom HTML, CSS, or Canvas/SVG drawing code to simulate or "patch" missing score elements that should be part of the VexFlow output.
 - **Graceful Failure:** If VexFlow cannot render a specific input, fall back only to empty preview states or clear error messages instead of trying to manually draw placeholders.
+
+## Debugging Tools
+
+- **Initial Diagnosis**: When encountering parser, normalization, or rendering bugs, ALWAYS use `npm run drummark` to isolate the problem.
+    - Use `--format ir` to verify if the issue is in the parser/normalization phase.
+    - Use `--format svg` or `--format xml` to verify if the issue is in the rendering/export phase.
+- **Verification**: After applying a fix, use the tool to verify the output in the relevant format.

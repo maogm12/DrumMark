@@ -10,7 +10,8 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "render-cli": "tsx src/render-cli.ts"
+    "render-cli": "tsx src/render-cli.ts",
+    "drummark": "tsx src/cli.ts"
   },
   "dependencies": {
     "@codemirror/language": "^6.12.3",

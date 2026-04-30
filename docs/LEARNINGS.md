@@ -152,3 +152,19 @@ If the app is served from a sub-directory (e.g., `/drum_notation/`):
 - **The CodeMirror stream highlighter is a separate parser surface:** `src/dslLanguage.ts` does not inherit the real DSL parser's coverage automatically, so spec additions like anonymous lines, `Track:` summons, `Track { ... }` routing scopes, `%`/`%%`, and navigation markers must be added explicitly or they silently fall back to generic identifiers.
 - **`%%` is measure-repeat syntax in DrumMark, not a comment prefix:** carrying over `%%` as a comment token from an older grammar directly conflicts with spec section 9.4 and breaks editor feedback on repeat shorthand.
 - **Single-token summons and block scopes need state, not regex-only matching:** `ST:R` and `RC{d:bell}` only highlight correctly if the stream parser remembers a pending explicit track or routed scope across subsequent `:` / `{` tokens instead of classifying each token in isolation.
+
+## 25. VexFlow 5 Dot Rendering (2026-04-29)
+
+- **Dots require explicit addition:** In VexFlow 5, even if a duration code includes 'd' (e.g., `"qd"`), the dot will not be rendered visually unless a `Dot` modifier is explicitly added and attached to the note using `Dot.buildAndAttach([note], { all: true })`.
+- **Rests also need dots:** The same rule applies to rests. A dotted rest (like a 3/8 dotted quarter rest) must have an attached `Dot` modifier, or it will be visually indistinguishable from a regular rest, leading to visual timing gaps.
+- **Duration calculations for dots:** Fractions with numerators of 3 (1.5x base) or 7 (1.75x base) should be mapped to 1 or 2 dots respectively.
+
+## 26. MusicXML Rest Positioning (2026-04-29)
+
+- **Rests need vertical steps:** To prevent rests from colliding with notes in other voices (or overlapping in the same voice), MusicXML `<rest>` elements should include `<display-step>` and `<display-octave>`.
+- **Consistency with Renderer:** Following the VexFlow renderer's convention, Voice 1 rests are usually positioned at `B/4` and Voice 2 rests at `F/4` for drum notation.
+
+## 27. DrumMark CLI & Diagnostics (2026-04-29)
+
+- **Isolate the Pipeline:** When a bug is reported, use the `drummark` CLI to dump the Intermediate Representation (IR), MusicXML, and SVG separately. This allows you to immediately determine if the bug is in the **Parser/Normalization** phase (incorrect IR), the **Exporter** (incorrect XML), or the **Renderer** (incorrect SVG/VexFlow logic).
+- **Reproduction Scripts:** Creating a minimal `.drum` file and running it through `npm run drummark` is faster and more reliable for verification than manual testing in the full web application.

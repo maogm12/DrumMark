@@ -68,10 +68,10 @@ divisions 4
       hideVoice2Rests: true,
     });
 
-    expect(svg).toMatch(/font-size="10pt" x="[^"]+" y="140">Fine<\/text>/);
-    expect(svg).toMatch(/font-size="10pt" x="[^"]+" y="140">D\.C\.<\/text>/);
-    expect(svg).toMatch(/font-size="10pt" x="[^"]+" y="140">D\.S\.<\/text>/);
-    expect(svg).toMatch(/font-family="Bravura" font-size="20pt" x="[^"]+" y="140"><\/text>/);
+    expect(svg).toMatch(/font-size="20pt" x="[^"]+" y="164">Fine<\/text>/);
+    expect(svg).toMatch(/font-size="20pt" x="[^"]+" y="164">D\.C\.<\/text>/);
+    expect(svg).toMatch(/font-size="20pt" x="[^"]+" y="164">D\.S\.<\/text>/);
+    expect(svg).toMatch(/font-family="Bravura" font-size="20pt" x="[^"]+" y="164"><\/text>/);
   });
 
   it("continues a volta across systems when the ending spans multiple measures", async () => {

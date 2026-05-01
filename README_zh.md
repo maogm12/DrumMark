@@ -17,7 +17,7 @@
 ## ✨ 核心特性
 
 - ✍️ **文本驱动：** 告别繁琐的鼠标点击。使用简单的字符（如 `x`, `d`, `p`）快速录入节奏。
-- ⚡ **实时预览：** 基于 OSMD 的渲染引擎，编辑即所得，提供即时的视觉反馈。
+- ⚡ **实时预览：** 基于 VexFlow 5 的渲染引擎，编辑即所得，提供即时的视觉反馈。
 - 🎼 **专业导出：** 生成标准 MusicXML 文件，完美对接 MuseScore, Sibelius 或 Finale。
 - 📏 **节奏精准：** 支持复杂拍子（如 7/8）、时长修饰（附点 `.`、半值 `/`）、自动连杠（Beaming）和高级连音符（Tuplets）。
 - 🥁 **全技巧覆盖：** 涵盖军鼓、底鼓、踩镲、通通鼓、镲片的所有常规演奏技巧（Rimshot, Flam, Choke, Bell 等）。
@@ -39,12 +39,13 @@ SD |  - - d:cross - d - | D:rim - [2: d d:flam] - - -  |
 BD |  p - - - p - - - | p - p - - - p -        |
 ```
 
-### 常用轨道说明：
+### 常用输入方式：
 - `HH`: 踩镲 (Hi-Hat)
 - `SD`: 军鼓 (Snare Drum)
 - `BD`: 底鼓 (Bass Drum)
 - `RC`/`C`: 叮叮镲 (Ride) / 吊镲 (Crash)
-- `DR`: 综合鼓组（糖语法，可快速录入军鼓和通通鼓）
+- `| ... |`: 匿名轨道，可直接使用 `s`、`b`、`t1`、`c` 这类全局 magic token
+- `SD { ... }`: 轨道路由作用域，适合整段批量路由
 
 ---
 
@@ -52,7 +53,7 @@ BD |  p - - - p - - - | p - p - - - p -        |
 
 - **Frontend:** React + TypeScript + Vite
 - **Editor:** CodeMirror 6 (定制语法高亮)
-- **Rendering:** OpenSheetMusicDisplay (OSMD)
+- **Rendering:** VexFlow 5
 - **PDF Export:** pdf-lib + SVG Rasterization
 
 ---

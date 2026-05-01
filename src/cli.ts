@@ -54,7 +54,7 @@ async function main() {
   }
 
   if (!params.input) {
-    console.error("Usage: npm run debug-tool <input-file> [--format ir|svg|xml] [--output path]");
+    console.error("Usage: npm run drummark -- <input-file> [--format ir|svg|xml] [--output path]");
     process.exit(1);
   }
 

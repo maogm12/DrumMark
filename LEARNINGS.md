@@ -34,3 +34,11 @@
 - VexFlow `Repetition` is only partially useful for navigation engraving. `SEGNO_LEFT` is symbol-only, but `CODA_LEFT` and `TO_CODA` inject hardcoded text, and all `Repetition` text is top-of-staff only. For position-sensitive navigation, note-anchored `Annotation` modifiers are more reliable.
 - Pure navigation measures still need render anchors. If the renderer only records anchor points for sounded events, start/end navigation on rest-only bars disappears; rest entries must seed the same rhythmic anchor map.
 - For the current engraving rules, `fine` and the `dc/ds` family belong below the staff, while `to-coda` stays above and should be emitted as separate text-plus-glyph annotations so the coda symbol survives SVG export.
+
+## 2026-04-30 Addendum: Grouping Boundary Units & VexFlow Header Ownership
+
+- Grouping-boundary validation in normalize must use the same unit system as AST validation: grouping values are beat counts, while token offsets and weights are slot counts. Converting the boundary with `cumulativeGrouping * divisions / beats` avoids both false positives and false negatives.
+- A legal dotted value near the middle of a `2+2` bar is a good regression probe. In `4/4` with `divisions 16`, `| - x. x. - ... |` must not be flagged as crossing the grouping boundary, even though naive beat-vs-slot comparison says it does.
+- Navigation text placement in VexFlow is sensitive to `StaveText` font size and `shiftY`. For this renderer, the stable snapshot for left-edge `segno/coda` and right-edge `Fine` / `D.C.` / `D.S.` came from using native `StaveText` at `20pt` without the extra manual upward shift.
+- Title, subtitle, and composer should be emitted through VexFlow objects, not `context.fillText()`. A zero-line header stave with `StaveText` modifiers satisfies the repository rule that score headers remain inside the VexFlow rendering path.
+- Headless/JSDOM runs do not expose the browser `FontFace` API. VexFlow font loading should therefore no-op in that environment instead of logging an expected failure on every render test.

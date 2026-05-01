@@ -43,4 +43,18 @@ HH | [3: d d d] x |`);
       message: "Token `group` crosses grouping boundary at 2 in track HH",
     });
   });
+
+  it("does not report a false grouping-boundary error when slot math stays inside the beat group", () => {
+    const score = buildNormalizedScore(`time 4/4
+divisions 16
+grouping 2+2
+
+HH | - x. x. - - - - - - - - - - - - |`);
+
+    expect(score.errors).not.toContainEqual({
+      line: 5,
+      column: 1,
+      message: "Token `x` crosses grouping boundary at 2 in track HH",
+    });
+  });
 });

@@ -48,6 +48,8 @@ const {
   MultiMeasureRest,
   VoltaType,
   Volta,
+  StaveText,
+  TextJustification,
   RendererBackends
 } = VexFlow;
 
@@ -87,6 +89,21 @@ export function voltaTypeForMeasure(score: NormalizedScore, measure: NormalizedS
   if (begins) return VoltaType.BEGIN;
   if (ends) return VoltaType.END;
   return VoltaType.MID;
+}
+
+export function endsVoltaGroup(score: NormalizedScore, measure: NormalizedScore["measures"][number]): boolean {
+  const current = measure.volta?.indices.join(",");
+  if (!current) return false;
+  const next = score.measures[measure.globalIndex + 1]?.volta?.indices.join(",");
+  // 当前 measure 的 volta 和下一个 measure 不同时，当前的就是 volta 组的最后一个
+  return current !== next;
+}
+
+export function startsVoltaGroup(score: NormalizedScore, measure: NormalizedScore["measures"][number]): boolean {
+  const current = measure.volta?.indices.join(",");
+  if (!current) return false;
+  const previous = score.measures[measure.globalIndex - 1]?.volta?.indices.join(",");
+  return current !== previous;
 }
 
 export function measureRepeatGlyph(slashes: number): string {
@@ -176,6 +193,14 @@ function applyStructuralModifiers(
     const volta = new (Volta as any)(voltaType, `${measure.volta?.indices.join(",")}.`, stave.getX(), -5);
     volta.setPosition(Modifier.Position.ABOVE);
     stave.addModifier(volta);
+
+    // 每个 volta 组结束时，不覆盖已有 barline，只在未显式设置时自动推导
+    if (endsVoltaGroup(score, measure)) {
+      if (measure.barline === undefined) {
+        const hasNext = score.measures[measure.globalIndex + 1] !== undefined;
+        stave.setEndBarType(hasNext ? BarlineType.REPEAT_END : BarlineType.END);
+      }
+    }
   }
 }
 
@@ -204,9 +229,10 @@ function addTextAnnotation(
   vertical: "above" | "below",
   justification: "left" | "center" | "right",
   xShift = 0,
-  yShift = 0,
+  yShift = -45,
 ) {
   const annotation = new Annotation(text)
+    .setFont("Bravura", 16, "")
     .setJustification(justification)
     .setVerticalJustification(vertical);
   annotation.setXShift(xShift);
@@ -220,15 +246,60 @@ function addGlyphAnnotation(
   vertical: "above" | "below",
   justification: "left" | "center" | "right",
   xShift = 0,
-  yShift = 0,
+  yShift = -60,
 ) {
   const annotation = new Annotation(glyph)
-    .setFont("Bravura", 20, "")
+    .setFont("Bravura", 16, "")
     .setJustification(justification)
     .setVerticalJustification(vertical);
   annotation.setXShift(xShift);
   annotation.setYShift(yShift);
   note.addModifier(annotation, 0);
+}
+
+function drawHeaderWithVexFlow(context: any, score: NormalizedScore, width: number, options: VexflowRenderOptions) {
+  const title = score.header.title;
+  const subtitle = score.header.subtitle;
+  const composer = score.header.composer;
+
+  if (!title && !subtitle && !composer) {
+    return;
+  }
+
+  const headerStave = new Stave(50, 72, width - 100, {
+    numLines: 0,
+    leftBar: false,
+    rightBar: false,
+  });
+
+  if (title) {
+    const titleText = new StaveText(title, Modifier.Position.ABOVE, {
+      justification: TextJustification.CENTER,
+      shiftY: -(options.titleTopPadding * 10),
+    });
+    titleText.setFont("Academico", 24, "bold");
+    headerStave.addModifier(titleText);
+  }
+
+  if (subtitle) {
+    const subtitleText = new StaveText(subtitle, Modifier.Position.ABOVE, {
+      justification: TextJustification.CENTER,
+      shiftY: -(options.titleSubtitleGap * 10),
+    });
+    subtitleText.setFont("Academico", 14, "italic");
+    headerStave.addModifier(subtitleText);
+  }
+
+  if (composer) {
+    const composerText = new StaveText(composer, Modifier.Position.ABOVE, {
+      justification: TextJustification.RIGHT,
+      shiftY: -(options.titleSubtitleGap * 10),
+    });
+    composerText.setFont("Academico", 12, "");
+    headerStave.addModifier(composerText);
+  }
+
+  headerStave.setContext(context).draw();
 }
 
 function renderStartNavigation(
@@ -239,12 +310,12 @@ function renderStartNavigation(
   if (!measure.startNav) return;
 
   if (measure.startNav.anchor === "left-edge") {
-    const note = firstNavAnchor(navAnchors);
-    if (!note) return;
-
     const glyph = measure.startNav.kind === "segno" ? Glyphs.segno : Glyphs.coda;
-    const shift = -(stave.getNoteStartX() - stave.getX()) - 6;
-    addGlyphAnnotation(note, glyph, "above", "left", shift);
+    const st = new StaveText(glyph, Modifier.Position.ABOVE, {
+      justification: TextJustification.LEFT,
+    });
+    st.setFont("Bravura", 20, "");
+    stave.addModifier(st);
     return;
   }
 
@@ -257,47 +328,41 @@ function renderStartNavigation(
 }
 
 function renderEndNavigation(
+  stave: any,
   measure: NormalizedScore["measures"][number],
   navAnchors: Map<string, any>,
 ) {
   if (!measure.endNav) return;
 
-  const note =
-    measure.endNav.anchor === "right-edge"
-      ? lastNavAnchor(navAnchors)
-      : navAnchors.get(`${measure.endNav.anchor.eventBefore.numerator}/${measure.endNav.anchor.eventBefore.denominator}`);
+  if (measure.endNav.anchor === "right-edge") {
+    let text = "";
+    switch (measure.endNav.kind) {
+      case "fine": text = "Fine"; break;
+      case "to-coda": text = "To " + Glyphs.coda; break;
+      case "dc": text = "D.C."; break;
+      case "ds": text = "D.S."; break;
+      case "dc-al-fine": text = "D.C. al Fine"; break;
+      case "dc-al-coda": text = "D.C. al Coda"; break;
+      case "ds-al-fine": text = "D.S. al Fine"; break;
+      case "ds-al-coda": text = "D.S. al Coda"; break;
+    }
+    const st = new StaveText(text, Modifier.Position.ABOVE, {
+      justification: TextJustification.RIGHT,
+      shiftX: -10,
+    });
+    st.setFont("Bravura", 20, "");
+    stave.addModifier(st);
+    return;
+  }
+
+  const note = navAnchors.get(`${measure.endNav.anchor.eventBefore.numerator}/${measure.endNav.anchor.eventBefore.denominator}`);
   if (!note) return;
 
   const vertical = "above";
-  const codaTextShift = 44;
 
   switch (measure.endNav.kind) {
-    case "fine":
-      addTextAnnotation(note, "Fine", vertical, "right");
-      break;
     case "to-coda":
-      addTextAnnotation(note, "To", vertical, "right", codaTextShift);
-      addGlyphAnnotation(note, Glyphs.coda, vertical, "right");
-      break;
-    case "dc":
-      addTextAnnotation(note, "D.C.", vertical, "right");
-      break;
-    case "ds":
-      addTextAnnotation(note, "D.S.", vertical, "right");
-      break;
-    case "dc-al-fine":
-      addTextAnnotation(note, "D.C. al Fine", vertical, "right");
-      break;
-    case "dc-al-coda":
-      addTextAnnotation(note, "D.C. al", vertical, "right", codaTextShift);
-      addGlyphAnnotation(note, Glyphs.coda, vertical, "right");
-      break;
-    case "ds-al-fine":
-      addTextAnnotation(note, "D.S. al Fine", vertical, "right");
-      break;
-    case "ds-al-coda":
-      addTextAnnotation(note, "D.S. al", vertical, "right", codaTextShift);
-      addGlyphAnnotation(note, Glyphs.coda, vertical, "right");
+      addTextAnnotation(note, "To " + Glyphs.coda, vertical, "center");
       break;
     default:
       break;
@@ -305,12 +370,13 @@ function renderEndNavigation(
 }
 
 async function ensureVexFlowFonts() {
+  if (typeof FontFace === "undefined") {
+    return;
+  }
+
   if (typeof VexFlow.loadFonts === "function") {
     try {
       await VexFlow.loadFonts("Bravura", "Academico");
-      // if (typeof VexFlow.setFonts === "function") {
-      //   VexFlow.setFonts("Bravura", "Academico");
-      // }
     } catch (e) {
       console.error("VexFlow font loading failed:", e);
     }
@@ -358,7 +424,7 @@ export async function renderScoreToSvg(score: NormalizedScore, options: VexflowR
   context.setFillStyle("#333");
   context.setStrokeStyle("#333");
 
-  drawHeader(context, score, systemWidth);
+  drawHeaderWithVexFlow(context, score, systemWidth, options);
 
   let yOffset = 150;
   for (let i = 0; i < allSystems.length; i++) {
@@ -382,27 +448,6 @@ export async function renderScoreToSvg(score: NormalizedScore, options: VexflowR
     document.body.removeChild(container);
   }
   return svg;
-}
-
-function drawHeader(context: any, score: NormalizedScore, width: number) {
-  const title = score.header.title;
-  const subtitle = score.header.subtitle;
-  const composer = score.header.composer;
-
-  context.save();
-  if (title) {
-    context.setFont("Arial", 24, "bold");
-    context.fillText(title, width / 2 - context.measureText(title).width / 2, 40);
-  }
-  if (subtitle) {
-    context.setFont("Arial", 14, "italic");
-    context.fillText(subtitle, width / 2 - context.measureText(subtitle).width / 2, 70);
-  }
-  if (composer) {
-    context.setFont("Arial", 12, "normal");
-    context.fillText(composer, width - context.measureText(composer).width - 50, 70);
-  }
-  context.restore();
 }
 
 interface SystemOptions {
@@ -445,14 +490,14 @@ function renderSystem(context: any, score: NormalizedScore, measures: RenderMeas
 
     applyStructuralModifiers(stave, score, measure, i === 0);
 
-    stave.setContext(context).draw();
-    staves.push(stave);
-
     const { voices, beams, tuplets, drawables } = renderMeasureVoices(score, renderMeasure, stave, stickings, options, i === 0);
     allVoices.push(...voices);
     allBeams.push(...beams);
     allTuplets.push(...tuplets);
     overlayDrawables.push(...drawables);
+
+    stave.setContext(context).draw();
+    staves.push(stave);
 
     if (renderMeasure.kind === "measure-repeat-2-start") {
       const next = measures[i + 1];
@@ -556,7 +601,7 @@ function renderMeasureVoices(
 
   if (measure.startNav || measure.endNav) {
     renderStartNavigation(stave, measure, navAnchors);
-    renderEndNavigation(measure, navAnchors);
+    renderEndNavigation(stave, measure, navAnchors);
   }
 
   return { voices, beams, tuplets, drawables: [] };
@@ -743,7 +788,7 @@ export async function renderScorePagesToSvgs(score: NormalizedScore, options: Ve
     const context = renderer.getContext();
     context.setFillStyle("#333");
     context.setStrokeStyle("#333");
-    if (systemIdx === 0) drawHeader(context, score, 800);
+    if (systemIdx === 0) drawHeaderWithVexFlow(context, score, 800, options);
 
     let yOffset = systemIdx === 0 ? 150 : 50;
     for (let s = 0; s < systemsThisPage; s++) {

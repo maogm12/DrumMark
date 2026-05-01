@@ -116,6 +116,13 @@ function gcd(a: number, b: number): number {
   return x || 1;
 }
 
+function groupingBoundaryInSlots(cumulativeGrouping: number, beats: number, divisions: number): Fraction {
+  return simplify({
+    numerator: cumulativeGrouping * divisions,
+    denominator: beats,
+  });
+}
+
 function resolveParsedStartNav(nav: ParsedStartNav | undefined, tokenStarts: Fraction[]): StartNav | undefined {
   if (!nav) return undefined;
   if (nav.anchor === "left-edge") return nav;
@@ -399,7 +406,11 @@ export function normalizeScoreAst(ast: ScoreAst): NormalizedScore {
           let cumulativeGrouping = 0;
           for (const groupSize of ast.headers.grouping.values) {
             cumulativeGrouping += groupSize;
-            const boundaryFrac: Fraction = { numerator: cumulativeGrouping, denominator: 1 };
+            const boundaryFrac = groupingBoundaryInSlots(
+              cumulativeGrouping,
+              ast.headers.time.beats,
+              divisions,
+            );
             
             // startSlot < boundaryFrac AND endSlot > boundaryFrac
             if (compareFractions(startSlot, boundaryFrac) < 0 && compareFractions(endSlot, boundaryFrac) > 0) {

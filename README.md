@@ -17,7 +17,7 @@
 ## ✨ Features
 
 - ✍️ **Text-Driven:** Forget tedious mouse clicks. Record your ideas using simple characters (`x`, `d`, `p`).
-- ⚡ **Live Preview:** Real-time rendering engine based on OSMD.
+- ⚡ **Live Preview:** Real-time rendering engine based on VexFlow 5.
 - 🎼 **Professional Export:** Generate standard MusicXML compatible with MuseScore, Sibelius, or Finale.
 - 📏 **Rhythmic Precision:** Supports complex meters (e.g., 7/8), duration modifiers (dots `.` and halves `/`), automatic beaming, and advanced tuplets.
 - 🥁 **Full Technique Support:** Covers rimshots, flams, chokes, bells, and more across all major drum kit components.
@@ -39,12 +39,13 @@ SD |  - - d:cross - d - | D:rim - [2: d d:flam] - - -  |
 BD |  p - - - p - - - | p - p - - - p -        |
 ```
 
-### Supported Tracks:
+### Supported Input Style:
 - `HH`: Hi-Hat
 - `SD`: Snare Drum
 - `BD`: Bass Drum
 - `RC`/`C`: Ride / Crash Cymbal
-- `DR`: Drum Sugar (quick entry for Snare and Toms)
+- `| ... |`: Anonymous track lines with global magic tokens like `s`, `b`, `t1`, `c`
+- `SD { ... }`: Track routing scopes for bulk routing without rewriting each token
 
 ---
 
@@ -52,7 +53,7 @@ BD |  p - - - p - - - | p - p - - - p -        |
 
 - **Frontend:** React + TypeScript + Vite
 - **Editor:** CodeMirror 6 (Custom syntax highlighting)
-- **Rendering:** OpenSheetMusicDisplay (OSMD)
+- **Rendering:** VexFlow 5
 - **PDF Export:** pdf-lib + SVG Rasterization
 
 ---

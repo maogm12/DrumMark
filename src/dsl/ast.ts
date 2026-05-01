@@ -252,10 +252,15 @@ function validateAndBuildRepeats(
   errors: ParseError[],
 ): RepeatSpan[] {
   const boundaryByBar = new Map<number, { start?: boolean; end?: boolean; times?: number; line: number }>();
+  const voltaByBar = new Map<number, string>();
 
   for (const paragraph of paragraphs) {
     for (const track of paragraph.tracks) {
       for (const measure of track.measures) {
+        if (measure.volta) {
+          voltaByBar.set(measure.globalIndex, measure.volta.indices.join(","));
+        }
+
         if (!measure.repeatStart && !measure.repeatEnd) continue;
 
         const existing = boundaryByBar.get(measure.globalIndex);
@@ -287,22 +292,34 @@ function validateAndBuildRepeats(
   const maxBar = paragraphs.flatMap((p) => p.tracks.flatMap((t) => t.measures)).reduce((max, m) => Math.max(max, m.globalIndex), -1);
   const repeatSpans: RepeatSpan[] = [];
   let openStart: number | null = null;
+  let openStartHasEnding = false;
 
   for (let bar = 0; bar <= maxBar; bar += 1) {
     const boundary = boundaryByBar.get(bar);
     const start = boundary?.start ?? false;
     const end = boundary?.end ?? false;
+    const nextVolta = voltaByBar.get(bar + 1);
 
     if (start && openStart !== null) pushError(errors, paragraphs[0]?.startLine ?? 1, `Nested repeat start at bar ${bar + 1} is not supported`);
-    if (start && openStart === null) openStart = bar;
+    if (start && openStart === null) {
+      openStart = bar;
+      openStartHasEnding = false;
+    }
     if (end && openStart === null) pushError(errors, paragraphs[0]?.startLine ?? 1, `Repeat end at bar ${bar + 1} has no matching start`);
     if (end && openStart !== null) {
       repeatSpans.push({ startBar: openStart, endBar: bar, times: boundary?.times ?? 2 });
-      openStart = null;
+      openStartHasEnding = true;
+
+      if (nextVolta === undefined) {
+        openStart = null;
+        openStartHasEnding = false;
+      }
     }
   }
 
-  if (openStart !== null) pushError(errors, paragraphs[0]?.startLine ?? 1, `Repeat starting at bar ${openStart + 1} is missing an end`);
+  if (openStart !== null && !openStartHasEnding) {
+    pushError(errors, paragraphs[0]?.startLine ?? 1, `Repeat starting at bar ${openStart + 1} is missing an end`);
+  }
 
   return repeatSpans;
 }

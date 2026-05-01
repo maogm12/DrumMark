@@ -1650,3 +1650,93 @@ This addendum refines positional legality for measures that contain navigation s
 - Cardinality rules remain unchanged:
   - at most one start-side navigation marker
   - at most one end-side navigation instruction
+
+## Addendum 2026-04-30G: Implicit Repeat-End for Intermediate Voltas
+
+### Status
+
+Proposed
+
+### Scope
+
+This addendum refines repeat and volta interaction for alternate endings whose engraved right barline should show a backward repeat even when the source omits an explicit `:|`.
+
+### Rule
+
+- If a measure is inside a volta and its right boundary immediately opens a different following volta, that measure is an intermediate ending.
+- An intermediate ending must normalize as if its right boundary were a repeat end.
+- This rule applies whether the source wrote the repeat explicitly:
+  - `|1. ... :|2. ...`
+- or omitted it:
+  - `|1. ... |2. ...`
+- The inferred repeat-end uses the default repeat count `2` unless an explicit repeat count syntax is present.
+
+### Final Ending Rule
+
+- The last volta in a repeated section does not receive inferred repeat-end semantics.
+- Its closing barline remains exactly the user-written boundary:
+  - `|` stays regular
+  - `||` stays double
+  - `|.` stays volta terminator
+  - `||.` stays double plus volta terminator
+- If the last volta is also the final measure of the score and no explicit terminal barline was written, the existing end-of-score final-barline normalization still applies.
+
+### Canonical Consequence
+
+- `|: A |1. B |2. C |`
+  normalizes barline intent as:
+  - bar 1: `repeat-start`
+  - bar 2: `repeat-end`, volta `[1]`
+  - bar 3: `final`, volta `[2]`
+- `|: A |1. B :|2. C |3. D ||`
+  normalizes barline intent as:
+  - bar 1: `repeat-start`
+  - bar 2: `repeat-end`, volta `[1]`
+  - bar 3: `repeat-end`, volta `[2]`
+  - bar 4: `double`, volta `[3]`
+
+### Repeat-Span Consequence
+
+- Multi-ending alternate endings may produce multiple canonical repeat spans that share the same `repeat-start`.
+- Therefore `|: A |1. B :|2. C :|3. D ||` yields two repeat spans:
+  - start bar 1 -> end bar 2
+  - start bar 1 -> end bar 3
+- The final ending exits the repeated section without adding another backward-repeat span unless one is explicitly written.
+
+## Addendum 2026-04-30H: Clarification of Addendum G
+
+### Status
+
+Proposed
+
+### Scope
+
+This addendum refines Addendum 2026-04-30G and controls wherever G was ambiguous.
+
+### Clarification 1: `|.` and `||.` Are Excluded from Implicit Repeat-End Inference
+
+- Implicit repeat-end inference applies only when a volta measure's right boundary is a plain barline that immediately opens a different following volta.
+- Therefore this inference applies to:
+  - `|1. ... |2. ...`
+  - `|2. ... |3. ...`
+- This inference does not apply to right boundaries that are already explicit volta terminators:
+  - `|.`
+  - `||.`
+- So `|1. ... |. |2. ...` is not a valid surrogate for `|1. ... :|2. ...`.
+- The only valid meanings of `|.` and `||.` remain:
+  - terminate the current volta bracket
+  - optionally carry a double-barline appearance in the `||.` case
+
+### Clarification 2: No New Repeat-Count Syntax Is Introduced
+
+- Addendum G does not introduce any new repeat-count syntax or metadata field.
+- Implicit repeat-end inference produces canonical repeat-end semantics equivalent to a plain `:|`.
+- Therefore the inferred repeat uses the existing default backward-repeat count of `2`, exactly as plain `:|` already does elsewhere in the specification.
+
+### Non-Change
+
+- Explicit compact syntax remains valid and unchanged:
+  - `:|2.`
+  - `:|3.`
+  - `:|1,2.`
+- The last volta in a repeated section still keeps the user-written closing boundary and does not receive implicit repeat-end semantics.

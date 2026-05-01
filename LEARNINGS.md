@@ -42,3 +42,9 @@
 - Navigation text placement in VexFlow is sensitive to `StaveText` font size and `shiftY`. For this renderer, the stable snapshot for left-edge `segno/coda` and right-edge `Fine` / `D.C.` / `D.S.` came from using native `StaveText` at `20pt` without the extra manual upward shift.
 - Title, subtitle, and composer should be emitted through VexFlow objects, not `context.fillText()`. A zero-line header stave with `StaveText` modifiers satisfies the repository rule that score headers remain inside the VexFlow rendering path.
 - Headless/JSDOM runs do not expose the browser `FontFace` API. VexFlow font loading should therefore no-op in that environment instead of logging an expected failure on every render test.
+
+## 2026-04-30 Addendum: Implicit Repeat-End for Intermediate Voltas
+
+- Engraving semantics and repeat semantics have to stay aligned for alternate endings. If a measure is inside a volta and its right boundary immediately opens a different next volta, that current measure should normalize as a `repeat-end` even when the source omitted an explicit `:|`.
+- The inference applies only to intermediate endings. The last volta keeps whatever closing barline the user wrote (`|`, `||`, `|.`, `||.`), and the usual end-of-score final-barline normalization still happens later if nothing explicit was written.
+- Multi-ending repeat validation cannot model voltas as a single open/close pair. A repeat start may fan out into multiple repeat spans with the same `startBar`, one for each intermediate ending (`1.`, `2.`, etc.), while the final ending exits the repeated section without another backward repeat.

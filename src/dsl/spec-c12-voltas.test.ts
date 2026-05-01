@@ -72,6 +72,32 @@ SD |1,2. d - - - |`;
     });
   });
 
+  it("infers repeat-end semantics for intermediate voltas but leaves the last volta's closing barline explicit", () => {
+    const source = `time 4/4
+divisions 4
+
+HH |: x - - - |1. x - - - |2. o - - - |3. c - - - ||`;
+
+    const ast = buildScoreAst(source);
+    expect(ast.errors).toEqual([]);
+    expect(ast.repeatSpans).toEqual([
+      { startBar: 0, endBar: 1, times: 2 },
+      { startBar: 0, endBar: 2, times: 2 },
+    ]);
+
+    const score = buildNormalizedScore(source);
+    expect(score.errors).toEqual([]);
+    expect(score.measures.map((measure) => ({
+      barline: measure.barline,
+      volta: measure.volta?.indices,
+    }))).toEqual([
+      { barline: "repeat-start", volta: undefined },
+      { barline: "repeat-end", volta: [1] },
+      { barline: "repeat-end", volta: [2] },
+      { barline: "double", volta: [3] },
+    ]);
+  });
+
   it("rejects nested repeat starts even when the boundaries are split across tracks", () => {
     const score = buildScoreAst(`time 4/4
 divisions 4

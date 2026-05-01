@@ -651,6 +651,12 @@ function parseMeasureTail(remainder: string, line: PreprocessedLine, errors: Par
     | { kind: "barline" | "repeat_start"; voltaIndices?: number[]; voltaTerminator?: boolean }
     | null = null;
 
+  const sameVoltaIndices = (left?: number[], right?: number[]) =>
+    left !== undefined
+    && right !== undefined
+    && left.length === right.length
+    && left.every((value, index) => value === right[index]);
+
   const parseBoundary = (
     index: number,
   ): {
@@ -701,6 +707,10 @@ function parseMeasureTail(remainder: string, line: PreprocessedLine, errors: Par
       return { length: 2, kind: "repeat_end", times: 2 };
     }
 
+    if (remainder.startsWith("||.", index)) {
+      return { length: 3, kind: "barline", double: true, voltaTerminator: true };
+    }
+
     if (remainder.startsWith("||", index)) {
       return { length: 2, kind: "barline", double: true };
     }
@@ -746,7 +756,7 @@ function parseMeasureTail(remainder: string, line: PreprocessedLine, errors: Par
       cursor += startBoundary.length;
     }
 
-    const endBoundaryMatch = remainder.slice(cursor).match(/:\|\s*\d+(?:,\d+)*\.|\|\s*\d+(?:,\d+)*\.|\|\.|\|:|:\|x\d+|:\||\|/);
+    const endBoundaryMatch = remainder.slice(cursor).match(/:\|\s*\d+(?:,\d+)*\.|\|\s*\d+(?:,\d+)*\.|\|\.\s*\d+(?:,\d+)*\.|\|\.|\|\|\.|\|:|:\|x\d+|:\||\|/);
 
     if (!endBoundaryMatch || endBoundaryMatch.index === undefined) {
       errors.push({
@@ -772,11 +782,20 @@ function parseMeasureTail(remainder: string, line: PreprocessedLine, errors: Par
     const content = remainder.slice(cursor, endIndex).trim();
 
     // Regular measure (no special shorthand)
+    const inferredRepeatEnd =
+      currentLeftBoundary.voltaIndices !== undefined
+      && endBoundary.kind === "barline"
+      && endBoundary.voltaIndices !== undefined
+      && !sameVoltaIndices(currentLeftBoundary.voltaIndices, endBoundary.voltaIndices);
+
     measures.push({
       content,
       repeatStart: currentLeftBoundary.kind === "repeat_start",
-      repeatEnd: endBoundary.kind === "repeat_end",
-      repeatTimes: endBoundary.kind === "repeat_end" ? endBoundary.times : undefined,
+      repeatEnd: endBoundary.kind === "repeat_end" || inferredRepeatEnd,
+      repeatTimes:
+        endBoundary.kind === "repeat_end" || inferredRepeatEnd
+          ? endBoundary.times ?? 2
+          : undefined,
       barline: endBoundary.final ? "final" : endBoundary.double ? "double" : undefined,
       voltaIndices: currentLeftBoundary.voltaIndices,
       voltaTerminator: currentLeftBoundary.voltaTerminator || endBoundary.voltaTerminator,

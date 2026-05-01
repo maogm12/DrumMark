@@ -54,6 +54,34 @@ divisions 4
     expect(score.measures[1]?.volta).toBeUndefined();
   });
 
+  it("infers a repeat-end barline when a volta is followed by a different next volta", () => {
+    const doc = parseDocumentSkeleton(`time 4/4
+divisions 4
+
+|: x - - - |1. x - - - |2. o - - - |3. c - - - |`);
+
+    expect(doc.errors).toEqual([]);
+    const measures = doc.paragraphs[0].lines[0].measures;
+
+    expect(measures[1]).toMatchObject({
+      repeatStart: false,
+      repeatEnd: true,
+      repeatTimes: 2,
+      voltaIndices: [1],
+    });
+    expect(measures[2]).toMatchObject({
+      repeatStart: false,
+      repeatEnd: true,
+      repeatTimes: 2,
+      voltaIndices: [2],
+    });
+    expect(measures[3]).toMatchObject({
+      repeatEnd: false,
+      repeatTimes: undefined,
+      voltaIndices: [3],
+    });
+  });
+
   it("treats `|: :|` as a single repeat-both empty measure", () => {
     const ast = buildScoreAst(`time 4/4
 divisions 4

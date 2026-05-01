@@ -9,6 +9,14 @@ grouping 1+1+1+1
 
 | x x x x | % | %% |
 
-HH | @segno x x x x | xx @to-coda xx | @coda x x @fine - - |
-SD | - s - s | - s - s | - s - s |
-BD | b - b - | b - b - | b - b - |
+HH | [cx] [xx] [xx] o | @segno [xx] [xx] [xx] [xx] | [xx] [xx] [xx] [xx] @to-coda |
+SD | -    [d-] -    d |        -    [d-] -    [d-] | -    [d-] -    [d-] |
+BD | p    -    p    - |        p    -    p    -    | p    -    p    -    |
+
+HH | [cx] [xx] [xx] o @ds-al-coda | @coda [xx] [xx] [xx] [xx] | [xx] [xx] [xx] [xx] @fine |
+SD | -    [d-] -    d             |       -    [d-] -    [d-] | -    [d-] -    [d-] |
+BD | p    -    p    -             |       p    -    p    -    | p    -    p    -    |
+
+HH | [cx] [xx] [xx] o @dc-al-coda | [xx] [xx] [xx] [xx] @dc-al-fine |
+SD | -    [d-] -    d             | -    [d-] -    [d-] |
+BD | p    -    p    -             | p    -    p    -    |

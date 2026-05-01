@@ -250,9 +250,44 @@
   background: #fafafa;
 }
 
+.docs-code-block {
+  position: relative;
+}
+
+.docs-copy-button {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 1;
+  border: 1px solid var(--docs-border);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--docs-muted);
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 700;
+  line-height: 1;
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
+}
+
+.docs-copy-button:hover {
+  background: white;
+  color: var(--docs-text);
+  border-color: #cbd5e1;
+}
+
+.docs-copy-button.copied {
+  color: #0f766e;
+  border-color: #99f6e4;
+  background: #f0fdfa;
+}
+
 .docs-code-block pre {
   margin: 0;
   padding: 24px;
+  padding-top: 56px;
   font-size: 0.95rem;
   line-height: 1.6;
   overflow-x: auto;

@@ -68,6 +68,7 @@ async function buildDocs(templatePath: string, outputPath: string) {
         }
 
         const dsl = fs.readFileSync(drumFile, 'utf8');
+        const encodedDsl = encodeURIComponent(dsl);
         
         // 1. Highlight
         const highlightedDsl = highlightDslStatic(dsl);
@@ -94,6 +95,7 @@ async function buildDocs(templatePath: string, outputPath: string) {
 
         // 3. Construct HTML
         const exampleTitle = lang === 'zh' ? '示例' : 'Example';
+        const copyLabel = lang === 'zh' ? '复制' : 'Copy';
         const resultTitle = lang === 'zh' ? '生成结果' : 'Score Result';
         
         const sectionBody = `
@@ -101,6 +103,13 @@ async function buildDocs(templatePath: string, outputPath: string) {
                 <div class="docs-section-pane">
                     <div class="docs-pane-title">${exampleTitle}</div>
                     <div class="docs-code-block">
+                        <button
+                            type="button"
+                            class="docs-copy-button"
+                            data-copy="${encodedDsl}"
+                            data-copy-label="${copyLabel}"
+                            aria-label="${copyLabel}"
+                        >${copyLabel}</button>
                         <pre class="dsl-code-block">${highlightedDsl}</pre>
                     </div>
                 </div>

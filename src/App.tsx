@@ -527,6 +527,8 @@ function StaffPreview({
   titleSubtitleGap,
   titleStaffGap,
   systemSpacing,
+  stemLength,
+  voltaGap,
   hideVoice2Rests,
   active,
 }: {
@@ -537,6 +539,8 @@ function StaffPreview({
   titleSubtitleGap: number;
   titleStaffGap: number;
   systemSpacing: number;
+  stemLength: number;
+  voltaGap: number;
   hideVoice2Rests: boolean;
   active: boolean;
 }) {
@@ -566,6 +570,8 @@ function StaffPreview({
       titleSubtitleGap,
       titleStaffGap,
       systemSpacing,
+      stemLength,
+      voltaGap,
       hideVoice2Rests,
     };
 
@@ -586,7 +592,7 @@ function StaffPreview({
         console.error("VexFlow render error:", renderError);
         setError(msg || "Could not render staff preview.");
       });
-  }, [score, systemSpacing, titleStaffGap, titleSubtitleGap, titleTopPadding, active, hideVoice2Rests, pagePadding, pageScale]);
+  }, [score, systemSpacing, stemLength, voltaGap, titleStaffGap, titleSubtitleGap, titleTopPadding, active, hideVoice2Rests, pagePadding, pageScale]);
 
   const printableStyle = {
     "--staff-zoom-width": `${pageScale * 100}%`,
@@ -648,6 +654,8 @@ function renderPdfPageSvgs(
     titleSubtitleGap?: number;
     titleStaffGap?: number;
     systemSpacing?: number;
+    stemLength?: number;
+    voltaGap?: number;
     hideVoice2Rests?: boolean;
   },
 ) {
@@ -659,6 +667,8 @@ function renderPdfPageSvgs(
     titleSubtitleGap: layout?.titleSubtitleGap ?? 1.2,
     titleStaffGap: layout?.titleStaffGap ?? 2.8,
     systemSpacing: layout?.systemSpacing ?? 0.6,
+    stemLength: layout?.stemLength ?? 31,
+    voltaGap: layout?.voltaGap ?? -15,
     hideVoice2Rests: layout?.hideVoice2Rests ?? false,
   };
 
@@ -673,6 +683,8 @@ async function buildPdf(
     titleSubtitleGap?: number;
     titleStaffGap?: number;
     systemSpacing?: number;
+    stemLength?: number;
+    voltaGap?: number;
     hideVoice2Rests?: boolean;
   },
 ) {
@@ -726,6 +738,8 @@ interface AppSettings {
   pageScale: number;
   titleStaffGap: number;
   systemSpacing: number;
+  stemLength: number;
+  voltaGap: number;
   titleTopPadding: number;
   titleSubtitleGap: number;
   activeTab: MainTab;
@@ -737,6 +751,8 @@ const defaultSettings: AppSettings = {
   pageScale: 1.0,
   titleStaffGap: 2.8,
   systemSpacing: 0.6,
+  stemLength: 31,
+  voltaGap: -15,
   titleTopPadding: 3.6,
   titleSubtitleGap: 1.2,
   activeTab: "editor",
@@ -758,6 +774,12 @@ export function App() {
       // Migration: Ensure pageScale is 1.0 if not defined or coming from old system
       if (parsed.pageScale === undefined || parsed.pageScale < 0.2 || parsed.pageScale > 5) {
         parsed.pageScale = 1.0;
+      }
+      if (parsed.stemLength === undefined || parsed.stemLength < 20 || parsed.stemLength > 40) {
+        parsed.stemLength = 31;
+      }
+      if (parsed.voltaGap === undefined || parsed.voltaGap < -16 || parsed.voltaGap > 16) {
+        parsed.voltaGap = -15;
       }
       if (parsed.previewMode && !parsed.activeTab) {
         parsed.activeTab = parsed.previewMode === "xml" ? "xml" : "page";
@@ -915,6 +937,8 @@ export function App() {
         titleSubtitleGap: settings.titleSubtitleGap,
         titleStaffGap: settings.titleStaffGap,
         systemSpacing: settings.systemSpacing,
+        stemLength: settings.stemLength,
+        voltaGap: settings.voltaGap,
         hideVoice2Rests: settings.hideVoice2Rests,
       });
       const pdfBuffer = pdfBytes.buffer.slice(pdfBytes.byteOffset, pdfBytes.byteOffset + pdfBytes.byteLength) as ArrayBuffer;
@@ -1038,6 +1062,8 @@ export function App() {
                       titleSubtitleGap={settings.titleSubtitleGap}
                       titleStaffGap={settings.titleStaffGap}
                       systemSpacing={settings.systemSpacing}
+                      stemLength={settings.stemLength}
+                      voltaGap={settings.voltaGap}
                       hideVoice2Rests={settings.hideVoice2Rests}
                       active={true}
                     />
@@ -1069,6 +1095,14 @@ export function App() {
                   <div className="setting-row">
                     <div className="setting-label"><span>System Spacing</span><span className="setting-value">{settings.systemSpacing.toFixed(1)}</span></div>
                     <input type="range" min="0.6" max="6" step="0.2" value={settings.systemSpacing} onChange={(e) => updateSetting("systemSpacing", parseFloat(e.target.value))} />
+                  </div>
+                  <div className="setting-row">
+                    <div className="setting-label"><span>Stem Length</span><span className="setting-value">{settings.stemLength}</span></div>
+                    <input type="range" min="20" max="40" step="1" value={settings.stemLength} onChange={(e) => updateSetting("stemLength", parseInt(e.target.value, 10))} />
+                  </div>
+                  <div className="setting-row">
+                    <div className="setting-label"><span>Volta Gap</span><span className="setting-value">{settings.voltaGap}</span></div>
+                    <input type="range" min="-16" max="16" step="1" value={settings.voltaGap} onChange={(e) => updateSetting("voltaGap", parseInt(e.target.value, 10))} />
                   </div>
                   <div className="padding-grid-container">
                     <span className="setting-label-small">Margins (px)</span>

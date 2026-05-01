@@ -83,6 +83,8 @@ async function main() {
       titleSubtitleGap: 10,
       titleStaffGap: 40,
       systemSpacing: 1.0,
+      stemLength: 31,
+      voltaGap: -15,
       hideVoice2Rests: false
     });
   }

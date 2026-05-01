@@ -13,6 +13,8 @@ export type VexflowRenderOptions = {
   titleSubtitleGap: number;
   titleStaffGap: number;
   systemSpacing: number;
+  stemLength: number;
+  voltaGap?: number;
   hideVoice2Rests: boolean;
 };
 

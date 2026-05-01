@@ -219,6 +219,11 @@ If the app is served from a sub-directory (e.g., `/drum_notation/`):
 - **Hash navigation and back/forward restoration become simplest when `window` is the only scroller:** letting the document itself scroll removes the need for custom scroll bookkeeping, first-paint masking, and hash-specific repair logic.
 - **Keep docs runtime JS minimal and non-musical:** the browser docs entrypoint should ideally handle only lightweight UI affordances like the mobile menu, not parsing, rendering, active-nav tracking, or scroll management.
 
+## 35A. Static Docs Copy Buttons Should Be Runtime-Resilient (2026-04-30)
+
+- **Example copy UX should not depend solely on build-time HTML injection:** `build-docs.ts` currently emits `.docs-copy-button` for generated example panes, but the browser-side docs script should still backfill missing buttons for any `.docs-code-block` so future template changes or hand-authored code blocks do not silently lose copy support.
+- **Binding should be idempotent:** when copy buttons may exist from build time or be injected at runtime, the docs bootstrap needs a guard such as `data-copy-bound` to avoid duplicate click handlers during repeated initialization paths.
+
 ## 36. Docs Width Constraints Belong On Content, Not The Full Shell (2026-04-30)
 
 - **Do not cap the outer docs shell with `max-width`:** when the sidebar owns a distinct background color, constraining `.docs-container` leaves exposed body background on ultrawide screens and visually breaks the left rail.

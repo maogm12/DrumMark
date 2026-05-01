@@ -2,6 +2,11 @@
 
 ## 2026-04-30
 
+- Static docs examples should copy from the source DSL string, not from highlighted `<pre>` HTML. The stable pattern here is to emit the original example text as encoded `data-copy` at build time, then let the browser decode and copy that payload on button click.
+- `navigator.clipboard.writeText()` is not sufficient for docs pages served over LAN `http` such as `http://192.168.x.x:5173`. Those contexts commonly fail clipboard writes on mobile browsers, so docs copy buttons need a `document.execCommand("copy")` fallback wired into the same click gesture.
+- Navigation labels like `Fine`, `D.C.`, and `D.S.` must not be rendered with the music glyph font `Bravura`. That causes device-dependent fallback differences across desktop and mobile. Textual navigation should use `Academico`; only actual symbols like segno/coda should stay on `Bravura`, and mixed `To Coda` rendering should be emitted as separate text-plus-glyph elements.
+- Navigation collision handling is safer when it stays inside VexFlow's modifier layout. For note-adjacent end markers, attaching them as `Annotation`s on the last anchor note lets `ModifierContext` reserve horizontal space and stack vertical text lines automatically; querying note bounding boxes before `Formatter` has assigned `TickContext` will crash with `NoTickContext`.
+- If navigation text must not reflow notes, render it as post-format overlays instead of note modifiers. The practical split here is: right-edge `Fine` / `D.C.` / `D.S.` and left-edge `segno/coda` should share the same overlay `Annotation` baseline (`textLine`-driven), otherwise mixing `StaveText` on one side and `Annotation` on the other produces visible vertical misalignment.
 - Volta boundaries in the parser are measure-boundary syntax, not regular measure content. The parser must recognize them before token parsing on anonymous tracks, or inputs like `:|2.` degrade into a valid repeat-end followed by an invalid content token `2`.
 - Anonymous-track alternate endings need the same boundary grammar as named tracks. In practice this includes both compact forms like `|2.` and musician-style spaced forms like `| 3.`.
 - A repeat end may immediately introduce the next volta with no intervening barline token. `:|2.` should close the previous repeated measure and seed the next measure's left boundary with volta indices `[2]`.
@@ -48,3 +53,22 @@
 - Engraving semantics and repeat semantics have to stay aligned for alternate endings. If a measure is inside a volta and its right boundary immediately opens a different next volta, that current measure should normalize as a `repeat-end` even when the source omitted an explicit `:|`.
 - The inference applies only to intermediate endings. The last volta keeps whatever closing barline the user wrote (`|`, `||`, `|.`, `||.`), and the usual end-of-score final-barline normalization still happens later if nothing explicit was written.
 - Multi-ending repeat validation cannot model voltas as a single open/close pair. A repeat start may fan out into multiple repeat spans with the same `startBar`, one for each intermediate ending (`1.`, `2.`, etc.), while the final ending exits the repeated section without another backward repeat.
+
+## 2026-04-30 Addendum: VexFlow Stem Length Control
+
+- VexFlow exposes per-note stem shortening through `StemmableNote#setStemLength(height)`. This is a direct absolute stem height override, not a delta.
+- Beamed groups still honor that override as their starting geometry, but `Beam.applyStemExtensions()` will extend stems as needed to meet the shared beam line. So shortening works globally, but beamed notes remain constrained by beam alignment rather than a fixed identical visual height.
+- If stem length is user-tunable in the editor, it should be part of the shared `VexflowRenderOptions` pipeline rather than a renderer constant, otherwise preview, PDF export, CLI output, and tests drift out of sync.
+
+## 2026-04-30 Addendum: Editor Stem-Length Wiring
+
+- The editor already persisted a `stemLength` render setting and exposed a slider, but the actual note-building path still has to receive that value explicitly. In this renderer the critical handoff is `renderMeasureVoices(...) -> createVexNotes(...) -> StaveNote#setStemLength(...)`.
+- A UI-level option is not enough as verification. The stable regression check is to compare the exported SVG stem path for the same score under two `stemLength` values and assert the stem endpoint moves.
+- In VexFlow, `StemmableNote#setStemLength()` only records `stemExtensionOverride`; it does not push that value into the already-built `Stem`. If code also calls `setStemDirection()`, the safe order is `setStemLength()` first, then `setStemDirection()`, because `setStemDirection()` is what applies `getStemExtension()` onto the live stem object.
+
+## 2026-05-01 Addendum: VexFlow Navigation Layout Split
+
+- VexFlow is good at local modifier stacking, not system-level collision avoidance. If navigation is anchored to a note, attaching it as an `Annotation`-like modifier lets `ModifierContext` stack it with accents, sticking, and other note-local marks automatically.
+- `left-edge` / `right-edge` navigation and `volta` brackets should not rely on fixed `shiftY` heuristics. A more stable renderer flow is: format and draw notes first, then inspect note and modifier geometry, build a system-level top skyline, and place edge/span overlays against that skyline.
+- Pure note geometry is not enough once sticking or text annotations are in play. After `voice.draw(...)`, VexFlow modifiers have resolved positions, so skyline construction can safely sample note top, stem top, and the rendered `x/y` of above-staff modifiers without forcing a second SVG render pass.
+- Mixed-font navigation such as `To Coda` is easier to keep stable by treating it as one logical layout unit. A custom annotation/overlay that draws text and glyph segments together avoids the spacing drift that happens when `To` and the coda symbol are emitted as independent modifiers competing for text lines.

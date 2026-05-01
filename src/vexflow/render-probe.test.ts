@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
-import { describe, expect, it } from "vitest";
-import { Glyphs } from "vexflow";
+import { describe, expect, it, vi } from "vitest";
+import { Glyphs, StaveNote, Stem } from "vexflow";
 import { buildNormalizedScore } from "../dsl/normalize";
 import { renderScoreToSvg } from "./renderer";
 
@@ -21,11 +21,39 @@ grouping 1+1+1+1+1+1+1+1+1
       titleSubtitleGap: 1.2,
       titleStaffGap: 2.8,
       systemSpacing: 1,
+      stemLength: 30,
       hideVoice2Rests: true,
     });
 
     expect(svg).toContain("<svg");
     expect(svg).toContain("vf-stavenote");
+  });
+
+  it("applies stemLength render options to note construction", async () => {
+    const score = buildNormalizedScore(`time 4/4
+divisions 4
+
+| x - - - |`);
+
+    const stemSpy = vi.spyOn(StaveNote.prototype, "setStemLength");
+    const extensionSpy = vi.spyOn(Stem.prototype, "setExtension");
+
+    await renderScoreToSvg(score, {
+      mode: "preview",
+      pagePadding: { top: 24, right: 18, bottom: 24, left: 18 },
+      pageScale: 1.0,
+      titleTopPadding: 3.6,
+      titleSubtitleGap: 1.2,
+      titleStaffGap: 2.8,
+      systemSpacing: 1,
+      stemLength: 40,
+      hideVoice2Rests: true,
+    });
+
+    expect(stemSpy).toHaveBeenCalledWith(40);
+    expect(extensionSpy).toHaveBeenCalledWith(40 - Stem.HEIGHT);
+    stemSpy.mockRestore();
+    extensionSpy.mockRestore();
   });
 
   it("renders canonical structural intent without crashing the VexFlow path", async () => {
@@ -42,6 +70,7 @@ divisions 4
       titleSubtitleGap: 1.2,
       titleStaffGap: 2.8,
       systemSpacing: 1,
+      stemLength: 30,
       hideVoice2Rests: true,
     });
 
@@ -65,13 +94,20 @@ divisions 4
       titleSubtitleGap: 1.2,
       titleStaffGap: 2.8,
       systemSpacing: 1,
+      stemLength: 30,
       hideVoice2Rests: true,
     });
 
-    expect(svg).toMatch(/font-size="20pt" x="[^"]+" y="164">Fine<\/text>/);
-    expect(svg).toMatch(/font-size="20pt" x="[^"]+" y="164">D\.C\.<\/text>/);
-    expect(svg).toMatch(/font-size="20pt" x="[^"]+" y="164">D\.S\.<\/text>/);
-    expect(svg).toMatch(/font-family="Bravura" font-size="20pt" x="[^"]+" y="164"><\/text>/);
+    expect(svg).toContain(">Fine</text>");
+    expect(svg).toContain(">D.C.</text>");
+    expect(svg).toContain(">D.S.</text>");
+    expect(svg).toContain('class="vf-edge-navigation edge-navigation-fine"');
+    expect(svg).toContain('class="vf-edge-navigation edge-navigation-dc"');
+    expect(svg).toContain('class="vf-edge-navigation edge-navigation-ds"');
+    expect(svg).toContain('font-family="Academico"');
+    expect(svg).toContain(">\uE047</text>");
+    expect(svg).toContain('font-family="Bravura"');
+    expect(svg).toContain('font-size="20pt"');
   });
 
   it("continues a volta across systems when the ending spans multiple measures", async () => {
@@ -88,12 +124,106 @@ divisions 4
       titleSubtitleGap: 1.2,
       titleStaffGap: 2.8,
       systemSpacing: 1,
+      stemLength: 30,
       hideVoice2Rests: true,
     });
 
     expect(svg).toContain(">1.</text>");
-    expect(svg).toMatch(/<rect x="[^"]+" y="125" width="[^"]+" height="1" fill="#333" stroke="none"><\/rect>/);
-    expect(svg).toMatch(/<rect x="[^"]+" y="325" width="[^"]+" height="1" fill="#333" stroke="none"><\/rect>/);
+    const overlayYs = [...svg.matchAll(/<g class="vf-volta-overlay"[\s\S]*?<rect x="[^"]+" y="([0-9.]+)" width="[^"]+" height="1" stroke="none"><\/rect>/g)]
+      .map((match) => Number(match[1]));
+
+    expect(overlayYs).toHaveLength(2);
+    expect(overlayYs[0]).toBeLessThan(190.5);
+    expect(overlayYs[1]).toBeLessThan(390.5);
+  });
+
+  it("keeps adjacent volta spans on the same system at one shared height", async () => {
+    const score = buildNormalizedScore(`time 4/4
+divisions 4
+
+|: x x x x |1. x x x x :|2. x x x x |`);
+
+    const svg = await renderScoreToSvg(score, {
+      mode: "preview",
+      pagePadding: { top: 24, right: 18, bottom: 24, left: 18 },
+      pageScale: 1.0,
+      titleTopPadding: 3.6,
+      titleSubtitleGap: 1.2,
+      titleStaffGap: 2.8,
+      systemSpacing: 1,
+      stemLength: 30,
+      hideVoice2Rests: true,
+    });
+
+    const overlayYs = [...svg.matchAll(/<g class="vf-volta-overlay"[\s\S]*?<rect x="[^"]+" y="([0-9.]+)" width="[^"]+" height="1" stroke="none"><\/rect>/g)]
+      .map((match) => Number(match[1]));
+
+    expect(overlayYs).toHaveLength(2);
+    expect(overlayYs[0]).toBe(overlayYs[1]);
+  });
+
+  it("lets volta gap control how close the bracket sits to the notes", async () => {
+    const score = buildNormalizedScore(`time 4/4
+divisions 4
+
+|: x x x x |1. x x x x :|2. x x x x |`);
+
+    const compactSvg = await renderScoreToSvg(score, {
+      mode: "preview",
+      pagePadding: { top: 24, right: 18, bottom: 24, left: 18 },
+      pageScale: 1.0,
+      titleTopPadding: 3.6,
+      titleSubtitleGap: 1.2,
+      titleStaffGap: 2.8,
+      systemSpacing: 1,
+      stemLength: 30,
+      voltaGap: 0,
+      hideVoice2Rests: true,
+    });
+
+    const looseSvg = await renderScoreToSvg(score, {
+      mode: "preview",
+      pagePadding: { top: 24, right: 18, bottom: 24, left: 18 },
+      pageScale: 1.0,
+      titleTopPadding: 3.6,
+      titleSubtitleGap: 1.2,
+      titleStaffGap: 2.8,
+      systemSpacing: 1,
+      stemLength: 30,
+      voltaGap: 16,
+      hideVoice2Rests: true,
+    });
+
+    const compactY = Number(compactSvg.match(/<g class="vf-volta-overlay"[\s\S]*?<rect x="[^"]+" y="([0-9.]+)" width="[^"]+" height="1" stroke="none"><\/rect>/)?.[1] ?? "0");
+    const looseY = Number(looseSvg.match(/<g class="vf-volta-overlay"[\s\S]*?<rect x="[^"]+" y="([0-9.]+)" width="[^"]+" height="1" stroke="none"><\/rect>/)?.[1] ?? "0");
+
+    expect(compactY).toBeGreaterThan(looseY);
+  });
+
+  it("stacks interior navigation above accent and sticking modifiers", async () => {
+    const score = buildNormalizedScore(`time 4/4
+divisions 4
+
+HH | X X @to-coda X X |
+ST | R - L - |`);
+
+    const svg = await renderScoreToSvg(score, {
+      mode: "preview",
+      pagePadding: { top: 24, right: 18, bottom: 24, left: 18 },
+      pageScale: 1.0,
+      titleTopPadding: 3.6,
+      titleSubtitleGap: 1.2,
+      titleStaffGap: 2.8,
+      systemSpacing: 1,
+      stemLength: 30,
+      hideVoice2Rests: true,
+    });
+
+    expect(svg).toContain('class="vf-annotation note-navigation note-navigation-to-coda"');
+    expect(svg).toContain(">To</text>");
+    expect(svg).toContain(Glyphs.coda);
+    expect(svg).toContain(">R</text>");
+    expect(svg).toContain(">L</text>");
   });
 
   it("renders a native multi-measure rest instead of a text label plus whole-rest note", async () => {
@@ -112,6 +242,7 @@ grouping 4
       titleSubtitleGap: 1.2,
       titleStaffGap: 2.8,
       systemSpacing: 1,
+      stemLength: 30,
       hideVoice2Rests: true,
     });
 
@@ -138,6 +269,7 @@ T1 | [1: d d d] - - - - - - - |`);
       titleSubtitleGap: 1.2,
       titleStaffGap: 2.8,
       systemSpacing: 1,
+      stemLength: 30,
       hideVoice2Rests: true,
     });
 
@@ -160,6 +292,7 @@ ST | R - L - | R - L - |`);
       titleSubtitleGap: 1.2,
       titleStaffGap: 2.8,
       systemSpacing: 1,
+      stemLength: 30,
       hideVoice2Rests: true,
     });
 
@@ -186,6 +319,7 @@ BD | b - b - |`);
       titleSubtitleGap: 1.2,
       titleStaffGap: 2.8,
       systemSpacing: 1,
+      stemLength: 30,
       hideVoice2Rests: false,
     });
 
@@ -211,6 +345,7 @@ BD | b - - - | % |`);
       titleSubtitleGap: 1.2,
       titleStaffGap: 2.8,
       systemSpacing: 1,
+      stemLength: 30,
       hideVoice2Rests: false,
     });
 
@@ -246,6 +381,7 @@ BD | b - - - | b - b - | %% |`);
       titleSubtitleGap: 1.2,
       titleStaffGap: 2.8,
       systemSpacing: 1,
+      stemLength: 30,
       hideVoice2Rests: false,
     });
 
@@ -280,6 +416,7 @@ BD | p - - - p - - - |`);
       titleSubtitleGap: 1.2,
       titleStaffGap: 2.8,
       systemSpacing: 1,
+      stemLength: 30,
       hideVoice2Rests: false,
     });
 

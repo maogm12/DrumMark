@@ -72,3 +72,33 @@
 - `left-edge` / `right-edge` navigation and `volta` brackets should not rely on fixed `shiftY` heuristics. A more stable renderer flow is: format and draw notes first, then inspect note and modifier geometry, build a system-level top skyline, and place edge/span overlays against that skyline.
 - Pure note geometry is not enough once sticking or text annotations are in play. After `voice.draw(...)`, VexFlow modifiers have resolved positions, so skyline construction can safely sample note top, stem top, and the rendered `x/y` of above-staff modifiers without forcing a second SVG render pass.
 - Mixed-font navigation such as `To Coda` is easier to keep stable by treating it as one logical layout unit. A custom annotation/overlay that draws text and glyph segments together avoids the spacing drift that happens when `To` and the coda symbol are emitted as independent modifiers competing for text lines.
+
+## Legacy Docs Learnings (Merged From `docs/LEARNINGS.md`)
+
+### 1. VexFlow 5 & Vite MPA
+
+- VexFlow 5 font loading should use `await VexFlow.loadFonts(...fontNames)`, and active fonts are controlled by `VexFlow.setFonts(...fontNames)`.
+- In the minified VexFlow 5 build used here, SMuFL mappings live at `VF.smufl.to_code_points`, and `StaveNote` notehead instances are stored on `note.note_heads`.
+- Vite subpath deploys need `base` configured and should prefer relative internal HTML links for multi-page docs.
+- Static docs generation in this repo runs through `npm run build-docs` in a headless JSDOM environment that pre-renders `.drum` examples into SVG.
+
+### 2. DrumMark Spec And DSL Validation
+
+- Header duplication, grouping consistency, and irregular-meter fallback all need parser-level protection so later stages do not inherit ambiguous header state.
+- Anonymous routing, summon prefixes, global token resolution priority, and `ST` sticking semantics all have implementation-critical edge cases that should be tested at normalize time, not just parser shape time.
+- Measure-level constructs such as `%`, `%%`, `|1.`, `|2.`, `@segno`, `@dc`, `--N--`, and `*N` are global structural metadata and should not be treated like ordinary inline content once parsed.
+- Validation is strongest when it uses rational timing math rather than slot heuristics alone, especially for dotted values, group stretching/compression, and grouping-boundary crossing.
+
+### 3. MusicXML And Renderer Backend
+
+- MusicXML rests should include explicit display positions to avoid voice collisions, matching the renderer convention of placing voice 1 rests around `B/4` and voice 2 rests around `F/4`.
+- Measure repeats and multi-measure rests are appearance metadata layered on top of canonical musical structure, not shortcuts for malformed physical-measure duplication.
+- VexFlow needs explicit `Dot` modifiers for dotted notes and rests, and dotted durations must also be encoded in the note duration itself so ticks and spacing stay correct.
+- Multi-measure rests should be rendered with VexFlow's native `MultiMeasureRest`, not simulated with text plus a whole rest.
+
+### 4. Static Docs Runtime
+
+- Static docs pages should avoid eagerly loading the full DSL/render stack because examples are already pre-rendered at build time.
+- Browser-native scrolling and lightweight runtime JS are more robust than nested scroll containers and heavy custom restoration logic for the docs page.
+- Copy buttons should be resilient at runtime even if build-time HTML injection changes, and button binding should be idempotent.
+- Width constraints should be applied to the reading column rather than the outer docs shell, so the sidebar and chrome can remain full-width.

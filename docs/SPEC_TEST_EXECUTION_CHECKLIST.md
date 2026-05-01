@@ -15,7 +15,7 @@ IR-only sections and renderer/exporter internals are out of scope unless a synta
 - The sub-agent adds the missing tests first.
 - If the new tests fail, the sub-agent fixes the smallest correct implementation surface needed to make them pass.
 - Each case should prefer a disjoint write scope to reduce merge conflicts.
-- Findings that clarify parser or DSL behavior should be appended to `docs/LEARNINGS.md`.
+- Findings that clarify parser or DSL behavior should be appended to `LEARNINGS.md`.
 
 ## Case Ledger
 

@@ -65,11 +65,11 @@ function downloadTextFile(filename: string, content: string, mimeType: string) {
 }
 
 function safeExportBasename(title: string | undefined) {
-  const filename = title ? title : "drum-notation";
+  const filename = title ? title : "drummark";
   return filename
     .toLowerCase()
     .replace(/[^\p{L}\p{N}]+/gu, "-")
-    .replace(/^-+|-+$/g, "") || "drum-notation";
+    .replace(/^-+|-+$/g, "") || "drummark";
 }
 
 function parseSvgSize(svgMarkup: string) {
@@ -181,7 +181,7 @@ function buildXmpMetadata({
       xmlns:dc="http://purl.org/dc/elements/1.1/"
       xmlns:pdf="http://ns.adobe.com/pdf/1.3/"
       xmlns:xmp="http://ns.adobe.com/xap/1.0/"
-      xmlns:music="https://drum-notation.local/ns/1.0/">
+      xmlns:music="https://drummark.local/ns/1.0/">
       <dc:title>
         <rdf:Alt>
           <rdf:li xml:lang="x-default">${xmlText(title)}</rdf:li>
@@ -198,7 +198,7 @@ function buildXmpMetadata({
         </rdf:Alt>
       </dc:description>
       <pdf:Keywords>${xmlText(keywordText)}</pdf:Keywords>
-      <xmp:CreatorTool>Drum Notation</xmp:CreatorTool>
+      <xmp:CreatorTool>DrumMark</xmp:CreatorTool>
       <xmp:CreateDate>${date}</xmp:CreateDate>
       <xmp:ModifyDate>${date}</xmp:ModifyDate>
       <music:Composer>${xmlText(composer ?? author)}</music:Composer>
@@ -228,8 +228,8 @@ function applyPdfMetadata(
   pdf.setKeywords(metadata.keywords);
   pdf.setCreationDate(metadata.createdAt);
   pdf.setModificationDate(metadata.createdAt);
-  pdf.setCreator("Drum Notation");
-  pdf.setProducer("Drum Notation");
+  pdf.setCreator("DrumMark");
+  pdf.setProducer("DrumMark");
 
   const infoDict = (pdf as unknown as { getInfoDict: () => { set: (key: unknown, value: unknown) => void } }).getInfoDict();
   infoDict.set(PDFName.of("Composer"), PDFHexString.fromText(metadata.composer ?? metadata.author));
@@ -675,8 +675,8 @@ function renderPdfPageSvgs(
     voltaGap: layout.voltaGap,
     hideVoice2Rests: layout.hideVoice2Rests,
     tempoShiftX: DEFAULT_RENDER_OPTIONS.tempoShiftX,
-  };
-
+    tempoShiftY: DEFAULT_RENDER_OPTIONS.tempoShiftY,
+    };
   return renderScorePagesToSvgs(score, opts);
 }
 
@@ -695,12 +695,12 @@ async function buildPdf(
   },
 ) {
   const [{ PDFDocument, PDFHexString, PDFName }] = await Promise.all([import("pdf-lib")]);
-  const title = score.ast.headers.title?.value ?? "Drum Notation";
+  const title = score.ast.headers.title?.value ?? "DrumMark";
   const subtitle = score.ast.headers.subtitle?.value;
   const composer = score.ast.headers.composer?.value;
-  const author = composer ?? "Drum Notation";
-  const subject = subtitle ? `Drum notation - ${subtitle}` : "Drum notation";
-  const keywords = ["drum notation", "drums", "musicxml", title, author];
+  const author = composer ?? "DrumMark";
+  const subject = subtitle ? `DrumMark - ${subtitle}` : "DrumMark";
+  const keywords = ["DrumMark", "drum notation", "drums", "musicxml", title, author];
   const createdAt = new Date();
   const pageSvgs = await renderPdfPageSvgs(score, layout);
 
@@ -766,14 +766,14 @@ const defaultSettings: AppSettings = {
 
 export function App() {
   const [dsl, setDsl] = useState(() => {
-    const saved = localStorage.getItem("drum-notation-dsl");
+    const saved = localStorage.getItem("drummark-dsl");
     if (!saved || saved === legacySeedDsl) {
       return seedDsl;
     }
     return saved;
   });
   const [settings, setSettings] = useState<AppSettings>(() => {
-    const saved = localStorage.getItem("drum-notation-settings");
+    const saved = localStorage.getItem("drummark-settings");
     if (!saved) return defaultSettings;
     try {
       const parsed = JSON.parse(saved);
@@ -806,7 +806,7 @@ export function App() {
   const [showErrors, setShowErrors] = useState(false);
   
   const [editorWidth, setEditorWidth] = useState(() => {
-    const saved = localStorage.getItem("drum-notation-editor-width");
+    const saved = localStorage.getItem("drummark-editor-width");
     return saved ? parseInt(saved, 10) : 600;
   });
   const isResizingRef = useRef(false);
@@ -879,11 +879,11 @@ export function App() {
   }, [debouncedAnalysisInput]);
 
   useEffect(() => {
-    localStorage.setItem("drum-notation-dsl", dsl);
+    localStorage.setItem("drummark-dsl", dsl);
   }, [dsl]);
 
   useEffect(() => {
-    localStorage.setItem("drum-notation-settings", JSON.stringify(settings));
+    localStorage.setItem("drummark-settings", JSON.stringify(settings));
   }, [settings]);
 
   useEffect(() => {
@@ -893,7 +893,7 @@ export function App() {
   }, [settings.pageScale, settings.activeTab]);
 
   useEffect(() => {
-    localStorage.setItem("drum-notation-editor-width", String(editorWidth));
+    localStorage.setItem("drummark-editor-width", String(editorWidth));
   }, [editorWidth]);
 
   const updateSetting = <K extends keyof AppSettings>(key: K, value: AppSettings[K]) => {
@@ -1082,7 +1082,7 @@ export function App() {
         <div className="header-branding">
           <DrumIcon />
           <div>
-            <h1>Drum Notation</h1>
+            <h1>DrumMark</h1>
             <p>Text-first notation</p>
           </div>
         </div>

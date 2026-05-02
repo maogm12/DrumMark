@@ -1,16 +1,16 @@
-# Drum Notation 🥁
+# DrumMark 🥁
 
 <p align="center">
-  <img src="public/favicon.svg" width="128" height="128" alt="Drum Notation Logo">
+  <img src="public/favicon.svg" width="128" height="128" alt="DrumMark Logo">
 </p>
 
 <p align="center">
   <b>中文版</b> | <a href="README.md">English</a>
 </p>
 
-> **为现代鼓手设计的“文本优先”记谱工具。**
+> **为现代鼓手打造的文本优先记谱工具。**
 
-**Drum Notation** 是一款轻量级 Web 应用，它通过自研的记谱语法，让你能像写代码一样飞速记录鼓谱灵感，并实时生成专业五线谱，支持导出 MusicXML 和 PDF。
+**DrumMark** 是一款轻量级 Web 应用，它通过自研的记谱语法，让你能像写代码一样飞速记录鼓谱灵感，并实时生成专业五线谱，支持导出 MusicXML 和 PDF。
 
 ---
 

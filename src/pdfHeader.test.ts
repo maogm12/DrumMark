@@ -23,7 +23,7 @@ describe("drawPdfHeaderText", () => {
 
     drawPdfHeaderText({
       page,
-      title: "Drum Notation",
+      title: "DrumMark",
       subtitle: "Verse A",
       composer: "G. Mao",
       pageWidth: 612,
@@ -36,7 +36,7 @@ describe("drawPdfHeaderText", () => {
     });
 
     const bytes = await pdf.save();
-    const path = join(mkdtempSync(join(tmpdir(), "drum-notation-pdf-")), "header.pdf");
+    const path = join(mkdtempSync(join(tmpdir(), "drummark-pdf-")), "header.pdf");
     writeFileSync(path, bytes);
 
     const tool = pdftotextPath();
@@ -47,7 +47,7 @@ describe("drawPdfHeaderText", () => {
     }
 
     const text = execFileSync(tool, [path, "-"], { encoding: "utf8" });
-    expect(text).toContain("Drum Notation");
+    expect(text).toContain("DrumMark");
     expect(text).toContain("Verse A");
     expect(text).toContain("G. Mao");
   });

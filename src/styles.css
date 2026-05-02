@@ -36,8 +36,8 @@
 
 @font-face {
   font-family: 'Bravura';
-  src: url('/drum_notation/fonts/bravura.woff2') format('woff2'),
-       url('/drum_notation/fonts/bravura.otf') format('opentype');
+  src: url('../public/fonts/bravura.woff2') format('woff2'),
+       url('../public/fonts/bravura.otf') format('opentype');
   font-weight: normal;
   font-style: normal;
 }

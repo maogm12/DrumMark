@@ -2,7 +2,7 @@
 
 ## Goal
 
-Bring the implementation into alignment with the current [DRUMMARK_SPEC.md](/Users/gmao/code/drum_notation/docs/DRUMMARK_SPEC.md) until every item in [TASKS.md](/Users/gmao/code/drum_notation/docs/TASKS.md) is checked off.
+Bring the implementation into alignment with the current [DRUMMARK_SPEC.md](./DRUMMARK_SPEC.md) until every item in [TASKS.md](./TASKS.md) is checked off.
 
 Constraint:
 
@@ -74,7 +74,7 @@ Rules:
 
 The gap-closure effort is complete only when all of the following are true:
 
-- Every checkbox in [TASKS.md](/Users/gmao/code/drum_notation/docs/TASKS.md) is checked.
+- Every checkbox in [TASKS.md](./TASKS.md) is checked.
 - `npm test` passes.
 - `docs/DRUMMARK_SPEC.md` and the implementation no longer disagree on the features covered by the checklist.
 - Remaining unsupported features, if any, are explicitly represented as unchecked tasks rather than hidden drift.

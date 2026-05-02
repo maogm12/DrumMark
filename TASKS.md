@@ -1,4 +1,4 @@
-# Drum Notation App Tasks
+# DrumMark App Tasks
 
 ## Phase 0: Project Setup
 

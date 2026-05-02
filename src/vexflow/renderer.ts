@@ -1,3 +1,4 @@
+/// <reference types="vite/client" />
 import VexFlow from "vexflow";
 import type { NormalizedEvent, NormalizedScore } from "../dsl/types";
 import { DEFAULT_RENDER_OPTIONS, type PagePadding, type VexflowRenderOptions } from "./types";
@@ -579,7 +580,10 @@ let cachedBravuraBase64: string | null = null;
 async function getBravuraBase64(): Promise<string> {
   if (cachedBravuraBase64) return cachedBravuraBase64;
   try {
-    const fontUrl = window.location.origin + "/drum_notation/fonts/bravura.woff2";
+    const baseUrl = import.meta.env.BASE_URL.endsWith("/")
+      ? import.meta.env.BASE_URL
+      : import.meta.env.BASE_URL + "/";
+    const fontUrl = window.location.origin + baseUrl + "fonts/bravura.woff2";
     const resp = await fetch(fontUrl);
     if (!resp.ok) throw new Error("Failed to fetch font");
     const blob = await resp.blob();

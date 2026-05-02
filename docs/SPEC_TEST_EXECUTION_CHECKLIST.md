@@ -1,7 +1,7 @@
 # DrumMark Spec Test Execution Checklist
 
 Date: 2026-04-29
-Source of truth: [docs/DRUMMARK_SPEC.md](/Users/gmao/code/drum_notation/docs/DRUMMARK_SPEC.md)
+Source of truth: [docs/DRUMMARK_SPEC.md](./DRUMMARK_SPEC.md)
 
 ## Scope
 

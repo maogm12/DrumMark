@@ -1,7 +1,7 @@
-# Drum Notation 🥁
+# DrumMark 🥁
 
 <p align="center">
-  <img src="public/favicon.svg" width="128" height="128" alt="Drum Notation Logo">
+  <img src="public/favicon.svg" width="128" height="128" alt="DrumMark Logo">
 </p>
 
 <p align="center">
@@ -10,7 +10,7 @@
 
 > **Text-first drum notation for the modern drummer.**
 
-**Drum Notation** is a lightweight web application designed for drummers. It features a custom syntax that allows you to write drum scores as quickly as typing code, generating professional-grade sheet music in real-time.
+**DrumMark** is a lightweight web application designed for drummers. It features a custom syntax that allows you to write drum scores as quickly as typing code, generating professional-grade sheet music in real-time.
 
 ---
 

@@ -551,6 +551,18 @@ export function App() {
 
   const [settingsVisible, setSettingsVisible] = useState(true);
   const [pageZoomMenuOpen, setPageZoomMenuOpen] = useState(false);
+  const pageZoomMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!pageZoomMenuOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (pageZoomMenuRef.current && !pageZoomMenuRef.current.contains(e.target as Node)) {
+        setPageZoomMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [pageZoomMenuOpen]);
   
   const [showErrors, setShowErrors] = useState(false);
   
@@ -913,7 +925,6 @@ export function App() {
                 <button className={`preview-tab${settings.activeTab === "page" ? " active" : ""}`} onClick={() => updateSetting("activeTab", "page")} type="button">Page</button>
                 <button className={`preview-tab${settings.activeTab === "xml" ? " active" : ""}`} onClick={() => updateSetting("activeTab", "xml")} type="button">XML</button>
               </div>
-              <button className={`settings-toggle${settingsVisible ? " active" : ""}`} onClick={() => setSettingsVisible(!settingsVisible)} type="button" title="Toggle Settings"><SettingsIcon /></button>
             </div>
           </header>
           
@@ -922,7 +933,7 @@ export function App() {
               <div className={`preview-surface${settings.activeTab === "page" ? " active" : ""}`} aria-hidden={settings.activeTab !== "page"}>
                 <div className="surface-toolbar page-surface-toolbar">
                   <div className="toolbar-group">
-                    <div className="page-zoom-menu">
+                    <div className="page-zoom-menu" ref={pageZoomMenuRef}>
                       <button aria-label="Zoom" className="surface-icon-button" onClick={() => setPageZoomMenuOpen((current) => !current)} type="button" title={`Zoom ${pageZoomPercent}%`}>
                         {Math.abs(settings.pageScale - 1.0) < 0.001 ? <SearchIcon /> : (settings.pageScale < 1 ? <SearchMinusIcon /> : <SearchPlusIcon />)}
                       </button>
@@ -940,6 +951,9 @@ export function App() {
                     </div>
                     <button className="surface-icon-button" onClick={handlePrint} type="button" title="Print Score">
                       <PrinterIcon />
+                    </button>
+                    <button className={`surface-icon-button${settingsVisible ? " active" : ""}`} onClick={() => setSettingsVisible(!settingsVisible)} type="button" title="Settings">
+                      <SettingsIcon />
                     </button>
                   </div>
                 </div>

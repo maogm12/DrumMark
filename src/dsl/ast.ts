@@ -24,6 +24,10 @@ import {
   divideFractions,
 } from "./logic";
 
+function calculateDivisions(noteValue: number, time: { beats: number; beatUnit: number }): number {
+  return (time.beats * noteValue) / time.beatUnit;
+}
+
 function makeRestTokens(divisions: number): MeasureToken[] {
   return Array.from({ length: divisions }, () => ({
     kind: "basic",
@@ -171,7 +175,9 @@ function validateGrouping(headers: ScoreAst["headers"], errors: ParseError[]): v
     });
   }
 
-  const divisionsFrac: Fraction = { numerator: headers.divisions.value, denominator: 1 };
+  const noteValue = headers.note?.value ?? (headers.divisions ? (headers.divisions.value * headers.time.beatUnit / headers.time.beats) : 16);
+  const divisions = calculateDivisions(noteValue, headers.time);
+  const divisionsFrac: Fraction = { numerator: divisions, denominator: 1 };
   const beatsFrac: Fraction = { numerator: headers.time.beats, denominator: 1 };
   
   let cumulative = 0;
@@ -185,7 +191,7 @@ function validateGrouping(headers: ScoreAst["headers"], errors: ParseError[]): v
 
     if (slotPosition.denominator !== 1) {
       errors.push({
-        line: headers.grouping.line || headers.divisions.line || 1,
+        line: headers.grouping.line || headers.note?.line || headers.divisions?.line || 1,
         column: 1,
         message: "Grouping boundaries must fall on integer slot positions under the current divisions",
       });
@@ -383,6 +389,9 @@ export function buildScoreAst(source: string): ScoreAst {
   const globalTracks: TrackName[] = [];
   let globalBarIndex = 0;
 
+  const globalNoteValue = skeleton.headers.note?.value ?? 
+    (skeleton.headers.divisions ? (skeleton.headers.divisions.value * skeleton.headers.time.beatUnit / skeleton.headers.time.beats) : 16);
+
   // Track discovery and ordering
   skeleton.paragraphs.forEach((p) =>
     p.lines.forEach((l) => {
@@ -397,6 +406,17 @@ export function buildScoreAst(source: string): ScoreAst {
   );
 
   for (const paragraph of skeleton.paragraphs) {
+    const activeNoteValue = paragraph.noteValue ?? globalNoteValue;
+    const activeDivisions = calculateDivisions(activeNoteValue, skeleton.headers.time);
+
+    if (!Number.isInteger(activeDivisions)) {
+      errors.push({
+        line: paragraph.startLine,
+        column: 1,
+        message: `Grid resolution 1/${activeNoteValue} is not compatible with time signature ${skeleton.headers.time.beats}/${skeleton.headers.time.beatUnit} (results in ${activeDivisions} slots)`,
+      });
+    }
+
     const explicitMeasureCounts = [...new Set(paragraph.lines.map((l) => l.measures.length))];
     if (explicitMeasureCounts.length > 1) {
       errors.push({
@@ -415,7 +435,7 @@ export function buildScoreAst(source: string): ScoreAst {
             t,
             skeleton.headers.time.beats,
             skeleton.headers.time.beatUnit,
-            skeleton.headers.divisions.value,
+            activeDivisions,
             errors,
             line.lineNumber,
           ),
@@ -427,7 +447,7 @@ export function buildScoreAst(source: string): ScoreAst {
         generated: false,
         lineNumber: line.lineNumber,
         measures: line.measures.map((m, idx) =>
-          normalizeExplicitMeasure(m, globalBarIndex + idx, line.lineNumber, skeleton.headers.divisions.value),
+          normalizeExplicitMeasure(m, globalBarIndex + idx, line.lineNumber, activeDivisions),
         ),
       } satisfies ScoreTrackParagraph;
     });
@@ -452,7 +472,7 @@ export function buildScoreAst(source: string): ScoreAst {
         generated: true,
         lineNumber: undefined,
         measures: Array.from({ length: measureCount }, (_, index) =>
-          makeRestMeasure(globalBarIndex + index, skeleton.headers.divisions.value),
+          makeRestMeasure(globalBarIndex + index, activeDivisions),
         ),
       });
     });
@@ -462,6 +482,7 @@ export function buildScoreAst(source: string): ScoreAst {
       measureCount,
       tracks: filledTracks,
       groups: paragraph.lines.filter((l) => l.track !== "ANONYMOUS").map((l) => [l.track as TrackName]),
+      noteValue: activeNoteValue,
     });
 
     globalBarIndex += measureCount;

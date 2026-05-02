@@ -53,7 +53,16 @@ HH | x - x - |`);
     expect(doc.headers.tempo).toMatchObject({ value: 120, line: 0 });
   });
 
-  it("reports missing required time and divisions headers", () => {
+  it("supports note 1/N header", () => {
+    const doc = parseDocumentSkeleton(`time 4/4
+note 1/8
+
+HH | x - x - |`);
+    expect(doc.errors).toEqual([]);
+    expect(doc.headers.note?.value).toBe(8);
+  });
+
+  it("reports missing required time and note headers", () => {
     const doc = parseDocumentSkeleton(`HH | x - x - |`);
 
     expect(doc.errors).toContainEqual({
@@ -64,7 +73,7 @@ HH | x - x - |`);
     expect(doc.errors).toContainEqual({
       line: 1,
       column: 1,
-      message: "Missing required header `divisions`",
+      message: "Missing required header `note` (e.g., note 1/16)",
     });
   });
 
@@ -130,6 +139,8 @@ HH | x - x - |`);
 time 3/4
 divisions 16
 divisions 12
+note 1/16
+note 1/8
 grouping 2+2
 grouping 3
 
@@ -147,6 +158,11 @@ HH | x - x - |`);
     });
     expect(doc.errors).toContainEqual({
       line: 6,
+      column: 1,
+      message: "Duplicate header `note`",
+    });
+    expect(doc.errors).toContainEqual({
+      line: 8,
       column: 1,
       message: "Duplicate header `grouping`",
     });

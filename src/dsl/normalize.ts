@@ -381,14 +381,11 @@ export function normalizeScoreAst(ast: ScoreAst): NormalizedScore {
 
         sourceLine = measure.sourceLine || sourceLine;
 
-        const measureDuration = {
-          numerator: ast.headers.time.beats,
-          denominator: ast.headers.time.beatUnit,
-        };
-        const divisions = ast.headers.divisions.value;
+        const activeNoteValue = paragraph.noteValue;
+        const divisions = (ast.headers.time.beats * activeNoteValue) / ast.headers.time.beatUnit;
         const slotDuration = simplify({
-          numerator: measureDuration.numerator,
-          denominator: measureDuration.denominator * divisions,
+          numerator: 1,
+          denominator: activeNoteValue,
         });
 
         let currentSlotOffset: Fraction = { numerator: 0, denominator: 1 };
@@ -551,6 +548,7 @@ export function normalizeScoreAst(ast: ScoreAst): NormalizedScore {
         measureRepeat: measureMeta?.measureRepeat,
         multiRest: measureMeta?.multiRest,
         multiRestCount: measureMeta?.multiRestCount,
+        noteValue: paragraph.noteValue,
       });
       voltaSeeds.push(measureMeta?.volta ? { indices: [...measureMeta.volta.indices] } : undefined);
       voltaTerminators.push(measureMeta?.voltaTerminator === true);
@@ -587,6 +585,9 @@ export function normalizeScoreAst(ast: ScoreAst): NormalizedScore {
     }
   }
 
+  const globalNoteValue = ast.headers.note?.value ?? 
+    (ast.headers.divisions ? (ast.headers.divisions.value * ast.headers.time.beatUnit / ast.headers.time.beats) : 16);
+
   const header: NormalizedHeader = {
     ...(ast.headers.title ? { title: ast.headers.title.value } : {}),
     ...(ast.headers.subtitle ? { subtitle: ast.headers.subtitle.value } : {}),
@@ -596,7 +597,8 @@ export function normalizeScoreAst(ast: ScoreAst): NormalizedScore {
       beats: ast.headers.time.beats,
       beatUnit: ast.headers.time.beatUnit,
     },
-    divisions: ast.headers.divisions.value,
+    divisions: ast.headers.divisions?.value ?? ((ast.headers.time.beats * globalNoteValue) / ast.headers.time.beatUnit),
+    noteValue: globalNoteValue,
     grouping: [...ast.headers.grouping.values],
   };
 

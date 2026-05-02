@@ -31,7 +31,7 @@ A typical score snippet looks like this:
 ```text
 title Funk Study
 time 4/4
-divisions 16
+note 1/16
 grouping 2+2
 
 HH |: x - x - o - x - | x:close - X - x - c - :|x2

@@ -104,14 +104,14 @@
                         <button
                             type="button"
                             class="docs-copy-button"
-                            data-copy="title%20Basic%20Groove%0Atempo%20120%0Atime%204%2F4%0Adivisions%208%0A%0AHH%20%7C%20x%20x%20x%20x%20x%20x%20x%20x%20%7C%0ASD%20%7C%20-%20-%20d%20-%20-%20-%20d%20-%20%7C%0ABD%20%7C%20p%20-%20-%20-%20p%20-%20-%20-%20%7C"
+                            data-copy="title%20Basic%20Groove%0Atempo%20120%0Atime%204%2F4%0Anote%201%2F8%0A%0AHH%20%7C%20x%20x%20x%20x%20x%20x%20x%20x%20%7C%0ASD%20%7C%20-%20-%20d%20-%20-%20-%20d%20-%20%7C%0ABD%20%7C%20p%20-%20-%20-%20p%20-%20-%20-%20%7C"
                             data-copy-label="复制"
                             aria-label="复制"
                         >复制</button>
                         <pre class="dsl-code-block"><span class="dsl-header-meta">title</span> <span class="dsl-header-text">Basic Groove</span>
 <span class="dsl-header-struct">tempo</span> <span class="dsl-header-number">120</span>
 <span class="dsl-header-struct">time</span> <span class="dsl-header-number">4</span><span class="dsl-header-divider">/</span><span class="dsl-header-number">4</span>
-<span class="dsl-header-struct">divisions</span> <span class="dsl-header-number">8</span>
+<span class="dsl-header-struct">note</span> <span class="dsl-header-number">1/8</span>
 
 <span class="dsl-track">HH</span> <span class="dsl-barline">|</span> <span class="dsl-accent-note">x</span> <span class="dsl-accent-note">x</span> <span class="dsl-accent-note">x</span> <span class="dsl-accent-note">x</span> <span class="dsl-accent-note">x</span> <span class="dsl-accent-note">x</span> <span class="dsl-accent-note">x</span> <span class="dsl-accent-note">x</span> <span class="dsl-barline">|</span>
 <span class="dsl-track">SD</span> <span class="dsl-barline">|</span> <span class="dsl-rest">-</span> <span class="dsl-rest">-</span> <span class="dsl-note">d</span> <span class="dsl-rest">-</span> <span class="dsl-rest">-</span> <span class="dsl-rest">-</span> <span class="dsl-note">d</span> <span class="dsl-rest">-</span> <span class="dsl-barline">|</span>
@@ -143,7 +143,14 @@
                                         <li><strong>title / subtitle / composer:</strong> 乐曲的名称和作者信息。这些会印在乐谱上。</li>
                                         <li><strong>tempo:</strong> 四分音符 BPM。如不指定默认为 120。</li>
                                         <li><strong>time:</strong> 拍号（如 <code>4/4</code>、<code>3/4</code>、<code>6/8</code>）。必填。</li>
-                                        <li><strong>divisions:</strong> 每小节的总网格单位。必填。数值越高节奏越精细——标准精度用 16，复杂切分用 32。</li>
+                                        <li><strong>note:</strong> 单个网格槽位的时值（如 <code>note 1/16</code>）。必填。
+                                            <ul class="docs-sub-list">
+                                                <li><strong>支持的值:</strong> <code>1/1</code>, <code>1/2</code>, <code>1/4</code>, <code>1/8</code>, <code>1/16</code>, <code>1/32</code>, <code>1/64</code>, <code>1/128</code>。</li>
+                                                <li><strong>全局设定:</strong> 在 Header 中定义一次，作用于全谱。</li>
+                                                <li><strong>段落覆盖:</strong> 在段落开头写 <code>note 1/N</code> 可临时改变该段的分辨率（如在复杂 Fill 段落改用 1/32）。</li>
+                                            </ul>
+                                        </li>
+                                        <li><strong>divisions:</strong> <span class="docs-tag-deprecated">已废弃</span> 每小节的总网格单位。由 <code>note</code> 替代。</li>
                                         <li><strong>grouping:</strong> 定义小节内的节拍结构。控制节奏分组和连杠（beaming）。
                                             <div class="docs-mini-table-container">
                                                 <table class="docs-table">
@@ -162,9 +169,9 @@
                                         </li>
                                     </ul>
                                     <ul class="docs-list">
-                                        <li><strong>语法形式：</strong> 头部是 <code>字段名 空格 值</code>，不是 JSON，也不需要逗号。可写 <code>time 4/4</code>，也可写 <code>time 4 / 4</code>。</li>
+                                        <li><strong>语法形式：</strong> 头部是 <code>字段名 空格 值</code>，不是 JSON，也不需要逗号。可写 <code>time 4/4</code>，也可写 <code>note 1/16</code>。</li>
                                         <li><strong>grouping 规则：</strong> 显式写出的每一组相加必须严格等于拍号分子。比如 <code>7/8</code> 可以写 <code>grouping 3+2+2</code>。</li>
-                                        <li><strong>divisions 的意义：</strong> 它定义每小节输入网格总数。校验时所有 token 的时值总和必须刚好等于这个总网格。</li>
+                                        <li><strong>动态网格：</strong> 每小节的总槽位数为 <code>小节时长 / note 时值</code>。4/4 拍下 <code>note 1/16</code> 为 16 格，6/8 拍下则自动变为 12 格。</li>
                                     </ul>
                                 </div>
                             </div>
@@ -176,7 +183,7 @@
                         <button
                             type="button"
                             class="docs-copy-button"
-                            data-copy="title%20Metadata%20Demo%0Asubtitle%20Subtitle%0Acomposer%20G%20Mao%0Atempo%2096%0Atime%204%2F4%0Adivisions%208%0Agrouping%202%2B2%0A%0AHH%20%7C%20x%20x%20%20%20x%20x%20%20%20x%20x%20%20%20x%20x%20%7C%0ASD%20%7C%20-%20-%20%20%20d%20-%20%20%20-%20-%20%20%20d%20-%20%7C%0ABD%20%7C%20%5B2%3Ap%5D%20-%20p%20%20%20%5B2%3Ap%5D%20-%20-%20%7C"
+                            data-copy="title%20Metadata%20Demo%0Asubtitle%20Subtitle%0Acomposer%20G%20Mao%0Atempo%2096%0Atime%204%2F4%0Anote%201%2F8%0Agrouping%202%2B2%0A%0AHH%20%7C%20x%20x%20%20%20x%20x%20%20%20x%20x%20%20%20x%20x%20%7C%0ASD%20%7C%20-%20-%20%20%20d%20-%20%20%20-%20-%20%20%20d%20-%20%7C%0ABD%20%7C%20%5B2%3Ap%5D%20-%20p%20%20%20%5B2%3Ap%5D%20-%20-%20%7C"
                             data-copy-label="复制"
                             aria-label="复制"
                         >复制</button>
@@ -185,7 +192,7 @@
 <span class="dsl-header-meta">composer</span> <span class="dsl-header-text">G Mao</span>
 <span class="dsl-header-struct">tempo</span> <span class="dsl-header-number">96</span>
 <span class="dsl-header-struct">time</span> <span class="dsl-header-number">4</span><span class="dsl-header-divider">/</span><span class="dsl-header-number">4</span>
-<span class="dsl-header-struct">divisions</span> <span class="dsl-header-number">8</span>
+<span class="dsl-header-struct">note</span> <span class="dsl-header-number">1/8</span>
 <span class="dsl-header-struct">grouping</span> <span class="dsl-header-number">2</span><span class="dsl-header-operator">+</span><span class="dsl-header-number">2</span>
 
 <span class="dsl-track">HH</span> <span class="dsl-barline">|</span> <span class="dsl-accent-note">x</span> <span class="dsl-accent-note">x</span>   <span class="dsl-accent-note">x</span> <span class="dsl-accent-note">x</span>   <span class="dsl-accent-note">x</span> <span class="dsl-accent-note">x</span>   <span class="dsl-accent-note">x</span> <span class="dsl-accent-note">x</span> <span class="dsl-barline">|</span>
@@ -252,13 +259,13 @@
                         <button
                             type="button"
                             class="docs-copy-button"
-                            data-copy="title%20Track%20Assignment%0Atime%204%2F4%0Adivisions%208%0A%0AC%20%20%7C%20x%20-%20-%20-%20-%20-%20-%20-%20%20%20%20%20%7C%20x%20-%20-%20-%20-%20-%20-%20-%20%7C%0AHH%20%7C%20-%20x%20x%20x%20-%20-%20-%20-%20%20%20%20%20%7C%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7C%0ARC%20%7C%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7C%20-%20x%20x%20x%20x%20x%20-%20-%20%7C%0AT1%20%7C%20-%20-%20-%20-%20%20-%20d%2Fd%2F%20-%20-%20%7C%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7C%0AT2%20%7C%20-%20-%20-%20-%20%20-%20-%20d%2Fd%2F%20-%20%7C%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7C%0ASD%20%7C%20-%20-%20d%20-%20%20d%2Fd%2F%20-%20-%20-%20%7C%20-%20-%20d%20-%20-%20-%20%5B2%3Adddd%5D%20%7C%0AT3%20%7C%20-%20-%20-%20-%20%20-%20-%20-%20d%2Fd%2F%20%7C%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7C%0ABD%20%7C%20p%20-%20-%20-%20%20p%20-%20-%20-%20%20%20%20%7C%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7C%0AHF%20%7C%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7C%20p%20-%20p%20-%20p%20-%20p%20-%20%7C%0A%0A%7C%20c%20r%20r%20r%20%20c%20x%20x%20o%20%7C%20s%2Bb%20s%2Bb%20t1%20t1%20t2%20t2%20t3%20t3%20%7C%0A%0ASD%20%7C%20d%2Fd%2Fd%20%5B2%3Ad%5D%20%5B2%3Adddd%5D%20%5B2%3A-ddd%5D%20%7C%0AST%20%7C%20R%2FL%2FR%20%5B2%3AR%5D%20%5B2%3ARLRL%5D%20%5B2%3A-LRL%5D%20%7C"
+                            data-copy="title%20Track%20Assignment%0Atime%204%2F4%0Anote%201%2F8%0A%0AC%20%20%7C%20x%20-%20-%20-%20-%20-%20-%20-%20%20%20%20%20%7C%20x%20-%20-%20-%20-%20-%20-%20-%20%7C%0AHH%20%7C%20-%20x%20x%20x%20-%20-%20-%20-%20%20%20%20%20%7C%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7C%0ARC%20%7C%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7C%20-%20x%20x%20x%20x%20x%20-%20-%20%7C%0AT1%20%7C%20-%20-%20-%20-%20%20-%20d%2Fd%2F%20-%20-%20%7C%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7C%0AT2%20%7C%20-%20-%20-%20-%20%20-%20-%20d%2Fd%2F%20-%20%7C%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7C%0ASD%20%7C%20-%20-%20d%20-%20%20d%2Fd%2F%20-%20-%20-%20%7C%20-%20-%20d%20-%20-%20-%20%5B2%3Adddd%5D%20%7C%0AT3%20%7C%20-%20-%20-%20-%20%20-%20-%20-%20d%2Fd%2F%20%7C%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7C%0ABD%20%7C%20p%20-%20-%20-%20%20p%20-%20-%20-%20%20%20%20%7C%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7C%0AHF%20%7C%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7C%20p%20-%20p%20-%20p%20-%20p%20-%20%7C%0A%0A%7C%20c%20r%20r%20r%20%20c%20x%20x%20o%20%7C%20s%2Bb%20s%2Bb%20t1%20t1%20t2%20t2%20t3%20t3%20%7C%0A%0ASD%20%7C%20d%2Fd%2Fd%20%5B2%3Ad%5D%20%5B2%3Adddd%5D%20%5B2%3A-ddd%5D%20%7C%0AST%20%7C%20R%2FL%2FR%20%5B2%3AR%5D%20%5B2%3ARLRL%5D%20%5B2%3A-LRL%5D%20%7C"
                             data-copy-label="复制"
                             aria-label="复制"
                         >复制</button>
                         <pre class="dsl-code-block"><span class="dsl-header-meta">title</span> <span class="dsl-header-text">Track Assignment</span>
 <span class="dsl-header-struct">time</span> <span class="dsl-header-number">4</span><span class="dsl-header-divider">/</span><span class="dsl-header-number">4</span>
-<span class="dsl-header-struct">divisions</span> <span class="dsl-header-number">8</span>
+<span class="dsl-header-struct">note</span> <span class="dsl-header-number">1/8</span>
 
 <span class="dsl-track">C</span>  <span class="dsl-barline">|</span> <span class="dsl-accent-note">x</span> <span class="dsl-rest">-</span> <span class="dsl-rest">-</span> <span class="dsl-rest">-</span> <span class="dsl-rest">-</span> <span class="dsl-rest">-</span> <span class="dsl-rest">-</span> <span class="dsl-rest">-</span>     <span class="dsl-barline">|</span> <span class="dsl-accent-note">x</span> <span class="dsl-rest">-</span> <span class="dsl-rest">-</span> <span class="dsl-rest">-</span> <span class="dsl-rest">-</span> <span class="dsl-rest">-</span> <span class="dsl-rest">-</span> <span class="dsl-rest">-</span> <span class="dsl-barline">|</span>
 <span class="dsl-track">HH</span> <span class="dsl-barline">|</span> <span class="dsl-rest">-</span> <span class="dsl-accent-note">x</span> <span class="dsl-accent-note">x</span> <span class="dsl-accent-note">x</span> <span class="dsl-rest">-</span> <span class="dsl-rest">-</span> <span class="dsl-rest">-</span> <span class="dsl-rest">-</span>     <span class="dsl-barline">|</span>                 <span class="dsl-barline">|</span>
@@ -366,13 +373,13 @@
                         <button
                             type="button"
                             class="docs-copy-button"
-                            data-copy="title%20Hit%20Types%0Atime%204%2F4%0Adivisions%208%0Agrouping%204%0A%0AHH%20%7C%20x%20-%20x%20-%20x%20-%20x%20-%20%7C%0ASD%20%7C%20s%20-%20d%20-%20s%20-%20d%20-%20%7C%0ABD%20%7C%20b%20-%20b%20-%20b%20-%20b%20-%20%7C"
+                            data-copy="title%20Hit%20Types%0Atime%204%2F4%0Anote%201%2F8%0Agrouping%204%0A%0AHH%20%7C%20x%20-%20x%20-%20x%20-%20x%20-%20%7C%0ASD%20%7C%20s%20-%20d%20-%20s%20-%20d%20-%20%7C%0ABD%20%7C%20b%20-%20b%20-%20b%20-%20b%20-%20%7C"
                             data-copy-label="复制"
                             aria-label="复制"
                         >复制</button>
                         <pre class="dsl-code-block"><span class="dsl-header-meta">title</span> <span class="dsl-header-text">Hit Types</span>
 <span class="dsl-header-struct">time</span> <span class="dsl-header-number">4</span><span class="dsl-header-divider">/</span><span class="dsl-header-number">4</span>
-<span class="dsl-header-struct">divisions</span> <span class="dsl-header-number">8</span>
+<span class="dsl-header-struct">note</span> <span class="dsl-header-number">1/8</span>
 <span class="dsl-header-struct">grouping</span> <span class="dsl-header-number">4</span>
 
 <span class="dsl-track">HH</span> <span class="dsl-barline">|</span> <span class="dsl-accent-note">x</span> <span class="dsl-rest">-</span> <span class="dsl-accent-note">x</span> <span class="dsl-rest">-</span> <span class="dsl-accent-note">x</span> <span class="dsl-rest">-</span> <span class="dsl-accent-note">x</span> <span class="dsl-rest">-</span> <span class="dsl-barline">|</span>
@@ -433,14 +440,14 @@
                         <button
                             type="button"
                             class="docs-copy-button"
-                            data-copy="title%20Articulation%20Techniques%0Atempo%2096%0Atime%204%2F4%0Adivisions%2016%0Agrouping%202%2B2%0A%0AHH%20%7C%20d%3Aopen%20-%20d%3Aclose%20-%20d%3Aghost%20-%20d%3Adead%20-%20%7C%0A%0ARC%20%7C%20d%3Abell%20-%20d%3Adrag%20-%20d%3Aroll%20-%20-%20%7C%0A%0AC%20%20%7C%20d%3Achoke%3Aaccent%20-%20-%20-%20-%20-%20-%20-%20%7C%0A%0ASD%20%7C%20d%3Aaccent%20-%20d%3Arim%20-%20d%3Across%20-%20d%3Aflam%20-%20%7C%0A%0AT1%20%7C%20d%3Aghost%20-%20d%3Adrag%20-%20d%3Aroll%20-%20d%3Adead%20-%20%7C%0A%0ABD%20%7C%20d%3Aroll%20-%20d%3Adead%20-%20d%20-%20d%20%7C%0A"
+                            data-copy="title%20Articulation%20Techniques%0Atempo%2096%0Atime%204%2F4%0Anote%201%2F16%0Agrouping%202%2B2%0A%0AHH%20%7C%20d%3Aopen%20-%20d%3Aclose%20-%20d%3Aghost%20-%20d%3Adead%20-%20%7C%0A%0ARC%20%7C%20d%3Abell%20-%20d%3Adrag%20-%20d%3Aroll%20-%20-%20%7C%0A%0AC%20%20%7C%20d%3Achoke%3Aaccent%20-%20-%20-%20-%20-%20-%20-%20%7C%0A%0ASD%20%7C%20d%3Aaccent%20-%20d%3Arim%20-%20d%3Across%20-%20d%3Aflam%20-%20%7C%0A%0AT1%20%7C%20d%3Aghost%20-%20d%3Adrag%20-%20d%3Aroll%20-%20d%3Adead%20-%20%7C%0A%0ABD%20%7C%20d%3Aroll%20-%20d%3Adead%20-%20d%20-%20d%20%7C%0A"
                             data-copy-label="复制"
                             aria-label="复制"
                         >复制</button>
                         <pre class="dsl-code-block"><span class="dsl-header-meta">title</span> <span class="dsl-header-text">Articulation Techniques</span>
 <span class="dsl-header-struct">tempo</span> <span class="dsl-header-number">96</span>
 <span class="dsl-header-struct">time</span> <span class="dsl-header-number">4</span><span class="dsl-header-divider">/</span><span class="dsl-header-number">4</span>
-<span class="dsl-header-struct">divisions</span> <span class="dsl-header-number">16</span>
+<span class="dsl-header-struct">note</span> <span class="dsl-header-number">1/16</span>
 <span class="dsl-header-struct">grouping</span> <span class="dsl-header-number">2</span><span class="dsl-header-operator">+</span><span class="dsl-header-number">2</span>
 
 <span class="dsl-track">HH</span> <span class="dsl-barline">|</span> <span class="dsl-note">d</span><span class="dsl-punctuation">:</span><span class="dsl-modifier">open</span> <span class="dsl-rest">-</span> <span class="dsl-note">d</span><span class="dsl-punctuation">:</span><span class="dsl-modifier">close</span> <span class="dsl-rest">-</span> <span class="dsl-note">d</span><span class="dsl-punctuation">:</span><span class="dsl-modifier">ghost</span> <span class="dsl-rest">-</span> <span class="dsl-note">d</span><span class="dsl-punctuation">:</span><span class="dsl-modifier">dead</span> <span class="dsl-rest">-</span> <span class="dsl-barline">|</span>
@@ -505,13 +512,13 @@
                         <button
                             type="button"
                             class="docs-copy-button"
-                            data-copy="title%20Rhythmic%20Groups%0Atime%204%2F4%0Adivisions%208%0Agrouping%201%2B1%2B1%2B1%0A%0AHH%20%7C%20%5Bd%20d%20d%5D%20x%20x%20x%20x%20x%20x%20x%20%7C%0ASD%20%7C%20-%20-%20-%20-%20-%20-%20-%20-%20%7C%0ABD%20%7C%20b%20-%20-%20-%20b%20-%20-%20-%20%7C%0A%0AHH%20%7C%20x%20x%20x%20x%20x%20x%20x%20x%20%7C%0ASD%20%7C%20-%20-%20%5B3%3A%20d%20d%20d%5D%20-%20-%20-%20%7C%0ABD%20%7C%20b%20-%20-%20-%20b%20-%20-%20-%20%7C%0A%0AHH%20%7C%20x%20x%20x%20x%20x%20x%20x%20x%20%7C%0ASD%20%7C%20-%20-%20%5B2%3A%20d%20d%20d%5D%20-%20-%20-%20-%20%7C%0ABD%20%7C%20b%20-%20-%20-%20b%20-%20-%20-%20%7C%0A%0AHH%20%7C%20x%20x%20x%20x%20x%20x%20x%20x%20%7C%0ASD%20%7C%20-%20-%20%5B3%3A%20d%20d%5D%20-%20-%20-%20%7C%0ABD%20%7C%20b%20-%20-%20-%20b%20-%20-%20-%20%7C%0A%0AHH%20%7C%20x%20x%20x%20x%20x%20x%20x%20x%20%7C%0ASD%20%7C%20%5B5%3A%20d%20d%5D%20-%20-%20-%20%7C%0ABD%20%7C%20b%20-%20-%20-%20b%20-%20-%20-%20%7C%0A%0AHH%20%7C%20x%20x%20x%20x%20x%20x%20x%20x%20%7C%0ASD%20%7C%20-%20-%20%5B2%3A%20d%20d%20d%20d%5D%20-%20-%20-%20-%20%7C%0ABD%20%7C%20b%20-%20-%20-%20b%20-%20-%20-%20%7C%0A%0AHH%20%7C%20x%20x%20x%20x%20x%20x%20x%20x%20%7C%0ASD%20%7C%20-%20-%20%5B3%3A%20d%20%5B2%3A%20d%20d%20d%5D%20d%5D%20-%20-%20-%20%7C%0ABD%20%7C%20b%20-%20-%20-%20b%20-%20-%20-%20%7C%0A"
+                            data-copy="title%20Rhythmic%20Groups%0Atime%204%2F4%0Anote%201%2F8%0Agrouping%201%2B1%2B1%2B1%0A%0AHH%20%7C%20%5Bd%20d%20d%5D%20x%20x%20x%20x%20x%20x%20x%20%7C%0ASD%20%7C%20-%20-%20-%20-%20-%20-%20-%20-%20%7C%0ABD%20%7C%20b%20-%20-%20-%20b%20-%20-%20-%20%7C%0A%0AHH%20%7C%20x%20x%20x%20x%20x%20x%20x%20x%20%7C%0ASD%20%7C%20-%20-%20%5B3%3A%20d%20d%20d%5D%20-%20-%20-%20%7C%0ABD%20%7C%20b%20-%20-%20-%20b%20-%20-%20-%20%7C%0A%0AHH%20%7C%20x%20x%20x%20x%20x%20x%20x%20x%20%7C%0ASD%20%7C%20-%20-%20%5B2%3A%20d%20d%20d%5D%20-%20-%20-%20-%20%7C%0ABD%20%7C%20b%20-%20-%20-%20b%20-%20-%20-%20%7C%0A%0AHH%20%7C%20x%20x%20x%20x%20x%20x%20x%20x%20%7C%0ASD%20%7C%20-%20-%20%5B3%3A%20d%20d%5D%20-%20-%20-%20%7C%0ABD%20%7C%20b%20-%20-%20-%20b%20-%20-%20-%20%7C%0A%0AHH%20%7C%20x%20x%20x%20x%20x%20x%20x%20x%20%7C%0ASD%20%7C%20%5B5%3A%20d%20d%5D%20-%20-%20-%20%7C%0ABD%20%7C%20b%20-%20-%20-%20b%20-%20-%20-%20%7C%0A%0AHH%20%7C%20x%20x%20x%20x%20x%20x%20x%20x%20%7C%0ASD%20%7C%20-%20-%20%5B2%3A%20d%20d%20d%20d%5D%20-%20-%20-%20-%20%7C%0ABD%20%7C%20b%20-%20-%20-%20b%20-%20-%20-%20%7C%0A%0AHH%20%7C%20x%20x%20x%20x%20x%20x%20x%20x%20%7C%0ASD%20%7C%20-%20-%20%5B3%3A%20d%20%5B2%3A%20d%20d%20d%5D%20d%5D%20-%20-%20-%20%7C%0ABD%20%7C%20b%20-%20-%20-%20b%20-%20-%20-%20%7C%0A"
                             data-copy-label="复制"
                             aria-label="复制"
                         >复制</button>
                         <pre class="dsl-code-block"><span class="dsl-header-meta">title</span> <span class="dsl-header-text">Rhythmic Groups</span>
 <span class="dsl-header-struct">time</span> <span class="dsl-header-number">4</span><span class="dsl-header-divider">/</span><span class="dsl-header-number">4</span>
-<span class="dsl-header-struct">divisions</span> <span class="dsl-header-number">8</span>
+<span class="dsl-header-struct">note</span> <span class="dsl-header-number">1/8</span>
 <span class="dsl-header-struct">grouping</span> <span class="dsl-header-number">1</span><span class="dsl-header-operator">+</span><span class="dsl-header-number">1</span><span class="dsl-header-operator">+</span><span class="dsl-header-number">1</span><span class="dsl-header-operator">+</span><span class="dsl-header-number">1</span>
 
 <span class="dsl-track">HH</span> <span class="dsl-barline">|</span> <span class="dsl-group-bracket">[</span><span class="dsl-note">d</span> <span class="dsl-note">d</span> <span class="dsl-note">d</span><span class="dsl-group-bracket">]</span> <span class="dsl-accent-note">x</span> <span class="dsl-accent-note">x</span> <span class="dsl-accent-note">x</span> <span class="dsl-accent-note">x</span> <span class="dsl-accent-note">x</span> <span class="dsl-accent-note">x</span> <span class="dsl-accent-note">x</span> <span class="dsl-barline">|</span>
@@ -574,13 +581,13 @@
                         <button
                             type="button"
                             class="docs-copy-button"
-                            data-copy="title%20Simultaneous%20Hits%0Atime%204%2F4%0Adivisions%208%0Agrouping%204%0A%0AHH%20%7C%20x%2Bs%20-%20x%2Bb%20-%20x%2Bs%20-%20x%2Bb%20-%20%7C%0ASD%20%7C%20-%20-%20d%2BBD%3Ad%20-%20-%20-%20-%20%7C"
+                            data-copy="title%20Simultaneous%20Hits%0Atime%204%2F4%0Anote%201%2F8%0Agrouping%204%0A%0AHH%20%7C%20x%2Bs%20-%20x%2Bb%20-%20x%2Bs%20-%20x%2Bb%20-%20%7C%0ASD%20%7C%20-%20-%20d%2BBD%3Ad%20-%20-%20-%20-%20%7C"
                             data-copy-label="复制"
                             aria-label="复制"
                         >复制</button>
                         <pre class="dsl-code-block"><span class="dsl-header-meta">title</span> <span class="dsl-header-text">Simultaneous Hits</span>
 <span class="dsl-header-struct">time</span> <span class="dsl-header-number">4</span><span class="dsl-header-divider">/</span><span class="dsl-header-number">4</span>
-<span class="dsl-header-struct">divisions</span> <span class="dsl-header-number">8</span>
+<span class="dsl-header-struct">note</span> <span class="dsl-header-number">1/8</span>
 <span class="dsl-header-struct">grouping</span> <span class="dsl-header-number">4</span>
 
 <span class="dsl-track">HH</span> <span class="dsl-barline">|</span> <span class="dsl-accent-note">x</span><span class="dsl-hit-combinator">+</span><span class="dsl-note">s</span> <span class="dsl-rest">-</span> <span class="dsl-accent-note">x</span><span class="dsl-hit-combinator">+</span><span class="dsl-kick-note">b</span> <span class="dsl-rest">-</span> <span class="dsl-accent-note">x</span><span class="dsl-hit-combinator">+</span><span class="dsl-note">s</span> <span class="dsl-rest">-</span> <span class="dsl-accent-note">x</span><span class="dsl-hit-combinator">+</span><span class="dsl-kick-note">b</span> <span class="dsl-rest">-</span> <span class="dsl-barline">|</span>
@@ -617,14 +624,14 @@
                         <button
                             type="button"
                             class="docs-copy-button"
-                            data-copy="title%20Hand%20Coordination%0Atempo%2090%0Atime%204%2F4%0Adivisions%208%0Agrouping%204%0A%0ASD%20%7C%20d%20d%20d%20d%20d%20d%20d%20d%20%7C%0AST%20%7C%20R%20L%20R%20L%20R%20L%20R%20L%20%7C"
+                            data-copy="title%20Hand%20Coordination%0Atempo%2090%0Atime%204%2F4%0Anote%201%2F8%0Agrouping%204%0A%0ASD%20%7C%20d%20d%20d%20d%20d%20d%20d%20d%20%7C%0AST%20%7C%20R%20L%20R%20L%20R%20L%20R%20L%20%7C"
                             data-copy-label="复制"
                             aria-label="复制"
                         >复制</button>
                         <pre class="dsl-code-block"><span class="dsl-header-meta">title</span> <span class="dsl-header-text">Hand Coordination</span>
 <span class="dsl-header-struct">tempo</span> <span class="dsl-header-number">90</span>
 <span class="dsl-header-struct">time</span> <span class="dsl-header-number">4</span><span class="dsl-header-divider">/</span><span class="dsl-header-number">4</span>
-<span class="dsl-header-struct">divisions</span> <span class="dsl-header-number">8</span>
+<span class="dsl-header-struct">note</span> <span class="dsl-header-number">1/8</span>
 <span class="dsl-header-struct">grouping</span> <span class="dsl-header-number">4</span>
 
 <span class="dsl-track">SD</span> <span class="dsl-barline">|</span> <span class="dsl-note">d</span> <span class="dsl-note">d</span> <span class="dsl-note">d</span> <span class="dsl-note">d</span> <span class="dsl-note">d</span> <span class="dsl-note">d</span> <span class="dsl-note">d</span> <span class="dsl-note">d</span> <span class="dsl-barline">|</span>
@@ -674,13 +681,13 @@
                         <button
                             type="button"
                             class="docs-copy-button"
-                            data-copy="title%20Repeat%20Structure%0Atime%204%2F4%0Adivisions%204%0Agrouping%201%2B1%2B1%2B1%0A%0A%7C%3A%20s%20s%20s%20s%20%7C1.%20s%20s%20%5Bss%5D%20s%20%3A%7C2.%20s%20s%20%5Bssss%5D%20s%20%7C%0A%0A%7C%20s%20s%20%5Bssss%5D%20%5Bss%5D%20%7C%203.%20s%20s%20%5Bssss%5D%20%5Bssss%5D%20%7C.%20c%20-%20-%20-%7C%0A%0A%7C%20x%20x%20x%20x%20%7C%20%25%20%7C%20%25%25%20%7C%0A%0AHH%20%7C%20%5Bcx%5D%20%5Bxx%5D%20%5Bxx%5D%20o%20%7C%20%40segno%20%5Bxx%5D%20%5Bxx%5D%20%5Bxx%5D%20%5Bxx%5D%20%7C%20%5Bxx%5D%20%5Bxx%5D%20%5Bxx%5D%20%5Bxx%5D%20%40to-coda%20%7C%0ASD%20%7C%20-%20%20%20%20%5Bd-%5D%20-%20%20%20%20d%20%7C%20%20%20%20%20%20%20%20-%20%20%20%20%5Bd-%5D%20-%20%20%20%20%5Bd-%5D%20%7C%20-%20%20%20%20%5Bd-%5D%20-%20%20%20%20%5Bd-%5D%20%7C%0ABD%20%7C%20p%20%20%20%20-%20%20%20%20p%20%20%20%20-%20%7C%20%20%20%20%20%20%20%20p%20%20%20%20-%20%20%20%20p%20%20%20%20-%20%20%20%20%7C%20p%20%20%20%20-%20%20%20%20p%20%20%20%20-%20%20%20%20%7C%0A%0AHH%20%7C%20%5Bcx%5D%20%5Bxx%5D%20%5Bxx%5D%20o%20%40ds-al-coda%20%7C%20%40coda%20%5Bxx%5D%20%5Bxx%5D%20%5Bxx%5D%20%5Bxx%5D%20%7C%20%5Bxx%5D%20%5Bxx%5D%20%5Bxx%5D%20%5Bxx%5D%20%40fine%20%7C%0ASD%20%7C%20-%20%20%20%20%5Bd-%5D%20-%20%20%20%20d%20%20%20%20%20%20%20%20%20%20%20%20%20%7C%20%20%20%20%20%20%20-%20%20%20%20%5Bd-%5D%20-%20%20%20%20%5Bd-%5D%20%7C%20-%20%20%20%20%5Bd-%5D%20-%20%20%20%20%5Bd-%5D%20%7C%0ABD%20%7C%20p%20%20%20%20-%20%20%20%20p%20%20%20%20-%20%20%20%20%20%20%20%20%20%20%20%20%20%7C%20%20%20%20%20%20%20p%20%20%20%20-%20%20%20%20p%20%20%20%20-%20%20%20%20%7C%20p%20%20%20%20-%20%20%20%20p%20%20%20%20-%20%20%20%20%7C%0A%0AHH%20%7C%20%5Bcx%5D%20%5Bxx%5D%20%5Bxx%5D%20o%20%40dc-al-coda%20%7C%20%5Bxx%5D%20%5Bxx%5D%20%5Bxx%5D%20%5Bxx%5D%20%40dc-al-fine%20%7C%0ASD%20%7C%20-%20%20%20%20%5Bd-%5D%20-%20%20%20%20d%20%20%20%20%20%20%20%20%20%20%20%20%20%7C%20-%20%20%20%20%5Bd-%5D%20-%20%20%20%20%5Bd-%5D%20%7C%0ABD%20%7C%20p%20%20%20%20-%20%20%20%20p%20%20%20%20-%20%20%20%20%20%20%20%20%20%20%20%20%20%7C%20p%20%20%20%20-%20%20%20%20p%20%20%20%20-%20%20%20%20%7C"
+                            data-copy="title%20Repeat%20Structure%0Atime%204%2F4%0Anote%201%2F4%0Agrouping%201%2B1%2B1%2B1%0A%0A%7C%3A%20s%20s%20s%20s%20%7C1.%20s%20s%20%5Bss%5D%20s%20%3A%7C2.%20s%20s%20%5Bssss%5D%20s%20%7C%0A%0A%7C%20s%20s%20%5Bssss%5D%20%5Bss%5D%20%7C%203.%20s%20s%20%5Bssss%5D%20%5Bssss%5D%20%7C.%20c%20-%20-%20-%7C%0A%0A%7C%20x%20x%20x%20x%20%7C%20%25%20%7C%20%25%25%20%7C%0A%0AHH%20%7C%20%5Bcx%5D%20%5Bxx%5D%20%5Bxx%5D%20o%20%7C%20%40segno%20%5Bxx%5D%20%5Bxx%5D%20%5Bxx%5D%20%5Bxx%5D%20%7C%20%5Bxx%5D%20%5Bxx%5D%20%5Bxx%5D%20%5Bxx%5D%20%40to-coda%20%7C%0ASD%20%7C%20-%20%20%20%20%5Bd-%5D%20-%20%20%20%20d%20%7C%20%20%20%20%20%20%20%20-%20%20%20%20%5Bd-%5D%20-%20%20%20%20%5Bd-%5D%20%7C%20-%20%20%20%20%5Bd-%5D%20-%20%20%20%20%5Bd-%5D%20%7C%0ABD%20%7C%20p%20%20%20%20-%20%20%20%20p%20%20%20%20-%20%7C%20%20%20%20%20%20%20%20p%20%20%20%20-%20%20%20%20p%20%20%20%20-%20%20%20%20%7C%20p%20%20%20%20-%20%20%20%20p%20%20%20%20-%20%20%20%20%7C%0A%0AHH%20%7C%20%5Bcx%5D%20%5Bxx%5D%20%5Bxx%5D%20o%20%40ds-al-coda%20%7C%20%40coda%20%5Bxx%5D%20%5Bxx%5D%20%5Bxx%5D%20%5Bxx%5D%20%7C%20%5Bxx%5D%20%5Bxx%5D%20%5Bxx%5D%20%5Bxx%5D%20%40fine%20%7C%0ASD%20%7C%20-%20%20%20%20%5Bd-%5D%20-%20%20%20%20d%20%20%20%20%20%20%20%20%20%20%20%20%20%7C%20%20%20%20%20%20%20-%20%20%20%20%5Bd-%5D%20-%20%20%20%20%5Bd-%5D%20%7C%20-%20%20%20%20%5Bd-%5D%20-%20%20%20%20%5Bd-%5D%20%7C%0ABD%20%7C%20p%20%20%20%20-%20%20%20%20p%20%20%20%20-%20%20%20%20%20%20%20%20%20%20%20%20%20%7C%20%20%20%20%20%20%20p%20%20%20%20-%20%20%20%20p%20%20%20%20-%20%20%20%20%7C%20p%20%20%20%20-%20%20%20%20p%20%20%20%20-%20%20%20%20%7C%0A%0AHH%20%7C%20%5Bcx%5D%20%5Bxx%5D%20%5Bxx%5D%20o%20%40dc-al-coda%20%7C%20%5Bxx%5D%20%5Bxx%5D%20%5Bxx%5D%20%5Bxx%5D%20%40dc-al-fine%20%7C%0ASD%20%7C%20-%20%20%20%20%5Bd-%5D%20-%20%20%20%20d%20%20%20%20%20%20%20%20%20%20%20%20%20%7C%20-%20%20%20%20%5Bd-%5D%20-%20%20%20%20%5Bd-%5D%20%7C%0ABD%20%7C%20p%20%20%20%20-%20%20%20%20p%20%20%20%20-%20%20%20%20%20%20%20%20%20%20%20%20%20%7C%20p%20%20%20%20-%20%20%20%20p%20%20%20%20-%20%20%20%20%7C"
                             data-copy-label="复制"
                             aria-label="复制"
                         >复制</button>
                         <pre class="dsl-code-block"><span class="dsl-header-meta">title</span> <span class="dsl-header-text">Repeat Structure</span>
 <span class="dsl-header-struct">time</span> <span class="dsl-header-number">4</span><span class="dsl-header-divider">/</span><span class="dsl-header-number">4</span>
-<span class="dsl-header-struct">divisions</span> <span class="dsl-header-number">4</span>
+<span class="dsl-header-struct">note</span> <span class="dsl-header-number">1/4</span>
 <span class="dsl-header-struct">grouping</span> <span class="dsl-header-number">1</span><span class="dsl-header-operator">+</span><span class="dsl-header-number">1</span><span class="dsl-header-operator">+</span><span class="dsl-header-number">1</span><span class="dsl-header-operator">+</span><span class="dsl-header-number">1</span>
 
 <span class="dsl-repeat">|:</span> <span class="dsl-note">s</span> <span class="dsl-note">s</span> <span class="dsl-note">s</span> <span class="dsl-note">s</span> <span class="dsl-repeat-count">|1.</span> <span class="dsl-note">s</span> <span class="dsl-note">s</span> <span class="dsl-group-bracket">[</span><span class="dsl-identifier">ss</span><span class="dsl-group-bracket">]</span> <span class="dsl-note">s</span> <span class="dsl-repeat">:|</span><span class="dsl-group-count">2</span><span class="dsl-duration-modifier">.</span> <span class="dsl-note">s</span> <span class="dsl-note">s</span> <span class="dsl-group-bracket">[</span><span class="dsl-identifier">ssss</span><span class="dsl-group-bracket">]</span> <span class="dsl-note">s</span> <span class="dsl-barline">|</span>
@@ -731,13 +738,13 @@
                         <button
                             type="button"
                             class="docs-copy-button"
-                            data-copy="title%20Extended%20Rest%0Atime%204%2F4%0Adivisions%204%0Agrouping%204%0A%0A%7C%20--16--%20%7C"
+                            data-copy="title%20Extended%20Rest%0Atime%204%2F4%0Anote%201%2F4%0Agrouping%204%0A%0A%7C%20--16--%20%7C"
                             data-copy-label="复制"
                             aria-label="复制"
                         >复制</button>
                         <pre class="dsl-code-block"><span class="dsl-header-meta">title</span> <span class="dsl-header-text">Extended Rest</span>
 <span class="dsl-header-struct">time</span> <span class="dsl-header-number">4</span><span class="dsl-header-divider">/</span><span class="dsl-header-number">4</span>
-<span class="dsl-header-struct">divisions</span> <span class="dsl-header-number">4</span>
+<span class="dsl-header-struct">note</span> <span class="dsl-header-number">1/4</span>
 <span class="dsl-header-struct">grouping</span> <span class="dsl-header-number">4</span>
 
 <span class="dsl-barline">|</span> <span class="dsl-repeat-count">--16--</span> <span class="dsl-barline">|</span></pre>
@@ -772,13 +779,13 @@
                         <button
                             type="button"
                             class="docs-copy-button"
-                            data-copy="title%20Measure%20Duplication%0Atime%204%2F4%0Adivisions%208%0Agrouping%204%0A%0AHH%20%7C%20x%20x%20x%20x%20x%20x%20x%20x%20*4%20%7C"
+                            data-copy="title%20Measure%20Duplication%0Atime%204%2F4%0Anote%201%2F8%0Agrouping%204%0A%0AHH%20%7C%20x%20x%20x%20x%20x%20x%20x%20x%20*4%20%7C"
                             data-copy-label="复制"
                             aria-label="复制"
                         >复制</button>
                         <pre class="dsl-code-block"><span class="dsl-header-meta">title</span> <span class="dsl-header-text">Measure Duplication</span>
 <span class="dsl-header-struct">time</span> <span class="dsl-header-number">4</span><span class="dsl-header-divider">/</span><span class="dsl-header-number">4</span>
-<span class="dsl-header-struct">divisions</span> <span class="dsl-header-number">8</span>
+<span class="dsl-header-struct">note</span> <span class="dsl-header-number">1/8</span>
 <span class="dsl-header-struct">grouping</span> <span class="dsl-header-number">4</span>
 
 <span class="dsl-track">HH</span> <span class="dsl-barline">|</span> <span class="dsl-accent-note">x</span> <span class="dsl-accent-note">x</span> <span class="dsl-accent-note">x</span> <span class="dsl-accent-note">x</span> <span class="dsl-accent-note">x</span> <span class="dsl-accent-note">x</span> <span class="dsl-accent-note">x</span> <span class="dsl-accent-note">x</span> <span class="dsl-repeat-count">*4</span> <span class="dsl-barline">|</span></pre>
@@ -806,7 +813,7 @@
                                 <p>DrumMark 的校验重点是“谱面逻辑必须唯一、时值必须闭合”。系统会验证：</p>
                                 <div class="docs-section-content">
                                     <ul class="docs-list">
-                                        <li><strong>整小节时值：</strong> 每小节里所有 token 的精确时值总和必须刚好等于拍号与 <code>divisions</code> 共同定义的整小节长度。</li>
+                                        <li><strong>整小节时值：</strong> 每小节里所有 token 的精确时值总和必须刚好等于拍号与 <code>note</code> 共同定义的整小节长度。</li>
                                         <li><strong>grouping 边界：</strong> token 或整个 group 都不能跨越 <code>grouping</code> 定义的分拍边界。</li>
                                         <li><strong>modifier 合法性：</strong> modifier 是否允许，取决于最终解析目标轨。例如 <code>:open</code> 只能用于 hi-hat 语义。</li>
                                         <li><strong>结构冲突：</strong> 冲突的反复、volta、marker/jump、非法 group，以及未知轨道或未知 token 都会直接报错。</li>
@@ -821,13 +828,13 @@
                         <button
                             type="button"
                             class="docs-copy-button"
-                            data-copy="title%20Boundary%20Crossing%0Atime%204%2F4%0Adivisions%208%0Agrouping%202%2B2%0A%0AHH%20%7C%20d.%20d%2F%20d%20d%20%7C"
+                            data-copy="title%20Boundary%20Crossing%0Atime%204%2F4%0Anote%201%2F8%0Agrouping%202%2B2%0A%0AHH%20%7C%20d.%20d%2F%20d%20d%20%7C"
                             data-copy-label="复制"
                             aria-label="复制"
                         >复制</button>
                         <pre class="dsl-code-block"><span class="dsl-header-meta">title</span> <span class="dsl-header-text">Boundary Crossing</span>
 <span class="dsl-header-struct">time</span> <span class="dsl-header-number">4</span><span class="dsl-header-divider">/</span><span class="dsl-header-number">4</span>
-<span class="dsl-header-struct">divisions</span> <span class="dsl-header-number">8</span>
+<span class="dsl-header-struct">note</span> <span class="dsl-header-number">1/8</span>
 <span class="dsl-header-struct">grouping</span> <span class="dsl-header-number">2</span><span class="dsl-header-operator">+</span><span class="dsl-header-number">2</span>
 
 <span class="dsl-track">HH</span> <span class="dsl-barline">|</span> <span class="dsl-note">d</span><span class="dsl-duration-modifier">.</span> <span class="dsl-note">d</span><span class="dsl-duration-modifier">/</span> <span class="dsl-note">d</span> <span class="dsl-note">d</span> <span class="dsl-barline">|</span></pre>
@@ -862,7 +869,7 @@
                         <button
                             type="button"
                             class="docs-copy-button"
-                            data-copy="title%20Funk%20Groove%0Asubtitle%20Section%20A%20-%20Main%20Theme%0Acomposer%20Your%20Name%0Atempo%20108%0Atime%204%2F4%0Adivisions%2016%0Agrouping%202%2B2%0A%0AHH%20%7C%3A%20x%20x%20x%20x%20x%20x%20x%20x%20%7C%20x%20x%20x%20x%20x%20x%20o%20x%20%7C%0AHF%20%7C%20-%20-%20-%20-%20-%20-%20p%20-%20%7C%20-%20-%20-%20-%20-%20-%20p%20-%20%7C%0ASD%20%7C%20-%20-%20d%20-%20-%20-%20D%20-%20%7C%20-%20-%20d%20-%20-%20-%20D%3Ag%20-%20%7C%0ABD%20%7C%20b%20-%20-%20-%20b%20-%20-%20-%20%7C%20b%20-%20-%20-%20B%20-%20-%20-%20%7C%0AC%20%20%7C%20-%20-%20-%20-%20-%20-%20-%20c%20%7C%20-%20-%20-%20-%20-%20-%20-%20-%20%7C%0A%0A%7C%20d%20d%20d%20d%20*3%20%7C"
+                            data-copy="title%20Funk%20Groove%0Asubtitle%20Section%20A%20-%20Main%20Theme%0Acomposer%20Your%20Name%0Atempo%20108%0Atime%204%2F4%0Anote%201%2F16%0Agrouping%202%2B2%0A%0AHH%20%7C%3A%20x%20x%20x%20x%20x%20x%20x%20x%20%7C%20x%20x%20x%20x%20x%20x%20o%20x%20%7C%0AHF%20%7C%20-%20-%20-%20-%20-%20-%20p%20-%20%7C%20-%20-%20-%20-%20-%20-%20p%20-%20%7C%0ASD%20%7C%20-%20-%20d%20-%20-%20-%20D%20-%20%7C%20-%20-%20d%20-%20-%20-%20D%3Ag%20-%20%7C%0ABD%20%7C%20b%20-%20-%20-%20b%20-%20-%20-%20%7C%20b%20-%20-%20-%20B%20-%20-%20-%20%7C%0AC%20%20%7C%20-%20-%20-%20-%20-%20-%20-%20c%20%7C%20-%20-%20-%20-%20-%20-%20-%20-%20%7C%0A%0A%7C%20d%20d%20d%20d%20*3%20%7C"
                             data-copy-label="复制"
                             aria-label="复制"
                         >复制</button>
@@ -871,7 +878,7 @@
 <span class="dsl-header-meta">composer</span> <span class="dsl-header-text">Your Name</span>
 <span class="dsl-header-struct">tempo</span> <span class="dsl-header-number">108</span>
 <span class="dsl-header-struct">time</span> <span class="dsl-header-number">4</span><span class="dsl-header-divider">/</span><span class="dsl-header-number">4</span>
-<span class="dsl-header-struct">divisions</span> <span class="dsl-header-number">16</span>
+<span class="dsl-header-struct">note</span> <span class="dsl-header-number">1/16</span>
 <span class="dsl-header-struct">grouping</span> <span class="dsl-header-number">2</span><span class="dsl-header-operator">+</span><span class="dsl-header-number">2</span>
 
 <span class="dsl-track">HH</span> <span class="dsl-repeat">|:</span> <span class="dsl-accent-note">x</span> <span class="dsl-accent-note">x</span> <span class="dsl-accent-note">x</span> <span class="dsl-accent-note">x</span> <span class="dsl-accent-note">x</span> <span class="dsl-accent-note">x</span> <span class="dsl-accent-note">x</span> <span class="dsl-accent-note">x</span> <span class="dsl-barline">|</span> <span class="dsl-accent-note">x</span> <span class="dsl-accent-note">x</span> <span class="dsl-accent-note">x</span> <span class="dsl-accent-note">x</span> <span class="dsl-accent-note">x</span> <span class="dsl-accent-note">x</span> <span class="dsl-cymbal-note">o</span> <span class="dsl-accent-note">x</span> <span class="dsl-barline">|</span>

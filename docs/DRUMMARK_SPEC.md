@@ -1740,3 +1740,50 @@ This addendum refines Addendum 2026-04-30G and controls wherever G was ambiguous
   - `:|3.`
   - `:|1,2.`
 - The last volta in a repeated section still keeps the user-written closing boundary and does not receive implicit repeat-end semantics.
+
+## Addendum 2026-05-02: Base Rhythmic Unit and Paragraph Overrides
+
+### Status
+
+Proposed
+
+### Scope
+
+This addendum introduces the `note 1/N` syntax to define the base rhythmic unit (grid resolution), deprecates the `divisions` header, and enables paragraph-level overrides.
+
+
+### New Syntax: `note 1/N`
+
+- The `note 1/N` syntax explicitly defines the musical duration of a single grid slot (one character column or one basic token like `d` or `-`).
+- `N` must be a power of 2 ($2^n$ where $n \in \{0, 1, 2, 3, 4, 5, 6, 7\}$).
+- Supported values for `N`: `1`, `2`, `4`, `8`, `16`, `32`, `64`, `128`.
+- Examples:
+  - `note 1/4` (Quarter note grid)
+  - `note 1/8` (Eighth note grid)
+  - `note 1/16` (Sixteenth note grid)
+
+### Scoping Rules
+
+- **Global Header**: `note 1/N` can be used in the document header. It sets the default grid resolution for the entire score.
+- **Paragraph Override**: A line containing only `note 1/N` at the very beginning of a paragraph (immediately following a blank line) overrides the global setting for that paragraph only.
+- Subsequent paragraphs revert to the global header value unless they also contain an explicit override.
+
+### Deprecation of `divisions`
+
+- The `divisions` header is deprecated in favor of `note 1/N`.
+- For backward compatibility, `divisions X` will be interpreted as `note 1/N` where $1/N = \text{MeasureDuration} / X$, provided $N$ is a supported power of 2.
+- If $N$ calculated from `divisions` is not a power of 2, the compiler should issue a warning or error depending on the strictness level.
+
+### Rhythmic Validation
+
+- The number of slots required to fill a measure is calculated dynamically:
+  - `ExpectedSlots = MeasureDuration / (1/N)`
+- For a 4/4 measure (Duration = 1) with `note=1/16`, `ExpectedSlots = 16`.
+- For a 6/8 measure (Duration = 3/4) with `note=1/16`, `ExpectedSlots = 12`.
+- A measure is valid if and only if the sum of all token durations (expressed in fractions of a whole note) equals the `MeasureDuration`. This is equivalent to ensuring the total weight of tokens equals `ExpectedSlots`.
+
+### Canonical Representation
+
+- The `NormalizedHeader` and IR will store `noteValue: number` (the denominator $N$).
+- `divisions` may be omitted from IR if `noteValue` is present, or kept as a derived value for specific consumers.
+- Each `NormalizedMeasure` or `ScoreParagraph` must carry its effective `noteValue`.

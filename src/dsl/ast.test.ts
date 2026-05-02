@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { buildScoreAst } from "./ast";
+import { buildNormalizedScore } from "./normalize";
 
 describe("buildScoreAst", () => {
   it("auto-fills missing known tracks inside later paragraphs", () => {
@@ -152,5 +153,34 @@ SD | d - - - @to-coda |`);
     expect(score.paragraphs[0].tracks[1].measures[0]).toMatchObject({
       endNav: { kind: "to-coda", anchor: "right-edge" },
     });
+  });
+
+  it("calculates dynamic divisions from 'note 1/N' and supports paragraph overrides", () => {
+    const score = buildScoreAst(`time 4/4
+note 1/8
+
+HH | x - x - |
+
+note 1/16
+HH | x - x - x - x - |`);
+
+    expect(score.errors).toEqual([]);
+    expect(score.paragraphs).toHaveLength(2);
+    
+    // Paragraph 1: 4/4 @ 1/8 note = 8 slots
+    expect(score.paragraphs[0].noteValue).toBe(8);
+    // x - x - = 4 tokens, but it's padded to 8 by normalizeExplicitMeasure
+    expect(score.paragraphs[0].tracks[0].measures[0].tokens).toHaveLength(8);
+  });
+
+  it("validates measure duration against dynamic divisions", () => {
+    const score = buildNormalizedScore(`time 4/4
+note 1/8
+
+HH | x x x x x x x x x |`); // 9 slots in 8-slot measure
+
+    expect(score.errors).toContainEqual(expect.objectContaining({
+      message: "Track `HH` measure 1 has invalid duration: used 9/1 slots, expected 8",
+    }));
   });
 });

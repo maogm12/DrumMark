@@ -294,4 +294,20 @@ divisions 4
     expect(doc.errors).toEqual([]);
     expect(doc.headers.time).toMatchObject({ beats: 4, beatUnit: 4 });
   });
+
+  it("parses the 'note 1/N' header and paragraph overrides", () => {
+    const doc = parseDocumentSkeleton(`time 4/4
+note 1/8
+
+HH | x - x - |
+
+note 1/16
+HH | x - x - x - x - |`);
+
+    expect(doc.errors).toEqual([]);
+    expect(doc.headers.note?.value).toBe(8);
+    expect(doc.paragraphs).toHaveLength(2);
+    expect(doc.paragraphs[0].noteValue).toBeUndefined(); // Uses global
+    expect(doc.paragraphs[1].noteValue).toBe(16); // Overridden
+  });
 });

@@ -1,4 +1,4 @@
-export const HEADER_FIELDS = ["title", "subtitle", "composer", "tempo", "time", "divisions", "grouping"] as const;
+export const HEADER_FIELDS = ["title", "subtitle", "composer", "tempo", "time", "divisions", "note", "grouping"] as const;
 
 export type HeaderField = (typeof HEADER_FIELDS)[number];
 
@@ -181,6 +181,12 @@ export type DivisionsHeader = {
   line: number;
 };
 
+export type NoteHeader = {
+  field: "note";
+  value: number;
+  line: number;
+};
+
 export type GroupingHeader = {
   field: "grouping";
   values: number[];
@@ -193,13 +199,15 @@ export type ParsedHeaders = {
   composer?: MetadataHeader;
   tempo: TempoHeader;
   time: TimeHeader;
-  divisions: DivisionsHeader;
+  divisions?: DivisionsHeader;
+  note?: NoteHeader;
   grouping: GroupingHeader;
 };
 
 export type TrackParagraph = {
   startLine: number;
   lines: ParsedTrackLine[];
+  noteValue?: number;
 };
 
 export type DocumentSkeleton = {
@@ -230,6 +238,7 @@ export type ScoreParagraph = {
   measureCount: number;
   tracks: ScoreTrackParagraph[];
   groups: (TrackName | "ANONYMOUS")[][];
+  noteValue: number;
 };
 
 export type RepeatSpan = {
@@ -360,6 +369,7 @@ export type NormalizedMeasure = {
   measureRepeat?: MeasureRepeatIntent;
   multiRest?: MultiRestIntent;
   multiRestCount?: number;
+  noteValue: number;
 };
 
 export type StartNav =
@@ -386,6 +396,7 @@ export type NormalizedHeader = {
     beatUnit: number;
   };
   divisions: number;
+  noteValue: number;
   grouping: number[];
 };
 

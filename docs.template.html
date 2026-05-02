@@ -111,7 +111,14 @@
                                         <li><strong>title / subtitle / composer:</strong> Your score's name and credits. These appear on the printed sheet.</li>
                                         <li><strong>tempo:</strong> Quarter-note BPM. Default is 120 if omitted.</li>
                                         <li><strong>time:</strong> The meter (e.g., <code>4/4</code>, <code>3/4</code>, <code>6/8</code>). Required.</li>
-                                        <li><strong>divisions:</strong> Total grid units per measure. Required. Controls rhythmic precision — use 16 for standard precision, 32 for complex syncopation.</li>
+                                        <li><strong>note:</strong> The duration of a single grid slot (e.g., <code>note 1/16</code>). Required.
+                                            <ul class="docs-sub-list">
+                                                <li><strong>Supported values:</strong> <code>1/1</code>, <code>1/2</code>, <code>1/4</code>, <code>1/8</code>, <code>1/16</code>, <code>1/32</code>, <code>1/64</code>, <code>1/128</code>.</li>
+                                                <li><strong>Global:</strong> Define it once in the header for the whole score.</li>
+                                                <li><strong>Overrides:</strong> Put <code>note 1/N</code> at the start of any paragraph to temporarily switch resolution (e.g., use 1/32 for a complex fill).</li>
+                                            </ul>
+                                        </li>
+                                        <li><strong>divisions:</strong> <span class="docs-tag-deprecated">Deprecated</span> Total grid units per measure. Replaced by <code>note</code>.</li>
                                         <li><strong>grouping:</strong> Defines the beat structure within a measure. Controls rhythmic grouping and beaming.
                                             <div class="docs-mini-table-container">
                                                 <table class="docs-table">
@@ -130,9 +137,9 @@
                                         </li>
                                     </ul>
                                     <ul class="docs-list">
-                                        <li><strong>Syntax form:</strong> headers use <code>field value</code>, not JSON and not comma-separated data. Both <code>time 4/4</code> and <code>time 4 / 4</code> are valid.</li>
+                                        <li><strong>Syntax form:</strong> headers use <code>field value</code>, not JSON and not comma-separated data. Both <code>time 4/4</code> and <code>note 1/16</code> are valid.</li>
                                         <li><strong>Grouping rule:</strong> the explicit grouping parts must add up exactly to the meter numerator. For example, <code>7/8</code> may use <code>grouping 3+2+2</code>.</li>
-                                        <li><strong>What divisions means:</strong> it defines the total input grid per measure. Validation requires the exact summed token duration to match that full grid.</li>
+                                        <li><strong>Dynamic Grid:</strong> the total slots per measure is <code>MeasureDuration / NoteValue</code>. In 4/4 time, <code>note 1/16</code> yields 16 slots; in 6/8 time, it yields 12 slots.</li>
                                     </ul>
                                 </div>
                             </div>
@@ -397,7 +404,7 @@
                                 <p>DrumMark validation is primarily about one unique score logic and exact duration closure. The system validates:</p>
                                 <div class="docs-section-content">
                                     <ul class="docs-list">
-                                        <li><strong>Whole-measure duration:</strong> the exact summed duration of every measure must match the full measure length implied by the meter and <code>divisions</code>.</li>
+                                        <li><strong>Whole-measure duration:</strong> the exact summed duration of every measure must match the full measure length implied by the meter and <code>note</code> resolution.</li>
                                         <li><strong>Grouping boundaries:</strong> neither a token nor a whole group may cross a beat boundary defined by <code>grouping</code>.</li>
                                         <li><strong>Modifier legality:</strong> whether a modifier is allowed depends on the final resolved target track. For example, <code>:open</code> is only legal for hi-hat semantics.</li>
                                         <li><strong>Structural conflicts:</strong> conflicting repeats, voltas, markers/jumps, illegal groups, and unknown tracks or tokens all fail validation directly.</li>

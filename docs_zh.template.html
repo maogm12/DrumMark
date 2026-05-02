@@ -111,7 +111,14 @@
                                         <li><strong>title / subtitle / composer:</strong> 乐曲的名称和作者信息。这些会印在乐谱上。</li>
                                         <li><strong>tempo:</strong> 四分音符 BPM。如不指定默认为 120。</li>
                                         <li><strong>time:</strong> 拍号（如 <code>4/4</code>、<code>3/4</code>、<code>6/8</code>）。必填。</li>
-                                        <li><strong>divisions:</strong> 每小节的总网格单位。必填。数值越高节奏越精细——标准精度用 16，复杂切分用 32。</li>
+                                        <li><strong>note:</strong> 单个网格槽位的时值（如 <code>note 1/16</code>）。必填。
+                                            <ul class="docs-sub-list">
+                                                <li><strong>支持的值:</strong> <code>1/1</code>, <code>1/2</code>, <code>1/4</code>, <code>1/8</code>, <code>1/16</code>, <code>1/32</code>, <code>1/64</code>, <code>1/128</code>。</li>
+                                                <li><strong>全局设定:</strong> 在 Header 中定义一次，作用于全谱。</li>
+                                                <li><strong>段落覆盖:</strong> 在段落开头写 <code>note 1/N</code> 可临时改变该段的分辨率（如在复杂 Fill 段落改用 1/32）。</li>
+                                            </ul>
+                                        </li>
+                                        <li><strong>divisions:</strong> <span class="docs-tag-deprecated">已废弃</span> 每小节的总网格单位。由 <code>note</code> 替代。</li>
                                         <li><strong>grouping:</strong> 定义小节内的节拍结构。控制节奏分组和连杠（beaming）。
                                             <div class="docs-mini-table-container">
                                                 <table class="docs-table">
@@ -130,9 +137,9 @@
                                         </li>
                                     </ul>
                                     <ul class="docs-list">
-                                        <li><strong>语法形式：</strong> 头部是 <code>字段名 空格 值</code>，不是 JSON，也不需要逗号。可写 <code>time 4/4</code>，也可写 <code>time 4 / 4</code>。</li>
+                                        <li><strong>语法形式：</strong> 头部是 <code>字段名 空格 值</code>，不是 JSON，也不需要逗号。可写 <code>time 4/4</code>，也可写 <code>note 1/16</code>。</li>
                                         <li><strong>grouping 规则：</strong> 显式写出的每一组相加必须严格等于拍号分子。比如 <code>7/8</code> 可以写 <code>grouping 3+2+2</code>。</li>
-                                        <li><strong>divisions 的意义：</strong> 它定义每小节输入网格总数。校验时所有 token 的时值总和必须刚好等于这个总网格。</li>
+                                        <li><strong>动态网格：</strong> 每小节的总槽位数为 <code>小节时长 / note 时值</code>。4/4 拍下 <code>note 1/16</code> 为 16 格，6/8 拍下则自动变为 12 格。</li>
                                     </ul>
                                 </div>
                             </div>
@@ -397,7 +404,7 @@
                                 <p>DrumMark 的校验重点是“谱面逻辑必须唯一、时值必须闭合”。系统会验证：</p>
                                 <div class="docs-section-content">
                                     <ul class="docs-list">
-                                        <li><strong>整小节时值：</strong> 每小节里所有 token 的精确时值总和必须刚好等于拍号与 <code>divisions</code> 共同定义的整小节长度。</li>
+                                        <li><strong>整小节时值：</strong> 每小节里所有 token 的精确时值总和必须刚好等于拍号与 <code>note</code> 共同定义的整小节长度。</li>
                                         <li><strong>grouping 边界：</strong> token 或整个 group 都不能跨越 <code>grouping</code> 定义的分拍边界。</li>
                                         <li><strong>modifier 合法性：</strong> modifier 是否允许，取决于最终解析目标轨。例如 <code>:open</code> 只能用于 hi-hat 语义。</li>
                                         <li><strong>结构冲突：</strong> 冲突的反复、volta、marker/jump、非法 group，以及未知轨道或未知 token 都会直接报错。</li>

@@ -79,6 +79,18 @@ const MULTI_CHAR_GLYPHS = BASIC_GLYPHS.filter((glyph) => glyph.length > 1).sort(
 
 const SUPPORTED_BEAT_UNITS = new Set([2, 4, 8, 16]);
 
+function isPowerOfTwo(n: number): boolean {
+  return n > 0 && (n & (n - 1)) === 0;
+}
+
+function parseNoteValue(value: string): number | null {
+  const match = value.match(/^1\s*\/\s*(\d+)$/);
+  if (!match) return null;
+  const n = parseInt(match[1], 10);
+  if (isPowerOfTwo(n) && n <= 128) return n;
+  return null;
+}
+
 function parsePositiveInteger(value: string): number | null {
   if (!/^\d+$/.test(value)) {
     return null;
@@ -266,6 +278,34 @@ function parseHeaderLine(line: PreprocessedLine, headers: HeaderAccumulator, err
       };
       return true;
     }
+    case "note": {
+      if (headers.note) {
+        errors.push({
+          line: line.lineNumber,
+          column: 1,
+          message: "Duplicate header `note`",
+        });
+        return true;
+      }
+
+      const parsed = parseNoteValue(value);
+
+      if (parsed === null) {
+        errors.push({
+          line: line.lineNumber,
+          column: line.raw.indexOf(value) + 1,
+          message: "Note must be in the form 1/N where N is a power of 2 (1, 2, 4, 8, 16, 32, 64, 128)",
+        });
+        return true;
+      }
+
+      headers.note = {
+        field: "note",
+        value: parsed,
+        line: line.lineNumber,
+      };
+      return true;
+    }
     case "grouping": {
       if (headers.grouping) {
         errors.push({
@@ -341,16 +381,19 @@ function finalizeHeaders(headers: HeaderAccumulator, errors: ParseError[]): Pars
     ...(headers.composer ? { composer: headers.composer } : {}),
     tempo: headers.tempo ?? { field: "tempo", value: 120, line: 0 },
     time,
-    divisions:
-      headers.divisions ??
-      (() => {
-        errors.push({
-          line: 1,
-          column: 1,
-          message: "Missing required header `divisions`",
-        });
-        return { field: "divisions", value: 16, line: 0 };
-      })(),
+    divisions: headers.divisions,
+    note:
+      headers.note ??
+      (headers.divisions
+        ? undefined
+        : (() => {
+            errors.push({
+              line: 1,
+              column: 1,
+              message: "Missing required header `note` (e.g., note 1/16)",
+            });
+            return { field: "note", value: 16, line: 0 };
+          })()),
     grouping,
   };
 }
@@ -1176,11 +1219,10 @@ function splitParagraphs(lines: PreprocessedLine[], errors: ParseError[]): Track
         rawParagraphs.push(current);
         current = [];
       }
-
       continue;
     }
 
-    if (line.kind === "content") {
+    if (line.kind === "content" || line.kind === "comment") {
       current.push(line);
     }
   }
@@ -1191,44 +1233,62 @@ function splitParagraphs(lines: PreprocessedLine[], errors: ParseError[]): Track
 
   return rawParagraphs
     .map((paragraphLines) => {
-      const parsedLines = paragraphLines
-        .filter((line) => {
-          const first = line.content.split(/\s+/)[0];
-          return !HEADER_FIELDS.includes(first as (typeof HEADER_FIELDS)[number]);
-        })
+      let noteValue: number | undefined;
+      const filteredLines: PreprocessedLine[] = [];
+
+      for (const line of paragraphLines) {
+        if (line.kind === "comment") continue;
+        if (line.kind === "content") {
+          const match = line.content.match(/^note\s+1\s*\/\s*(\d+)$/);
+          if (match) {
+            const n = parseInt(match[1], 10);
+            if (isPowerOfTwo(n) && n <= 128) {
+              noteValue = n;
+            } else {
+              errors.push({
+                line: line.lineNumber,
+                column: 1,
+                message: "Note must be in the form 1/N where N is a power of 2 (1, 2, 4, 8, 16, 32, 64, 128)",
+              });
+            }
+            continue; // Skip the note override line from track parsing
+          }
+          filteredLines.push(line);
+        }
+      }
+
+      const parsedLines = filteredLines
         .map((line) => parseTrackLine(line, errors))
         .filter((line): line is ParsedTrackLine => line !== null);
 
-      const firstLine = paragraphLines[0];
-      if (firstLine === undefined) return null;
+      if (parsedLines.length === 0) return null;
+
       return {
-        startLine: firstLine.lineNumber,
+        startLine: paragraphLines[0]!.lineNumber,
         lines: parsedLines,
+        noteValue,
       };
     })
-    .filter((paragraph): paragraph is TrackParagraph => paragraph !== null && paragraph.lines.length > 0);
+    .filter((paragraph): paragraph is TrackParagraph => paragraph !== null);
 }
 
 export function parseDocumentSkeleton(source: string): DocumentSkeleton {
   const lines = preprocessSource(source);
   const errors: ParseError[] = [];
   const headers: HeaderAccumulator = {};
-  let bodyStartIndex = lines.findIndex((line) => line.kind === "content");
-
+  
+  // bodyStartIndex should be the index of the first real track line (contains '|')
+  let bodyStartIndex = lines.findIndex((line) => line.kind === "content" && line.content.includes("|"));
   if (bodyStartIndex === -1) {
     bodyStartIndex = lines.length;
   }
 
-  for (let index = 0; index < lines.length; index += 1) {
+  // Parse headers from all content lines preceding the first track line
+  for (let index = 0; index < bodyStartIndex; index += 1) {
     const line = lines[index];
-    if (line === undefined) continue;
-
-    if (line.kind !== "content") {
-      continue;
-    }
+    if (!line || line.kind !== "content") continue;
 
     const isHeader = parseHeaderLine(line, headers, errors);
-
     if (!isHeader) {
       const firstToken = line.content.split(/\s+/)[0];
       if (firstToken && /^[a-z][a-z0-9-]*$/i.test(firstToken) && /^[a-z]/.test(firstToken) && !HEADER_FIELDS.includes(firstToken as (typeof HEADER_FIELDS)[number])) {
@@ -1237,19 +1297,24 @@ export function parseDocumentSkeleton(source: string): DocumentSkeleton {
           column: 1,
           message: `Unknown header \`${firstToken}\``,
         });
-        bodyStartIndex = index + 1;
-        continue;
       }
-
-      bodyStartIndex = index;
-      break;
     }
-
-    bodyStartIndex = index + 1;
   }
 
   const bodyLines = lines.slice(bodyStartIndex);
-  const unexpectedHeader = bodyLines.find((line) => line.kind === "content" && line.content.split(/\s+/)[0] && HEADER_FIELDS.includes(line.content.split(/\s+/)[0] as (typeof HEADER_FIELDS)[number]));
+  const unexpectedHeader = bodyLines.find((line) => {
+    if (line.kind !== "content") return false;
+    const firstToken = line.content.split(/\s+/)[0];
+    if (!firstToken || !HEADER_FIELDS.includes(firstToken as (typeof HEADER_FIELDS)[number])) {
+      return false;
+    }
+    // 'note' is allowed at the start of a paragraph in bodyLines
+    if (firstToken === "note") {
+      const match = line.content.match(/^note\s+1\s*\/\s*(\d+)$/);
+      if (match) return false;
+    }
+    return true;
+  });
 
   if (unexpectedHeader) {
     errors.push({

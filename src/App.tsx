@@ -10,7 +10,7 @@ import { drumMarkEditorTheme, drumMarkLanguage, drumMarkSyntaxHighlighting } fro
 
 const legacySeedDsl = `tempo 96
 time 4/4
-divisions 16
+note 1/16
 
 HH |: x - x - o - x - | x - x:close - X - x - :|
 SD |  - - d:cross - d - | D:rim - [2: d d:flam d] - - -  |
@@ -25,7 +25,7 @@ subtitle Coverage Demo
 composer OpenAI Codex
 tempo 112
 time 4/4
-divisions 8
+note 1/8
 grouping 1+1+1+1
 
 |: x+s p - - RC{d:bell d:choke} SD:d:rim - :|

@@ -8,6 +8,7 @@
 - **Technical Rigor:** Ensure every change is idiomatically correct and does not introduce regressions or syntax errors (like omission placeholders) into the codebase.
 - **Knowledge Retention:** After researching source code or documentation to solve a problem, document the findings (API details, internal logic, discovered constraints) in `LEARNINGS.md`. **All updates to `LEARNINGS.md` MUST follow the Append-Only Protocol** to prevent accidental data loss and maintain a chronological record of technical discoveries.
 - **Design First:** For any significant DSL or architectural changes, the agent MUST present a design proposal and obtain explicit user approval before writing or modifying any implementation code.
+- **Mandatory Post-Change Review:** After every code modification (feature implementation or bug fix), the agent MUST invoke a sub-agent to review the change. The reviewer must verify technical correctness, check for potential side effects, and ensure compliance with existing patterns.
 
 ## Specification Evolution & Review Protocol
 

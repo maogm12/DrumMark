@@ -523,8 +523,7 @@ function StaffPreview({
   score,
   pagePadding,
   pageScale,
-  titleTopPadding,
-  titleSubtitleGap,
+  headerHeight,
   titleStaffGap,
   systemSpacing,
   stemLength,
@@ -535,8 +534,7 @@ function StaffPreview({
   score: NormalizedScore | null;
   pagePadding: PagePadding;
   pageScale: number;
-  titleTopPadding: number;
-  titleSubtitleGap: number;
+  headerHeight: number;
   titleStaffGap: number;
   systemSpacing: number;
   stemLength: number;
@@ -566,8 +564,7 @@ function StaffPreview({
       mode: "preview",
       pagePadding,
       pageScale,
-      titleTopPadding,
-      titleSubtitleGap,
+      headerHeight,
       titleStaffGap,
       systemSpacing,
       stemLength,
@@ -592,14 +589,10 @@ function StaffPreview({
         console.error("VexFlow render error:", renderError);
         setError(msg || "Could not render staff preview.");
       });
-  }, [score, systemSpacing, stemLength, voltaGap, titleStaffGap, titleSubtitleGap, titleTopPadding, active, hideVoice2Rests, pagePadding, pageScale]);
+  }, [score, systemSpacing, stemLength, voltaGap, titleStaffGap, headerHeight, active, hideVoice2Rests, pagePadding, pageScale]);
 
   const printableStyle = {
     "--staff-zoom-width": `${pageScale * 100}%`,
-    "--page-padding-top": `${pagePadding.top}px`,
-    "--page-padding-right": `${pagePadding.right}px`,
-    "--page-padding-bottom": `${pagePadding.bottom}px`,
-    "--page-padding-left": `${pagePadding.left}px`,
   } as CSSProperties;
 
   if (!score) {
@@ -650,8 +643,7 @@ function MusicXmlPreview({ xml }: { xml: string }) {
 function renderPdfPageSvgs(
   score: NormalizedScore,
   layout?: {
-    titleTopPadding?: number;
-    titleSubtitleGap?: number;
+    headerHeight?: number;
     titleStaffGap?: number;
     systemSpacing?: number;
     stemLength?: number;
@@ -663,8 +655,7 @@ function renderPdfPageSvgs(
     mode: "pdf",
     pagePadding: { top: 36, right: 36, bottom: 36, left: 36 },
     pageScale: 1,
-    titleTopPadding: layout?.titleTopPadding ?? 3.6,
-    titleSubtitleGap: layout?.titleSubtitleGap ?? 1.2,
+    headerHeight: layout?.headerHeight ?? 50,
     titleStaffGap: layout?.titleStaffGap ?? 2.8,
     systemSpacing: layout?.systemSpacing ?? 0.6,
     stemLength: layout?.stemLength ?? 31,
@@ -679,8 +670,7 @@ async function buildPdf(
   score: NormalizedScore,
   _xml: string,
   layout?: {
-    titleTopPadding?: number;
-    titleSubtitleGap?: number;
+    headerHeight?: number;
     titleStaffGap?: number;
     systemSpacing?: number;
     stemLength?: number;
@@ -740,8 +730,7 @@ interface AppSettings {
   systemSpacing: number;
   stemLength: number;
   voltaGap: number;
-  titleTopPadding: number;
-  titleSubtitleGap: number;
+  headerHeight: number;
   activeTab: MainTab;
 }
 
@@ -749,12 +738,11 @@ const defaultSettings: AppSettings = {
   hideVoice2Rests: false,
   pagePadding: { top: 24, right: 18, bottom: 24, left: 18 },
   pageScale: 1.0,
-  titleStaffGap: 2.8,
-  systemSpacing: 0.6,
+  titleStaffGap: 60,
+  headerHeight: 50,
+  systemSpacing: 30,
   stemLength: 31,
   voltaGap: -15,
-  titleTopPadding: 3.6,
-  titleSubtitleGap: 1.2,
   activeTab: "editor",
 };
 
@@ -780,6 +768,9 @@ export function App() {
       }
       if (parsed.voltaGap === undefined || parsed.voltaGap < -16 || parsed.voltaGap > 16) {
         parsed.voltaGap = -15;
+      }
+      if (parsed.headerHeight === undefined) {
+        parsed.headerHeight = 50;
       }
       if (parsed.previewMode && !parsed.activeTab) {
         parsed.activeTab = parsed.previewMode === "xml" ? "xml" : "page";
@@ -933,8 +924,7 @@ export function App() {
     setPendingPdfExport(true);
     try {
       const pdfBytes = await buildPdf(score, staffXml, {
-        titleTopPadding: settings.titleTopPadding,
-        titleSubtitleGap: settings.titleSubtitleGap,
+        headerHeight: settings.headerHeight,
         titleStaffGap: settings.titleStaffGap,
         systemSpacing: settings.systemSpacing,
         stemLength: settings.stemLength,
@@ -1058,8 +1048,7 @@ export function App() {
                       score={hasRenderableScore ? score : null}
                       pagePadding={settings.pagePadding}
                       pageScale={settings.pageScale}
-                      titleTopPadding={settings.titleTopPadding}
-                      titleSubtitleGap={settings.titleSubtitleGap}
+                      headerHeight={settings.headerHeight}
                       titleStaffGap={settings.titleStaffGap}
                       systemSpacing={settings.systemSpacing}
                       stemLength={settings.stemLength}
@@ -1093,39 +1082,48 @@ export function App() {
                     <input type="range" min="0.6" max="3.0" step="0.05" value={settings.pageScale} onChange={(e) => updateSetting("pageScale", parseFloat(e.target.value))} />
                   </div>
                   <div className="setting-row">
-                    <div className="setting-label"><span>System Spacing</span><span className="setting-value">{settings.systemSpacing.toFixed(1)}</span></div>
-                    <input type="range" min="0.6" max="6" step="0.2" value={settings.systemSpacing} onChange={(e) => updateSetting("systemSpacing", parseFloat(e.target.value))} />
+                    <div className="setting-label"><span>System Spacing (pt)</span><span className="setting-value">{settings.systemSpacing.toFixed(0)}</span></div>
+                    <input type="range" min="0" max="100" step="1" value={settings.systemSpacing} onChange={(e) => updateSetting("systemSpacing", parseFloat(e.target.value))} />
                   </div>
                   <div className="setting-row">
-                    <div className="setting-label"><span>Stem Length</span><span className="setting-value">{settings.stemLength}</span></div>
-                    <input type="range" min="20" max="40" step="1" value={settings.stemLength} onChange={(e) => updateSetting("stemLength", parseInt(e.target.value, 10))} />
+                    <div className="setting-label"><span>Stem Length (pt)</span><span className="setting-value">{settings.stemLength}</span></div>
+                    <input type="range" min="15" max="50" step="1" value={settings.stemLength} onChange={(e) => updateSetting("stemLength", parseInt(e.target.value, 10))} />
                   </div>
                   <div className="setting-row">
-                    <div className="setting-label"><span>Volta Gap</span><span className="setting-value">{settings.voltaGap}</span></div>
-                    <input type="range" min="-16" max="16" step="1" value={settings.voltaGap} onChange={(e) => updateSetting("voltaGap", parseInt(e.target.value, 10))} />
+                    <div className="setting-label"><span>Volta Gap (pt)</span><span className="setting-value">{settings.voltaGap}</span></div>
+                    <input type="range" min="-20" max="20" step="1" value={settings.voltaGap} onChange={(e) => updateSetting("voltaGap", parseInt(e.target.value, 10))} />
                   </div>
                   <div className="padding-grid-container">
-                    <span className="setting-label-small">Margins (px)</span>
+                    <span className="setting-label-small">Margins (pt)</span>
                     <div className="padding-grid">
-                      {([["Top", "top"], ["Right", "right"], ["Bottom", "bottom"], ["Left", "left"]] as const).map(([label, key]) => (
-                        <div className="padding-input" key={key}><span>{label}</span><input type="number" value={settings.pagePadding[key]} onChange={(e) => updatePagePadding(key, parseInt(e.target.value, 10) || 0)} /></div>
-                      ))}
-                    </div>
+                      {([["Top", "top", 800], ["Right", "right", 400], ["Bottom", "bottom", 800], ["Left", "left", 400]] as const).map(([label, key, limit]) => (
+                        <div className="padding-input" key={key}>
+                          <span>{label}</span>
+                          <input
+                            type="number"
+                            inputMode="numeric"
+                            min="0"
+                            max={limit}
+                            value={settings.pagePadding[key]}
+                            onFocus={(e) => e.target.select()}
+                            onChange={(e) => {
+                              const val = parseInt(e.target.value, 10);
+                              updatePagePadding(key, isNaN(val) ? 0 : Math.max(0, Math.min(val, limit)));
+                            }}
+                          />
+                        </div>
+                      ))}                    </div>
                   </div>
                 </div>
                 <div className="settings-section">
                   <h3 className="settings-section-title">Header Spacing</h3>
                   <div className="setting-row">
-                    <div className="setting-label"><span>Title Top</span><span className="setting-value">{settings.titleTopPadding.toFixed(1)}</span></div>
-                    <input type="range" min="0" max="10" step="0.2" value={settings.titleTopPadding} onChange={(e) => updateSetting("titleTopPadding", parseFloat(e.target.value))} />
+                    <div className="setting-label"><span>Header Height (pt)</span><span className="setting-value">{settings.headerHeight.toFixed(0)}</span></div>
+                    <input type="range" min="10" max="300" step="1" value={settings.headerHeight} onChange={(e) => updateSetting("headerHeight", parseFloat(e.target.value))} />
                   </div>
                   <div className="setting-row">
-                    <div className="setting-label"><span>Subtitle Gap</span><span className="setting-value">{settings.titleSubtitleGap.toFixed(1)}</span></div>
-                    <input type="range" min="0" max="6" step="0.2" value={settings.titleSubtitleGap} onChange={(e) => updateSetting("titleSubtitleGap", parseFloat(e.target.value))} />
-                  </div>
-                  <div className="setting-row">
-                    <div className="setting-label"><span>Header to Staff</span><span className="setting-value">{settings.titleStaffGap.toFixed(1)}</span></div>
-                    <input type="range" min="1" max="8" step="0.2" value={settings.titleStaffGap} onChange={(e) => updateSetting("titleStaffGap", parseFloat(e.target.value))} />
+                    <div className="setting-label"><span>Header to Staff (pt)</span><span className="setting-value">{settings.titleStaffGap.toFixed(0)}</span></div>
+                    <input type="range" min="0" max="100" step="1" value={settings.titleStaffGap} onChange={(e) => updateSetting("titleStaffGap", parseFloat(e.target.value))} />
                   </div>
                 </div>
               </aside>

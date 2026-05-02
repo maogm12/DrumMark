@@ -79,10 +79,9 @@ async function main() {
       mode: "preview",
       pagePadding: { top: 20, right: 20, bottom: 20, left: 20 },
       pageScale: 1.0,
-      titleTopPadding: 20,
-      titleSubtitleGap: 10,
-      titleStaffGap: 40,
-      systemSpacing: 1.0,
+      headerHeight: 50,
+      titleStaffGap: 60,
+      systemSpacing: 30.0,
       stemLength: 31,
       voltaGap: -15,
       hideVoice2Rests: false

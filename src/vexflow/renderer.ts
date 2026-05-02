@@ -500,47 +500,66 @@ function computeAnnotationCoordinates(note: any, annotation: any, textWidth: num
   return { x, y };
 }
 
-function drawHeaderWithVexFlow(context: any, score: NormalizedScore, width: number, options: VexflowRenderOptions) {
+function drawHeaderWithVexFlow(context: any, score: NormalizedScore, width: number, options: VexflowRenderOptions, headerY: number) {
   const title = score.header.title;
   const subtitle = score.header.subtitle;
   const composer = score.header.composer;
 
   if (!title && !subtitle && !composer) return;
 
-  const headerStave = new Stave(50, 72, width - 100, {
+  const paddingLeftPt = (options.pagePadding.left ?? 24) * 0.75;
+  const paddingRightPt = (options.pagePadding.right ?? 24) * 0.75;
+  const headerHeightPt = options.headerHeight ?? 50;
+
+  const headerBottomY = headerY;
+  const headerTopY = headerBottomY - headerHeightPt;
+
+  // Title anchor: fixed relative to the page top (headerTopY)
+  const titleStave = new Stave(paddingLeftPt, headerTopY + 28, width - paddingLeftPt - paddingRightPt, {
     numLines: 0,
     leftBar: false,
     rightBar: false,
   });
 
+  // Subtitle/Composer anchor: moves with headerHeight (headerBottomY)
+  const bottomStave = new Stave(paddingLeftPt, headerBottomY, width - paddingLeftPt - paddingRightPt, {
+    numLines: 0,
+    leftBar: false,
+    rightBar: false,
+  });
+
+  // Title: Positioned at the top of the header area (fixed)
   if (title) {
     const titleText = new StaveText(title, Modifier.Position.ABOVE, {
       justification: TextJustification.CENTER,
-      shiftY: -(options.titleTopPadding * 10),
+      shiftY: 0,
     });
     titleText.setFont("Academico", 24, "bold");
-    headerStave.addModifier(titleText);
+    titleStave.addModifier(titleText);
   }
 
+  // Subtitle: Positioned at the bottom of the header area (moves with height)
   if (subtitle) {
     const subtitleText = new StaveText(subtitle, Modifier.Position.ABOVE, {
       justification: TextJustification.CENTER,
-      shiftY: -(options.titleSubtitleGap * 10),
+      shiftY: 12,
     });
     subtitleText.setFont("Academico", 14, "italic");
-    headerStave.addModifier(subtitleText);
+    bottomStave.addModifier(subtitleText);
   }
 
+  // Composer: Positioned at the bottom-right of the header area (moves with height)
   if (composer) {
     const composerText = new StaveText(composer, Modifier.Position.ABOVE, {
       justification: TextJustification.RIGHT,
-      shiftY: -(options.titleSubtitleGap * 10),
+      shiftY: 12,
     });
     composerText.setFont("Academico", 12, "");
-    headerStave.addModifier(composerText);
+    bottomStave.addModifier(composerText);
   }
 
-  headerStave.setContext(context).draw();
+  titleStave.setContext(context).draw();
+  bottomStave.setContext(context).draw();
 }
 
 async function ensureVexFlowFonts() {
@@ -569,7 +588,7 @@ export async function renderScoreToSvg(score: NormalizedScore, options: VexflowR
 
   const systemWidth = mode === "preview" ? 900 : 800;
   const staffHeight = 100;
-  const systemSpacing = options.systemSpacing * 100;
+  const systemSpacing = options.systemSpacing;
 
   const renderMeasures = buildRenderMeasures(score);
   const allSystems: RenderMeasure[][] = [];
@@ -595,16 +614,25 @@ export async function renderScoreToSvg(score: NormalizedScore, options: VexflowR
   context.setFillStyle("#333");
   context.setStrokeStyle("#333");
 
-  drawHeaderWithVexFlow(context, score, systemWidth, options);
+  // First system Y: start at page padding top, then title block + titleStaffGap, then staff
+  const titleStaffGap = options.titleStaffGap ?? 2.8;
+  const pagePaddingTop = options.pagePadding?.top ?? 24;
+  const headerHeight = options.headerHeight ?? 50;
+  const firstSystemY = pagePaddingTop + headerHeight + titleStaffGap;
 
-  let yOffset = 150;
+  const paddingLeftPt = (options.pagePadding.left ?? 24) * 0.75;
+  const paddingRightPt = (options.pagePadding.right ?? 24) * 0.75;
+
+  drawHeaderWithVexFlow(context, score, systemWidth, options, pagePaddingTop + headerHeight);
+
+  let yOffset = firstSystemY;
   for (let i = 0; i < allSystems.length; i++) {
     const system = allSystems[i];
     if (!system) continue;
     renderSystem(context, score, system, {
-      x: 50,
+      x: paddingLeftPt,
       y: yOffset,
-      width: systemWidth - 100,
+      width: systemWidth - paddingLeftPt - paddingRightPt,
       isFirstSystem: i === 0,
       measureDuration,
       options,
@@ -650,22 +678,30 @@ export async function renderScorePagesToSvgs(score: NormalizedScore, options: Ve
     const context = renderer.getContext();
     context.setFillStyle("#333");
     context.setStrokeStyle("#333");
-    if (systemIdx === 0) drawHeaderWithVexFlow(context, score, 800, options);
-
-    let yOffset = systemIdx === 0 ? 150 : 50;
+    const pagePaddingLeftPt = (options.pagePadding?.left ?? 24) * 0.75;
+    const pagePaddingRightPt = (options.pagePadding?.right ?? 24) * 0.75;
+    let yOffset: number;
+    if (systemIdx === 0) {
+      const pagePaddingTop = options.pagePadding?.top ?? 24;
+      const headerHeightPt = options.headerHeight ?? 50;
+      drawHeaderWithVexFlow(context, score, 800, options, pagePaddingTop + headerHeightPt);
+      yOffset = pagePaddingTop + headerHeightPt + (options.titleStaffGap ?? 2.8);
+    } else {
+      yOffset = 50;
+    }
     for (let s = 0; s < systemsThisPage; s++) {
       const system = allSystems[systemIdx];
       if (system) {
         renderSystem(context, score, system, {
-          x: 50,
+          x: pagePaddingLeftPt,
           y: yOffset,
-          width: 700,
+          width: 800 - pagePaddingLeftPt - pagePaddingRightPt,
           isFirstSystem: systemIdx === 0,
           measureDuration: { numerator: score.header.timeSignature.beats, denominator: score.header.timeSignature.beatUnit },
           options,
         });
       }
-      yOffset += 100 + options.systemSpacing * 100;
+      yOffset += 100 + options.systemSpacing;
       systemIdx++;
     }
     svgs.push(container.innerHTML);
@@ -715,7 +751,7 @@ function renderSystem(context: any, score: NormalizedScore, measures: RenderMeas
       if (isFirstSystem) {
         stave.addTimeSignature(`${score.header.timeSignature.beats}/${score.header.timeSignature.beatUnit}`);
         if (score.header.tempo) {
-          stave.addModifier(new StaveTempo({ duration: "q", bpm: score.header.tempo }, -10, 0));
+          stave.addModifier(new StaveTempo({ duration: "q", bpm: score.header.tempo }, -(options.tempoShiftX ?? 10), 0));
         }
       }
     }

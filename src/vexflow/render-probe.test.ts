@@ -16,7 +16,6 @@ grouping 1+1+1+1+1+1+1+1+1
     const svg = await renderScoreToSvg(score, {
       mode: "preview",
       pagePadding: { top: 24, right: 18, bottom: 24, left: 18 },
-      pageScale: 1.0,
       titleTopPadding: 3.6,
       titleSubtitleGap: 1.2,
       titleStaffGap: 2.8,
@@ -41,7 +40,6 @@ divisions 4
     await renderScoreToSvg(score, {
       mode: "preview",
       pagePadding: { top: 24, right: 18, bottom: 24, left: 18 },
-      pageScale: 1.0,
       titleTopPadding: 3.6,
       titleSubtitleGap: 1.2,
       titleStaffGap: 2.8,
@@ -65,7 +63,6 @@ divisions 4
     const svg = await renderScoreToSvg(score, {
       mode: "preview",
       pagePadding: { top: 24, right: 18, bottom: 24, left: 18 },
-      pageScale: 1.0,
       titleTopPadding: 3.6,
       titleSubtitleGap: 1.2,
       titleStaffGap: 2.8,
@@ -89,7 +86,6 @@ divisions 4
     const svg = await renderScoreToSvg(score, {
       mode: "preview",
       pagePadding: { top: 24, right: 18, bottom: 24, left: 18 },
-      pageScale: 1.0,
       titleTopPadding: 3.6,
       titleSubtitleGap: 1.2,
       titleStaffGap: 2.8,
@@ -119,7 +115,6 @@ divisions 4
     const svg = await renderScoreToSvg(score, {
       mode: "preview",
       pagePadding: { top: 24, right: 18, bottom: 24, left: 18 },
-      pageScale: 1.0,
       titleTopPadding: 3.6,
       titleSubtitleGap: 1.2,
       titleStaffGap: 2.8,
@@ -146,7 +141,6 @@ divisions 4
     const svg = await renderScoreToSvg(score, {
       mode: "preview",
       pagePadding: { top: 24, right: 18, bottom: 24, left: 18 },
-      pageScale: 1.0,
       titleTopPadding: 3.6,
       titleSubtitleGap: 1.2,
       titleStaffGap: 2.8,
@@ -171,7 +165,6 @@ divisions 4
     const compactSvg = await renderScoreToSvg(score, {
       mode: "preview",
       pagePadding: { top: 24, right: 18, bottom: 24, left: 18 },
-      pageScale: 1.0,
       titleTopPadding: 3.6,
       titleSubtitleGap: 1.2,
       titleStaffGap: 2.8,
@@ -184,7 +177,6 @@ divisions 4
     const looseSvg = await renderScoreToSvg(score, {
       mode: "preview",
       pagePadding: { top: 24, right: 18, bottom: 24, left: 18 },
-      pageScale: 1.0,
       titleTopPadding: 3.6,
       titleSubtitleGap: 1.2,
       titleStaffGap: 2.8,
@@ -210,7 +202,6 @@ ST | R - L - |`);
     const svg = await renderScoreToSvg(score, {
       mode: "preview",
       pagePadding: { top: 24, right: 18, bottom: 24, left: 18 },
-      pageScale: 1.0,
       titleTopPadding: 3.6,
       titleSubtitleGap: 1.2,
       titleStaffGap: 2.8,
@@ -237,7 +228,6 @@ grouping 4
     const svg = await renderScoreToSvg(score, {
       mode: "preview",
       pagePadding: { top: 24, right: 18, bottom: 24, left: 18 },
-      pageScale: 1.0,
       titleTopPadding: 3.6,
       titleSubtitleGap: 1.2,
       titleStaffGap: 2.8,
@@ -264,7 +254,6 @@ T1 | [1: d d d] - - - - - - - |`);
     const svg = await renderScoreToSvg(score, {
       mode: "preview",
       pagePadding: { top: 24, right: 18, bottom: 24, left: 18 },
-      pageScale: 1.0,
       titleTopPadding: 3.6,
       titleSubtitleGap: 1.2,
       titleStaffGap: 2.8,
@@ -287,7 +276,6 @@ ST | R - L - | R - L - |`);
     const svg = await renderScoreToSvg(score, {
       mode: "preview",
       pagePadding: { top: 24, right: 18, bottom: 24, left: 18 },
-      pageScale: 1.0,
       titleTopPadding: 3.6,
       titleSubtitleGap: 1.2,
       titleStaffGap: 2.8,
@@ -314,7 +302,6 @@ BD | b - b - |`);
     const svg = await renderScoreToSvg(score, {
       mode: "preview",
       pagePadding: { top: 24, right: 18, bottom: 24, left: 18 },
-      pageScale: 1.0,
       titleTopPadding: 3.6,
       titleSubtitleGap: 1.2,
       titleStaffGap: 2.8,
@@ -340,7 +327,6 @@ BD | b - - - | % |`);
     const svg = await renderScoreToSvg(score, {
       mode: "preview",
       pagePadding: { top: 24, right: 18, bottom: 24, left: 18 },
-      pageScale: 1.0,
       titleTopPadding: 3.6,
       titleSubtitleGap: 1.2,
       titleStaffGap: 2.8,
@@ -376,7 +362,6 @@ BD | b - - - | b - b - | %% |`);
     const svg = await renderScoreToSvg(score, {
       mode: "preview",
       pagePadding: { top: 24, right: 18, bottom: 24, left: 18 },
-      pageScale: 1.0,
       titleTopPadding: 3.6,
       titleSubtitleGap: 1.2,
       titleStaffGap: 2.8,
@@ -411,7 +396,6 @@ BD | p - - - p - - - |`);
     const svg = await renderScoreToSvg(score, {
       mode: "preview",
       pagePadding: { top: 24, right: 18, bottom: 24, left: 18 },
-      pageScale: 1.0,
       titleTopPadding: 3.6,
       titleSubtitleGap: 1.2,
       titleStaffGap: 2.8,

@@ -109,3 +109,32 @@
 - `left-edge` / `right-edge` navigation and `volta` brackets should not rely on fixed `shiftY` heuristics. A more stable renderer flow is: format and draw notes first, then inspect note and modifier geometry, build a system-level top skyline, and place edge/span overlays against that skyline.
 - Pure note geometry is not enough once sticking or text annotations are in play. After `voice.draw(...)`, VexFlow modifiers have resolved positions, so skyline construction can safely sample note top, stem top, and the rendered `x/y` of above-staff modifiers without forcing a second SVG render pass.
 - Mixed-font navigation such as `To Coda` is easier to keep stable by treating it as one logical layout unit. A custom annotation/overlay that draws text and glyph segments together avoids the spacing drift that happens when `To` and the coda symbol are emitted as independent modifiers competing for text lines.
+
+## 2026-05-02 Addendum: UI Zoom & Safe Scrollable Centering
+
+- Percentage-based width (e.g., `width: 130%`) is an unstable zoom mechanism when the container width is user-resizable via a divider. If the preview pane is narrowed, the score shrinks even if the zoom percentage remains the same.
+- Stable Zoom Pattern: Use an absolute base width (e.g., `800px`) scaled by a raw decimal multiplier (`--page-scale`). This ensures "100% zoom" always looks the same regardless of the window size or resizer position.
+- The "Centered but Unscrollable Left" Bug: Using `justify-content: center` or `margin: auto` on Flexbox/Grid containers for centering causes data loss during overflow. If the content exceeds the window, the browser centers it relative to the scrollable area, which "pushes" the left/top edges into negative coordinate space where they cannot be reached by scrollbars.
+- "Safe Centering" with CSS Grid: The most robust modern fix is using `display: grid` on the scroll container and `margin: auto` on the content frame. Grid handles `margin: auto` more safely than Flexbox: it centers when the content is small, but respects the (0,0) origin when the content overflows, ensuring full scrollability to all edges.
+- Inline-Block Centering Caveat: `text-align: center` on a container with `inline-block` children can cause a "jump to bottom" bug if the content width exceeds 100%. The browser treats the overflowing box as a "word" that is too long for the current line and wraps it to the next line, causing it to appear below the container's top edge.
+
+## 2026-05-02 Addendum: Auto-Fit Width on Resize
+
+- To implement "Fit to Window" behavior for an absolute-width score, use a `ResizeObserver` on the container.
+- Formula: `newScale = (containerWidth - padding) / baseWidth`.
+- By using `setFitWidth(true)` as a persistent mode, we can keep the score fitting perfectly even when the user drags the editor/preview divider.
+- Manual zoom actions (like Ctrl+Wheel or clicking +/-) should automatically disable the `fitWidth` mode to respect the user's manual override.
+
+## 2026-05-02 Addendum: Mobile Pinch-to-Zoom
+
+- To implement custom pinch-to-zoom on mobile, intercept `touchstart` and `touchmove` events.
+- Calculate the Euclidean distance between two touch points: `Math.sqrt(dx*dx + dy*dy)`.
+- Scale the initial `pageScale` by the ratio of the current distance to the starting distance.
+- Use `event.preventDefault()` on `touchmove` when two fingers are detected to suppress the browser's native viewport zoom, allowing the custom notation scaling to take over.
+
+## 2026-05-02 Addendum: Virtual Zoom for Performance
+
+- Heavy renderers like VexFlow cannot re-render at 60fps during a zoom gesture.
+- Solution: "Virtual Zoom". Use a fast CSS `transform: scale()` on a wrapper during the gesture for immediate feedback.
+- Only "commit" the scale to the renderer's state on `touchend`.
+- This separates Visual Zoom (GPU-driven, 60fps) from Layout Zoom (CPU-driven, high quality), providing a buttery smooth experience on mobile.

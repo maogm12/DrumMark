@@ -78,13 +78,16 @@ async function main() {
     result = await renderScoreToSvg(score, {
       mode: "preview",
       pagePadding: { top: 20, right: 20, bottom: 20, left: 20 },
-      pageScale: 1.0,
+      pageWidth: 612,
+      pageHeight: 792,
+      staffScale: 0.75,
       headerHeight: 50,
       titleStaffGap: 60,
       systemSpacing: 30.0,
       stemLength: 31,
       voltaGap: -15,
-      hideVoice2Rests: false
+      hideVoice2Rests: false,
+      tempoShiftX: 10,
     });
   }
 

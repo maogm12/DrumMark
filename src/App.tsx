@@ -1,11 +1,11 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode, type UIEvent } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode, type UIEvent } from "react";
 import { EditorState, Compartment } from "@codemirror/state";
 import { EditorView, highlightActiveLine, highlightActiveLineGutter, lineNumbers } from "@codemirror/view";
 import { linter, type Diagnostic } from "@codemirror/lint";
 import type { PDFDocument as PDFLibDocument } from "pdf-lib";
 import { buildMusicXml, buildNormalizedScore, type ParseError } from "./dsl";
 import { type NormalizedScore } from "./dsl";
-import { renderScorePagesToSvgs, type VexflowRenderOptions } from "./vexflow";
+import { renderScorePagesToSvgs, type VexflowRenderOptions, DEFAULT_RENDER_OPTIONS } from "./vexflow";
 import { drumMarkEditorTheme, drumMarkLanguage, drumMarkSyntaxHighlighting } from "./drummark";
 
 const legacySeedDsl = `tempo 96
@@ -381,6 +381,15 @@ function SearchMinusIcon() {
   );
 }
 
+function SearchIcon() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="11" cy="11" r="8"></circle>
+      <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+    </svg>
+  );
+}
+
 function SettingsIcon() {
   return (
     <svg aria-hidden="true" fill="none" height="18" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24" width="18">
@@ -519,10 +528,9 @@ function DslEditor({ value, onChange, errors }: { value: string; onChange: (valu
   );
 }
 
-function PagePreview({
+const PagePreview = memo(function PagePreview({
   score,
   pagePadding,
-  pageScale,
   staffScale,
   headerHeight,
   titleStaffGap,
@@ -534,7 +542,6 @@ function PagePreview({
 }: {
   score: NormalizedScore | null;
   pagePadding: PagePadding;
-  pageScale: number;
   staffScale: number;
   headerHeight: number;
   titleStaffGap: number;
@@ -565,7 +572,6 @@ function PagePreview({
     const opts: VexflowRenderOptions = {
       mode: "preview",
       pagePadding,
-      pageScale,
       staffScale,
       pageWidth: pdfPageWidth,
       pageHeight: pdfPageHeight,
@@ -575,6 +581,7 @@ function PagePreview({
       stemLength,
       voltaGap,
       hideVoice2Rests,
+      tempoShiftX: DEFAULT_RENDER_OPTIONS.tempoShiftX,
     };
 
     renderScorePagesToSvgs(score, opts)
@@ -594,16 +601,12 @@ function PagePreview({
         console.error("VexFlow render error:", renderError);
         setError(msg || "Could not render staff preview.");
       });
-  }, [score, systemSpacing, stemLength, voltaGap, titleStaffGap, headerHeight, active, hideVoice2Rests, pagePadding, pageScale, staffScale]);
-
-  const printableStyle = {
-    "--staff-zoom-width": `${pageScale * 100}%`,
-  } as CSSProperties;
+  }, [score, systemSpacing, stemLength, voltaGap, titleStaffGap, headerHeight, active, hideVoice2Rests, pagePadding, staffScale]);
 
   if (!score) {
     return (
       <div className="staff-preview-shell" ref={shellRef} onScroll={handleScroll}>
-        <div className="staff-printable-frame" style={printableStyle}>
+        <div className="staff-printable-frame">
           <div className="staff-printable">
             <div className="staff-preview page-view">
               <section className="staff-preview-page" data-page="1" />
@@ -617,14 +620,14 @@ function PagePreview({
   return (
     <div className="staff-preview-shell" ref={shellRef} onScroll={handleScroll}>
       {error ? <div className="staff-error">{error}</div> : null}
-      <div className="staff-printable-frame" style={printableStyle}>
+      <div className="staff-printable-frame">
         <div className="staff-printable">
           <div className="staff-preview page-view" dangerouslySetInnerHTML={{ __html: renderedMarkup }} />
         </div>
       </div>
     </div>
   );
-}
+});
 
 function MusicXmlPreview({ xml }: { xml: string }) {
   const formattedXml = useMemo(() => beautifyXml(xml), [xml]);
@@ -661,7 +664,6 @@ function renderPdfPageSvgs(
   const opts: VexflowRenderOptions = {
     mode: "pdf",
     pagePadding: layout.pagePadding,
-    pageScale: 1,
     pageWidth: pdfPageWidth,
     pageHeight: pdfPageHeight,
     staffScale: layout.staffScale,
@@ -671,6 +673,7 @@ function renderPdfPageSvgs(
     stemLength: layout.stemLength,
     voltaGap: layout.voltaGap,
     hideVoice2Rests: layout.hideVoice2Rests,
+    tempoShiftX: DEFAULT_RENDER_OPTIONS.tempoShiftX,
   };
 
   return renderScorePagesToSvgs(score, opts);
@@ -956,36 +959,121 @@ export function App() {
     }
   }
 
-  const isPageZoomed = Math.abs(settings.pageScale - 1) > 0.001;
+  const [fitWidth, setFitWidth] = useState(true);
   const pageZoomPercent = Math.round(settings.pageScale * 100);
-
-  function adjustPageScale(delta: number) {
-    setSettings((prev) => ({
-      ...prev,
-      pageScale: Math.max(0.6, Math.min(3.0, Math.round((prev.pageScale + delta) * 100) / 100)),
-    }));
-  }
 
   const pageSurfaceBodyRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
+    if (!fitWidth || !pageSurfaceBodyRef.current) return;
+
+    const observer = new ResizeObserver((entries) => {
+      const entry = entries[0];
+      if (entry) {
+        // Dynamic padding based on mobile vs desktop
+        const isMobile = window.innerWidth <= 768;
+        const padding = isMobile ? 0 : 80;
+        const containerWidth = entry.contentRect.width - padding;
+        const baseWidth = 800;
+        const newScale = Math.max(0.2, Math.min(3.0, Math.round((containerWidth / baseWidth) * 20) / 20));
+
+        // Direct DOM update for instant feedback
+        pageSurfaceBodyRef.current?.style.setProperty("--page-scale", newScale.toString());
+        setSettings(prev => ({ ...prev, pageScale: newScale }));
+      }
+    });
+
+    observer.observe(pageSurfaceBodyRef.current);
+    return () => observer.disconnect();
+    }, [fitWidth]);
+
+    // Keep DOM variable in sync with state for non-gesture updates
+    useEffect(() => {
+    pageSurfaceBodyRef.current?.style.setProperty("--page-scale", settings.pageScale.toString());
+    }, [settings.pageScale]);
+
+    function adjustPageScale(delta: number) {
+    setFitWidth(false);
+    setSettings((prev) => ({
+      ...prev,
+      pageScale: Math.max(0.2, Math.min(3.0, Math.round((prev.pageScale + delta) * 100) / 100)),
+    }));
+    }
+
+    const touchStateRef = useRef({ distance: 0, initialScale: 1 });
+    const settingsRef = useRef(settings);
+    useEffect(() => { settingsRef.current = settings; }, [settings]);
+
+    useEffect(() => {
     const handleGlobalWheel = (event: WheelEvent) => {
-      // Intercept all zoom gestures (ctrl/meta + wheel) to disable browser zoom globally
       if (event.ctrlKey || event.metaKey) {
         event.preventDefault();
-
-        // Only scale the score if we are on the Page tab and mouse is over the preview area
-        if (settings.activeTab === "page" && pageSurfaceBodyRef.current?.contains(event.target as Node)) {
+        if (settingsRef.current.activeTab === "page" && pageSurfaceBodyRef.current?.contains(event.target as Node)) {
           adjustPageScale(event.deltaY < 0 ? 0.1 : -0.1);
         }
       }
     };
 
+    const handleTouchStart = (event: TouchEvent) => {
+      if (event.touches.length === 2 && pageSurfaceBodyRef.current?.contains(event.target as Node)) {
+        const t1 = event.touches[0];
+        const t2 = event.touches[1];
+        if (!t1 || !t2) return;
+        const dx = t1.pageX - t2.pageX;
+        const dy = t1.pageY - t2.pageY;
+        touchStateRef.current = {
+          distance: Math.sqrt(dx * dx + dy * dy),
+          initialScale: settingsRef.current.pageScale
+        };
+      }
+    };
+
+    const handleTouchMove = (event: TouchEvent) => {
+      if (event.touches.length === 2 && pageSurfaceBodyRef.current?.contains(event.target as Node)) {
+        const t1 = event.touches[0];
+        const t2 = event.touches[1];
+        if (!t1 || !t2) return;
+
+        event.preventDefault(); 
+        setFitWidth(false);
+
+        const dx = t1.pageX - t2.pageX;
+        const dy = t1.pageY - t2.pageY;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+
+        if (touchStateRef.current.distance > 0) {
+          const ratio = distance / touchStateRef.current.distance;
+          const newScale = Math.max(0.2, Math.min(3.0, touchStateRef.current.initialScale * ratio));
+
+          // Direct DOM update - fast!
+          pageSurfaceBodyRef.current?.style.setProperty("--page-scale", newScale.toString());
+        }
+      }
+    };
+
+    const handleTouchEnd = () => {
+      if (touchStateRef.current.distance > 0) {
+        // Sync final scale back to React state once gesture ends
+        const currentScale = parseFloat(pageSurfaceBodyRef.current?.style.getPropertyValue("--page-scale") || "1");
+        if (!isNaN(currentScale)) {
+          setSettings(prev => ({ ...prev, pageScale: currentScale }));
+        }
+        touchStateRef.current.distance = 0;
+      }
+    };
+
     window.addEventListener("wheel", handleGlobalWheel, { passive: false });
+    window.addEventListener("touchstart", handleTouchStart, { passive: true });
+    window.addEventListener("touchmove", handleTouchMove, { passive: false });
+    window.addEventListener("touchend", handleTouchEnd, { passive: true });
+
     return () => {
       window.removeEventListener("wheel", handleGlobalWheel);
+      window.removeEventListener("touchstart", handleTouchStart);
+      window.removeEventListener("touchmove", handleTouchMove);
+      window.removeEventListener("touchend", handleTouchEnd);
     };
-  }, [settings.activeTab]);
+    }, []); // Empty dependency array means listeners are stable and never re-bind
 
   return (
     <main className="app-shell">
@@ -1040,23 +1128,22 @@ export function App() {
             <div className="preview-content">
               <div className={`preview-surface${settings.activeTab === "page" ? " active" : ""}`} aria-hidden={settings.activeTab !== "page"}>
                 <div className="surface-toolbar page-surface-toolbar">
-                  {isPageZoomed ? (
-                    <div className="page-zoom-menu">
-                      <button aria-label="Zoom" className="surface-icon-button" onClick={() => setPageZoomMenuOpen((current) => !current)} type="button" title={`Zoom ${pageZoomPercent}%`}>
-                        {settings.pageScale < 1 ? <SearchMinusIcon /> : <SearchPlusIcon />}
-                      </button>
-                      {pageZoomMenuOpen ? (
-                        <div className="page-zoom-popover">
-                          <div className="page-zoom-readout">{pageZoomPercent}%</div>
-                          <div className="page-zoom-buttons">
-                            <button className="page-zoom-action" onClick={() => adjustPageScale(-0.1)} type="button">-</button>
-                            <button className="page-zoom-action" onClick={() => adjustPageScale(0.1)} type="button">+</button>
-                            <button className="page-zoom-reset" onClick={() => { updateSetting("pageScale", 1.0); setPageZoomMenuOpen(false); }} type="button">Reset</button>
-                          </div>
+                  <div className="page-zoom-menu">
+                    <button aria-label="Zoom" className="surface-icon-button" onClick={() => setPageZoomMenuOpen((current) => !current)} type="button" title={`Zoom ${pageZoomPercent}%`}>
+                      {Math.abs(settings.pageScale - 1.0) < 0.001 ? <SearchIcon /> : (settings.pageScale < 1 ? <SearchMinusIcon /> : <SearchPlusIcon />)}
+                    </button>
+                    {pageZoomMenuOpen ? (
+                      <div className="page-zoom-popover">
+                        <div className="page-zoom-readout">{fitWidth ? "Fit Width" : `${pageZoomPercent}%`}</div>
+                        <div className="page-zoom-buttons">
+                          <button className="page-zoom-action" onClick={() => adjustPageScale(-0.1)} type="button">-</button>
+                          <button className="page-zoom-reset" onClick={() => { setFitWidth(false); updateSetting("pageScale", 1.0); setPageZoomMenuOpen(false); }} type="button">100%</button>
+                          <button className="page-zoom-action" onClick={() => adjustPageScale(0.1)} type="button">+</button>
+                          <button className="page-zoom-reset fit-width-button" onClick={() => setFitWidth(true)} type="button">Fit Width</button>
                         </div>
-                      ) : null}
-                    </div>
-                  ) : null}
+                      </div>
+                    ) : null}
+                  </div>
                 </div>
                 <div className="page-surface-body" ref={pageSurfaceBodyRef}>
                   {settings.activeTab === "page" ? (
@@ -1092,16 +1179,12 @@ export function App() {
                   </div>
                 </label>
               </div>
-                <div className="settings-section">
-                  <h3 className="settings-section-title">Page Layout</h3>
-                  <div className="setting-row">
-                    <div className="setting-label"><span>Page Zoom</span><span className="setting-value">{Math.round(settings.pageScale * 100)}%</span></div>
-                    <input type="range" min="0.6" max="3.0" step="0.05" value={settings.pageScale} onChange={(e) => updateSetting("pageScale", parseFloat(e.target.value))} />
-                  </div>
-                  <div className="setting-row">
-                    <div className="setting-label"><span>Staff Scale</span><span className="setting-value">{(settings.staffScale * 100).toFixed(0)}%</span></div>
-                    <input type="range" min="0.3" max="1.5" step="0.05" value={settings.staffScale} onChange={(e) => updateSetting("staffScale", parseFloat(e.target.value))} />
-                  </div>
+                  <div className="settings-section">
+                    <h3 className="settings-section-title">Page Layout</h3>
+                    <div className="setting-row">
+                      <div className="setting-label"><span>Staff Scale</span><span className="setting-value">{(settings.staffScale * 100).toFixed(0)}%</span></div>
+                      <input type="range" min="0.3" max="1.5" step="0.05" value={settings.staffScale} onChange={(e) => updateSetting("staffScale", parseFloat(e.target.value))} />
+                    </div>
                   <div className="setting-row">
                     <div className="setting-label"><span>System Spacing (pt)</span><span className="setting-value">{settings.systemSpacing.toFixed(0)}</span></div>
                     <input type="range" min="0" max="100" step="1" value={settings.systemSpacing} onChange={(e) => updateSetting("systemSpacing", parseFloat(e.target.value))} />

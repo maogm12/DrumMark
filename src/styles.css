@@ -352,9 +352,13 @@ input {
 }
 
 .page-zoom-buttons {
-  display: flex;
-  align-items: center;
+  display: grid;
+  grid-template-columns: 32px 1fr 32px;
   gap: 8px;
+}
+
+.fit-width-button {
+  grid-column: span 3;
 }
 
 .page-zoom-action,
@@ -617,23 +621,25 @@ input:checked + .toggle-slider:before {
   overflow: auto;
   background: var(--bg-app);
   display: flex;
-  justify-content: center;
+  flex-direction: column;
   scroll-behavior: smooth;
-  min-height: 0;
 }
 
 .staff-printable-frame {
   padding: 40px;
+  min-width: 100%;
   min-height: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin: auto;
 }
 
 .staff-printable {
-  width: var(--staff-zoom-width, 100%);
-  max-width: 800px;
-  transition: width 0.2s ease-out;
+  width: calc(800px * var(--page-scale, 1));
+  flex-shrink: 0;
 }
 
 .staff-preview-page {
@@ -869,7 +875,7 @@ input:checked + .toggle-slider:before {
   }
 
   .staff-printable-frame {
-    padding: 20px 10px;
+    padding: 20px 0;
   }
 
   .status-bar {

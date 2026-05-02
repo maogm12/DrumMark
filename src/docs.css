@@ -15,12 +15,12 @@
   padding: 0;
   background: var(--docs-bg);
   font-family: var(--font-sans);
-  overflow-x: hidden;
-  overflow-y: auto;
 }
 
 .docs-layout {
   min-height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
 .docs-header-bar {
@@ -69,9 +69,10 @@
 }
 
 .docs-container {
-  display: flex; /* Changed from grid to flex for better control */
-  align-items: flex-start;
+  display: flex;
+  align-items: stretch;
   width: 100%;
+  flex: 1;
 }
 
 .docs-sidebar {
@@ -79,7 +80,7 @@
   flex-shrink: 0;
   position: sticky;
   top: 64px;
-  max-height: calc(100vh - 64px);
+  height: calc(100vh - 64px);
   background: var(--docs-sidebar-bg);
   border-right: 1px solid var(--docs-border);
   overflow-y: auto;

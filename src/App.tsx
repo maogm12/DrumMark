@@ -761,7 +761,7 @@ const defaultSettings: AppSettings = {
   systemSpacing: 30,
   stemLength: 31,
   voltaGap: -15,
-  activeTab: "editor",
+  activeTab: "page",
 };
 
 export function App() {

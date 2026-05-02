@@ -111,14 +111,14 @@
                                         <li><strong>title / subtitle / composer:</strong> Your score's name and credits. These appear on the printed sheet.</li>
                                         <li><strong>tempo:</strong> Quarter-note BPM. Default is 120 if omitted.</li>
                                         <li><strong>time:</strong> The meter (e.g., <code>4/4</code>, <code>3/4</code>, <code>6/8</code>). Required.</li>
-                                        <li><strong>note:</strong> The duration of a single grid slot (e.g., <code>note 1/16</code>). Required.
+                                        <li><strong>note:</strong> The duration of a single <strong>Note Unit</strong> (grid slot, e.g., <code>note 1/16</code>). Required.
                                             <ul class="docs-sub-list">
                                                 <li><strong>Supported values:</strong> <code>1/1</code>, <code>1/2</code>, <code>1/4</code>, <code>1/8</code>, <code>1/16</code>, <code>1/32</code>, <code>1/64</code>, <code>1/128</code>.</li>
                                                 <li><strong>Global:</strong> Define it once in the header for the whole score.</li>
                                                 <li><strong>Overrides:</strong> Put <code>note 1/N</code> at the start of any paragraph to temporarily switch resolution (e.g., use 1/32 for a complex fill).</li>
                                             </ul>
                                         </li>
-                                        <li><strong>divisions:</strong> <span class="docs-tag-deprecated">Deprecated</span> Total grid units per measure. Replaced by <code>note</code>.</li>
+                                        <li><strong>divisions:</strong> <span class="docs-tag-deprecated">Deprecated</span> Total Note Units per measure. Replaced by <code>note</code>.</li>
                                         <li><strong>grouping:</strong> Defines the beat structure within a measure. Controls rhythmic grouping and beaming.
                                             <div class="docs-mini-table-container">
                                                 <table class="docs-table">
@@ -139,7 +139,7 @@
                                     <ul class="docs-list">
                                         <li><strong>Syntax form:</strong> headers use <code>field value</code>, not JSON and not comma-separated data. Both <code>time 4/4</code> and <code>note 1/16</code> are valid.</li>
                                         <li><strong>Grouping rule:</strong> the explicit grouping parts must add up exactly to the meter numerator. For example, <code>7/8</code> may use <code>grouping 3+2+2</code>.</li>
-                                        <li><strong>Dynamic Grid:</strong> the total slots per measure is <code>MeasureDuration / NoteValue</code>. In 4/4 time, <code>note 1/16</code> yields 16 slots; in 6/8 time, it yields 12 slots.</li>
+                                        <li><strong>Dynamic Grid:</strong> the total <strong>Note Units</strong> per measure is <code>MeasureDuration / NoteValue</code>. In 4/4 time, <code>note 1/16</code> yields 16 Note Units; in 6/8 time, it yields 12 Note Units.</li>
                                     </ul>
                                 </div>
                             </div>
@@ -304,7 +304,7 @@
                             <div class="docs-section-content">
                                 <ul class="docs-list">
                                     <li><strong>Base syntax:</strong> <code>[span: item1 item2 ...]</code>. When <code>span</code> is omitted, <code>[a b c]</code> is shorthand for <code>[1: a b c]</code>.</li>
-                                    <li><strong>Meaning:</strong> <code>span</code> represents the number of <strong>note units</strong> (slots) the group occupies. Each item inside the group gets duration = <code>NoteValue × span / itemCount</code>.</li>
+                                    <li><strong>Meaning:</strong> <code>span</code> represents the number of <strong>Note Units</strong> (slots) the group occupies. Each item inside the group gets duration = <code>NoteValue × span / itemCount</code>.</li>
                                     <li><strong>Expansion groups:</strong> when <code>itemCount ≤ span</code>, the group stretches note values. It is only legal when the result can land on standard note values, dotted values, or valid tuplets.</li>
 
                                         <li><strong>Compression groups:</strong> when <code>itemCount &gt; span</code>, ratios like <code>2:1</code> and <code>4:1</code> collapse into ordinary subdivision, while other ratios are treated as tuplets.</li>

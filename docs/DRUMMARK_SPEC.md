@@ -1778,8 +1778,8 @@ This addendum introduces the `note 1/N` syntax to define the base rhythmic unit 
 
 - The number of slots required to fill a measure is calculated dynamically:
   - `ExpectedSlots = MeasureDuration / (1/N)`
-- For a 4/4 measure (Duration = 1) with `note=1/16`, `ExpectedSlots = 16`.
-- For a 6/8 measure (Duration = 3/4) with `note=1/16`, `ExpectedSlots = 12`.
+- For a 4/4 measure (Duration = 1) with `note 1/16`, `ExpectedSlots = 16`.
+- For a 6/8 measure (Duration = 3/4) with `note 1/16`, `ExpectedSlots = 12`.
 - A measure is valid if and only if the sum of all token durations (expressed in fractions of a whole note) equals the `MeasureDuration`. This is equivalent to ensuring the total weight of tokens equals `ExpectedSlots`.
 
 ### Canonical Representation

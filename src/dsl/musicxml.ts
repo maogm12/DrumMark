@@ -588,7 +588,7 @@ function measureXml(score: NormalizedScore, exportMeasure: ExportMeasure, divisi
     for (const [i, entry] of entries.entries()) {
       if (entry.kind === "rest") {
         if (hideVoice2Rests && voice.voice === 2) {
-          const boundaries = getGroupingBoundaries(measureStart, measureDuration, score.header.grouping, score.header.timeSignature);
+          const boundaries = getGroupingBoundaries(measureStart, score.header.grouping, score.header.timeSignature);
           let cursor = entry.start;
           const end = addFractions(entry.start, entry.duration);
           for (const boundary of boundaries) {

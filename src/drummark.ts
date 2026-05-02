@@ -503,12 +503,12 @@ export const drumMarkEditorTheme = EditorView.theme({
 export const drumMarkSyntaxHighlighting = syntaxHighlighting(drumMarkHighlightStyle);
 
 export function highlightDslStatic(code: string): string {
-  const state = drumMarkStreamParser.startState!();
+  const state = drumMarkStreamParser.startState!(2);
   const lines = code.split("\n");
   let html = "";
 
   for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
+    const line = lines[i] ?? "";
     const stream = new StringStream(line, 2, {
       tabSize: 2,
       lineSeparator: undefined

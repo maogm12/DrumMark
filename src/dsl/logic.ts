@@ -297,7 +297,7 @@ export function buildVoiceEntries(
     if (compareFractions(absoluteGroupStart, cursor) > 0) {
       // Gap before this group - split at grouping boundaries
       const gapEnd = absoluteGroupStart;
-      cursor = addRestsForSegment(entries, cursor, gapEnd, measureStart, measureDuration, grouping, time);
+      cursor = addRestsForSegment(entries, cursor, gapEnd, measureStart, grouping, time);
     }
 
     entries.push({
@@ -312,7 +312,7 @@ export function buildVoiceEntries(
 
   const measureEnd = addFractions(measureStart, measureDuration);
   if (compareFractions(cursor, measureEnd) < 0) {
-    addRestsForSegment(entries, cursor, measureEnd, measureStart, measureDuration, grouping, time);
+    addRestsForSegment(entries, cursor, measureEnd, measureStart, grouping, time);
   }
 
   return entries;
@@ -326,11 +326,10 @@ function addRestsForSegment(
   start: Fraction,
   end: Fraction,
   measureStart: Fraction,
-  measureDuration: Fraction,
   grouping: number[],
   timeSignature: { beats: number; beatUnit: number }
 ): Fraction {
-  const boundaries = getGroupingBoundaries(measureStart, measureDuration, grouping, timeSignature);
+  const boundaries = getGroupingBoundaries(measureStart, grouping, timeSignature);
   let cursor = start;
 
   for (const boundary of boundaries) {
@@ -359,7 +358,6 @@ function addRestsForSegment(
  */
 export function getGroupingBoundaries(
   measureStart: Fraction,
-  measureDuration: Fraction,
   grouping: number[],
   timeSignature: { beats: number; beatUnit: number }
 ): Fraction[] {

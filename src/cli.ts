@@ -42,13 +42,13 @@ async function main() {
   // Simple arg parsing
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
-    if (arg === "--format" && args[i+1]) {
-      params.format = args[i+1] as any;
+    if (arg === "--format" && args[i + 1]) {
+      params.format = args[i + 1] as any;
       i++;
-    } else if (arg === "--output" && args[i+1]) {
-      params.output = args[i+1];
+    } else if (arg === "--output" && args[i + 1]) {
+      params.output = args[i + 1] || null;
       i++;
-    } else if (!arg.startsWith("-")) {
+    } else if (arg && !arg.startsWith("-")) {
       params.input = arg;
     }
   }

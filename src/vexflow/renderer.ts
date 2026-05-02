@@ -1,7 +1,7 @@
 /// <reference types="vite/client" />
 import VexFlow from "vexflow";
 import type { NormalizedEvent, NormalizedScore } from "../dsl/types";
-import { DEFAULT_RENDER_OPTIONS, type PagePadding, type VexflowRenderOptions } from "./types";
+import { DEFAULT_RENDER_OPTIONS, type VexflowRenderOptions } from "./types";
 import {
   buildVoiceEntries,
   groupingSegmentIndex,
@@ -58,7 +58,6 @@ const NAV_TEXT_FONT = "Academico";
 const NAV_GLYPH_FONT = "Bravura";
 const SKYLINE_BUCKET_WIDTH = 4;
 const SKYLINE_GAP = 6;
-const DEFAULT_VOLTA_GAP = -15;
 const NAV_TEXT_SIZE = 12;
 const NAV_GLYPH_SIZE = 20;
 const VOLTA_TEXT_SIZE = 12;
@@ -150,7 +149,7 @@ class TopSkyline {
 }
 
 class NavigationAnnotation extends Annotation {
-  readonly height: number;
+  readonly labelHeight: number;
   private readonly segments: NavSegment[];
   private readonly widthEstimate: number;
   private readonly className: string;
@@ -159,9 +158,9 @@ class NavigationAnnotation extends Annotation {
     super(label);
     this.segments = segments;
     this.className = className;
-    this.height = Math.max(...segments.map((segment) => segment.fontSize));
+    this.labelHeight = Math.max(...segments.map((segment) => segment.fontSize));
     this.widthEstimate = estimateSegmentsWidth(segments);
-    this.setFont(NAV_TEXT_FONT, this.height, "");
+    this.setFont(NAV_TEXT_FONT, this.labelHeight, "");
   }
 
   override getWidth(): number {
@@ -171,7 +170,7 @@ class NavigationAnnotation extends Annotation {
   override draw(): void {
     const ctx = this.checkContext();
     const note = this.checkAttachedNote();
-    const { x, y } = computeAnnotationCoordinates(note, this, this.widthEstimate, this.height);
+    const { x, y } = computeAnnotationCoordinates(note, this, this.widthEstimate, this.labelHeight);
     this.setRendered();
     this.x = x;
     this.y = y;
@@ -389,14 +388,6 @@ function drawSegments(ctx: any, startX: number, baselineY: number, segments: Nav
   }
 }
 
-function navAnchorKeys(navAnchors: Map<string, NavAnchor>): string[] {
-  return [...navAnchors.keys()].sort((a, b) => {
-    const [an, ad] = a.split("/").map(Number);
-    const [bn, bd] = b.split("/").map(Number);
-    return an / ad - bn / bd;
-  });
-}
-
 function segmentsForStartNav(startNav: NonNullable<NormalizedScore["measures"][number]["startNav"]>): NavSegment[] {
   return [{
     text: startNav.kind === "segno" ? Glyphs.segno : Glyphs.coda,
@@ -434,7 +425,7 @@ function addNoteNavigationModifier(layoutNote: LayoutNote, segments: NavSegment[
     .setVerticalJustification("above");
   modifier.setXShift(xShift);
   layoutNote.note.addModifier(modifier, 0);
-  addSkylineRef(layoutNote, modifier, estimateSegmentsWidth(segments), modifier.height);
+  addSkylineRef(layoutNote, modifier, estimateSegmentsWidth(segments), modifier.labelHeight);
 }
 
 function attachInteriorNavigation(
@@ -591,8 +582,12 @@ async function getBravuraBase64(): Promise<string> {
       const reader = new FileReader();
       reader.onloadend = () => {
         const base64 = (reader.result as string).split(",")[1];
-        cachedBravuraBase64 = base64;
-        resolve(base64);
+        if (base64) {
+          cachedBravuraBase64 = base64;
+          resolve(base64);
+        } else {
+          reject(new Error("Failed to extract base64 from font data"));
+        }
       };
       reader.onerror = reject;
       reader.readAsDataURL(blob);

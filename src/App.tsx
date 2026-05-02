@@ -1,4 +1,4 @@
-import { memo, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode, type UIEvent } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState, type ReactNode, type UIEvent } from "react";
 import { EditorState, Compartment } from "@codemirror/state";
 import { EditorView, highlightActiveLine, highlightActiveLineGutter, lineNumbers } from "@codemirror/view";
 import { linter, type Diagnostic } from "@codemirror/lint";
@@ -1151,7 +1151,6 @@ export function App() {
                     <PagePreview
                       score={hasRenderableScore ? score : null}
                       pagePadding={settings.pagePadding}
-                      pageScale={settings.pageScale}
                       staffScale={settings.staffScale}
                       headerHeight={settings.headerHeight}
                       titleStaffGap={settings.titleStaffGap}

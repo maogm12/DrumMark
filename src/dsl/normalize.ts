@@ -125,7 +125,9 @@ function groupingBoundaryInSlots(cumulativeGrouping: number, beats: number, divi
 
 function resolveParsedStartNav(nav: ParsedStartNav | undefined, tokenStarts: Fraction[]): StartNav | undefined {
   if (!nav) return undefined;
-  if (nav.anchor === "left-edge") return nav;
+  if (nav.anchor === "left-edge") {
+    return { kind: nav.kind, anchor: "left-edge" };
+  }
   return {
     kind: "segno",
     anchor: { eventAfter: tokenStarts[nav.anchor.tokenAfter]! },
@@ -134,7 +136,9 @@ function resolveParsedStartNav(nav: ParsedStartNav | undefined, tokenStarts: Fra
 
 function resolveParsedEndNav(nav: ParsedEndNav | undefined, tokenStarts: Fraction[]): EndNav | undefined {
   if (!nav) return undefined;
-  if (nav.anchor === "right-edge") return nav;
+  if (nav.anchor === "right-edge") {
+    return { kind: nav.kind, anchor: "right-edge" } as EndNav;
+  }
   return {
     kind: "to-coda",
     anchor: { eventBefore: tokenStarts[nav.anchor.tokenBefore]! },
@@ -557,6 +561,8 @@ export function normalizeScoreAst(ast: ScoreAst): NormalizedScore {
   let activeVolta: NormalizedScore["measures"][number]["volta"] | undefined;
   for (let index = 0; index < measures.length; index += 1) {
     const measure = measures[index];
+    if (!measure) continue;
+
     const seed = voltaSeeds[index];
     if (seed) {
       activeVolta = { indices: [...seed.indices] };
@@ -576,7 +582,7 @@ export function normalizeScoreAst(ast: ScoreAst): NormalizedScore {
   // Ensure the last measure has a final barline if not otherwise specified
   if (measures.length > 0) {
     const lastMeasure = measures[measures.length - 1];
-    if (lastMeasure.barline === undefined || lastMeasure.barline === "regular") {
+    if (lastMeasure && (lastMeasure.barline === undefined || lastMeasure.barline === "regular")) {
       lastMeasure.barline = "final";
     }
   }

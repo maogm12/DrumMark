@@ -483,12 +483,13 @@
                                 <p>连音符和自定义节奏细分。</p>
                             </div>
                             <div class="docs-description">
-                                <p>group 用来表达不落在常规网格上的节奏压缩与拉伸，比如三连音、五连音，或者“两个音占三格”这种记法。</p>
-                                <div class="docs-section-content">
-                                    <ul class="docs-list">
-                                        <li><strong>基本语法：</strong><code>[span: item1 item2 ...]</code>。省略 <code>span</code> 时，<code>[a b c]</code> 等价于 <code>[1: a b c]</code>。</li>
-                                        <li><strong>含义：</strong> 组内每个 item 的时值 = 当前槽位时值 × <code>span / itemCount</code>。</li>
-                                        <li><strong>拉伸组：</strong> 当 <code>itemCount ≤ span</code> 时，属于把音值拉长；只有结果能落在标准音值、附点音值或合法连音上时才允许。</li>
+                            <p>group 用来表达不落在常规网格上的节奏压缩与拉伸，比如三连音、五连音，或者“两个音占三格”这种记法。</p>
+                            <div class="docs-section-content">
+                                <ul class="docs-list">
+                                    <li><strong>基本语法：</strong><code>[span: item1 item2 ...]</code>。省略 <code>span</code> 时，<code>[a b c]</code> 等价于 <code>[1: a b c]</code>。</li>
+                                    <li><strong>含义：</strong> <code>span</code> 表示该组占据的 <strong>note 槽位数量</strong>。组内每个 item 的时值 = <code>note 时值 × span / itemCount</code>。</li>
+                                    <li><strong>拉伸组：</strong> 当 <code>itemCount ≤ span</code> 时，属于把音值拉长；只有结果能落在标准音值、附点音值或合法连音上时才允许。</li>
+
                                         <li><strong>压缩组：</strong> 当 <code>itemCount &gt; span</code> 时，<code>2:1</code> 与 <code>4:1</code> 这类会被视为普通细分，其它比值按 tuplet 处理。</li>
                                         <li><strong>不支持的情况：</strong> 任何需要系统自动拆成 tie 才能成立的 group，都会直接报错。</li>
                                         <li><strong>可嵌套：</strong> group 里可以再放 group，但极小音值不保证低于 64 分音符仍有良好支持。</li>

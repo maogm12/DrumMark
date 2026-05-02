@@ -294,7 +294,7 @@ weight = base × (2 - 0.5^dots) / (2^halves)
 **Halving**:
 - `d/` = 0.5
 - `d//` = 0.25
-- `d/`/` = 0.125
+- `d///` = 0.125
 
 Fractional validation: each token is converted to an absolute Fraction relative to a whole note before summing. Validation MUST use exact rational duration math internally. A measure is valid iff the sum of all token durations equals the full `timeSignature` fraction; equivalently, the accumulated token weight equals `divisions`.
 
@@ -1787,3 +1787,31 @@ This addendum introduces the `note 1/N` syntax to define the base rhythmic unit 
 - The `NormalizedHeader` and IR will store `noteValue: number` (the denominator $N$).
 - `divisions` may be omitted from IR if `noteValue` is present, or kept as a derived value for specific consumers.
 - Each `NormalizedMeasure` or `ScoreParagraph` must carry its effective `noteValue`.
+
+## Addendum 2026-05-02-B: Clarification of Rhythmic Units in Groups
+
+### Status
+
+Proposed
+
+### Scope
+
+This addendum clarifies the definition of the `span` parameter in Rhythmic Groups (`[span: ...]`) following the introduction of the `note 1/N` syntax.
+
+### Redefinition of "Slot" as "Note Unit"
+
+- With the deprecation of the global `divisions` header, the term "slot" or "grid unit" is formally redefined as a **Note Unit**.
+- One **Note Unit** is equivalent to the duration defined by the active `note 1/N` setting (e.g., if `note 1/16` is active, 1 Note Unit = 1/16th note).
+
+### Interpretation of `span` in Groups
+
+- In the group syntax `[span: item1 item2 ...]`, the `span` integer represents the number of **Note Units** (slots) the group occupies.
+- **Formula Update**: Each item's absolute duration is calculated as:
+  `ItemDuration = NoteDuration * (span / itemCount)`
+  where `NoteDuration` is the duration of the active base note (e.g., 1/16).
+- **Example**: Under `note 1/16`, the group `[2: d d d]` occupies 2 Note Units (which equals two 1/16th notes, or one 1/8th note). The three `d` tokens are compressed into that duration as a triplet.
+
+### Supersession
+
+- This definition supersedes the descriptions in **Section 5.4 (Rhythmic Math)** and **Section 5.5 (Groups)** regarding the relationship between token weights and `divisions`. 
+- Validation should now compare total measure weight against the expected slot count: `MeasureDuration / NoteDuration`.

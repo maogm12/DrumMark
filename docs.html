@@ -483,12 +483,13 @@
                                 <p>Tuplets and custom rhythmic subdivisions.</p>
                             </div>
                             <div class="docs-description">
-                                <p>Groups express rhythmic compression and expansion that do not sit on the regular grid, such as tuplets, stretched dyads, or "two notes across three slots" patterns.</p>
-                                <div class="docs-section-content">
-                                    <ul class="docs-list">
-                                        <li><strong>Base syntax:</strong> <code>[span: item1 item2 ...]</code>. When <code>span</code> is omitted, <code>[a b c]</code> is shorthand for <code>[1: a b c]</code>.</li>
-                                        <li><strong>Meaning:</strong> each item inside the group gets duration = current slot duration × <code>span / itemCount</code>.</li>
-                                        <li><strong>Expansion groups:</strong> when <code>itemCount ≤ span</code>, the group stretches note values. It is only legal when the result can land on standard note values, dotted values, or valid tuplets.</li>
+                            <p>Groups express rhythmic compression and expansion that do not sit on the regular grid, such as tuplets, stretched dyads, or "two notes across three slots" patterns.</p>
+                            <div class="docs-section-content">
+                                <ul class="docs-list">
+                                    <li><strong>Base syntax:</strong> <code>[span: item1 item2 ...]</code>. When <code>span</code> is omitted, <code>[a b c]</code> is shorthand for <code>[1: a b c]</code>.</li>
+                                    <li><strong>Meaning:</strong> <code>span</code> represents the number of <strong>note units</strong> (slots) the group occupies. Each item inside the group gets duration = <code>NoteValue × span / itemCount</code>.</li>
+                                    <li><strong>Expansion groups:</strong> when <code>itemCount ≤ span</code>, the group stretches note values. It is only legal when the result can land on standard note values, dotted values, or valid tuplets.</li>
+
                                         <li><strong>Compression groups:</strong> when <code>itemCount &gt; span</code>, ratios like <code>2:1</code> and <code>4:1</code> collapse into ordinary subdivision, while other ratios are treated as tuplets.</li>
                                         <li><strong>Unsupported cases:</strong> any group that would only work if the system had to invent ties is rejected.</li>
                                         <li><strong>Nesting:</strong> groups may contain groups, but extremely small values below 64th-note territory are not guaranteed to be well supported.</li>

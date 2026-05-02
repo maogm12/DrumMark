@@ -18,6 +18,7 @@ export type VexflowRenderOptions = {
   voltaGap: number;
   hideVoice2Rests: boolean;
   tempoShiftX: number;
+  tempoShiftY: number;
 };
 
 export const DEFAULT_RENDER_OPTIONS: VexflowRenderOptions = {
@@ -33,6 +34,7 @@ export const DEFAULT_RENDER_OPTIONS: VexflowRenderOptions = {
   voltaGap: -15,
   hideVoice2Rests: false,
   tempoShiftX: 10,
+  tempoShiftY: 0,
 };
 
 export type ScoreRenderResult = {

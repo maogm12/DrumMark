@@ -88,6 +88,7 @@ async function main() {
       voltaGap: -15,
       hideVoice2Rests: false,
       tempoShiftX: 10,
+      tempoShiftY: 0,
     });
   }
 

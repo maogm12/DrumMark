@@ -703,6 +703,7 @@ function renderSystemsBatch(
         ...options,
         systemSpacing: dims.systemSpacing,
         tempoShiftX: options.tempoShiftX / dims.staffScale,
+        tempoShiftY: options.tempoShiftY / dims.staffScale,
         voltaGap: options.voltaGap / dims.staffScale,
         pagePadding: { 
           ...options.pagePadding, 
@@ -880,7 +881,7 @@ function renderSystem(context: any, score: NormalizedScore, measures: RenderMeas
           const tempoText = new StaveTempo(
             { duration: "q", bpm: score.header.tempo },
             x - 45, 
-            options.voltaGap
+            options.tempoShiftY
           );
           stave.addModifier(tempoText, Modifier.Position.ABOVE);
         }

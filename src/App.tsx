@@ -582,6 +582,7 @@ const PagePreview = memo(function PagePreview({
       voltaGap,
       hideVoice2Rests,
       tempoShiftX: DEFAULT_RENDER_OPTIONS.tempoShiftX,
+      tempoShiftY: DEFAULT_RENDER_OPTIONS.tempoShiftY,
     };
 
     renderScorePagesToSvgs(score, opts)

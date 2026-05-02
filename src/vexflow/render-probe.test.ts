@@ -195,6 +195,48 @@ divisions 4
     expect(compactY).toBeGreaterThan(looseY);
   });
 
+  it("decouples tempo positioning from volta gap", async () => {
+    const score = buildNormalizedScore(`tempo 120\ntime 4/4\ndivisions 4\n\n| x x x x |`);
+
+    const compactSvg = await renderScoreToSvg(score, {
+      mode: "preview",
+      pagePadding: { top: 24, right: 18, bottom: 24, left: 18 },
+      titleTopPadding: 3.6,
+      titleSubtitleGap: 1.2,
+      titleStaffGap: 2.8,
+      systemSpacing: 1,
+      stemLength: 30,
+      voltaGap: -15,
+      hideVoice2Rests: true,
+    } as any);
+
+    const looseSvg = await renderScoreToSvg(score, {
+      mode: "preview",
+      pagePadding: { top: 24, right: 18, bottom: 24, left: 18 },
+      titleTopPadding: 3.6,
+      titleSubtitleGap: 1.2,
+      titleStaffGap: 2.8,
+      systemSpacing: 1,
+      stemLength: 30,
+      voltaGap: 15,
+      hideVoice2Rests: true,
+    } as any);
+
+    const getTempoY = (svg: string) => {
+      // VexFlow 5 might not use a specific class for StaveTempo group.
+      // We look for the text "120" and capture its Y coordinate.
+      const match = svg.match(/<text[^>]*y="([0-9.]+)"[^>]*>[^<]*120/);
+      return match ? Number(match[1]) : null;
+    };
+
+    const compactTempoY = getTempoY(compactSvg);
+    const looseTempoY = getTempoY(looseSvg);
+
+    expect(compactTempoY).not.toBeNull();
+    expect(looseTempoY).not.toBeNull();
+    expect(compactTempoY).toBe(looseTempoY);
+  });
+
   it("stacks interior navigation above accent and sticking modifiers", async () => {
     const score = buildNormalizedScore(`time 4/4
 divisions 4

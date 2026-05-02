@@ -390,6 +390,16 @@ function SearchIcon() {
   );
 }
 
+function PrinterIcon() {
+  return (
+    <svg aria-hidden="true" fill="none" height="18" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24" width="18">
+      <polyline points="6 9 6 2 18 2 18 9" />
+      <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
+      <rect height="8" width="12" x="6" y="14" />
+    </svg>
+  );
+}
+
 function SettingsIcon() {
   return (
     <svg aria-hidden="true" fill="none" height="18" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24" width="18">
@@ -937,6 +947,75 @@ export function App() {
     downloadTextFile(`${safeExportBasename(score.ast.headers.title?.value)}.musicxml`, staffXml, "application/vnd.recordare.musicxml+xml");
   }
 
+  function handlePrint() {
+    const printWindow = window.open("", "_blank");
+    if (!printWindow) {
+      window.alert("Please allow popups to use the print feature.");
+      return;
+    }
+
+    const title = score.ast.headers.title?.value ?? "DrumMark Score";
+    const styles = Array.from(document.querySelectorAll("style, link[rel='stylesheet']"))
+      .map(el => el.outerHTML)
+      .join("\n");
+
+    const scoreHtml = document.querySelector(".staff-preview.page-view")?.innerHTML || "";
+
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>${title}</title>
+          ${styles}
+          <style>
+            @media print {
+              @page { margin: 0; size: auto; }
+              body { margin: 0; padding: 0; background: white; }
+              .staff-preview-page { 
+                margin: 0 !important; 
+                padding: 0 !important; 
+                page-break-after: always; 
+                border: none !important;
+                box-shadow: none !important;
+                background: white !important;
+              }
+              .staff-preview-page:last-child { page-break-after: auto; }
+              svg { width: 100% !important; height: auto !important; }
+            }
+            body { 
+              margin: 0; 
+              padding: 20px; 
+              display: flex; 
+              flex-direction: column; 
+              align-items: center; 
+              background: #f0f2f5; 
+            }
+            .staff-preview-page {
+              background: white;
+              box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+              margin-bottom: 20px;
+              width: 100%;
+              max-width: 800px;
+            }
+          </style>
+        </head>
+        <body>
+          ${scoreHtml}
+          <script>
+            window.onload = () => {
+              // Give some time for fonts/SVGs to stabilize
+              setTimeout(() => {
+                window.print();
+                window.close();
+              }, 500);
+            };
+          </script>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+  }
+
   async function handlePdfExport() {
     if (!canExport) return;
     setPendingPdfExport(true);
@@ -1088,6 +1167,10 @@ export function App() {
         </div>
         <div className="header-actions">
           <a className="export-button" href="docs.html">Docs</a>
+          <button className="export-button" onClick={handlePrint} type="button">
+            <PrinterIcon />
+            <span className="button-text-wide">Print</span>
+          </button>
           <button className="export-button" disabled={!canExport} onClick={handleMusicXmlExport} type="button">Export MusicXML</button>
           <button className="export-button primary" disabled={!canExport || pendingPdfExport} onClick={handlePdfExport} type="button">
             {pendingPdfExport ? "Exporting PDF..." : "Export PDF"}

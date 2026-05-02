@@ -111,6 +111,7 @@ input {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 8px;
   height: 32px;
   padding: 0 12px;
   font-size: 0.8rem;
@@ -121,6 +122,16 @@ input {
   color: var(--text-main);
   cursor: pointer;
   transition: all 0.2s;
+}
+
+.button-text-wide {
+  display: inline;
+}
+
+@media (max-width: 768px) {
+  .button-text-wide {
+    display: none;
+  }
 }
 
 .export-button:hover:not(:disabled) {

@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite --host",
-    "build": "tsc -b && vite build && npm run build-docs",
+    "build": "tsc -b && npm run build-docs && vite build",
     "build-docs": "tsx build-docs.ts",
     "preview": "vite preview",
     "test": "vitest run",

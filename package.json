@@ -19,7 +19,6 @@
     "@codemirror/view": "^6.41.1",
     "@lezer/highlight": "^1.2.3",
     "opensheetmusicdisplay": "^1.9.7",
-    "pdf-lib": "^1.17.1",
     "react": "^19.2.0",
     "react-dom": "^19.0.0",
     "vexflow": "^5.0.0"

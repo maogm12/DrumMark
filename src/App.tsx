@@ -2,7 +2,6 @@ import { memo, useCallback, useEffect, useMemo, useRef, useState, type ReactNode
 import { EditorState, Compartment } from "@codemirror/state";
 import { EditorView, highlightActiveLine, highlightActiveLineGutter, lineNumbers } from "@codemirror/view";
 import { linter, type Diagnostic } from "@codemirror/lint";
-import type { PDFDocument as PDFLibDocument } from "pdf-lib";
 import { buildMusicXml, buildNormalizedScore, type ParseError } from "./dsl";
 import { type NormalizedScore } from "./dsl";
 import { renderScorePagesToSvgs, type VexflowRenderOptions, DEFAULT_RENDER_OPTIONS } from "./vexflow";
@@ -49,7 +48,6 @@ type PagePadding = {
 
 const pdfPageWidth = 612;
 const pdfPageHeight = 792;
-const pdfMargin = 0; // Padding is already handled inside the SVG renderer
 
 function downloadBlob(filename: string, blob: Blob) {
   const url = URL.createObjectURL(blob);
@@ -70,177 +68,6 @@ function safeExportBasename(title: string | undefined) {
     .toLowerCase()
     .replace(/[^\p{L}\p{N}]+/gu, "-")
     .replace(/^-+|-+$/g, "") || "drummark";
-}
-
-function parseSvgSize(svgMarkup: string) {
-  const doc = new DOMParser().parseFromString(svgMarkup, "image/svg+xml");
-  const svg = doc.documentElement;
-  const viewBox = svg.getAttribute("viewBox")?.split(/\s+/).map(Number);
-  if (viewBox && viewBox.length === 4) {
-    const v2 = viewBox[2];
-    const v3 = viewBox[3];
-    if (v2 !== undefined && v3 !== undefined && Number.isFinite(v2) && Number.isFinite(v3)) {
-      return { width: v2, height: v3 };
-    }
-  }
-
-  const parseLength = (value: string | null) => {
-    if (!value) {
-      return 0;
-    }
-    const parsed = Number.parseFloat(value);
-    return Number.isFinite(parsed) ? parsed : 0;
-  };
-
-  return {
-    width: parseLength(svg.getAttribute("width")) || 900,
-    height: parseLength(svg.getAttribute("height")) || 900,
-  };
-}
-
-async function svgToPngBytes(svgMarkup: string, scale = 2) {
-  const { width, height } = parseSvgSize(svgMarkup);
-  const blob = new Blob([svgMarkup], { type: "image/svg+xml;charset=utf-8" });
-  const url = URL.createObjectURL(blob);
-
-  try {
-    const image = new Image();
-    image.decoding = "async";
-    const loaded = new Promise<void>((resolve, reject) => {
-      image.onload = () => resolve();
-      image.onerror = () => reject(new Error("Could not rasterize staff SVG."));
-    });
-    image.src = url;
-    await loaded;
-
-    const canvas = document.createElement("canvas");
-    canvas.width = Math.max(1, Math.ceil(width * scale));
-    canvas.height = Math.max(1, Math.ceil(height * scale));
-    const context = canvas.getContext("2d");
-    if (!context) {
-      throw new Error("Could not create PDF image canvas.");
-    }
-
-    context.drawImage(image, 0, 0, canvas.width, canvas.height);
-
-    const pngBlob = await new Promise<Blob>((resolve, reject) => {
-      canvas.toBlob((result) => {
-        if (result) {
-          resolve(result);
-        } else {
-          reject(new Error("Could not encode staff image."));
-        }
-      }, "image/png");
-    });
-
-    return {
-      bytes: await pngBlob.arrayBuffer(),
-      width,
-      height,
-    };
-  } finally {
-    URL.revokeObjectURL(url);
-  }
-}
-
-function xmlText(value: string) {
-  return value
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&apos;");
-}
-
-function xmpDate(date: Date) {
-  return date.toISOString().replace(/\.\d{3}Z$/, "Z");
-}
-
-function buildXmpMetadata({
-  title,
-  author,
-  composer,
-  subject,
-  keywords,
-  createdAt,
-}: {
-  title: string;
-  author: string;
-  composer?: string;
-  subject: string;
-  keywords: string[];
-  createdAt: Date;
-}) {
-  const keywordText = keywords.join(", ");
-  const date = xmpDate(createdAt);
-
-  return `<?xpacket begin="\uFEFF" id="W5M0MpCehiHzreSzNTczkc9d"?>
-<x:xmpmeta xmlns:x="adobe:ns:meta/">
-  <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
-    <rdf:Description rdf:about=""
-      xmlns:dc="http://purl.org/dc/elements/1.1/"
-      xmlns:pdf="http://ns.adobe.com/pdf/1.3/"
-      xmlns:xmp="http://ns.adobe.com/xap/1.0/"
-      xmlns:music="https://drummark.local/ns/1.0/">
-      <dc:title>
-        <rdf:Alt>
-          <rdf:li xml:lang="x-default">${xmlText(title)}</rdf:li>
-        </rdf:Alt>
-      </dc:title>
-      <dc:creator>
-        <rdf:Seq>
-          <rdf:li>${xmlText(author)}</rdf:li>
-        </rdf:Seq>
-      </dc:creator>
-      <dc:description>
-        <rdf:Alt>
-          <rdf:li xml:lang="x-default">${xmlText(subject)}</rdf:li>
-        </rdf:Alt>
-      </dc:description>
-      <pdf:Keywords>${xmlText(keywordText)}</pdf:Keywords>
-      <xmp:CreatorTool>DrumMark</xmp:CreatorTool>
-      <xmp:CreateDate>${date}</xmp:CreateDate>
-      <xmp:ModifyDate>${date}</xmp:ModifyDate>
-      <music:Composer>${xmlText(composer ?? author)}</music:Composer>
-    </rdf:Description>
-  </rdf:RDF>
-</x:xmpmeta>
-<?xpacket end="w"?>`;
-}
-
-function applyPdfMetadata(
-  pdf: PDFLibDocument,
-  core: Pick<typeof import("pdf-lib"), "PDFHexString" | "PDFName">,
-  metadata: {
-    title: string;
-    author: string;
-    composer?: string;
-    subject: string;
-    keywords: string[];
-    createdAt: Date;
-  },
-) {
-  const { PDFHexString, PDFName } = core;
-
-  pdf.setTitle(metadata.title, { showInWindowTitleBar: true });
-  pdf.setAuthor(metadata.author);
-  pdf.setSubject(metadata.subject);
-  pdf.setKeywords(metadata.keywords);
-  pdf.setCreationDate(metadata.createdAt);
-  pdf.setModificationDate(metadata.createdAt);
-  pdf.setCreator("DrumMark");
-  pdf.setProducer("DrumMark");
-
-  const infoDict = (pdf as unknown as { getInfoDict: () => { set: (key: unknown, value: unknown) => void } }).getInfoDict();
-  infoDict.set(PDFName.of("Composer"), PDFHexString.fromText(metadata.composer ?? metadata.author));
-
-  const xmp = buildXmpMetadata(metadata);
-  const metadataStream = pdf.context.stream(xmp, {
-    Type: "Metadata",
-    Subtype: "XML",
-  });
-  const metadataRef = pdf.context.register(metadataStream);
-  pdf.catalog.set(PDFName.of("Metadata"), metadataRef);
 }
 
 function useDebouncedValue<T>(value: T, delayMs: number) {
@@ -809,7 +636,6 @@ export function App() {
     }
   });
 
-  const [pendingPdfExport, setPendingPdfExport] = useState(false);
   const [settingsVisible, setSettingsVisible] = useState(true);
   const [pageZoomMenuOpen, setPageZoomMenuOpen] = useState(false);
   
@@ -1016,29 +842,6 @@ export function App() {
     printWindow.document.close();
   }
 
-  async function handlePdfExport() {
-    if (!canExport) return;
-    setPendingPdfExport(true);
-    try {
-      const pdfBytes = await buildPdf(score, staffXml, {
-        pagePadding: settings.pagePadding,
-        staffScale: settings.staffScale,
-        headerHeight: settings.headerHeight,
-        titleStaffGap: settings.titleStaffGap,
-        systemSpacing: settings.systemSpacing,
-        stemLength: settings.stemLength,
-        voltaGap: settings.voltaGap,
-        hideVoice2Rests: settings.hideVoice2Rests,
-      });
-      const pdfBuffer = pdfBytes.buffer.slice(pdfBytes.byteOffset, pdfBytes.byteOffset + pdfBytes.byteLength) as ArrayBuffer;
-      downloadBlob(`${safeExportBasename(score.ast.headers.title?.value)}.pdf`, new Blob([pdfBuffer], { type: "application/pdf" }));
-    } catch (error) {
-      window.alert(error instanceof Error ? error.message : "Could not export PDF.");
-    } finally {
-      setPendingPdfExport(false);
-    }
-  }
-
   const [fitWidth, setFitWidth] = useState(true);
   const pageZoomPercent = Math.round(settings.pageScale * 100);
 
@@ -1167,10 +970,6 @@ export function App() {
         </div>
         <div className="header-actions">
           <a className="export-button" href="docs.html">Docs</a>
-          <button className="export-button" onClick={handlePrint} type="button">
-            <PrinterIcon />
-            <span className="button-text-wide">Print</span>
-          </button>
           <button className="export-button" disabled={!canExport} onClick={handleMusicXmlExport} type="button">Export MusicXML</button>
           <button className="export-button primary" disabled={!canExport || pendingPdfExport} onClick={handlePdfExport} type="button">
             {pendingPdfExport ? "Exporting PDF..." : "Export PDF"}
@@ -1212,21 +1011,26 @@ export function App() {
             <div className="preview-content">
               <div className={`preview-surface${settings.activeTab === "page" ? " active" : ""}`} aria-hidden={settings.activeTab !== "page"}>
                 <div className="surface-toolbar page-surface-toolbar">
-                  <div className="page-zoom-menu">
-                    <button aria-label="Zoom" className="surface-icon-button" onClick={() => setPageZoomMenuOpen((current) => !current)} type="button" title={`Zoom ${pageZoomPercent}%`}>
-                      {Math.abs(settings.pageScale - 1.0) < 0.001 ? <SearchIcon /> : (settings.pageScale < 1 ? <SearchMinusIcon /> : <SearchPlusIcon />)}
-                    </button>
-                    {pageZoomMenuOpen ? (
-                      <div className="page-zoom-popover">
-                        <div className="page-zoom-readout">{fitWidth ? "Fit Width" : `${pageZoomPercent}%`}</div>
-                        <div className="page-zoom-buttons">
-                          <button className="page-zoom-action" onClick={() => adjustPageScale(-0.1)} type="button">-</button>
-                          <button className="page-zoom-reset" onClick={() => { setFitWidth(false); updateSetting("pageScale", 1.0); setPageZoomMenuOpen(false); }} type="button">100%</button>
-                          <button className="page-zoom-action" onClick={() => adjustPageScale(0.1)} type="button">+</button>
-                          <button className="page-zoom-reset fit-width-button" onClick={() => setFitWidth(true)} type="button">Fit Width</button>
+                  <div className="toolbar-group">
+                    <div className="page-zoom-menu">
+                      <button aria-label="Zoom" className="surface-icon-button" onClick={() => setPageZoomMenuOpen((current) => !current)} type="button" title={`Zoom ${pageZoomPercent}%`}>
+                        {Math.abs(settings.pageScale - 1.0) < 0.001 ? <SearchIcon /> : (settings.pageScale < 1 ? <SearchMinusIcon /> : <SearchPlusIcon />)}
+                      </button>
+                      {pageZoomMenuOpen ? (
+                        <div className="page-zoom-popover">
+                          <div className="page-zoom-readout">{fitWidth ? "Fit Width" : `${pageZoomPercent}%`}</div>
+                          <div className="page-zoom-buttons">
+                            <button className="page-zoom-action" onClick={() => adjustPageScale(-0.1)} type="button">-</button>
+                            <button className="page-zoom-reset" onClick={() => { setFitWidth(false); updateSetting("pageScale", 1.0); setPageZoomMenuOpen(false); }} type="button">100%</button>
+                            <button className="page-zoom-action" onClick={() => adjustPageScale(0.1)} type="button">+</button>
+                            <button className="page-zoom-reset fit-width-button" onClick={() => setFitWidth(true)} type="button">Fit Width</button>
+                          </div>
                         </div>
-                      </div>
-                    ) : null}
+                      ) : null}
+                    </div>
+                    <button className="surface-icon-button" onClick={handlePrint} type="button" title="Print Score">
+                      <PrinterIcon />
+                    </button>
                   </div>
                 </div>
                 <div className="page-surface-body" ref={pageSurfaceBodyRef}>

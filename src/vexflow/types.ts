@@ -6,7 +6,7 @@ export type PagePadding = {
 };
 
 export type VexflowRenderOptions = {
-  mode: "preview" | "pdf";
+  mode: "preview";
   pagePadding: PagePadding;
   pageWidth: number;
   pageHeight: number;

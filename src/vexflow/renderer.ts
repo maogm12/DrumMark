@@ -566,58 +566,6 @@ async function ensureVexFlowFonts() {
   }
 }
 
-let cachedBravuraBase64: string | null = null;
-
-async function getBravuraBase64(): Promise<string> {
-  if (cachedBravuraBase64) return cachedBravuraBase64;
-  try {
-    const baseUrl = import.meta.env.BASE_URL.endsWith("/")
-      ? import.meta.env.BASE_URL
-      : import.meta.env.BASE_URL + "/";
-    const fontUrl = window.location.origin + baseUrl + "fonts/bravura.woff2";
-    const resp = await fetch(fontUrl);
-    if (!resp.ok) throw new Error("Failed to fetch font");
-    const blob = await resp.blob();
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const base64 = (reader.result as string).split(",")[1];
-        if (base64) {
-          cachedBravuraBase64 = base64;
-          resolve(base64);
-        } else {
-          reject(new Error("Failed to extract base64 from font data"));
-        }
-      };
-      reader.onerror = reject;
-      reader.readAsDataURL(blob);
-    });
-  } catch (e) {
-    console.error("Font preloading failed:", e);
-    return "";
-  }
-}
-
-function serializeSvgWithStyles(svgElement: SVGSVGElement, fontBase64?: string): string {
-  const style = document.createElementNS("http://www.w3.org/2000/svg", "style");
-  let fontRule = "";
-  if (fontBase64) {
-    fontRule = `
-      @font-face {
-        font-family: 'Bravura';
-        src: url(data:font/woff2;base64,${fontBase64}) format('woff2');
-      }
-    `;
-  }
-  
-  style.textContent = `
-    ${fontRule}
-    svg { background: white; }
-  `;
-  svgElement.prepend(style);
-  return new XMLSerializer().serializeToString(svgElement);
-}
-
 function getScaledDimensions(options: VexflowRenderOptions) {
   const staffScale = options.staffScale;
   return {
@@ -650,22 +598,20 @@ function groupMeasuresIntoSystems(score: NormalizedScore): RenderMeasure[][] {
   return allSystems;
 }
 
-function createHiddenContainer(isExport: boolean): HTMLDivElement {
+function createHiddenContainer(): HTMLDivElement {
   const container = document.createElement("div");
-  if (!isExport) {
-    container.style.position = "absolute";
-    container.style.left = "-9999px";
-    container.style.visibility = "hidden";
-    document.body.appendChild(container);
-  }
+  container.style.position = "absolute";
+  container.style.left = "-9999px";
+  container.style.visibility = "hidden";
+  document.body.appendChild(container);
   return container;
 }
 
-function finalizeSvg(container: HTMLDivElement, isExport: boolean, fontBase64?: string): string {
+function finalizeSvg(container: HTMLDivElement): string {
   try {
     const svgElement = container.querySelector("svg");
     if (!svgElement) return container.innerHTML;
-    return isExport ? serializeSvgWithStyles(svgElement, fontBase64) : new XMLSerializer().serializeToString(svgElement);
+    return new XMLSerializer().serializeToString(svgElement);
   } finally {
     if (container.parentElement) {
       document.body.removeChild(container);
@@ -721,8 +667,6 @@ function renderSystemsBatch(
 export async function renderScoreToSvg(score: NormalizedScore, inputOptions: VexflowRenderOptions): Promise<string> {
   const options = { ...DEFAULT_RENDER_OPTIONS, ...inputOptions } as VexflowRenderOptions;
   await ensureVexFlowFonts();
-  const isExport = options.mode === "pdf";
-  const fontBase64 = isExport ? await getBravuraBase64() : undefined;
   
   const dims = getScaledDimensions(options);
   const allSystems = groupMeasuresIntoSystems(score);
@@ -735,7 +679,7 @@ export async function renderScoreToSvg(score: NormalizedScore, inputOptions: Vex
                              allSystems.length * (staffHeight + dims.systemSpacing) + dims.pagePaddingBottom;
   const totalPhysicalHeight = totalLogicalHeight * dims.staffScale;
 
-  const container = createHiddenContainer(isExport);
+  const container = createHiddenContainer();
   const renderer = new Renderer(container, RendererBackends.SVG);
   renderer.resize(physicalWidth, totalPhysicalHeight);
   const context = renderer.getContext();
@@ -762,14 +706,12 @@ export async function renderScoreToSvg(score: NormalizedScore, inputOptions: Vex
   const yStart = dims.pagePaddingTop + dims.headerHeight + dims.titleStaffGap;
   renderSystemsBatch(context, score, allSystems, 0, systemWidth, yStart, dims, options);
 
-  return finalizeSvg(container, isExport, fontBase64);
+  return finalizeSvg(container);
 }
 
 export async function renderScorePagesToSvgs(score: NormalizedScore, inputOptions: VexflowRenderOptions): Promise<string[]> {
   const options = { ...DEFAULT_RENDER_OPTIONS, ...inputOptions } as VexflowRenderOptions;
   await ensureVexFlowFonts();
-  const isExport = options.mode === "pdf";
-  const fontBase64 = isExport ? await getBravuraBase64() : undefined;
   
   const dims = getScaledDimensions(options);
   const allSystems = groupMeasuresIntoSystems(score);
@@ -783,7 +725,7 @@ export async function renderScorePagesToSvgs(score: NormalizedScore, inputOption
 
   let systemIdx = 0;
   while (systemIdx < allSystems.length) {
-    const container = createHiddenContainer(isExport);
+    const container = createHiddenContainer();
     const renderer = new Renderer(container, RendererBackends.SVG);
     renderer.resize(physicalWidth, physicalHeight);
     const context = renderer.getContext();
@@ -827,7 +769,7 @@ export async function renderScorePagesToSvgs(score: NormalizedScore, inputOption
     }
 
     renderSystemsBatch(context, score, currentBatch, startBatchIdx, pageWidth, isFirstPage ? (dims.pagePaddingTop + dims.headerHeight + dims.titleStaffGap) : dims.pagePaddingTop, dims, options);
-    svgs.push(finalizeSvg(container, isExport, fontBase64));
+    svgs.push(finalizeSvg(container));
   }
   return svgs;
 }

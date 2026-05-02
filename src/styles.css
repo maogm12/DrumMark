@@ -317,6 +317,12 @@ input {
   justify-content: space-between;
 }
 
+.toolbar-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .surface-icon-button {
   width: 32px;
   height: 32px;

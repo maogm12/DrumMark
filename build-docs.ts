@@ -104,7 +104,7 @@ async function buildDocs(templatePath: string, outputPath: string) {
         const resultTitle = lang === 'zh' ? '生成结果' : 'Score Result';
         
         const sectionBody = `
-            <div class="docs-section-body">
+            <div class="docs-example-row">
                 <div class="docs-section-pane">
                     <div class="docs-pane-title">${exampleTitle}</div>
                     <div class="docs-code-block">

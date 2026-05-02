@@ -88,7 +88,7 @@
                             <div class="docs-description">
                                 <p>DrumMark 用纯文本描述套鼓谱面。您写的是节奏、分工和发音法，系统再把它编译成标准鼓谱。</p>
                                 <p>它的目标不是替代乐理，而是把鼓手已经熟悉的拍号、分拍、重音、装饰音、反复和 sticking，用尽量短的文本稳定表达出来。</p>
-                                <div class="docs-section-body">
+                                <div class="docs-section-content">
                                     <ul class="docs-list">
                                         <li><strong>注释：</strong><code>#</code> 之后到行尾都是注释。</li>
                                         <li><strong>空白：</strong> 空格和 Tab 只负责分隔 token，不改变节奏含义；<code>HH|d-d-|</code> 与 <code>HH | d - d - |</code> 等价。</li>
@@ -97,7 +97,7 @@
                                 </div>
                             </div>
                             
-            <div class="docs-section-body">
+            <div class="docs-example-row">
                 <div class="docs-section-pane">
                     <div class="docs-pane-title">示例</div>
                     <div class="docs-code-block">
@@ -138,7 +138,7 @@
                             </div>
                             <div class="docs-description">
                                 <p>头部写在所有谱面内容之前，用来定义拍号、内部分拍和输入分辨率。</p>
-                                <div class="docs-section-body">
+                                <div class="docs-section-content">
                                     <ul class="docs-list">
                                         <li><strong>title / subtitle / composer:</strong> 乐曲的名称和作者信息。这些会印在乐谱上。</li>
                                         <li><strong>tempo:</strong> 四分音符 BPM。如不指定默认为 120。</li>
@@ -169,7 +169,7 @@
                                 </div>
                             </div>
                             
-            <div class="docs-section-body">
+            <div class="docs-example-row">
                 <div class="docs-section-pane">
                     <div class="docs-pane-title">示例</div>
                     <div class="docs-code-block">
@@ -213,7 +213,7 @@
                             </div>
                             <div class="docs-description">
                                 <p>命名轨写法是 <code>&lt;TRACK&gt; | ... |</code>。每一行给出该轨在当前段落中的小节内容。</p>
-                                <div class="docs-section-body">
+                                <div class="docs-section-content">
                                     <table class="docs-table">
                                         <thead><tr><th>名称</th><th>谱面对象</th><th>类别</th></tr></thead>
                                         <tbody>
@@ -245,7 +245,7 @@
                                 </div>
                             </div>
                             
-            <div class="docs-section-body">
+            <div class="docs-example-row">
                 <div class="docs-section-pane">
                     <div class="docs-pane-title">示例</div>
                     <div class="docs-code-block">
@@ -296,7 +296,7 @@
                             </div>
                             <div class="docs-description">
                                 <p>token 是 DrumMark 的最小记谱单位。它既可以表示击打，也可以表示休止，还可以携带时值修饰与路由信息。</p>
-                                <div class="docs-section-body">
+                                <div class="docs-section-content">
                                     <table class="docs-table docs-table-compact">
                                         <thead>
                                             <tr><th>基础 Token</th><th>解析结果</th><th>说明</th></tr>
@@ -359,7 +359,7 @@
                                 </div>
                             </div>
                             
-            <div class="docs-section-body">
+            <div class="docs-example-row">
                 <div class="docs-section-pane">
                     <div class="docs-pane-title">示例</div>
                     <div class="docs-code-block">
@@ -400,7 +400,7 @@
                             </div>
                             <div class="docs-description">
                                 <p>在音符后面加冒号再写技巧名称，可以为您的击打添加额外的细节。modifier 是否合法取决于最终解析到的目标轨道，所以不是每个 modifier 都能用于所有 track。</p>
-                                <div class="docs-section-body">
+                                <div class="docs-section-content">
                                     <table class="docs-table">
                                         <thead><tr><th>轨道 / 家族</th><th>允许的 Modifiers</th><th>典型用途</th></tr></thead>
                                         <tbody>
@@ -426,7 +426,7 @@
                                 </div>
                             </div>
                             
-            <div class="docs-section-body">
+            <div class="docs-example-row">
                 <div class="docs-section-pane">
                     <div class="docs-pane-title">示例</div>
                     <div class="docs-code-block">
@@ -477,7 +477,7 @@
                             </div>
                             <div class="docs-description">
                                 <p>group 用来表达不落在常规网格上的节奏压缩与拉伸，比如三连音、五连音，或者“两个音占三格”这种记法。</p>
-                                <div class="docs-section-body">
+                                <div class="docs-section-content">
                                     <ul class="docs-list">
                                         <li><strong>基本语法：</strong><code>[span: item1 item2 ...]</code>。省略 <code>span</code> 时，<code>[a b c]</code> 等价于 <code>[1: a b c]</code>。</li>
                                         <li><strong>含义：</strong> 组内每个 item 的时值 = 当前槽位时值 × <code>span / itemCount</code>。</li>
@@ -498,7 +498,7 @@
                                 </div>
                             </div>
                             
-            <div class="docs-section-body">
+            <div class="docs-example-row">
                 <div class="docs-section-pane">
                     <div class="docs-pane-title">示例</div>
                     <div class="docs-code-block">
@@ -567,7 +567,7 @@
                                 <p><code>x+s</code> 是最常见的 hat+snare，<code>x+s+b</code> 是三件同时击打；也可以写显式形式如 <code>HH:d + SD:d</code>。<code>+</code> 两侧可留空格，也可以不留。</p>
                             </div>
                             
-            <div class="docs-section-body">
+            <div class="docs-example-row">
                 <div class="docs-section-pane">
                     <div class="docs-pane-title">示例</div>
                     <div class="docs-code-block">
@@ -610,7 +610,7 @@
                                 <p>写 <code>R</code> 表示右手，<code>L</code> 表示左手。它会附着到同一拍点上的所有实际音符；如果某个 <code>ST</code> 拍点没有任何实际音符，导出时会被忽略。</p>
                             </div>
                             
-            <div class="docs-section-body">
+            <div class="docs-example-row">
                 <div class="docs-section-pane">
                     <div class="docs-pane-title">示例</div>
                     <div class="docs-code-block">
@@ -651,7 +651,7 @@
                             </div>
                             <div class="docs-description">
                                 <p>结构性记号是全谱级别的，不是单轨私有信息。它们可以写在任意一轨，但会作用于同一全局小节。</p>
-                                <div class="docs-section-body">
+                                <div class="docs-section-content">
                                     <ul class="docs-list">
                                         <li><strong>小节线：</strong> <code>|</code> 常规；<code>|:</code> 反复开始；<code>:|</code> 反复结束；<code>||</code> 双小节线；<code>|.</code> 明确结束当前 volta bracket，但不会强制画终止粗线。</li>
                                         <li><strong>结尾小节线：</strong> 最后一个小节会自动补终止小节线，所以不需要为了画结尾线再写额外语法。</li>
@@ -667,7 +667,7 @@
                                 </div>
                             </div>
                             
-            <div class="docs-section-body">
+            <div class="docs-example-row">
                 <div class="docs-section-pane">
                     <div class="docs-pane-title">示例</div>
                     <div class="docs-code-block">
@@ -724,7 +724,7 @@
                                 <p>多小节休止只接受 <code>|--N--|</code> 这一种写法，例如 <code>|--8--|</code>。数字两侧至少各要有一个 <code>-</code>，并且整个结构必须完整落在单个小节里。</p>
                             </div>
                             
-            <div class="docs-section-body">
+            <div class="docs-example-row">
                 <div class="docs-section-pane">
                     <div class="docs-pane-title">示例</div>
                     <div class="docs-code-block">
@@ -765,7 +765,7 @@
                                 <p><code>*N</code> 写在小节末尾，表示把当前小节扩展成总共连续 <code>N</code> 个相同小节，而不是“再重复 N 次”。例如 <code>*4</code> 的结果是总共 4 小节。</p>
                             </div>
                             
-            <div class="docs-section-body">
+            <div class="docs-example-row">
                 <div class="docs-section-pane">
                     <div class="docs-pane-title">示例</div>
                     <div class="docs-code-block">
@@ -804,7 +804,7 @@
                             </div>
                             <div class="docs-description">
                                 <p>DrumMark 的校验重点是“谱面逻辑必须唯一、时值必须闭合”。系统会验证：</p>
-                                <div class="docs-section-body">
+                                <div class="docs-section-content">
                                     <ul class="docs-list">
                                         <li><strong>整小节时值：</strong> 每小节里所有 token 的精确时值总和必须刚好等于拍号与 <code>divisions</code> 共同定义的整小节长度。</li>
                                         <li><strong>grouping 边界：</strong> token 或整个 group 都不能跨越 <code>grouping</code> 定义的分拍边界。</li>
@@ -814,7 +814,7 @@
                                 </div>
                             </div>
                             
-            <div class="docs-section-body">
+            <div class="docs-example-row">
                 <div class="docs-section-pane">
                     <div class="docs-pane-title">示例</div>
                     <div class="docs-code-block">
@@ -855,7 +855,7 @@
                                 <p>一个完整的乐谱展示，包含多轨道、复杂修饰符和节奏组的应用。</p>
                             </div>
                             
-            <div class="docs-section-body">
+            <div class="docs-example-row">
                 <div class="docs-section-pane">
                     <div class="docs-pane-title">示例</div>
                     <div class="docs-code-block">

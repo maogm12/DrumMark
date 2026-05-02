@@ -88,7 +88,7 @@
                             <div class="docs-description">
                                 <p>DrumMark describes drum notation in plain text. You write rhythm, orchestration, and articulation, and the system compiles that into standard drum notation.</p>
                                 <p>Its goal is not to replace musicianship. Its goal is to encode things drummers already think in terms of, such as meter, beat grouping, accents, grace-note figures, repeats, and sticking, in the shortest stable textual form possible.</p>
-                                <div class="docs-section-body">
+                                <div class="docs-section-content">
                                     <ul class="docs-list">
                                         <li><strong>Comments:</strong> everything after <code>#</code> on a line is a comment.</li>
                                         <li><strong>Whitespace:</strong> spaces and tabs only separate tokens; they do not change rhythm. <code>HH|d-d-|</code> and <code>HH | d - d - |</code> are equivalent.</li>
@@ -97,7 +97,7 @@
                                 </div>
                             </div>
                             
-            <div class="docs-section-body">
+            <div class="docs-example-row">
                 <div class="docs-section-pane">
                     <div class="docs-pane-title">Example</div>
                     <div class="docs-code-block">
@@ -138,7 +138,7 @@
                             </div>
                             <div class="docs-description">
                                 <p>Headers come before any score content and define meter, internal beat grouping, and input resolution.</p>
-                                <div class="docs-section-body">
+                                <div class="docs-section-content">
                                     <ul class="docs-list">
                                         <li><strong>title / subtitle / composer:</strong> Your score's name and credits. These appear on the printed sheet.</li>
                                         <li><strong>tempo:</strong> Quarter-note BPM. Default is 120 if omitted.</li>
@@ -169,7 +169,7 @@
                                 </div>
                             </div>
                             
-            <div class="docs-section-body">
+            <div class="docs-example-row">
                 <div class="docs-section-pane">
                     <div class="docs-pane-title">Example</div>
                     <div class="docs-code-block">
@@ -213,7 +213,7 @@
                             </div>
                             <div class="docs-description">
                                 <p>Named tracks use the form <code>&lt;TRACK&gt; | ... |</code>. Each line provides that track's measure content for the current paragraph.</p>
-                                <div class="docs-section-body">
+                                <div class="docs-section-content">
                                     <table class="docs-table">
                                         <thead><tr><th>Name</th><th>Notation Target</th><th>Category</th></tr></thead>
                                         <tbody>
@@ -245,7 +245,7 @@
                                 </div>
                             </div>
                             
-            <div class="docs-section-body">
+            <div class="docs-example-row">
                 <div class="docs-section-pane">
                     <div class="docs-pane-title">Example</div>
                     <div class="docs-code-block">
@@ -296,7 +296,7 @@
                             </div>
                             <div class="docs-description">
                                 <p>A token is the smallest unit in DrumMark notation. It may represent a hit, a rest, or a hit plus duration and routing information.</p>
-                                <div class="docs-section-body">
+                                <div class="docs-section-content">
                                     <table class="docs-table docs-table-compact">
                                         <thead>
                                             <tr><th>Core Token</th><th>Resolves To</th><th>Notes</th></tr>
@@ -359,7 +359,7 @@
                                 </div>
                             </div>
                             
-            <div class="docs-section-body">
+            <div class="docs-example-row">
                 <div class="docs-section-pane">
                     <div class="docs-pane-title">Example</div>
                     <div class="docs-code-block">
@@ -400,7 +400,7 @@
                             </div>
                             <div class="docs-description">
                                 <p>Add extra details to your hits by putting a colon after the note, then the technique name. Modifier legality depends on the resolved target track, so not every modifier works everywhere.</p>
-                                <div class="docs-section-body">
+                                <div class="docs-section-content">
                                     <table class="docs-table">
                                         <thead><tr><th>Track / Family</th><th>Allowed Modifiers</th><th>Typical Use</th></tr></thead>
                                         <tbody>
@@ -426,7 +426,7 @@
                                 </div>
                             </div>
                             
-            <div class="docs-section-body">
+            <div class="docs-example-row">
                 <div class="docs-section-pane">
                     <div class="docs-pane-title">Example</div>
                     <div class="docs-code-block">
@@ -477,7 +477,7 @@
                             </div>
                             <div class="docs-description">
                                 <p>Groups express rhythmic compression and expansion that do not sit on the regular grid, such as tuplets, stretched dyads, or "two notes across three slots" patterns.</p>
-                                <div class="docs-section-body">
+                                <div class="docs-section-content">
                                     <ul class="docs-list">
                                         <li><strong>Base syntax:</strong> <code>[span: item1 item2 ...]</code>. When <code>span</code> is omitted, <code>[a b c]</code> is shorthand for <code>[1: a b c]</code>.</li>
                                         <li><strong>Meaning:</strong> each item inside the group gets duration = current slot duration × <code>span / itemCount</code>.</li>
@@ -498,7 +498,7 @@
                                 </div>
                             </div>
                             
-            <div class="docs-section-body">
+            <div class="docs-example-row">
                 <div class="docs-section-pane">
                     <div class="docs-pane-title">Example</div>
                     <div class="docs-code-block">
@@ -567,7 +567,7 @@
                                 <p><code>x+s</code> is the common hat-plus-snare case, and <code>x+s+b</code> means three simultaneous voices. Explicit forms such as <code>HH:d + SD:d</code> are also valid. Spaces around <code>+</code> are optional.</p>
                             </div>
                             
-            <div class="docs-section-body">
+            <div class="docs-example-row">
                 <div class="docs-section-pane">
                     <div class="docs-pane-title">Example</div>
                     <div class="docs-code-block">
@@ -610,7 +610,7 @@
                                 <p>Write <code>R</code> for right hand and <code>L</code> for left hand. The annotation attaches to the sounding notes at the same attack point; if an <code>ST</code> position has no real note underneath it, that sticking mark is ignored in export.</p>
                             </div>
                             
-            <div class="docs-section-body">
+            <div class="docs-example-row">
                 <div class="docs-section-pane">
                     <div class="docs-pane-title">Example</div>
                     <div class="docs-code-block">
@@ -651,7 +651,7 @@
                             </div>
                             <div class="docs-description">
                                 <p>Structural markings are score-global, not private to one track. You may write them on any track line, but they apply to the shared global measure.</p>
-                                <div class="docs-section-body">
+                                <div class="docs-section-content">
                                     <ul class="docs-list">
                                         <li><strong>Barlines:</strong> <code>|</code> is normal; <code>|:</code> starts a repeat; <code>:|</code> ends a repeat; <code>||</code> is a double barline; <code>|.</code> explicitly ends the current volta bracket without forcing a final barline.</li>
                                         <li><strong>Final barline:</strong> the score automatically ends with a final barline on the last measure, so you do not need separate syntax just to draw the ending line.</li>
@@ -667,7 +667,7 @@
                                 </div>
                             </div>
                             
-            <div class="docs-section-body">
+            <div class="docs-example-row">
                 <div class="docs-section-pane">
                     <div class="docs-pane-title">Example</div>
                     <div class="docs-code-block">
@@ -724,7 +724,7 @@
                                 <p>Multi-measure rests only accept the form <code>|--N--|</code>, for example <code>|--8--|</code>. There must be at least one <code>-</code> on each side of the number, and the whole structure must occupy a single measure.</p>
                             </div>
                             
-            <div class="docs-section-body">
+            <div class="docs-example-row">
                 <div class="docs-section-pane">
                     <div class="docs-pane-title">Example</div>
                     <div class="docs-code-block">
@@ -765,7 +765,7 @@
                                 <p><code>*N</code> at the end of a measure expands the current measure into <code>N</code> total consecutive copies, not "repeat it N more times." For example, <code>*4</code> produces four measures total.</p>
                             </div>
                             
-            <div class="docs-section-body">
+            <div class="docs-example-row">
                 <div class="docs-section-pane">
                     <div class="docs-pane-title">Example</div>
                     <div class="docs-code-block">
@@ -804,7 +804,7 @@
                             </div>
                             <div class="docs-description">
                                 <p>DrumMark validation is primarily about one unique score logic and exact duration closure. The system validates:</p>
-                                <div class="docs-section-body">
+                                <div class="docs-section-content">
                                     <ul class="docs-list">
                                         <li><strong>Whole-measure duration:</strong> the exact summed duration of every measure must match the full measure length implied by the meter and <code>divisions</code>.</li>
                                         <li><strong>Grouping boundaries:</strong> neither a token nor a whole group may cross a beat boundary defined by <code>grouping</code>.</li>
@@ -814,7 +814,7 @@
                                 </div>
                             </div>
                             
-            <div class="docs-section-body">
+            <div class="docs-example-row">
                 <div class="docs-section-pane">
                     <div class="docs-pane-title">Example</div>
                     <div class="docs-code-block">
@@ -855,7 +855,7 @@
                                 <p>A complete score demonstrating multiple tracks, complex modifiers, and rhythmic groups.</p>
                             </div>
                             
-            <div class="docs-section-body">
+            <div class="docs-example-row">
                 <div class="docs-section-pane">
                     <div class="docs-pane-title">Example</div>
                     <div class="docs-code-block">

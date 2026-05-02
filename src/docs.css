@@ -15,6 +15,8 @@
   padding: 0;
   background: var(--docs-bg);
   font-family: var(--font-sans);
+  overflow: auto !important; /* Override overflow: hidden from styles.css */
+  display: block !important; /* Override display: flex from styles.css */
 }
 
 .docs-layout {

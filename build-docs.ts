@@ -7,6 +7,7 @@ import { buildNormalizedScore } from "./src/dsl/index";
 import { renderScoreToSvg } from "./src/vexflow/index";
 import { highlightDslStatic } from "./src/drummark";
 import { registerFont } from "canvas";
+import { DEFAULT_RENDER_OPTIONS } from "./src/vexflow/types";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -23,10 +24,20 @@ global.HTMLDivElement = mockDom.window.HTMLDivElement;
 global.SVGElement = mockDom.window.SVGElement;
 global.Image = mockDom.window["Image"] as any;
 global.DOMParser = mockDom.window.DOMParser as any;
+global.XMLSerializer = (mockDom.window as any).XMLSerializer;
 
 if (!global.fetch) {
     (global as any).fetch = () => Promise.reject("Fetch not available in Node.");
 }
+
+class MockFileReader {
+    onloadend: (() => void) | null = null;
+    result: string | null = null;
+    readAsDataURL() {
+        if (this.onloadend) this.onloadend();
+    }
+}
+(global as any).FileReader = MockFileReader;
 
 const fontsDir = path.resolve(__dirname, "public/fonts");
 const bravuraPath = path.join(fontsDir, "bravura.otf");
@@ -79,13 +90,9 @@ async function buildDocs(templatePath: string, outputPath: string) {
             mockDom.window.document.body.innerHTML = '<div id="vd-container"></div>';
             const score = buildNormalizedScore(dsl);
             renderedSvg = await renderScoreToSvg(score, {
+                ...DEFAULT_RENDER_OPTIONS,
                 mode: "preview",
-                pagePadding: { top: 24, right: 24, bottom: 24, left: 24 },
-                pageScale: 0.8,
-                headerHeight: 50,
-                titleStaffGap: 0,
-                systemSpacing: 1.0,
-                hideVoice2Rests: false,
+                pageScale: 1.0,
             });
         } catch (e: any) {
             console.error(`     Error rendering ${id}:`, e.message);

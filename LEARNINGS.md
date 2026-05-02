@@ -66,13 +66,6 @@
 - A UI-level option is not enough as verification. The stable regression check is to compare the exported SVG stem path for the same score under two `stemLength` values and assert the stem endpoint moves.
 - In VexFlow, `StemmableNote#setStemLength()` only records `stemExtensionOverride`; it does not push that value into the already-built `Stem`. If code also calls `setStemDirection()`, the safe order is `setStemLength()` first, then `setStemDirection()`, because `setStemDirection()` is what applies `getStemExtension()` onto the live stem object.
 
-## 2026-05-01 Addendum: VexFlow Navigation Layout Split
-
-- VexFlow is good at local modifier stacking, not system-level collision avoidance. If navigation is anchored to a note, attaching it as an `Annotation`-like modifier lets `ModifierContext` stack it with accents, sticking, and other note-local marks automatically.
-- `left-edge` / `right-edge` navigation and `volta` brackets should not rely on fixed `shiftY` heuristics. A more stable renderer flow is: format and draw notes first, then inspect note and modifier geometry, build a system-level top skyline, and place edge/span overlays against that skyline.
-- Pure note geometry is not enough once sticking or text annotations are in play. After `voice.draw(...)`, VexFlow modifiers have resolved positions, so skyline construction can safely sample note top, stem top, and the rendered `x/y` of above-staff modifiers without forcing a second SVG render pass.
-- Mixed-font navigation such as `To Coda` is easier to keep stable by treating it as one logical layout unit. A custom annotation/overlay that draws text and glyph segments together avoids the spacing drift that happens when `To` and the coda symbol are emitted as independent modifiers competing for text lines.
-
 ## Legacy Docs Learnings (Merged From `docs/LEARNINGS.md`)
 
 ### 1. VexFlow 5 & Vite MPA
@@ -102,3 +95,17 @@
 - Browser-native scrolling and lightweight runtime JS are more robust than nested scroll containers and heavy custom restoration logic for the docs page.
 - Copy buttons should be resilient at runtime even if build-time HTML injection changes, and button binding should be idempotent.
 - Width constraints should be applied to the reading column rather than the outer docs shell, so the sidebar and chrome can remain full-width.
+
+## 2026-05-01 Addendum: VexFlow 5 StaveTempo Positioning
+
+- VexFlow 5 `StaveTempo` modifiers, when added with `Modifier.Position.ABOVE`, appear to calculate their horizontal position based on the internal "Note Start" offset but fail to add the parent `Stave.x` coordinate.
+- Result: When page margins (padding) change, the stave and notes shift correctly, but the tempo marking remains stuck at a fixed absolute position on the canvas.
+- Fix: Manually add the stave's current `x` to the tempo's `x-offset` parameter. In this renderer, `new StaveTempo({ ... }, x - 45, y)` ensures the BPM marking follows the staff perfectly while staying left-aligned above the clef.
+- Testing: Verifying this requires isolated render passes (e.g., fresh `JSDOM` instances in tests) because VexFlow's internal font measurement and modifier contexts can have "sticky" global state in Node environments that masks coordinate drift.
+
+## 2026-05-01 Addendum: VexFlow Navigation Layout Split
+
+- VexFlow is good at local modifier stacking, not system-level collision avoidance. If navigation is anchored to a note, attaching it as an `Annotation`-like modifier lets `ModifierContext` stack it with accents, sticking, and other note-local marks automatically.
+- `left-edge` / `right-edge` navigation and `volta` brackets should not rely on fixed `shiftY` heuristics. A more stable renderer flow is: format and draw notes first, then inspect note and modifier geometry, build a system-level top skyline, and place edge/span overlays against that skyline.
+- Pure note geometry is not enough once sticking or text annotations are in play. After `voice.draw(...)`, VexFlow modifiers have resolved positions, so skyline construction can safely sample note top, stem top, and the rendered `x/y` of above-staff modifiers without forcing a second SVG render pass.
+- Mixed-font navigation such as `To Coda` is easier to keep stable by treating it as one logical layout unit. A custom annotation/overlay that draws text and glyph segments together avoids the spacing drift that happens when `To` and the coda symbol are emitted as independent modifiers competing for text lines.

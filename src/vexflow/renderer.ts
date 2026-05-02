@@ -1,6 +1,6 @@
 import VexFlow from "vexflow";
 import type { NormalizedEvent, NormalizedScore } from "../dsl/types";
-import type { VexflowRenderOptions } from "./types";
+import { DEFAULT_RENDER_OPTIONS, type PagePadding, type VexflowRenderOptions } from "./types";
 import {
   buildVoiceEntries,
   groupingSegmentIndex,
@@ -504,12 +504,13 @@ function drawHeaderWithVexFlow(context: any, score: NormalizedScore, width: numb
   const title = score.header.title;
   const subtitle = score.header.subtitle;
   const composer = score.header.composer;
+  const tempo = score.header.tempo;
 
-  if (!title && !subtitle && !composer) return;
+  if (!title && !subtitle && !composer && !tempo) return;
 
-  const paddingLeftPt = (options.pagePadding.left ?? 24) * 0.75;
-  const paddingRightPt = (options.pagePadding.right ?? 24) * 0.75;
-  const headerHeightPt = options.headerHeight ?? 50;
+  const paddingLeftPt = options.pagePadding.left;
+  const paddingRightPt = options.pagePadding.right;
+  const headerHeightPt = options.headerHeight;
 
   const headerBottomY = headerY;
   const headerTopY = headerBottomY - headerHeightPt;
@@ -573,23 +574,66 @@ async function ensureVexFlowFonts() {
   }
 }
 
-export async function renderScoreToSvg(score: NormalizedScore, options: VexflowRenderOptions): Promise<string> {
-  await ensureVexFlowFonts();
+let cachedBravuraBase64: string | null = null;
 
-  const { mode } = options;
-  const measureDuration = {
-    numerator: score.header.timeSignature.beats,
-    denominator: score.header.timeSignature.beatUnit,
+async function getBravuraBase64(): Promise<string> {
+  if (cachedBravuraBase64) return cachedBravuraBase64;
+  try {
+    const fontUrl = window.location.origin + "/drum_notation/fonts/bravura.woff2";
+    const resp = await fetch(fontUrl);
+    if (!resp.ok) throw new Error("Failed to fetch font");
+    const blob = await resp.blob();
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64 = (reader.result as string).split(",")[1];
+        cachedBravuraBase64 = base64;
+        resolve(base64);
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+  } catch (e) {
+    console.error("Font preloading failed:", e);
+    return "";
+  }
+}
+
+function serializeSvgWithStyles(svgElement: SVGSVGElement, fontBase64?: string): string {
+  const style = document.createElementNS("http://www.w3.org/2000/svg", "style");
+  let fontRule = "";
+  if (fontBase64) {
+    fontRule = `
+      @font-face {
+        font-family: 'Bravura';
+        src: url(data:font/woff2;base64,${fontBase64}) format('woff2');
+      }
+    `;
+  }
+  
+  style.textContent = `
+    ${fontRule}
+    svg { background: white; }
+  `;
+  svgElement.prepend(style);
+  return new XMLSerializer().serializeToString(svgElement);
+}
+
+function getScaledDimensions(options: VexflowRenderOptions) {
+  const staffScale = options.staffScale;
+  return {
+    staffScale,
+    systemSpacing: options.systemSpacing / staffScale,
+    pagePaddingTop: options.pagePadding.top / staffScale,
+    pagePaddingBottom: options.pagePadding.bottom / staffScale,
+    pagePaddingLeft: options.pagePadding.left / staffScale,
+    pagePaddingRight: options.pagePadding.right / staffScale,
+    headerHeight: options.headerHeight / staffScale,
+    titleStaffGap: options.titleStaffGap / staffScale,
   };
+}
 
-  const container = document.createElement("div");
-  container.style.visibility = "hidden";
-  document.body.appendChild(container);
-
-  const systemWidth = mode === "preview" ? 900 : 800;
-  const staffHeight = 100;
-  const systemSpacing = options.systemSpacing;
-
+function groupMeasuresIntoSystems(score: NormalizedScore): RenderMeasure[][] {
   const renderMeasures = buildRenderMeasures(score);
   const allSystems: RenderMeasure[][] = [];
   let currentSystem: RenderMeasure[] = [];
@@ -604,103 +648,146 @@ export async function renderScoreToSvg(score: NormalizedScore, options: VexflowR
     currentSystem.push(measure);
   }
   if (currentSystem.length > 0) allSystems.push(currentSystem);
+  return allSystems;
+}
 
-  const totalHeight = 200 + allSystems.length * (staffHeight + systemSpacing);
+function createHiddenContainer(isExport: boolean): HTMLDivElement {
+  const container = document.createElement("div");
+  if (!isExport) {
+    container.style.position = "absolute";
+    container.style.left = "-9999px";
+    container.style.visibility = "hidden";
+    document.body.appendChild(container);
+  }
+  return container;
+}
 
+function finalizeSvg(container: HTMLDivElement, isExport: boolean, fontBase64?: string): string {
+  try {
+    const svgElement = container.querySelector("svg");
+    if (!svgElement) return container.innerHTML;
+    return isExport ? serializeSvgWithStyles(svgElement, fontBase64) : new XMLSerializer().serializeToString(svgElement);
+  } finally {
+    if (container.parentElement) {
+      document.body.removeChild(container);
+    }
+  }
+}
+
+/**
+ * Shared internal logic for rendering a batch of systems onto a single context.
+ */
+function renderSystemsBatch(
+  context: any,
+  score: NormalizedScore,
+  systems: RenderMeasure[][],
+  startSystemIdx: number, 
+  layoutWidth: number,
+  yStart: number,
+  dims: ReturnType<typeof getScaledDimensions>,
+  options: VexflowRenderOptions
+): number {
+  let yOffset = yStart;
+  const staffHeight = 100;
+  const measureDuration = { numerator: score.header.timeSignature.beats, denominator: score.header.timeSignature.beatUnit };
+
+  for (let i = 0; i < systems.length; i++) {
+    const globalIdx = startSystemIdx + i;
+    renderSystem(context, score, systems[i]!, {
+      x: dims.pagePaddingLeft,
+      y: yOffset,
+      width: layoutWidth - dims.pagePaddingLeft - dims.pagePaddingRight,
+      isFirstSystem: globalIdx === 0,
+      measureDuration,
+      options: {
+        ...options,
+        systemSpacing: dims.systemSpacing,
+        tempoShiftX: options.tempoShiftX / dims.staffScale,
+        voltaGap: options.voltaGap / dims.staffScale,
+        pagePadding: { 
+          ...options.pagePadding, 
+          top: dims.pagePaddingTop, 
+          bottom: dims.pagePaddingBottom, 
+          left: dims.pagePaddingLeft, 
+          right: dims.pagePaddingRight 
+        }
+      },
+    });
+    yOffset += staffHeight + dims.systemSpacing;
+  }
+  return yOffset;
+}
+
+export async function renderScoreToSvg(score: NormalizedScore, inputOptions: VexflowRenderOptions): Promise<string> {
+  const options = { ...DEFAULT_RENDER_OPTIONS, ...inputOptions } as VexflowRenderOptions;
+  await ensureVexFlowFonts();
+  const isExport = options.mode === "pdf";
+  const fontBase64 = isExport ? await getBravuraBase64() : undefined;
+  
+  const dims = getScaledDimensions(options);
+  const allSystems = groupMeasuresIntoSystems(score);
+
+  const physicalWidth = options.pageWidth;
+  const systemWidth = physicalWidth / dims.staffScale;
+  const staffHeight = 100;
+  
+  const totalLogicalHeight = dims.pagePaddingTop + dims.headerHeight + dims.titleStaffGap + 
+                             allSystems.length * (staffHeight + dims.systemSpacing) + dims.pagePaddingBottom;
+  const totalPhysicalHeight = totalLogicalHeight * dims.staffScale;
+
+  const container = createHiddenContainer(isExport);
   const renderer = new Renderer(container, RendererBackends.SVG);
-  renderer.resize(systemWidth, totalHeight);
+  renderer.resize(physicalWidth, totalPhysicalHeight);
   const context = renderer.getContext();
+  
+  const svgElement = container.querySelector("svg");
+  if (svgElement) {
+    const logicalHeight = totalLogicalHeight;
+    svgElement.setAttribute("viewBox", `0 0 ${systemWidth} ${logicalHeight}`);
+    svgElement.setAttribute("width", physicalWidth.toString());
+    svgElement.setAttribute("height", totalPhysicalHeight.toString());
+  }
+
   context.setFont("Arial", 10);
   context.setFillStyle("#333");
   context.setStrokeStyle("#333");
 
-  // First system Y: start at page padding top, then title block + titleStaffGap, then staff
-  const titleStaffGap = options.titleStaffGap ?? 2.8;
-  const pagePaddingTop = options.pagePadding?.top ?? 24;
-  const headerHeight = options.headerHeight ?? 50;
-  const firstSystemY = pagePaddingTop + headerHeight + titleStaffGap;
+  drawHeaderWithVexFlow(context, score, systemWidth, {
+    ...options,
+    titleStaffGap: dims.titleStaffGap,
+    headerHeight: dims.headerHeight,
+    pagePadding: { ...options.pagePadding, top: dims.pagePaddingTop, left: dims.pagePaddingLeft, right: dims.pagePaddingRight }
+  }, dims.pagePaddingTop + dims.headerHeight);
 
-  const paddingLeftPt = (options.pagePadding.left ?? 24) * 0.75;
-  const paddingRightPt = (options.pagePadding.right ?? 24) * 0.75;
+  const yStart = dims.pagePaddingTop + dims.headerHeight + dims.titleStaffGap;
+  renderSystemsBatch(context, score, allSystems, 0, systemWidth, yStart, dims, options);
 
-  drawHeaderWithVexFlow(context, score, systemWidth, options, pagePaddingTop + headerHeight);
-
-  let yOffset = firstSystemY;
-  for (let i = 0; i < allSystems.length; i++) {
-    const system = allSystems[i];
-    if (!system) continue;
-    renderSystem(context, score, system, {
-      x: paddingLeftPt,
-      y: yOffset,
-      width: systemWidth - paddingLeftPt - paddingRightPt,
-      isFirstSystem: i === 0,
-      measureDuration,
-      options,
-    });
-    yOffset += staffHeight + systemSpacing;
-  }
-
-  let svg: string;
-  try {
-    svg = container.innerHTML;
-  } finally {
-    document.body.removeChild(container);
-  }
-  return svg;
+  return finalizeSvg(container, isExport, fontBase64);
 }
 
-const LETTER_WIDTH = 612;
-const LETTER_HEIGHT = 792;
-
-export async function renderScorePagesToSvgs(score: NormalizedScore, options: VexflowRenderOptions): Promise<string[]> {
+export async function renderScorePagesToSvgs(score: NormalizedScore, inputOptions: VexflowRenderOptions): Promise<string[]> {
+  const options = { ...DEFAULT_RENDER_OPTIONS, ...inputOptions } as VexflowRenderOptions;
   await ensureVexFlowFonts();
-
-  const renderMeasures = buildRenderMeasures(score);
-  const allSystems: RenderMeasure[][] = [];
-  let currentSystem: RenderMeasure[] = [];
-  for (const measure of renderMeasures) {
-    if (currentSystem.length > 0) {
-      const last = currentSystem[currentSystem.length - 1];
-      if (last && (measure.measure.paragraphIndex !== last.measure.paragraphIndex || currentSystem.length >= 6)) {
-        allSystems.push(currentSystem);
-        currentSystem = [];
-      }
-    }
-    currentSystem.push(measure);
-  }
-  if (currentSystem.length > 0) allSystems.push(currentSystem);
+  const isExport = options.mode === "pdf";
+  const fontBase64 = isExport ? await getBravuraBase64() : undefined;
+  
+  const dims = getScaledDimensions(options);
+  const allSystems = groupMeasuresIntoSystems(score);
 
   const svgs: string[] = [];
-  const physicalWidth = options.pageWidth ?? (options.mode === "preview" ? 900 : LETTER_WIDTH);
-  const physicalHeight = options.pageHeight ?? LETTER_HEIGHT;
-  
-  // staffScale < 1.0 makes music smaller (higher density)
-  // staffScale > 1.0 makes music larger (lower density)
-  const staffScale = options.staffScale ?? 1.0;
-  
-  // The virtual/logical dimensions that VexFlow will use for layout
-  const pageWidth = physicalWidth / staffScale;
-  const pageHeight = physicalHeight / staffScale;
-  
+  const physicalWidth = options.pageWidth;
+  const physicalHeight = options.pageHeight;
+  const pageWidth = physicalWidth / dims.staffScale;
+  const pageHeight = physicalHeight / dims.staffScale;
   const staffHeight = 100;
-  // Scaling physical options to logical units
-  const systemSpacing = options.systemSpacing / staffScale;
-  const pagePaddingTop = (options.pagePadding?.top ?? 24) / staffScale;
-  const pagePaddingBottom = (options.pagePadding?.bottom ?? 24) / staffScale;
-  const pagePaddingLeftPt = ((options.pagePadding?.left ?? 24) * 0.75) / staffScale;
-  const pagePaddingRightPt = ((options.pagePadding?.right ?? 24) * 0.75) / staffScale;
-  const headerHeightPt = (options.headerHeight ?? 50) / staffScale;
-  const titleStaffGap = (options.titleStaffGap ?? 2.8) / staffScale;
 
   let systemIdx = 0;
   while (systemIdx < allSystems.length) {
-    const container = document.createElement("div");
+    const container = createHiddenContainer(isExport);
     const renderer = new Renderer(container, RendererBackends.SVG);
-    // Resize to logical dimensions
-    renderer.resize(pageWidth, pageHeight);
+    renderer.resize(physicalWidth, physicalHeight);
     const context = renderer.getContext();
     
-    // Set viewBox to map logical coordinates to physical dimensions
     const svgElement = container.querySelector("svg");
     if (svgElement) {
       svgElement.setAttribute("viewBox", `0 0 ${pageWidth} ${pageHeight}`);
@@ -718,51 +805,29 @@ export async function renderScorePagesToSvgs(score: NormalizedScore, options: Ve
     if (isFirstPage) {
       drawHeaderWithVexFlow(context, score, pageWidth, {
         ...options,
-        // Scale titleStaffGap and other header related options for drawing
-        titleStaffGap: titleStaffGap,
-        headerHeight: headerHeightPt,
-        pagePadding: {
-          ...options.pagePadding,
-          top: pagePaddingTop,
-          left: (options.pagePadding?.left ?? 24) / staffScale,
-          right: (options.pagePadding?.right ?? 24) / staffScale,
-        }
-      }, pagePaddingTop + headerHeightPt);
-      yOffset = pagePaddingTop + headerHeightPt + titleStaffGap;
+        titleStaffGap: dims.titleStaffGap,
+        headerHeight: dims.headerHeight,
+        pagePadding: { ...options.pagePadding, top: dims.pagePaddingTop, left: dims.pagePaddingLeft, right: dims.pagePaddingRight }
+      }, dims.pagePaddingTop + dims.headerHeight);
+      yOffset = dims.pagePaddingTop + dims.headerHeight + dims.titleStaffGap;
     } else {
-      yOffset = pagePaddingTop;
+      yOffset = dims.pagePaddingTop;
     }
 
-    const startIdx = systemIdx;
+    const startBatchIdx = systemIdx;
+    const currentBatch: RenderMeasure[][] = [];
     while (systemIdx < allSystems.length) {
-      const system = allSystems[systemIdx];
-      if (!system) break;
-      const neededHeight = staffHeight + systemSpacing;
-      
-      // If not the first system on this page, and it would overflow, break to next page
-      if (systemIdx > startIdx && yOffset + neededHeight > pageHeight - pagePaddingBottom) {
+      const neededHeight = staffHeight + dims.systemSpacing;
+      if (systemIdx > startBatchIdx && yOffset + neededHeight > pageHeight - dims.pagePaddingBottom) {
         break;
       }
-
-      renderSystem(context, score, system, {
-        x: pagePaddingLeftPt,
-        y: yOffset,
-        width: pageWidth - pagePaddingLeftPt - pagePaddingRightPt,
-        isFirstSystem: systemIdx === 0,
-        measureDuration: { numerator: score.header.timeSignature.beats, denominator: score.header.timeSignature.beatUnit },
-        options: {
-          ...options,
-          systemSpacing: systemSpacing,
-          staffScale: staffScale,
-          voltaGap: (options.voltaGap ?? DEFAULT_VOLTA_GAP) / staffScale,
-        },
-      });
-
+      currentBatch.push(allSystems[systemIdx]!);
       yOffset += neededHeight;
       systemIdx++;
     }
 
-    svgs.push(container.innerHTML);
+    renderSystemsBatch(context, score, currentBatch, startBatchIdx, pageWidth, isFirstPage ? (dims.pagePaddingTop + dims.headerHeight + dims.titleStaffGap) : dims.pagePaddingTop, dims, options);
+    svgs.push(finalizeSvg(container, isExport, fontBase64));
   }
   return svgs;
 }
@@ -810,7 +875,14 @@ function renderSystem(context: any, score: NormalizedScore, measures: RenderMeas
       if (isFirstSystem) {
         stave.addTimeSignature(`${score.header.timeSignature.beats}/${score.header.timeSignature.beatUnit}`);
         if (score.header.tempo) {
-          stave.addModifier(new StaveTempo({ duration: "q", bpm: score.header.tempo }, -(options.tempoShiftX ?? 10), 0));
+          // VexFlow 5 bug: StaveTempo above/below modifiers don't seem to account for stave.x.
+          // We manually add 'x' to the offset and shift it further left (-45) to sit above the clef.
+          const tempoText = new StaveTempo(
+            { duration: "q", bpm: score.header.tempo },
+            x - 45, 
+            options.voltaGap
+          );
+          stave.addModifier(tempoText, Modifier.Position.ABOVE);
         }
       }
     }
@@ -850,7 +922,7 @@ function renderSystem(context: any, score: NormalizedScore, measures: RenderMeas
   allTuplets.forEach((tuplet) => tuplet.setContext(context).draw());
   noteDrawables.forEach((drawable) => drawable.setContext(context).draw());
 
-  const systemLayout = buildSystemLayoutState(score, measures, staves, layoutNotesByMeasure, options.voltaGap ?? DEFAULT_VOLTA_GAP);
+  const systemLayout = buildSystemLayoutState(score, measures, staves, layoutNotesByMeasure, options.voltaGap);
   staves.forEach((stave) => stave.setContext(context).draw());
   systemLayout.edgeNavs.forEach(({ overlay }) => overlay.setContext(context).draw());
   systemLayout.voltaSpans.forEach(({ overlay }) => overlay.setContext(context).draw());

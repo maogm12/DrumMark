@@ -49,7 +49,7 @@ type PagePadding = {
 
 const pdfPageWidth = 612;
 const pdfPageHeight = 792;
-const pdfMargin = 36;
+const pdfMargin = 0; // Padding is already handled inside the SVG renderer
 
 function downloadBlob(filename: string, blob: Blob) {
   const url = URL.createObjectURL(blob);
@@ -647,29 +647,30 @@ function MusicXmlPreview({ xml }: { xml: string }) {
 
 function renderPdfPageSvgs(
   score: NormalizedScore,
-  layout?: {
-    headerHeight?: number;
-    titleStaffGap?: number;
-    systemSpacing?: number;
-    stemLength?: number;
-    voltaGap?: number;
-    hideVoice2Rests?: boolean;
-    staffScale?: number;
+  layout: {
+    pagePadding: PagePadding;
+    staffScale: number;
+    headerHeight: number;
+    titleStaffGap: number;
+    systemSpacing: number;
+    stemLength: number;
+    voltaGap: number;
+    hideVoice2Rests: boolean;
   },
 ) {
   const opts: VexflowRenderOptions = {
     mode: "pdf",
-    pagePadding: { top: 36, right: 36, bottom: 36, left: 36 },
+    pagePadding: layout.pagePadding,
     pageScale: 1,
     pageWidth: pdfPageWidth,
     pageHeight: pdfPageHeight,
-    staffScale: layout?.staffScale ?? 0.75,
-    headerHeight: layout?.headerHeight ?? 50,
-    titleStaffGap: layout?.titleStaffGap ?? 2.8,
-    systemSpacing: layout?.systemSpacing ?? 0.6,
-    stemLength: layout?.stemLength ?? 31,
-    voltaGap: layout?.voltaGap ?? -15,
-    hideVoice2Rests: layout?.hideVoice2Rests ?? false,
+    staffScale: layout.staffScale,
+    headerHeight: layout.headerHeight,
+    titleStaffGap: layout.titleStaffGap,
+    systemSpacing: layout.systemSpacing,
+    stemLength: layout.stemLength,
+    voltaGap: layout.voltaGap,
+    hideVoice2Rests: layout.hideVoice2Rests,
   };
 
   return renderScorePagesToSvgs(score, opts);
@@ -678,14 +679,15 @@ function renderPdfPageSvgs(
 async function buildPdf(
   score: NormalizedScore,
   _xml: string,
-  layout?: {
-    headerHeight?: number;
-    titleStaffGap?: number;
-    systemSpacing?: number;
-    stemLength?: number;
-    voltaGap?: number;
-    hideVoice2Rests?: boolean;
-    staffScale?: number;
+  layout: {
+    pagePadding: PagePadding;
+    staffScale: number;
+    headerHeight: number;
+    titleStaffGap: number;
+    systemSpacing: number;
+    stemLength: number;
+    voltaGap: number;
+    hideVoice2Rests: boolean;
   },
 ) {
   const [{ PDFDocument, PDFHexString, PDFName }] = await Promise.all([import("pdf-lib")]);
@@ -747,7 +749,7 @@ interface AppSettings {
 
 const defaultSettings: AppSettings = {
   hideVoice2Rests: false,
-  pagePadding: { top: 24, right: 18, bottom: 24, left: 18 },
+  pagePadding: { top: 30, right: 50, bottom: 30, left: 50 },
   pageScale: 0.8,
   staffScale: 0.75,
   titleStaffGap: 60,
@@ -936,6 +938,8 @@ export function App() {
     setPendingPdfExport(true);
     try {
       const pdfBytes = await buildPdf(score, staffXml, {
+        pagePadding: settings.pagePadding,
+        staffScale: settings.staffScale,
         headerHeight: settings.headerHeight,
         titleStaffGap: settings.titleStaffGap,
         systemSpacing: settings.systemSpacing,

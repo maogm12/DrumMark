@@ -35,7 +35,7 @@ describe("drawPdfHeaderText", () => {
       },
     });
 
-    const bytes = await pdf.save();
+    const bytes = await pdf.save({ useObjectStreams: false });
     const path = join(mkdtempSync(join(tmpdir(), "drummark-pdf-")), "header.pdf");
     writeFileSync(path, bytes);
 

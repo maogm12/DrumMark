@@ -23,15 +23,14 @@ export function drawPdfHeaderText({
   margin: number;
   fonts: PdfHeaderFonts;
 }) {
-  // Use Bold font for everything temporarily to verify if Regular font is the issue
-  // Also using safer Y coordinates
+  // Position header text at the top of the page.
   const rows = [
     { text: title, y: 710, size: 24, font: fonts.bold, align: "center" as const },
     subtitle
-      ? { text: subtitle, y: 680, size: 14, font: fonts.bold, align: "center" as const }
+      ? { text: subtitle, y: 680, size: 14, font: fonts.regular, align: "center" as const }
       : undefined,
     composer
-      ? { text: composer, y: 680, size: 12, font: fonts.bold, align: "right" as const }
+      ? { text: composer, y: 680, size: 12, font: fonts.regular, align: "right" as const }
       : undefined,
   ].filter((row): row is NonNullable<typeof row> => Boolean(row));
 

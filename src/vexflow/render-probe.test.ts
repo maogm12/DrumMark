@@ -14,7 +14,6 @@ grouping 1+1+1+1+1+1+1+1+1
 | b2 r2 c2 t4 spl chn cb wb cl |`);
 
     const svg = await renderScoreToSvg(score, {
-      mode: "preview",
       pagePadding: { top: 24, right: 18, bottom: 24, left: 18 },
       titleTopPadding: 3.6,
       titleSubtitleGap: 1.2,
@@ -38,7 +37,6 @@ divisions 4
     const extensionSpy = vi.spyOn(Stem.prototype, "setExtension");
 
     await renderScoreToSvg(score, {
-      mode: "preview",
       pagePadding: { top: 24, right: 18, bottom: 24, left: 18 },
       titleTopPadding: 3.6,
       titleSubtitleGap: 1.2,
@@ -61,7 +59,6 @@ divisions 4
 | @segno x - - - | x - - - @to-coda |`);
 
     const svg = await renderScoreToSvg(score, {
-      mode: "preview",
       pagePadding: { top: 24, right: 18, bottom: 24, left: 18 },
       titleTopPadding: 3.6,
       titleSubtitleGap: 1.2,
@@ -84,7 +81,6 @@ divisions 4
 | @segno x x x x | x x x x @fine | x x x x @dc | x x x x @ds |`);
 
     const svg = await renderScoreToSvg(score, {
-      mode: "preview",
       pagePadding: { top: 24, right: 18, bottom: 24, left: 18 },
       titleTopPadding: 3.6,
       titleSubtitleGap: 1.2,
@@ -115,7 +111,6 @@ divisions 4
 | x - - - |. x - - - |`);
 
     const svg = await renderScoreToSvg(score, {
-      mode: "preview",
       pagePadding: { top: 24, right: 18, bottom: 24, left: 18 },
       titleTopPadding: 3.6,
       titleSubtitleGap: 1.2,
@@ -142,7 +137,6 @@ divisions 4
 |: x x x x |1. x x x x :|2. x x x x |`);
 
     const svg = await renderScoreToSvg(score, {
-      mode: "preview",
       pagePadding: { top: 24, right: 18, bottom: 24, left: 18 },
       titleTopPadding: 3.6,
       titleSubtitleGap: 1.2,
@@ -166,7 +160,6 @@ divisions 4
 |: x x x x |1. x x x x :|2. x x x x |`);
 
     const compactSvg = await renderScoreToSvg(score, {
-      mode: "preview",
       pagePadding: { top: 24, right: 18, bottom: 24, left: 18 },
       titleTopPadding: 3.6,
       titleSubtitleGap: 1.2,
@@ -178,7 +171,6 @@ divisions 4
     });
 
     const looseSvg = await renderScoreToSvg(score, {
-      mode: "preview",
       pagePadding: { top: 24, right: 18, bottom: 24, left: 18 },
       titleTopPadding: 3.6,
       titleSubtitleGap: 1.2,
@@ -199,7 +191,6 @@ divisions 4
     const score = buildNormalizedScore(`tempo 120\ntime 4/4\ndivisions 4\n\n| x x x x |`);
 
     const compactSvg = await renderScoreToSvg(score, {
-      mode: "preview",
       pagePadding: { top: 24, right: 18, bottom: 24, left: 18 },
       titleTopPadding: 3.6,
       titleSubtitleGap: 1.2,
@@ -211,7 +202,6 @@ divisions 4
     } as any);
 
     const looseSvg = await renderScoreToSvg(score, {
-      mode: "preview",
       pagePadding: { top: 24, right: 18, bottom: 24, left: 18 },
       titleTopPadding: 3.6,
       titleSubtitleGap: 1.2,
@@ -245,7 +235,6 @@ HH | X X @to-coda X X |
 ST | R - L - |`);
 
     const svg = await renderScoreToSvg(score, {
-      mode: "preview",
       pagePadding: { top: 24, right: 18, bottom: 24, left: 18 },
       titleTopPadding: 3.6,
       titleSubtitleGap: 1.2,
@@ -271,7 +260,6 @@ grouping 4
 | --16-- |`);
 
     const svg = await renderScoreToSvg(score, {
-      mode: "preview",
       pagePadding: { top: 24, right: 18, bottom: 24, left: 18 },
       titleTopPadding: 3.6,
       titleSubtitleGap: 1.2,
@@ -297,7 +285,6 @@ divisions 8
 T1 | [1: d d d] - - - - - - - |`);
 
     const svg = await renderScoreToSvg(score, {
-      mode: "preview",
       pagePadding: { top: 24, right: 18, bottom: 24, left: 18 },
       titleTopPadding: 3.6,
       titleSubtitleGap: 1.2,
@@ -319,7 +306,6 @@ SD | d - d - | d - d - |
 ST | R - L - | R - L - |`);
 
     const svg = await renderScoreToSvg(score, {
-      mode: "preview",
       pagePadding: { top: 24, right: 18, bottom: 24, left: 18 },
       titleTopPadding: 3.6,
       titleSubtitleGap: 1.2,
@@ -345,7 +331,6 @@ HH | x x - - |
 BD | b - b - |`);
 
     const svg = await renderScoreToSvg(score, {
-      mode: "preview",
       pagePadding: { top: 24, right: 18, bottom: 24, left: 18 },
       titleTopPadding: 3.6,
       titleSubtitleGap: 1.2,
@@ -374,7 +359,6 @@ HH | x - - - | % |
 BD | b - - - | % |`);
 
     const svg = await renderScoreToSvg(score, {
-      mode: "preview",
       pagePadding: { top: 24, right: 18, bottom: 24, left: 18 },
       titleTopPadding: 3.6,
       titleSubtitleGap: 1.2,
@@ -409,7 +393,6 @@ SD | - - - - | - - s - | %% |
 BD | b - - - | b - b - | %% |`);
 
     const svg = await renderScoreToSvg(score, {
-      mode: "preview",
       pagePadding: { top: 24, right: 18, bottom: 24, left: 18 },
       titleTopPadding: 3.6,
       titleSubtitleGap: 1.2,
@@ -443,7 +426,6 @@ HH | x x x x x x x x |
 BD | p - - - p - - - |`);
 
     const svg = await renderScoreToSvg(score, {
-      mode: "preview",
       pagePadding: { top: 24, right: 18, bottom: 24, left: 18 },
       titleTopPadding: 3.6,
       titleSubtitleGap: 1.2,

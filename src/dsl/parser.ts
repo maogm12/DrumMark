@@ -85,7 +85,7 @@ function isPowerOfTwo(n: number): boolean {
 
 function parseNoteValue(value: string): number | null {
   const match = value.match(/^1\s*\/\s*(\d+)$/);
-  if (!match) return null;
+  if (!match || !match[1]) return null;
   const n = parseInt(match[1], 10);
   if (isPowerOfTwo(n) && n <= 128) return n;
   return null;
@@ -1240,7 +1240,7 @@ function splitParagraphs(lines: PreprocessedLine[], errors: ParseError[]): Track
         if (line.kind === "comment") continue;
         if (line.kind === "content") {
           const match = line.content.match(/^note\s+1\s*\/\s*(\d+)$/);
-          if (match) {
+          if (match && match[1]) {
             const n = parseInt(match[1], 10);
             if (isPowerOfTwo(n) && n <= 128) {
               noteValue = n;
@@ -1263,11 +1263,12 @@ function splitParagraphs(lines: PreprocessedLine[], errors: ParseError[]): Track
 
       if (parsedLines.length === 0) return null;
 
-      return {
+      const paragraph: TrackParagraph = {
         startLine: paragraphLines[0]!.lineNumber,
         lines: parsedLines,
         noteValue,
       };
+      return paragraph;
     })
     .filter((paragraph): paragraph is TrackParagraph => paragraph !== null);
 }

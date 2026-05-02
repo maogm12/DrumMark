@@ -76,7 +76,6 @@ async function main() {
     result = buildMusicXml(score);
   } else if (params.format === "svg") {
     result = await renderScoreToSvg(score, {
-      mode: "preview",
       pagePadding: { top: 20, right: 20, bottom: 20, left: 20 },
       pageWidth: 612,
       pageHeight: 792,

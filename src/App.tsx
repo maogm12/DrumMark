@@ -407,7 +407,6 @@ const PagePreview = memo(function PagePreview({
     const targetLeft = scrollPosRef.current.left;
 
     const opts: VexflowRenderOptions = {
-      mode: "preview",
       pagePadding,
       staffScale,
       pageWidth: pdfPageWidth,
@@ -486,92 +485,6 @@ function MusicXmlPreview({ xml }: { xml: string }) {
   );
 }
 
-function renderPdfPageSvgs(
-  score: NormalizedScore,
-  layout: {
-    pagePadding: PagePadding;
-    staffScale: number;
-    headerHeight: number;
-    titleStaffGap: number;
-    systemSpacing: number;
-    stemLength: number;
-    voltaGap: number;
-    hideVoice2Rests: boolean;
-  },
-) {
-  const opts: VexflowRenderOptions = {
-    mode: "pdf",
-    pagePadding: layout.pagePadding,
-    pageWidth: pdfPageWidth,
-    pageHeight: pdfPageHeight,
-    staffScale: layout.staffScale,
-    headerHeight: layout.headerHeight,
-    titleStaffGap: layout.titleStaffGap,
-    systemSpacing: layout.systemSpacing,
-    stemLength: layout.stemLength,
-    voltaGap: layout.voltaGap,
-    hideVoice2Rests: layout.hideVoice2Rests,
-    tempoShiftX: DEFAULT_RENDER_OPTIONS.tempoShiftX,
-    tempoShiftY: DEFAULT_RENDER_OPTIONS.tempoShiftY,
-    };
-  return renderScorePagesToSvgs(score, opts);
-}
-
-async function buildPdf(
-  score: NormalizedScore,
-  _xml: string,
-  layout: {
-    pagePadding: PagePadding;
-    staffScale: number;
-    headerHeight: number;
-    titleStaffGap: number;
-    systemSpacing: number;
-    stemLength: number;
-    voltaGap: number;
-    hideVoice2Rests: boolean;
-  },
-) {
-  const [{ PDFDocument, PDFHexString, PDFName }] = await Promise.all([import("pdf-lib")]);
-  const title = score.ast.headers.title?.value ?? "DrumMark";
-  const subtitle = score.ast.headers.subtitle?.value;
-  const composer = score.ast.headers.composer?.value;
-  const author = composer ?? "DrumMark";
-  const subject = subtitle ? `DrumMark - ${subtitle}` : "DrumMark";
-  const keywords = ["DrumMark", "drum notation", "drums", "musicxml", title, author];
-  const createdAt = new Date();
-  const pageSvgs = await renderPdfPageSvgs(score, layout);
-
-  if (pageSvgs.length === 0) {
-    throw new Error("Could not render staff pages for PDF.");
-  }
-
-  const pdf = await PDFDocument.create();
-  applyPdfMetadata(pdf, { PDFHexString, PDFName }, { title, author, composer, subject, keywords, createdAt });
-
-  for (const svg of pageSvgs) {
-    const page = pdf.addPage([pdfPageWidth, pdfPageHeight]);
-    const imageData = await svgToPngBytes(svg);
-    const image = await pdf.embedPng(imageData.bytes);
-    const contentWidth = pdfPageWidth - pdfMargin * 2;
-    const contentHeight = pdfPageHeight - (pdfMargin * 2);
-    
-    const iw = imageData.width;
-    const ih = imageData.height;
-    const imageScale = Math.min(contentWidth / iw, contentHeight / ih);
-    const imageWidth = iw * imageScale;
-    const imageHeight = ih * imageScale;
-    const imageY = pdfPageHeight - pdfMargin - imageHeight;
-
-    page.drawImage(image, {
-      x: (pdfPageWidth - imageWidth) / 2,
-      y: imageY,
-      width: imageWidth,
-      height: imageHeight,
-    });
-  }
-
-  return await pdf.save();
-}
 
 type MainTab = "editor" | "page" | "xml";
 
@@ -970,10 +883,7 @@ export function App() {
         </div>
         <div className="header-actions">
           <a className="export-button" href="docs.html">Docs</a>
-          <button className="export-button" disabled={!canExport} onClick={handleMusicXmlExport} type="button">Export MusicXML</button>
-          <button className="export-button primary" disabled={!canExport || pendingPdfExport} onClick={handlePdfExport} type="button">
-            {pendingPdfExport ? "Exporting PDF..." : "Export PDF"}
-          </button>
+          <button className="export-button primary" disabled={!canExport} onClick={handleMusicXmlExport} type="button">Export MusicXML</button>
         </div>
       </header>
 

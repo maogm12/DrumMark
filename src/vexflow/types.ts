@@ -6,7 +6,6 @@ export type PagePadding = {
 };
 
 export type VexflowRenderOptions = {
-  mode: "preview";
   pagePadding: PagePadding;
   pageWidth: number;
   pageHeight: number;
@@ -22,7 +21,6 @@ export type VexflowRenderOptions = {
 };
 
 export const DEFAULT_RENDER_OPTIONS: VexflowRenderOptions = {
-  mode: "preview",
   pagePadding: { top: 30, right: 50, bottom: 30, left: 50 },
   pageWidth: 612,
   pageHeight: 792,

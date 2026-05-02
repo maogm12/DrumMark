@@ -91,7 +91,6 @@ async function buildDocs(templatePath: string, outputPath: string) {
             const score = buildNormalizedScore(dsl);
             renderedSvg = await renderScoreToSvg(score, {
                 ...DEFAULT_RENDER_OPTIONS,
-                mode: "preview",
             });
         } catch (e: any) {
             console.error(`     Error rendering ${id}:`, e.message);

@@ -314,6 +314,10 @@ function validateAndBuildRepeats(
         openStart = null;
         openStartHasEnding = false;
       }
+    } else if (openStart !== null && openStartHasEnding && nextVolta === undefined) {
+      // We are past a repeat-end with voltas, and there's no more voltas, so close the span.
+      openStart = null;
+      openStartHasEnding = false;
     }
   }
 

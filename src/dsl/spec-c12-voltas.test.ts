@@ -125,4 +125,16 @@ SD |2. d - - - |`);
       message: "Conflicting volta declarations at bar 1",
     });
   });
+
+  it("supports consecutive repeat blocks with voltas without triggering nested repeat error", () => {
+    const source = `time 4/4
+divisions 4
+grouping 1+1+1+1
+
+|: s s s s |1. s s [ss] s :|2. s s [ssss] s |.
+
+|: s s s s |1. s s [ss] s :|2. s s [ssss] s |.`;
+    const score = buildNormalizedScore(source);
+    expect(score.errors).toEqual([]);
+  });
 });

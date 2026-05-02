@@ -5,7 +5,7 @@ import { linter, type Diagnostic } from "@codemirror/lint";
 import type { PDFDocument as PDFLibDocument } from "pdf-lib";
 import { buildMusicXml, buildNormalizedScore, type ParseError } from "./dsl";
 import { type NormalizedScore } from "./dsl";
-import { renderScoreToSvg, renderScorePagesToSvgs, type VexflowRenderOptions } from "./vexflow";
+import { renderScorePagesToSvgs, type VexflowRenderOptions } from "./vexflow";
 import { drumMarkEditorTheme, drumMarkLanguage, drumMarkSyntaxHighlighting } from "./drummark";
 
 const legacySeedDsl = `tempo 96
@@ -519,10 +519,11 @@ function DslEditor({ value, onChange, errors }: { value: string; onChange: (valu
   );
 }
 
-function StaffPreview({
+function PagePreview({
   score,
   pagePadding,
   pageScale,
+  staffScale,
   headerHeight,
   titleStaffGap,
   systemSpacing,
@@ -534,6 +535,7 @@ function StaffPreview({
   score: NormalizedScore | null;
   pagePadding: PagePadding;
   pageScale: number;
+  staffScale: number;
   headerHeight: number;
   titleStaffGap: number;
   systemSpacing: number;
@@ -564,6 +566,9 @@ function StaffPreview({
       mode: "preview",
       pagePadding,
       pageScale,
+      staffScale,
+      pageWidth: pdfPageWidth,
+      pageHeight: pdfPageHeight,
       headerHeight,
       titleStaffGap,
       systemSpacing,
@@ -572,9 +577,9 @@ function StaffPreview({
       hideVoice2Rests,
     };
 
-    renderScoreToSvg(score, opts)
-      .then((svgMarkup) => {
-        const markup = `<section class="staff-preview-page" data-page="1">${svgMarkup}</section>`;
+    renderScorePagesToSvgs(score, opts)
+      .then((pages) => {
+        const markup = pages.map((svg, i) => `<section class="staff-preview-page" data-page="${i+1}">${svg}</section>`).join("");
         setRenderedMarkup(markup);
 
         if (shellRef.current) {
@@ -589,7 +594,7 @@ function StaffPreview({
         console.error("VexFlow render error:", renderError);
         setError(msg || "Could not render staff preview.");
       });
-  }, [score, systemSpacing, stemLength, voltaGap, titleStaffGap, headerHeight, active, hideVoice2Rests, pagePadding, pageScale]);
+  }, [score, systemSpacing, stemLength, voltaGap, titleStaffGap, headerHeight, active, hideVoice2Rests, pagePadding, pageScale, staffScale]);
 
   const printableStyle = {
     "--staff-zoom-width": `${pageScale * 100}%`,
@@ -649,12 +654,16 @@ function renderPdfPageSvgs(
     stemLength?: number;
     voltaGap?: number;
     hideVoice2Rests?: boolean;
+    staffScale?: number;
   },
 ) {
   const opts: VexflowRenderOptions = {
     mode: "pdf",
     pagePadding: { top: 36, right: 36, bottom: 36, left: 36 },
     pageScale: 1,
+    pageWidth: pdfPageWidth,
+    pageHeight: pdfPageHeight,
+    staffScale: layout?.staffScale ?? 0.75,
     headerHeight: layout?.headerHeight ?? 50,
     titleStaffGap: layout?.titleStaffGap ?? 2.8,
     systemSpacing: layout?.systemSpacing ?? 0.6,
@@ -676,6 +685,7 @@ async function buildPdf(
     stemLength?: number;
     voltaGap?: number;
     hideVoice2Rests?: boolean;
+    staffScale?: number;
   },
 ) {
   const [{ PDFDocument, PDFHexString, PDFName }] = await Promise.all([import("pdf-lib")]);
@@ -726,6 +736,7 @@ interface AppSettings {
   hideVoice2Rests: boolean;
   pagePadding: PagePadding;
   pageScale: number;
+  staffScale: number;
   titleStaffGap: number;
   systemSpacing: number;
   stemLength: number;
@@ -737,7 +748,8 @@ interface AppSettings {
 const defaultSettings: AppSettings = {
   hideVoice2Rests: false,
   pagePadding: { top: 24, right: 18, bottom: 24, left: 18 },
-  pageScale: 1.0,
+  pageScale: 0.8,
+  staffScale: 0.75,
   titleStaffGap: 60,
   headerHeight: 50,
   systemSpacing: 30,
@@ -1044,10 +1056,11 @@ export function App() {
                 </div>
                 <div className="page-surface-body" ref={pageSurfaceBodyRef}>
                   {settings.activeTab === "page" ? (
-                    <StaffPreview
+                    <PagePreview
                       score={hasRenderableScore ? score : null}
                       pagePadding={settings.pagePadding}
                       pageScale={settings.pageScale}
+                      staffScale={settings.staffScale}
                       headerHeight={settings.headerHeight}
                       titleStaffGap={settings.titleStaffGap}
                       systemSpacing={settings.systemSpacing}
@@ -1080,6 +1093,10 @@ export function App() {
                   <div className="setting-row">
                     <div className="setting-label"><span>Page Zoom</span><span className="setting-value">{Math.round(settings.pageScale * 100)}%</span></div>
                     <input type="range" min="0.6" max="3.0" step="0.05" value={settings.pageScale} onChange={(e) => updateSetting("pageScale", parseFloat(e.target.value))} />
+                  </div>
+                  <div className="setting-row">
+                    <div className="setting-label"><span>Staff Scale</span><span className="setting-value">{(settings.staffScale * 100).toFixed(0)}%</span></div>
+                    <input type="range" min="0.3" max="1.5" step="0.05" value={settings.staffScale} onChange={(e) => updateSetting("staffScale", parseFloat(e.target.value))} />
                   </div>
                   <div className="setting-row">
                     <div className="setting-label"><span>System Spacing (pt)</span><span className="setting-value">{settings.systemSpacing.toFixed(0)}</span></div>

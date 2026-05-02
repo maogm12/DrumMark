@@ -9,6 +9,9 @@ export type VexflowRenderOptions = {
   mode: "preview" | "pdf";
   pagePadding: PagePadding;
   pageScale: number;
+  pageWidth?: number;
+  pageHeight?: number;
+  staffScale?: number;
   headerHeight: number;
   titleStaffGap: number;
   systemSpacing: number;

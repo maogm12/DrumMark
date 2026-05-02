@@ -596,7 +596,7 @@ export async function renderScoreToSvg(score: NormalizedScore, options: VexflowR
   for (const measure of renderMeasures) {
     if (currentSystem.length > 0) {
       const last = currentSystem[currentSystem.length - 1];
-      if (measure.measure.paragraphIndex !== last.measure.paragraphIndex || currentSystem.length >= 4) {
+      if (last && (measure.measure.paragraphIndex !== last.measure.paragraphIndex || currentSystem.length >= 6)) {
         allSystems.push(currentSystem);
         currentSystem = [];
       }
@@ -649,8 +649,10 @@ export async function renderScoreToSvg(score: NormalizedScore, options: VexflowR
   return svg;
 }
 
+const LETTER_WIDTH = 612;
+const LETTER_HEIGHT = 792;
+
 export async function renderScorePagesToSvgs(score: NormalizedScore, options: VexflowRenderOptions): Promise<string[]> {
-  if (options.mode === "preview") return [await renderScoreToSvg(score, options)];
   await ensureVexFlowFonts();
 
   const renderMeasures = buildRenderMeasures(score);
@@ -659,7 +661,7 @@ export async function renderScorePagesToSvgs(score: NormalizedScore, options: Ve
   for (const measure of renderMeasures) {
     if (currentSystem.length > 0) {
       const last = currentSystem[currentSystem.length - 1];
-      if (measure.measure.paragraphIndex !== last.measure.paragraphIndex || currentSystem.length >= 4) {
+      if (last && (measure.measure.paragraphIndex !== last.measure.paragraphIndex || currentSystem.length >= 6)) {
         allSystems.push(currentSystem);
         currentSystem = [];
       }
@@ -669,41 +671,97 @@ export async function renderScorePagesToSvgs(score: NormalizedScore, options: Ve
   if (currentSystem.length > 0) allSystems.push(currentSystem);
 
   const svgs: string[] = [];
+  const physicalWidth = options.pageWidth ?? (options.mode === "preview" ? 900 : LETTER_WIDTH);
+  const physicalHeight = options.pageHeight ?? LETTER_HEIGHT;
+  
+  // staffScale < 1.0 makes music smaller (higher density)
+  // staffScale > 1.0 makes music larger (lower density)
+  const staffScale = options.staffScale ?? 1.0;
+  
+  // The virtual/logical dimensions that VexFlow will use for layout
+  const pageWidth = physicalWidth / staffScale;
+  const pageHeight = physicalHeight / staffScale;
+  
+  const staffHeight = 100;
+  // Scaling physical options to logical units
+  const systemSpacing = options.systemSpacing / staffScale;
+  const pagePaddingTop = (options.pagePadding?.top ?? 24) / staffScale;
+  const pagePaddingBottom = (options.pagePadding?.bottom ?? 24) / staffScale;
+  const pagePaddingLeftPt = ((options.pagePadding?.left ?? 24) * 0.75) / staffScale;
+  const pagePaddingRightPt = ((options.pagePadding?.right ?? 24) * 0.75) / staffScale;
+  const headerHeightPt = (options.headerHeight ?? 50) / staffScale;
+  const titleStaffGap = (options.titleStaffGap ?? 2.8) / staffScale;
+
   let systemIdx = 0;
   while (systemIdx < allSystems.length) {
     const container = document.createElement("div");
     const renderer = new Renderer(container, RendererBackends.SVG);
-    const systemsThisPage = Math.min(5, allSystems.length - systemIdx);
-    renderer.resize(800, 1100);
+    // Resize to logical dimensions
+    renderer.resize(pageWidth, pageHeight);
     const context = renderer.getContext();
+    
+    // Set viewBox to map logical coordinates to physical dimensions
+    const svgElement = container.querySelector("svg");
+    if (svgElement) {
+      svgElement.setAttribute("viewBox", `0 0 ${pageWidth} ${pageHeight}`);
+      svgElement.setAttribute("width", physicalWidth.toString());
+      svgElement.setAttribute("height", physicalHeight.toString());
+    }
+
+    context.setFont("Arial", 10);
     context.setFillStyle("#333");
     context.setStrokeStyle("#333");
-    const pagePaddingLeftPt = (options.pagePadding?.left ?? 24) * 0.75;
-    const pagePaddingRightPt = (options.pagePadding?.right ?? 24) * 0.75;
+
     let yOffset: number;
-    if (systemIdx === 0) {
-      const pagePaddingTop = options.pagePadding?.top ?? 24;
-      const headerHeightPt = options.headerHeight ?? 50;
-      drawHeaderWithVexFlow(context, score, 800, options, pagePaddingTop + headerHeightPt);
-      yOffset = pagePaddingTop + headerHeightPt + (options.titleStaffGap ?? 2.8);
+    const isFirstPage = systemIdx === 0;
+    
+    if (isFirstPage) {
+      drawHeaderWithVexFlow(context, score, pageWidth, {
+        ...options,
+        // Scale titleStaffGap and other header related options for drawing
+        titleStaffGap: titleStaffGap,
+        headerHeight: headerHeightPt,
+        pagePadding: {
+          ...options.pagePadding,
+          top: pagePaddingTop,
+          left: (options.pagePadding?.left ?? 24) / staffScale,
+          right: (options.pagePadding?.right ?? 24) / staffScale,
+        }
+      }, pagePaddingTop + headerHeightPt);
+      yOffset = pagePaddingTop + headerHeightPt + titleStaffGap;
     } else {
-      yOffset = 50;
+      yOffset = pagePaddingTop;
     }
-    for (let s = 0; s < systemsThisPage; s++) {
+
+    const startIdx = systemIdx;
+    while (systemIdx < allSystems.length) {
       const system = allSystems[systemIdx];
-      if (system) {
-        renderSystem(context, score, system, {
-          x: pagePaddingLeftPt,
-          y: yOffset,
-          width: 800 - pagePaddingLeftPt - pagePaddingRightPt,
-          isFirstSystem: systemIdx === 0,
-          measureDuration: { numerator: score.header.timeSignature.beats, denominator: score.header.timeSignature.beatUnit },
-          options,
-        });
+      if (!system) break;
+      const neededHeight = staffHeight + systemSpacing;
+      
+      // If not the first system on this page, and it would overflow, break to next page
+      if (systemIdx > startIdx && yOffset + neededHeight > pageHeight - pagePaddingBottom) {
+        break;
       }
-      yOffset += 100 + options.systemSpacing;
+
+      renderSystem(context, score, system, {
+        x: pagePaddingLeftPt,
+        y: yOffset,
+        width: pageWidth - pagePaddingLeftPt - pagePaddingRightPt,
+        isFirstSystem: systemIdx === 0,
+        measureDuration: { numerator: score.header.timeSignature.beats, denominator: score.header.timeSignature.beatUnit },
+        options: {
+          ...options,
+          systemSpacing: systemSpacing,
+          staffScale: staffScale,
+          voltaGap: (options.voltaGap ?? DEFAULT_VOLTA_GAP) / staffScale,
+        },
+      });
+
+      yOffset += neededHeight;
       systemIdx++;
     }
+
     svgs.push(container.innerHTML);
   }
   return svgs;
@@ -732,6 +790,7 @@ function renderSystem(context: any, score: NormalizedScore, measures: RenderMeas
 
   for (let i = 0; i < measures.length; i++) {
     const renderMeasure = measures[i];
+    if (!renderMeasure) continue;
     const measure = renderMeasure.measure;
     const stave = new Stave(x + i * measureWidth, y, measureWidth);
     stave.setContext(context);
@@ -937,8 +996,13 @@ function buildVoltaSpans(
 
       const x1 = staves[start].getX();
       const x2 = staves[end].getX() + staves[end].getWidth();
+      const endMeasure = measures[end]?.measure;
+      if (!endMeasure) {
+        index = end + 1;
+        continue;
+      }
       const voltaType = voltaTypeForMeasure(score, measure);
-      const endType = voltaTypeForMeasure(score, measures[end].measure);
+      const endType = voltaTypeForMeasure(score, endMeasure);
       const showLeft = voltaType === VoltaType.BEGIN || voltaType === VoltaType.BEGIN_END;
       const showRight = endType === VoltaType.END || endType === VoltaType.BEGIN_END;
       const displayLabel = showLeft ? label : undefined;
@@ -974,6 +1038,7 @@ function renderMeasureVoices(
 
   if (measure.multiRest) {
     const multiMeasureRest = new MultiMeasureRest(measure.multiRest.count, {
+      numberOfMeasures: measure.multiRest.count,
       useSymbols: false,
       showNumber: true,
     });

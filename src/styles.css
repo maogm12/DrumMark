@@ -631,9 +631,8 @@ input:checked + .toggle-slider:before {
 }
 
 .staff-printable {
-  background: white;
-  box-shadow: var(--shadow-md);
   width: var(--staff-zoom-width, 100%);
+  max-width: 800px;
   transition: width 0.2s ease-out;
 }
 
@@ -642,6 +641,12 @@ input:checked + .toggle-slider:before {
   background: white;
   display: flex;
   flex-direction: column;
+  margin-bottom: 40px;
+  box-shadow: var(--shadow-md);
+}
+
+.staff-preview-page:last-child {
+  margin-bottom: 0;
 }
 
 .staff-preview svg {

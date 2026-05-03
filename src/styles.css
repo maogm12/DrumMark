@@ -701,26 +701,40 @@ input:checked + .toggle-slider:before {
   height: 100%;
   background: #ffffff;
   overflow: auto;
-  padding: 24px;
-}
-
-.xml-preview pre {
-  margin: 0;
+  padding: 16px;
   font-family: var(--font-mono);
   font-size: 0.85rem;
-  line-height: 1.6;
-  color: #1e293b;
+  line-height: 1.5;
+  white-space: nowrap;
 }
 
-.xml-line {
-  display: block;
+.xml-node, .xml-line {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: baseline;
+  gap: 2px;
+  min-height: 20px;
 }
 
-.xml-punctuation { color: #94a3b8; }
+.xml-line { display: flex; align-items: baseline; gap: 2px; min-height: 20px; white-space: nowrap; }
+
+.xml-bracket { color: #64748b; }
+.xml-bracket-open { color: #94a3b8; }
+.xml-bracket-close { color: #94a3b8; }
 .xml-tag { color: #e11d48; font-weight: 600; }
 .xml-attr { color: #0284c7; }
-.xml-string { color: #059669; }
-.xml-text { color: #0f172a; }
+.xml-attr-name { color: #0369a1; }
+.xml-attr-eq { color: #64748b; }
+.xml-attr-value { color: #059669; }
+.xml-text { color: #0f172a; margin-left: 4px; }
+
+.xml-toggle {
+  color: #94a3b8;
+  cursor: pointer;
+  user-select: none;
+  font-style: italic;
+}
+.xml-toggle:hover { color: #0284c7; }
 
 /* --- Status Bar & Error List --- */
 

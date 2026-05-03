@@ -86,107 +86,6 @@ function useDebouncedValue<T>(value: T, delayMs: number) {
   return debouncedValue;
 }
 
-function beautifyXml(xml: string): string {
-  const lines = xml
-    .replace(/>\s*</g, ">\n<")
-    .split("\n")
-    .map((line) => line.trim())
-    .filter(Boolean);
-  let depth = 0;
-
-  return lines.map((line) => {
-    if (/^<\/.+>$/.test(line)) {
-      depth = Math.max(depth - 1, 0);
-    }
-
-    const formatted = `${"  ".repeat(depth)}${line}`;
-
-    if (
-      /^<[^!?/][^>]*>$/.test(line) &&
-      !/^<[^>]+\/>$/.test(line) &&
-      !/^<[^>]+>.*<\/[^>]+>$/.test(line)
-    ) {
-      depth += 1;
-    }
-
-    return formatted;
-  }).join("\n");
-}
-
-function highlightXmlLine(line: string, lineIndex: number): ReactNode[] {
-  const pattern = /(<\/?)([A-Za-z_][\w:.-]*)([^>]*?)(\/?>)|(<\?[^>]*\?>|<![^>]*>)|([^<]+)/g;
-  const nodes: ReactNode[] = [];
-  let match: RegExpExecArray | null;
-
-  while ((match = pattern.exec(line)) !== null) {
-    if (match[5]) {
-      nodes.push(
-        <span className="xml-punctuation" key={`${lineIndex}-${match.index}-decl`}>
-          {match[5]}
-        </span>,
-      );
-      continue;
-    }
-
-    if (match[6]) {
-      nodes.push(
-        <span className="xml-text" key={`${lineIndex}-${match.index}-text`}>
-          {match[6]}
-        </span>,
-      );
-      continue;
-    }
-
-    const [, open, tagName, attrs, close] = match;
-    nodes.push(
-      <span className="xml-punctuation" key={`${lineIndex}-${match.index}-open`}>
-        {open}
-      </span>,
-      <span className="xml-tag" key={`${lineIndex}-${match.index}-tag`}>
-        {tagName}
-      </span>,
-    );
-
-    const attrPattern = /(\s+)([A-Za-z_:][\w:.-]*)(=)("[^"]*")/g;
-    let attrCursor = 0;
-    let attrMatch: RegExpExecArray | null;
-
-    if (attrs) {
-      while ((attrMatch = attrPattern.exec(attrs)) !== null) {
-        if (attrMatch.index > attrCursor) {
-          nodes.push(attrs.slice(attrCursor, attrMatch.index));
-        }
-
-        nodes.push(
-          attrMatch[1],
-          <span className="xml-attr" key={`${lineIndex}-${match.index}-${attrMatch.index}-attr`}>
-            {attrMatch[2]}
-          </span>,
-          <span className="xml-punctuation" key={`${lineIndex}-${match.index}-${attrMatch.index}-eq`}>
-            {attrMatch[3]}
-          </span>,
-          <span className="xml-string" key={`${lineIndex}-${match.index}-${attrMatch.index}-value`}>
-            {attrMatch[4]}
-          </span>,
-        );
-        attrCursor = attrMatch.index + attrMatch[0].length;
-      }
-
-      if (attrCursor < attrs.length) {
-        nodes.push(attrs.slice(attrCursor));
-      }
-    }
-
-    nodes.push(
-      <span className="xml-punctuation" key={`${lineIndex}-${match.index}-close`}>
-        {close}
-      </span>,
-    );
-  }
-
-  return nodes;
-}
-
 function SearchPlusIcon() {
   return (
     <svg aria-hidden="true" fill="none" height="16" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24" width="16">
@@ -232,6 +131,38 @@ function SettingsIcon() {
     <svg aria-hidden="true" fill="none" height="18" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24" width="18">
       <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
       <circle cx="12" cy="12" r="3" />
+    </svg>
+  );
+}
+
+function SaveIcon() {
+  return (
+    <svg aria-hidden="true" fill="none" height="18" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24" width="18">
+      <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+      <polyline points="17 21 17 13 7 13 7 21" />
+      <polyline points="7 3 7 8 15 8" />
+    </svg>
+  );
+}
+
+function CollapseAllIcon() {
+  return (
+    <svg aria-hidden="true" fill="none" height="18" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24" width="18">
+      <polyline points="4 14 10 14 10 20" />
+      <polyline points="20 10 14 10 14 4" />
+      <line x1="10" y1="14" x2="21" y2="3" />
+      <line x1="3" y1="21" x2="14" y2="10" />
+    </svg>
+  );
+}
+
+function ExpandAllIcon() {
+  return (
+    <svg aria-hidden="true" fill="none" height="18" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24" width="18">
+      <polyline points="15 3 21 3 21 9" />
+      <polyline points="9 21 3 21 3 15" />
+      <line x1="21" y1="3" x2="14" y2="10" />
+      <line x1="3" y1="21" x2="10" y2="14" />
     </svg>
   );
 }
@@ -466,21 +397,84 @@ const PagePreview = memo(function PagePreview({
   );
 });
 
-function MusicXmlPreview({ xml }: { xml: string }) {
-  const formattedXml = useMemo(() => beautifyXml(xml), [xml]);
-  const highlightedXml = useMemo(
-    () => formattedXml.split("\n").map((line, index) => (
-      <span className="xml-line" key={`${index}-${line}`}>
-        {highlightXmlLine(line, index)}
-        {"\n"}
-      </span>
-    )),
-    [formattedXml],
-  );
+function MusicXmlPreview({ xml, collapsed, toggle }: {
+  xml: string;
+  collapsed: Set<string>;
+  toggle: (path: string) => void;
+}) {
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(xml, "text/xml");
+  const parseError = doc.querySelector("parsererror");
+
+  if (parseError) {
+    return (
+      <div className="xml-preview" aria-label="MusicXML preview">
+        <pre>{xml}</pre>
+      </div>
+    );
+  }
 
   return (
     <div className="xml-preview" aria-label="MusicXML preview">
-      <pre>{highlightedXml}</pre>
+      {renderXmlTreeLines(doc.documentElement, 0, "", collapsed, toggle, 0)}
+    </div>
+  );
+}
+
+function renderXmlTreeLines(node: Node, depth: number, path: string, collapsed: Set<string>, toggle: (path: string) => void, index: number): ReactNode {
+  if (node.nodeType === Node.TEXT_NODE) {
+    const text = node.textContent?.trim();
+    if (!text) return null;
+    return (
+      <div key={`t-${index}`} className="xml-line" style={{ paddingLeft: depth * 16 }}>
+        <span className="xml-text">{text}</span>
+      </div>
+    );
+  }
+
+  if (node.nodeType !== Node.ELEMENT_NODE) return null;
+
+  const el = node as Element;
+  const tagName = el.nodeName;
+  const nodePath = path ? `${path}/${tagName}` : tagName;
+  const isCollapsed = collapsed.has(nodePath);
+
+  const childNodes = Array.from(el.childNodes);
+  const visibleChildren = childNodes.filter((n) => n.nodeType !== Node.TEXT_NODE || n.textContent?.trim());
+  const hasChildren = visibleChildren.length > 0;
+
+  const attrs = Array.from(el.attributes).map((attr) => (
+    <span key={attr.name} className="xml-attr">
+      <span className="xml-attr-name">{attr.name}</span>
+      <span className="xml-attr-eq">="</span>
+      <span className="xml-attr-value">{attr.value}</span>
+      <span className="xml-attr-eq">"</span>
+    </span>
+  ));
+
+  return (
+    <div key={`e-${index}`}>
+      <div className="xml-line" style={{ paddingLeft: depth * 16 }}>
+        {hasChildren ? (
+          <span className="xml-toggle" onClick={() => toggle(nodePath)}>
+            <span className="xml-arrow">{isCollapsed ? "▶" : "▼"}</span>
+          </span>
+        ) : (
+          <span className="xml-toggle xml-toggle-placeholder"/>
+        )}
+        <span className="xml-bracket">{"<"}</span>
+        <span className="xml-tag">{tagName}</span>
+        {attrs}
+        <span className="xml-bracket">{isCollapsed && hasChildren ? "> [...]" : (hasChildren ? ">" : "/>")}</span>
+      </div>
+      {!isCollapsed && visibleChildren.map((child, i) =>
+        renderXmlTreeLines(child, depth + 1, `${nodePath}/${i}`, collapsed, toggle, i),
+      )}
+      {hasChildren && !isCollapsed && (
+        <div className="xml-line" style={{ paddingLeft: depth * 16 }}>
+          <span className="xml-bracket">{"</"}{tagName}{">"}</span>
+        </div>
+      )}
     </div>
   );
 }
@@ -552,6 +546,31 @@ export function App() {
   const [settingsVisible, setSettingsVisible] = useState(true);
   const [pageZoomMenuOpen, setPageZoomMenuOpen] = useState(false);
   const pageZoomMenuRef = useRef<HTMLDivElement>(null);
+  const [xmlCollapsed, setXmlCollapsed] = useState<Set<string>>(new Set());
+
+  const xmlToggle = (path: string) => {
+    setXmlCollapsed((prev) => {
+      const next = new Set(prev);
+      if (next.has(path)) next.delete(path);
+      else next.add(path);
+      return next;
+    });
+  };
+  const xmlIsAllCollapsed = xmlCollapsed.size > 0;
+  const xmlToggleAll = () => {
+    if (xmlIsAllCollapsed) {
+      setXmlCollapsed(new Set());
+    } else {
+      setXmlCollapsed(new Set(["score-partwise", "part-list", "part"]));
+    }
+  };
+
+  // Close settings panel when switching away from page tab
+  useEffect(() => {
+    if (settings.activeTab !== "page") {
+      setSettingsVisible(false);
+    }
+  }, [settings.activeTab]);
 
   useEffect(() => {
     if (!pageZoomMenuOpen) return;
@@ -895,7 +914,6 @@ export function App() {
         </div>
         <div className="header-actions">
           <a className="export-button" href="docs.html">Docs</a>
-          <button className="export-button primary" disabled={!canExport} onClick={handleMusicXmlExport} type="button">Export MusicXML</button>
         </div>
       </header>
 
@@ -975,7 +993,17 @@ export function App() {
                 </div>
               </div>
               <div className={`preview-surface${settings.activeTab === "xml" ? " active" : ""}`} aria-hidden={settings.activeTab !== "xml"}>
-                {settings.activeTab === "xml" ? <MusicXmlPreview xml={staffXml} /> : null}
+                <div className="surface-toolbar xml-surface-toolbar">
+                  <div className="toolbar-group">
+                    <button className="surface-icon-button" onClick={xmlToggleAll} type="button" title={xmlIsAllCollapsed ? "Expand All" : "Collapse All"}>
+                      {xmlIsAllCollapsed ? <ExpandAllIcon /> : <CollapseAllIcon />}
+                    </button>
+                    <button className="surface-icon-button" disabled={!canExport} onClick={handleMusicXmlExport} type="button" title="Export MusicXML">
+                      <SaveIcon />
+                    </button>
+                  </div>
+                </div>
+                {settings.activeTab === "xml" ? <MusicXmlPreview xml={staffXml} collapsed={xmlCollapsed} toggle={xmlToggle} /> : null}
               </div>
             </div>
 

@@ -28,17 +28,6 @@ To ensure technical integrity and historical traceability, all formal specificat
     - Implementation may ONLY begin once a sub-agent review concludes with a clear `STATUS: APPROVED`.
     - **Consolidated Changes**: After receiving final approval from all reviewers, the primary agent MUST append a final `### Consolidated Changes` section. This section must synthesize all agreed-upon changes from the proposal and its subsequent review rounds into a single, cohesive summary for future reference. This summary and all associated review notes are part of the same Addendum's logical record.
 
-## Design Decisions (2026-04-26)
-
-### DSL Refactoring: Anonymous Tracks & Universal Summoning
-- **Status:** APPROVED
-- **Change:** Removed `DR` track. Introduced Anonymous Tracks (`|` prefix) and Track Routing Scopes (`{}`).
-- **Key Features:**
-    - Global Magic Tokens: `s`, `b`, `t1`, etc., are available everywhere.
-    - Colon Operator: `Track:Note:Modifier` for surgical control.
-    - Routing Scopes: `SD { ... }` for bulk track routing.
-- **Rationale:** Eliminate the "island" effect of special tracks, unify syntax across all tracks, and provide a more intuitive "Tab-like" writing experience.
-
 ## Rendering Rules
 
 - **Total Delegation:** All score rendering (staves, notes, headers, titles, tempo) must be handled exclusively by VexFlow.

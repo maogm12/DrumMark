@@ -1,6 +1,7 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState, type ReactNode, type UIEvent } from "react";
 import { EditorState, Compartment } from "@codemirror/state";
-import { EditorView, highlightActiveLine, highlightActiveLineGutter, lineNumbers } from "@codemirror/view";
+import { EditorView, highlightActiveLine, highlightActiveLineGutter, lineNumbers, keymap } from "@codemirror/view";
+import { history, historyKeymap } from "@codemirror/commands";
 import { linter, type Diagnostic } from "@codemirror/lint";
 import { buildMusicXml, buildNormalizedScore, type ParseError } from "./dsl";
 import { type NormalizedScore } from "./dsl";
@@ -190,7 +191,6 @@ function DslEditor({ value, onChange, errors }: { value: string; onChange: (valu
   const hostRef = useRef<HTMLDivElement | null>(null);
   const viewRef = useRef<EditorView | null>(null);
   const onChangeRef = useRef(onChange);
-  const lastChangeFromEditor = useRef<string | null>(null);
 
   useEffect(() => {
     onChangeRef.current = onChange;
@@ -208,6 +208,8 @@ function DslEditor({ value, onChange, errors }: { value: string; onChange: (valu
           lineNumbers(),
           highlightActiveLine(),
           highlightActiveLineGutter(),
+          history(),
+          keymap.of(historyKeymap),
           EditorState.tabSize.of(2),
           EditorView.contentAttributes.of({
             spellcheck: "false",
@@ -235,14 +237,7 @@ function DslEditor({ value, onChange, errors }: { value: string; onChange: (valu
           ),
           EditorView.updateListener.of((update) => {
             if (update.docChanged) {
-              const newDoc = update.state.doc.toString();
-              // Skip the callback if we're expecting this change (from ourselves)
-              if (lastChangeFromEditor.current !== null && lastChangeFromEditor.current === newDoc) {
-                lastChangeFromEditor.current = null;
-                return;
-              }
-              lastChangeFromEditor.current = newDoc;
-              onChangeRef.current(newDoc);
+              onChangeRef.current(update.state.doc.toString());
             }
           }),
         ],
@@ -280,28 +275,6 @@ function DslEditor({ value, onChange, errors }: { value: string; onChange: (valu
       ),
     });
   }, [errors]);
-
-  useEffect(() => {
-    const view = viewRef.current;
-    if (!view) return;
-
-    const currentValue = view.state.doc.toString();
-    if (currentValue === value) return;
-
-    // Use minimal changes to preserve undo history
-    let start = 0;
-    while (start < currentValue.length && start < value.length && currentValue[start] === value[start]) {
-      start++;
-    }
-    let end = 0;
-    while (end < currentValue.length - start && end < value.length - start && currentValue[currentValue.length - 1 - end] === value[value.length - 1 - end]) {
-      end++;
-    }
-
-    view.dispatch({
-      changes: { from: start, to: currentValue.length - end, insert: value.slice(start, value.length - end) },
-    });
-  }, [value]);
 
   return (
     <div className="editor-shell">

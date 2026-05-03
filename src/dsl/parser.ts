@@ -551,22 +551,14 @@ function parseMeasureTokens(
       }
 
       const items = parseMeasureTokens(inner, track, lineNumber, columnOffset + cursor + 2 + (colonMatch ? body.indexOf(inner) : 0), errors, false);
-      tokens.push({ kind: "group", count: items.length, span, items });
       cursor = closeIndex + 1;
-      continue;
-    }
 
-    // 3. Generic Token Parsing: Glyph[:Mod...][suffixes][+]
-    const parsePart = (ptr: number, inheritedTrackOverride?: string): { token: TokenGlyph; next: number } | null => {
-      const glyphResult = readBasicGlyph(content, ptr);
-      if (!glyphResult) return null;
-
-      let nextPtr = glyphResult.next;
-      const modifiers: Modifier[] = [];
-      while (content[nextPtr] === ":") {
-        const modResult = readModifier(content, nextPtr + 1);
+      // Parse trailing modifiers after the group (e.g., [2:s]:flam)
+      const groupModifiers: Modifier[] = [];
+      while (content[cursor] === ":") {
+        const modResult = readModifier(content, cursor + 1);
         if (!modResult) {
-          let modifierEnd = nextPtr + 1;
+          let modifierEnd = cursor + 1;
           while (modifierEnd < content.length) {
             const char = content[modifierEnd];
             if (char !== undefined && /[a-z-]/.test(char)) {
@@ -576,25 +568,72 @@ function parseMeasureTokens(
             }
           }
 
-          const rawModifier = content.slice(nextPtr + 1, modifierEnd);
+          const rawModifier = content.slice(cursor + 1, modifierEnd);
           if (rawModifier) {
             errors.push({
               line: lineNumber,
-              column: columnOffset + nextPtr + 1,
+              column: columnOffset + cursor + 1,
               message: `Unknown modifier \`${rawModifier}\``,
             });
-            nextPtr = modifierEnd;
+            cursor = modifierEnd;
             continue;
           }
 
           break;
         }
-        modifiers.push(modResult.modifier);
-        nextPtr = modResult.next;
+        groupModifiers.push(modResult.modifier);
+        cursor = modResult.next;
       }
 
+      tokens.push({ kind: "group", count: items.length, span, items, modifiers: groupModifiers });
+      continue;
+    }
+
+    // 3. Generic Token Parsing: Glyph[( :Mod | . | / | * )*][+]
+    // Modifiers and duration suffixes can be interleaved in any order
+    const parsePart = (ptr: number, inheritedTrackOverride?: string): { token: TokenGlyph; next: number } | null => {
+      const glyphResult = readBasicGlyph(content, ptr);
+      if (!glyphResult) return null;
+
+      let nextPtr = glyphResult.next;
+      const modifiers: Modifier[] = [];
       let dots = 0, halves = 0, stars = 0;
+
+      // Loop to handle interleaved modifiers and duration suffixes
       while (nextPtr < content.length) {
+        // Handle modifiers (starting with :)
+        if (content[nextPtr] === ":") {
+          const modResult = readModifier(content, nextPtr + 1);
+          if (!modResult) {
+            let modifierEnd = nextPtr + 1;
+            while (modifierEnd < content.length) {
+              const char = content[modifierEnd];
+              if (char !== undefined && /[a-z-]/.test(char)) {
+                modifierEnd += 1;
+              } else {
+                break;
+              }
+            }
+
+            const rawModifier = content.slice(nextPtr + 1, modifierEnd);
+            if (rawModifier) {
+              errors.push({
+                line: lineNumber,
+                column: columnOffset + nextPtr + 1,
+                message: `Unknown modifier \`${rawModifier}\``,
+              });
+              nextPtr = modifierEnd;
+              continue;
+            }
+
+            break;
+          }
+          modifiers.push(modResult.modifier);
+          nextPtr = modResult.next;
+          continue;
+        }
+
+        // Handle duration suffixes (., /, *)
         if (content[nextPtr] === ".") { dots++; nextPtr++; }
         else if (content[nextPtr] === "/") { halves++; nextPtr++; }
         else if (content[nextPtr] === "*") { stars++; nextPtr++; }

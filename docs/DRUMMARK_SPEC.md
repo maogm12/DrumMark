@@ -1856,15 +1856,13 @@ weight = base × (2 - 0.5^dots) × (2^stars) / (2^halves)
 
 The `*` symbol is also used for inline repeat (`*N` at measure end). Disambiguation rule:
 
-- When parsing a basic token, `*` after the base glyph is collected as a duration modifier
-- When a bare `*N` appears at the end of a measure (no preceding content or whitespace), it is treated as inline repeat
-- When `d*` appears and the measure ends with `*N` (no space between), the `*N` is the inline repeat and the `*` in `d*` is the duration modifier
+- When parsing a mease, if `*N` is at the end of the measure, allocate the `*` before `N` for inline repeat, the rest of the content is then used for token parse.
 
 **Key examples**:
 ```
 | d* |           # d* is one token, doubled duration
 | d* *2 |        # d* is one token (doubled), *2 is inline repeat (2 measures)
-| d*3 |          # d* is one token (doubled), *3 is inline repeat (3 measures)
+| d*3 |          # d is one token (basic), *3 is inline repeat (3 measures)
 | d* - - - |     # d* is one token (doubled), rest fills remaining slots
 | d* - - - *2 |  # d* is one token (doubled), rest, *2 repeats measure twice
 ```
@@ -1904,4 +1902,51 @@ This addendum supplements **Section 5.3 (Duration Modifiers)** and **Section 5.4
 | `d*/.` | 1 | 1 | 1.5 | doubled × dotted then halved |
 | `d/*.` | 1 | 1 | 1.5 | same (order independent) |
 | `-*` | 1 | 1 | 2 | doubled rest |
-| `d*3` | 1 | 1 | 2 | doubled note, inline repeat ×3 |
+| `d*3` | 1 | 1 | 2 | doubled note |
+
+## Addendum v1.4: Trailing Modifiers and Single-Note Group Modifier Attachment
+
+### Motivation
+
+Two related features are needed:
+
+1. **Trailing modifiers after duration suffixes**: The `:modifier` syntax (`:accent`, `:ghost`, etc.) should work after `./*` duration suffixes. Currently `d.*:accent` fails because the parser consumes `.*` first, then `:accent` is seen as an unknown token. Users must write `d:accent.*` instead, which is counterintuitive for combining articulation modifiers with duration modifiers.
+
+2. **Group modifier attachment**: A `[N:note]` group can accept `:modifiers` after the closing bracket. Trailing modifiers apply to all notes inside the group. This allows `[2:s]:flam` (snare with flam, stretched to 2 slots) and `[2:dd]:accent` (both drums accented).
+
+### Proposed Syntax
+
+**Unified Token Structure:**
+```
+Glyph ( Suffix )*
+```
+
+- **Glyph**: The base note (`d`, `x`, `-`, etc.) or a Summoned Hit (`s`, `b`, etc.).
+- **Suffix**: Any duration modifier (`.`, `*`, `/`) or articulation modifier (`:name`).
+- **Order Independence**: Suffixes can appear in any order and can be interleaved. All duration modifiers are multiplied together, and all articulation modifiers are collected into the event's modifier set.
+
+**Examples of Identical Tokens:**
+- `d:accent.*` == `d.*:accent`
+- `d:ghost.*/:accent` == `d:ghost:accent.*/` == `d.*/:ghost:accent`
+
+**Modifier Chaining**: Modifiers chain via `:` on both basic tokens and group suffixes. `d:flam:accent` and `d:ghost:drag` are both valid — every `:name` after the first is a post-modifier attached to the preceding glyph or group.
+
+**Group Modifier Attachment:**
+```
+[N:content]( Suffix )*
+```
+- Trailing suffixes apply to **all notes** inside the group.
+- If the group contains a rest, articulation modifiers are a syntax error.
+
+### Examples
+
+| Token | Interpretation |
+|-------|----------------|
+| `d.*:accent` | note `d`, doubled, dotted, with `:accent` |
+| `d:accent.*` | same as above |
+| `d:ghost:accent.*/` | note `d`, doubled and dotted (3x), then halved (1.5x), with `:ghost` and `:accent` |
+| `[2:s]:flam` | single note `s` stretched to 2 slots, with `:flam` |
+| `[2:s.*]:rim` | single note `s` dotted+doubled, stretched to 2 slots, with `:rim` |
+| `[2:s+b]:accent` | combined hit `s+b` stretched to 2 slots, each note gets `:accent` |
+| `[2:dd]:accent` | two notes `d` stretched to 2 slots, both get `:accent` |
+| `[2:-]:accent` | **invalid** — rests cannot have articulation modifiers |

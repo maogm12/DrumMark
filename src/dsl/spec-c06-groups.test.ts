@@ -18,6 +18,7 @@ HH | [ d x ] [3: d p g] |`);
         kind: "group",
         span: 1,
         count: 2,
+        modifiers: [],
         items: [
           { kind: "basic", value: "d", dots: 0, halves: 0, stars: 0, modifiers: [], trackOverride: undefined },
           { kind: "basic", value: "x", dots: 0, halves: 0, stars: 0, modifiers: [], trackOverride: undefined },
@@ -27,6 +28,7 @@ HH | [ d x ] [3: d p g] |`);
         kind: "group",
         span: 3,
         count: 3,
+        modifiers: [],
         items: [
           { kind: "basic", value: "d", dots: 0, halves: 0, stars: 0, modifiers: [], trackOverride: undefined },
           { kind: "basic", value: "p", dots: 0, halves: 0, stars: 0, modifiers: [], trackOverride: undefined },

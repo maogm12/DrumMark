@@ -163,6 +163,23 @@ type ResolvedToken = {
   modifiers: Modifier[];
 };
 
+function applyModifiersToToken(token: TokenGlyph, modifiers: Modifier[]): TokenGlyph {
+  if (token.kind === "basic") {
+    return { ...token, modifiers: [...token.modifiers, ...modifiers] };
+  }
+  if (token.kind === "group") {
+    return { ...token, modifiers: [...token.modifiers, ...modifiers] };
+  }
+  if (token.kind === "combined") {
+    return {
+      ...token,
+      items: token.items.map((item) => applyModifiersToToken(item, modifiers)),
+    };
+  }
+  // braced kind doesn't support modifiers
+  return token;
+}
+
 function resolveToken(
   token: Extract<TokenGlyph, { kind: "basic" }>,
   contextTrack: TrackName | "ANONYMOUS",
@@ -308,9 +325,14 @@ function tokenToEvents(
       const itemWeight = calculateTokenWeightAsFraction(item);
       const itemDuration = multiplyFractions(duration, divideFractions(itemWeight, totalWeight));
 
+      // Apply group modifiers to each item
+      const itemWithModifiers = token.modifiers.length > 0
+        ? applyModifiersToToken(item, token.modifiers)
+        : item;
+
       events.push(
         ...tokenToEvents(
-          item,
+          itemWithModifiers,
           currentStart,
           itemDuration,
           contextTrack,
@@ -351,6 +373,17 @@ function validateModifierLegality(
   }
 
   if (token.kind === "combined" || token.kind === "group") {
+    // Check if group has modifiers and contains a rest (invalid)
+    if (token.kind === "group" && token.modifiers.length > 0) {
+      const containsRest = token.items.some((item) => item.kind === "basic" && item.value === "-");
+      if (containsRest) {
+        errors.push({
+          line,
+          column: 1,
+          message: `Rest cannot have articulation modifiers`,
+        });
+      }
+    }
     token.items.forEach((item) => validateModifierLegality(item, contextTrack, errors, line));
     return;
   }

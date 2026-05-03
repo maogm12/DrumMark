@@ -274,7 +274,24 @@ function readTrackToken(stream: StringStream, state: DslState): string | null {
     return "punctuation";
   }
 
+  // Handle : as punctuation or modifier separator
+  // If followed by a modifier name, return null to let modifier handler process it
+  // Handle : as punctuation or modifier separator
+  // When : appears at the start of a potential token, check if a modifier follows
+  // If yes, return null to let modifier handler process :modifier
+  // If not (e.g., :*), consume : and return "punctuation"
   if (stream.match(":")) {
+    // We consumed :, now check what follows
+    // Peek at next char without advancing
+    const nextChar = stream.string[stream.pos];
+    if (nextChar && /[a-z]/i.test(nextChar)) {
+      // Letter follows - likely a modifier, but we've already consumed :
+      // Return null so stream advances past : via stream.next() in tokenizer
+      // Next call will be at the modifier name, which will be handled correctly
+      // However, this means : is NOT highlighted...
+      // Actually, let's return "punctuation" anyway since : is punctuation
+      // The modifier will be a separate token
+    }
     return "punctuation";
   }
 

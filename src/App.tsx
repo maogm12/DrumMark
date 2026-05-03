@@ -169,6 +169,15 @@ function ExpandAllIcon() {
   );
 }
 
+function BookIcon() {
+  return (
+    <svg aria-hidden="true" fill="none" height="18" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24" width="18">
+      <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+      <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+    </svg>
+  );
+}
+
 function DrumIcon() {
   return (
     <svg aria-hidden="true" className="app-logo" width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -901,7 +910,7 @@ export function App() {
           </div>
         </div>
         <div className="header-actions">
-          <a className="export-button" href="docs.html">Docs</a>
+          <a className="export-button" href="docs.html"><BookIcon /> Docs</a>
         </div>
       </header>
 

@@ -20,25 +20,26 @@ HF |  - - - - p - - - | - - - - p:close - -                |
 RC |  - - x:bell - - - - - | - - - - x - - - |
 ST |  [2: R L R] - - -     | R - L - R - L - |`;
 
-const seedDsl = `title DrumMark Spec Tour
-subtitle Coverage Demo
-composer OpenAI Codex
-tempo 112
+const seedDsl = `title Advanced Funk
+subtitle Performance Study
+composer G. Mao
+tempo 120
 time 4/4
-note 1/8
-grouping 1+1+1+1
+note 1/16
+grouping 2+2
 
-|: x+s p - - RC{d:bell d:choke} SD:d:rim - :|
-HH | x:open - x:half-open - x:close - X - |
-SD | d:cross - g - d:flam - d:drag - |
-BD | b - b2 - b:roll - B:dead - |
-HF | - - p:close - - - p - |
-T1 | [1: d d d] - - - - - - - |
-ST | R - L - R - L - |
+HH |: x x x x x x x x :| x x x x x x o x |
+HF | - - - - - - p - | - - - - - - p - |
+SD | - - d - - - D - | - - d - - - d - |
+BD | b - - - b - - - | b - - - B - - - |
 
-| @segno C - RC2:d:bell - SPL - CHN:d:choke - | @fine % |1. C2 - CB - WB - CL - | @to-coda --2-- |.
+| d d d d *2 |
 
-| t4 - r2 - c2 - cl - *2 | %% |`;
+ST | R - L - [2: R L R] - | R - L - R - L - |
+RC | r r r r r r r r | r r r r r r r r |
+C  | - - - - - - - c | - - - - - - - C |
+
+| @segno c2 - cl - *2 | %% | @fine |`;
 
 type PagePadding = {
   top: number;

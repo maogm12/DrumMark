@@ -593,15 +593,16 @@ function parseMeasureTokens(
         nextPtr = modResult.next;
       }
 
-      let dots = 0, halves = 0;
+      let dots = 0, halves = 0, stars = 0;
       while (nextPtr < content.length) {
         if (content[nextPtr] === ".") { dots++; nextPtr++; }
         else if (content[nextPtr] === "/") { halves++; nextPtr++; }
+        else if (content[nextPtr] === "*") { stars++; nextPtr++; }
         else break;
       }
 
       return {
-        token: { kind: "basic", value: glyphResult.glyph, dots, halves, modifiers, trackOverride: inheritedTrackOverride },
+        token: { kind: "basic", value: glyphResult.glyph, dots, halves, stars, modifiers, trackOverride: inheritedTrackOverride },
         next: nextPtr
       };
     };
@@ -1093,6 +1094,8 @@ function parseTrackLine(line: PreprocessedLine, errors: ParseError[]): ParsedTra
       }
 
       // Check for *N inline repeat: "xxxx *3" means the content occupies 3 total measures
+      // Non-greedy match: d*3 → content="d" (with stars on token), *3 is inline repeat
+      // The star in the content is parsed as token modifier, *N at end is inline repeat
       const inlineRepeatMatch = normalizedContent.match(/^(.*?)\s*\*\s*(-?\d+)\s*$/);
       const m1 = inlineRepeatMatch?.[1];
       const m2 = inlineRepeatMatch?.[2];

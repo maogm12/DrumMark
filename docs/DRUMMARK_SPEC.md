@@ -273,15 +273,16 @@ When parsing a token, the compiler resolves its target in this order:
 |--------|--------|
 | `.` | Multiplies duration by 1.5. Multiple dots accumulate (`d..` = 1.75×). |
 | `/` | Halves duration. Multiple halves accumulate (`d//` = 0.25×). |
+| `*` | Doubles duration. Multiple stars accumulate (`d**` = 4×). No per-token limit; measure validation ensures correctness. |
 
-Combined: `d./` = 0.75× duration.
+Combined: `d./` = 0.75× duration. `d.*` = 3× duration. Modifiers are commutative — order does not affect the result.
 
 ### 5.4 Rhythmic Math
 
 Each token's weight is computed as:
 
 ```
-weight = base × (2 - 0.5^dots) / (2^halves)
+weight = base × (2 - 0.5^dots) × 2^stars / (2^halves)
 ```
 
 **Base values**: `d` = 1 slot, `-` = 1 slot.
@@ -295,6 +296,11 @@ weight = base × (2 - 0.5^dots) / (2^halves)
 - `d/` = 0.5
 - `d//` = 0.25
 - `d///` = 0.125
+
+**Doubling**:
+- `d*` = 2
+- `d**` = 4
+- `d***` = 8
 
 Fractional validation: each token is converted to an absolute Fraction relative to a whole note before summing. Validation MUST use exact rational duration math internally. A measure is valid iff the sum of all token durations equals the full `timeSignature` fraction; equivalently, the accumulated token weight equals `divisions`.
 
@@ -1815,3 +1821,87 @@ This addendum clarifies the definition of the `span` parameter in Rhythmic Group
 
 - This definition supersedes the descriptions in **Section 5.4 (Rhythmic Math)** and **Section 5.5 (Groups)** regarding the relationship between token weights and `divisions`. 
 - Validation should now compare total measure weight against the expected slot count: `MeasureDuration / NoteDuration`.
+
+## Addendum 2026-05-02-C: Duration Multiplication Modifier
+
+### Status
+
+Proposed
+
+### Motivation
+
+The existing duration modifiers (`/` for halving, `.` for dotting/1.5×) have no symmetric inverse for doubling. Users wanting a note with twice the base duration must write `[2: d]` which is verbose. A lightweight doubling modifier would complete the modifier set.
+
+### Proposal
+
+Introduce `*` (asterisk) as a duration multiplication modifier that multiplies the base token weight by powers of 2.
+
+| Symbol | Effect |
+|--------|--------|
+| `*` | Multiplies duration by 2^n where n is the number of stars. |
+
+**Formula Update**:
+```
+weight = base × (2 - 0.5^dots) × (2^stars) / (2^halves)
+```
+
+**Examples**:
+- `d*` = 2× duration (1 slot → 2 slots)
+- `d**` = 4× duration (1 slot → 4 slots)
+- `d***` = 8× duration
+- `d*.` or `d.*` = 3× duration (2 × 1.5 = 3)
+- `d*/` or `d/*` = 1× duration (2 × 0.5 = 1, cancels out)
+
+### Interaction with Inline Repeat `*N`
+
+The `*` symbol is also used for inline repeat (`*N` at measure end). Disambiguation rule:
+
+- When parsing a basic token, `*` after the base glyph is collected as a duration modifier
+- When a bare `*N` appears at the end of a measure (no preceding content or whitespace), it is treated as inline repeat
+- When `d*` appears and the measure ends with `*N` (no space between), the `*N` is the inline repeat and the `*` in `d*` is the duration modifier
+
+**Key examples**:
+```
+| d* |           # d* is one token, doubled duration
+| d* *2 |        # d* is one token (doubled), *2 is inline repeat (2 measures)
+| d*3 |          # d* is one token (doubled), *3 is inline repeat (3 measures)
+| d* - - - |     # d* is one token (doubled), rest fills remaining slots
+| d* - - - *2 |  # d* is one token (doubled), rest, *2 repeats measure twice
+```
+
+### Order Independence
+
+The three modifier characters (`*`, `.`, `/`) are all multiplicative. They can appear in any order:
+- `d*.` = `d.*` = `d*` then `.` = 3× duration
+- `d*/` = `d/*` = `d*` then `/` = 1× duration (cancels)
+- `d./` = `d/.` = `d.` then `/` = 0.75× duration
+
+The formula produces the same result regardless of order.
+
+### Validation
+
+There is no per-token star limit. A token with many `*` modifiers simply has a large weight. Measure validation ensures the total weight of all tokens in a measure does not exceed the measure capacity (`MeasureDuration / NoteDuration`). If a token's weight would cause the measure to overflow, a normal "measure duration mismatch" error is raised.
+
+### Interaction with Rest Token
+
+The `*` modifier is valid on the rest token `-`. A doubled rest (`-*`) occupies 2 slots of silence.
+
+### Supersession
+
+This addendum supplements **Section 5.3 (Duration Modifiers)** and **Section 5.4 (Rhythmic Math)** with a complete symmetric modifier set: halving (`/`), base, dotting (`.`), and doubling (`*`).
+
+### Examples
+
+| Token | Base | Stars | Weight | Notes |
+|-------|------|-------|--------|-------|
+| `d` | 1 | 0 | 1 | |
+| `d*` | 1 | 1 | 2 | doubled |
+| `d**` | 1 | 2 | 4 | quadrupled |
+| `d***` | 1 | 3 | 8 | octupled |
+| `d*.` | 1 | 1 | 3 | doubled × dotted |
+| `d.*` | 1 | 1 | 3 | same (order independent) |
+| `d./` | 1 | 0 | 0.75 | dotted then halved |
+| `d*/.` | 1 | 1 | 1.5 | doubled × dotted then halved |
+| `d/*.` | 1 | 1 | 1.5 | same (order independent) |
+| `-*` | 1 | 1 | 2 | doubled rest |
+| `d*3` | 1 | 1 | 2 | doubled note, inline repeat ×3 |

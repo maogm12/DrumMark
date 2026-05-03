@@ -355,7 +355,8 @@
                                             <tbody>
                                                 <tr><td><code>.</code></td><td>在当前时值基础上增加一半。可重复使用，如 <code>d.</code>、<code>d..</code>、<code>d...</code>。</td></tr>
                                                 <tr><td><code>/</code></td><td>将当前时值减半。可重复使用，如 <code>d/</code>、<code>d//</code>、<code>d///</code>。</td></tr>
-                                                <tr><td><code>./</code> 组合</td><td>可以链式写在同一个 token 后面，例如 <code>d./</code> 或 <code>d.///</code>。</td></tr>
+                                                <tr><td><code>*</code></td><td>将当前时值翻倍。可重复使用，如 <code>d*</code>、<code>d**</code>、<code>d***</code>。无单token限制；小节校验保证正确性。</td></tr>
+                                                <tr><td><code>./</code> 和 <code>./*</code> 组合</td><td>修饰符满足交换律——顺序不影响结果：<code>d./</code> = 0.75×，<code>d.*</code> = 3×。</td></tr>
                                             </tbody>
                                         </table>
                                     </div>

@@ -246,7 +246,8 @@
                                             <tbody>
                                                 <tr><td><code>.</code></td><td>Adds half of the current value. You can repeat it: <code>d.</code>, <code>d..</code>, <code>d...</code>.</td></tr>
                                                 <tr><td><code>/</code></td><td>Halves the current value. You can repeat it: <code>d/</code>, <code>d//</code>, <code>d///</code>.</td></tr>
-                                                <tr><td><code>./</code> combinations</td><td>Can be chained on the same token, such as <code>d./</code> or <code>d.///</code>.</td></tr>
+                                                <tr><td><code>*</code></td><td>Doubles the current value. You can repeat it: <code>d*</code>, <code>d**</code>, <code>d***</code>. No per-token limit; measure validation ensures correctness.</td></tr>
+                                                <tr><td><code>./</code> and <code>./*</code> combinations</td><td>Modifiers are commutative — order does not affect the result: <code>d./</code> = 0.75×, <code>d.*</code> = 3×.</td></tr>
                                             </tbody>
                                         </table>
                                     </div>

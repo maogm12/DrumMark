@@ -17,10 +17,10 @@ SD | d - d - |
     
     // Check anonymous line tokens
     expect(doc.paragraphs[0].lines[0].measures[0].tokens).toEqual([
-      { kind: "basic", value: "x", dots: 0, halves: 0, modifiers: [], trackOverride: undefined },
-      { kind: "basic", value: "-", dots: 0, halves: 0, modifiers: [], trackOverride: undefined },
-      { kind: "basic", value: "s", dots: 0, halves: 0, modifiers: [], trackOverride: undefined },
-      { kind: "basic", value: "-", dots: 0, halves: 0, modifiers: [], trackOverride: undefined },
+      { kind: "basic", value: "x", dots: 0, halves: 0, stars: 0, modifiers: [], trackOverride: undefined },
+      { kind: "basic", value: "-", dots: 0, halves: 0, stars: 0, modifiers: [], trackOverride: undefined },
+      { kind: "basic", value: "s", dots: 0, halves: 0, stars: 0, modifiers: [], trackOverride: undefined },
+      { kind: "basic", value: "-", dots: 0, halves: 0, stars: 0, modifiers: [], trackOverride: undefined },
     ]);
   });
 
@@ -38,8 +38,8 @@ divisions 4
       kind: "braced",
       track: "HH",
       items: [
-        { kind: "basic", value: "x", dots: 0, halves: 0, modifiers: [], trackOverride: undefined },
-        { kind: "basic", value: "x", dots: 0, halves: 0, modifiers: [], trackOverride: undefined },
+        { kind: "basic", value: "x", dots: 0, halves: 0, stars: 0, modifiers: [], trackOverride: undefined },
+        { kind: "basic", value: "x", dots: 0, halves: 0, stars: 0, modifiers: [], trackOverride: undefined },
       ]
     });
 
@@ -49,6 +49,7 @@ divisions 4
       value: "d",
       dots: 0,
       halves: 0,
+      stars: 0,
       modifiers: [],
       trackOverride: "SD"
     });
@@ -58,8 +59,8 @@ divisions 4
       kind: "braced",
       track: "RC",
       items: [
-        { kind: "basic", value: "d", dots: 0, halves: 0, modifiers: [], trackOverride: undefined },
-        { kind: "basic", value: "d", dots: 0, halves: 0, modifiers: ["bell"], trackOverride: undefined },
+        { kind: "basic", value: "d", dots: 0, halves: 0, stars: 0, modifiers: [], trackOverride: undefined },
+        { kind: "basic", value: "d", dots: 0, halves: 0, stars: 0, modifiers: ["bell"], trackOverride: undefined },
       ]
     });
   });
@@ -75,6 +76,7 @@ divisions 4
       value: "s",
       dots: 0,
       halves: 0,
+      stars: 0,
       modifiers: ["rim", "ghost", "flam"],
       trackOverride: undefined
     });
@@ -91,16 +93,16 @@ divisions 4
     expect(tokens[0]).toEqual({
       kind: "combined",
       items: [
-        { kind: "basic", value: "x", dots: 0, halves: 0, modifiers: [], trackOverride: undefined },
-        { kind: "basic", value: "s", dots: 0, halves: 0, modifiers: [], trackOverride: undefined },
+        { kind: "basic", value: "x", dots: 0, halves: 0, stars: 0, modifiers: [], trackOverride: undefined },
+        { kind: "basic", value: "s", dots: 0, halves: 0, stars: 0, modifiers: [], trackOverride: undefined },
       ]
     });
 
     expect(tokens[1]).toEqual({
       kind: "combined",
       items: [
-        { kind: "basic", value: "b", dots: 0, halves: 0, modifiers: [], trackOverride: undefined },
-        { kind: "basic", value: "d", dots: 0, halves: 0, modifiers: ["rim"], trackOverride: "SD" },
+        { kind: "basic", value: "b", dots: 0, halves: 0, stars: 0, modifiers: [], trackOverride: undefined },
+        { kind: "basic", value: "d", dots: 0, halves: 0, stars: 0, modifiers: ["rim"], trackOverride: "SD" },
       ]
     });
   });
@@ -175,10 +177,10 @@ divisions 4
 
     expect(doc.errors).toEqual([]);
     expect(doc.paragraphs[0].lines[0].measures[0].tokens).toEqual([
-      { kind: "basic", value: "d", dots: 0, halves: 0, modifiers: ["half-open"], trackOverride: undefined },
-      { kind: "basic", value: "d", dots: 0, halves: 0, modifiers: ["roll"], trackOverride: undefined },
-      { kind: "basic", value: "d", dots: 0, halves: 0, modifiers: ["dead"], trackOverride: undefined },
-      { kind: "basic", value: "d", dots: 0, halves: 0, modifiers: [], trackOverride: undefined },
+      { kind: "basic", value: "d", dots: 0, halves: 0, stars: 0, modifiers: ["half-open"], trackOverride: undefined },
+      { kind: "basic", value: "d", dots: 0, halves: 0, stars: 0, modifiers: ["roll"], trackOverride: undefined },
+      { kind: "basic", value: "d", dots: 0, halves: 0, stars: 0, modifiers: ["dead"], trackOverride: undefined },
+      { kind: "basic", value: "d", dots: 0, halves: 0, stars: 0, modifiers: [], trackOverride: undefined },
     ]);
   });
 

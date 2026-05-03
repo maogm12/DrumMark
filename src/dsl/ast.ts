@@ -34,6 +34,7 @@ function makeRestTokens(divisions: number): MeasureToken[] {
     value: "-" as const,
     dots: 0,
     halves: 0,
+    stars: 0,
     modifiers: [],
     trackOverride: undefined,
   }));

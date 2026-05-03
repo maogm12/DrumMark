@@ -4,12 +4,13 @@ import { buildNormalizedScore } from "./normalize";
 import { parseDocumentSkeleton } from "./parser";
 import type { TokenGlyph } from "./types";
 
-function basicToken(value: Extract<TokenGlyph, { kind: "basic" }>["value"], dots: number, halves: number): TokenGlyph {
+function basicToken(value: Extract<TokenGlyph, { kind: "basic" }>["value"], dots: number, halves: number, stars: number = 0): TokenGlyph {
   return {
     kind: "basic",
     value,
     dots,
     halves,
+    stars,
     modifiers: [],
   };
 }
@@ -25,10 +26,10 @@ HH | x... x//// x../ x./// |`);
     const tokens = skeleton.paragraphs[0]?.lines[0]?.measures[0]?.tokens;
 
     expect(tokens).toEqual([
-      { kind: "basic", value: "x", dots: 3, halves: 0, modifiers: [], trackOverride: undefined },
-      { kind: "basic", value: "x", dots: 0, halves: 4, modifiers: [], trackOverride: undefined },
-      { kind: "basic", value: "x", dots: 2, halves: 1, modifiers: [], trackOverride: undefined },
-      { kind: "basic", value: "x", dots: 1, halves: 3, modifiers: [], trackOverride: undefined },
+      { kind: "basic", value: "x", dots: 3, halves: 0, stars: 0, modifiers: [], trackOverride: undefined },
+      { kind: "basic", value: "x", dots: 0, halves: 4, stars: 0, modifiers: [], trackOverride: undefined },
+      { kind: "basic", value: "x", dots: 2, halves: 1, stars: 0, modifiers: [], trackOverride: undefined },
+      { kind: "basic", value: "x", dots: 1, halves: 3, stars: 0, modifiers: [], trackOverride: undefined },
     ]);
   });
 

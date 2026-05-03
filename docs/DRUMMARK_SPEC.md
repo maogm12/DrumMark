@@ -1815,3 +1815,94 @@ This addendum clarifies the definition of the `span` parameter in Rhythmic Group
 
 - This definition supersedes the descriptions in **Section 5.4 (Rhythmic Math)** and **Section 5.5 (Groups)** regarding the relationship between token weights and `divisions`. 
 - Validation should now compare total measure weight against the expected slot count: `MeasureDuration / NoteDuration`.
+
+## Addendum 2026-05-02-C: Duration Multiplication Modifier
+
+### Status
+
+Proposed
+
+### Motivation
+
+The existing duration modifiers (`/` for halving, `.` for dotting/1.5×) have no symmetric inverse for doubling. Users wanting a note with twice the base duration must write `[2: d]` which is verbose. A lightweight doubling modifier would complete the modifier set.
+
+### Proposal
+
+Introduce `*` (asterisk) as a duration multiplication modifier that doubles the base token weight.
+
+| Symbol | Effect |
+|--------|--------|
+| `*` | Doubles duration. Multiple stars accumulate (`d**` = 4×). |
+
+**Formula Update**:
+```
+weight = base × (2 - 0.5^dots) × (2^stars) / (2^halves)
+```
+
+**Examples**:
+- `d*` = 2× duration (1 slot → 2 slots)
+- `d**` = 4× duration (1 slot → 4 slots)
+- `d*.` = 3× duration (2 × 1.5 = 3)
+- `d*/` = 1× duration (2 × 0.5 = 1, a no-op)
+
+### Interaction with Existing Grammar
+
+The `*` symbol is already used for inline repeat (`*N` at measure end). To avoid conflict:
+
+- `*` as a duration modifier appears **after** the base token, before any `.` or `/` modifiers
+- `*` as an inline repeat is a **standalone suffix** that must be the last token in a measure, with no following content
+- A digit immediately following `*` (as in `d*3`) is treated as a syntax error because `*N` must be a standalone suffix with nothing preceding it
+
+**Examples**:
+```
+| d* d* d* d* |        # four doubled quarter notes = half note each
+| d d d* d |           # d* is doubled, others are normal
+| d* - - - | *2 |      # inline repeat applies to whole measure, d* is content
+| d*3 |                # SYNTAX ERROR: ambiguous, would require whitespace to disambiguate
+```
+
+### Interaction with Rest Token
+
+The `*` modifier is valid on the rest token `-`. A doubled rest (`-*`) occupies 2 slots of silence.
+
+### Maximum Star Count
+
+Practical limit: `stars ≤ 3` (maximum 8× base duration). This covers all standard note values from 64th note through breve-equivalent. A token with `stars > 3` is a syntax error.
+
+### Implementation
+
+1. **Parser**: Add `*` to the modifier character set alongside `.` and `/`
+2. **Weight Calculation**: Add a `stars` counter (0 by default) that increments for each `*`
+3. **Formula**: Multiply by `(2 ** stars)` in the weight formula (using exponentiation operator)
+4. **Validation**: A token with `stars > 3` is rejected. A token with `stars > 0` is valid only if the resulting weight does not exceed the measure capacity, verified using the dynamic `ExpectedSlots = MeasureDuration / NoteDuration` framework from Addendum 2026-05-02.
+
+### Supersession
+
+This addendum supplements **Section 5.3 (Duration Modifiers)** and **Section 5.4 (Rhythmic Math)** with a complete symmetric modifier set: halving (`/`), base, dotting (`.`), and doubling (`*`).
+
+### Examples
+
+| Token | Base | Stars | Weight | Notes |
+|-------|------|-------|--------|-------|
+| `d` | 1 | 0 | 1 | |
+| `d*` | 1 | 1 | 2 | |
+| `d**` | 1 | 2 | 4 | |
+| `d***` | 1 | 3 | 8 | maximum allowed |
+| `d****` | 1 | 4 | 16 | SYNTAX ERROR |
+| `d*.` | 1 | 1 | 3 (2 × 1.5) | |
+| `d*/.` | 1 | 1 | 1.5 (2 × 0.5 × 1.5) | |
+| `-*` | 1 | 1 | 2 | doubled rest |
+
+### Review Round 1
+
+**Reviewer**: Sub-agent (constructive hostile architect)
+
+**Issues Addressed**:
+1. **Clarified `d*3` parsing**: Added explicit rule that `d*3` is a syntax error. Must use whitespace to disambiguate if user intends `d*` followed by `*3` inline repeat.
+2. **Added maximum star count**: Capped at `stars ≤ 3` (8× base) with rationale. Maximum 4 stars rejected.
+3. **Cross-referenced `note 1/N` validation**: Implementation section now references `ExpectedSlots = MeasureDuration / NoteDuration` from Addendum 2026-05-02.
+4. **Reconsidered `d*/` example**: Removed from primary examples table, replaced with `d*/.` which is meaningful.
+5. **Explicitly defined `*` on rest token**: Added `-*` example showing doubled rest occupies 2 slots.
+6. **Clarified exponent operator**: Implementation now uses `2 ** stars` notation explicitly.
+
+**STATUS: APPROVED**

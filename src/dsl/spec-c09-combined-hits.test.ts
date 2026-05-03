@@ -32,15 +32,15 @@ divisions 4
       {
         kind: "combined",
         items: [
-          { kind: "basic", value: "x", dots: 0, halves: 0, modifiers: [], trackOverride: undefined },
-          { kind: "basic", value: "s", dots: 0, halves: 0, modifiers: [], trackOverride: undefined },
+          { kind: "basic", value: "x", dots: 0, halves: 0, stars: 0, modifiers: [], trackOverride: undefined },
+          { kind: "basic", value: "s", dots: 0, halves: 0, stars: 0, modifiers: [], trackOverride: undefined },
         ],
       },
       {
         kind: "combined",
         items: [
-          { kind: "basic", value: "d", dots: 0, halves: 0, modifiers: [], trackOverride: "HH" },
-          { kind: "basic", value: "d", dots: 0, halves: 0, modifiers: ["rim"], trackOverride: "SD" },
+          { kind: "basic", value: "d", dots: 0, halves: 0, stars: 0, modifiers: [], trackOverride: "HH" },
+          { kind: "basic", value: "d", dots: 0, halves: 0, stars: 0, modifiers: ["rim"], trackOverride: "SD" },
         ],
       },
     ]);
@@ -56,9 +56,9 @@ divisions 4
       {
         kind: "combined",
         items: [
-          { kind: "basic", value: "b", dots: 0, halves: 0, modifiers: [], trackOverride: undefined },
-          { kind: "basic", value: "d", dots: 0, halves: 0, modifiers: ["cross", "accent"], trackOverride: "SD" },
-          { kind: "basic", value: "d", dots: 0, halves: 0, modifiers: ["bell", "drag"], trackOverride: "RC" },
+          { kind: "basic", value: "b", dots: 0, halves: 0, stars: 0, modifiers: [], trackOverride: undefined },
+          { kind: "basic", value: "d", dots: 0, halves: 0, stars: 0, modifiers: ["cross", "accent"], trackOverride: "SD" },
+          { kind: "basic", value: "d", dots: 0, halves: 0, stars: 0, modifiers: ["bell", "drag"], trackOverride: "RC" },
         ],
       },
     ]);

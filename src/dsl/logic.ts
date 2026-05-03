@@ -153,7 +153,7 @@ export function calculateTokenWeightAsFraction(token: TokenGlyph): Fraction {
     });
   }
 
-  // Weight formula: weight = base * (2 - 0.5^dots) / (2^halves)
+  // Weight formula: weight = base * (2 - 0.5^dots) * (2^stars) / (2^halves)
   // dots=1: 1.5 = 3/2
   // dots=2: 1.75 = 7/4
   // dots=3: 1.875 = 15/8
@@ -164,8 +164,9 @@ export function calculateTokenWeightAsFraction(token: TokenGlyph): Fraction {
   const dotWeight: Fraction = { numerator: dotNumerator, denominator: dotDenominator };
 
   const halfDivider = 1 << token.halves;
+  const starMultiplier = 1 << token.stars; // 2^stars
   return simplify({
-    numerator: dotWeight.numerator,
+    numerator: dotWeight.numerator * starMultiplier,
     denominator: dotWeight.denominator * halfDivider,
   });
 }

@@ -593,15 +593,21 @@ function parseMeasureTokens(
         nextPtr = modResult.next;
       }
 
-      let dots = 0, halves = 0;
+      let dots = 0, halves = 0, stars = 0;
       while (nextPtr < content.length) {
         if (content[nextPtr] === ".") { dots++; nextPtr++; }
         else if (content[nextPtr] === "/") { halves++; nextPtr++; }
+        else if (content[nextPtr] === "*") { stars++; nextPtr++; }
         else break;
       }
 
+      if (stars > 3) {
+        errors.push({ line: lineNumber, column: columnOffset + nextPtr, message: `Too many stars (${stars}). Maximum is 3.` });
+        stars = 3;
+      }
+
       return {
-        token: { kind: "basic", value: glyphResult.glyph, dots, halves, modifiers, trackOverride: inheritedTrackOverride },
+        token: { kind: "basic", value: glyphResult.glyph, dots, halves, stars, modifiers, trackOverride: inheritedTrackOverride },
         next: nextPtr
       };
     };

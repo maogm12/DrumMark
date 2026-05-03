@@ -309,12 +309,11 @@ input {
 .surface-toolbar {
   position: absolute;
   top: 12px;
-  left: 12px;
   right: 12px;
   z-index: 30;
   display: flex;
   align-items: flex-start;
-  justify-content: space-between;
+  justify-content: flex-end;
 }
 
 .toolbar-group {
@@ -350,7 +349,7 @@ input {
 .page-zoom-popover {
   position: absolute;
   top: 40px;
-  left: 0;
+  right: 0;
   min-width: 160px;
   padding: 12px;
   border: 1px solid var(--border-subtle);

@@ -1840,6 +1840,7 @@ Introduce `*` (asterisk) as a duration multiplication modifier that multiplies t
 |--------|--------|
 | `*` | Multiplies duration by 2^n where n is the number of stars. |
 
+
 **Formula Update**:
 ```
 weight = base × (2 - 0.5^dots) × (2^stars) / (2^halves)
@@ -1880,9 +1881,11 @@ The formula produces the same result regardless of order.
 
 There is no per-token star limit. A token with many `*` modifiers simply has a large weight. Measure validation ensures the total weight of all tokens in a measure does not exceed the measure capacity (`MeasureDuration / NoteDuration`). If a token's weight would cause the measure to overflow, a normal "measure duration mismatch" error is raised.
 
+
 ### Interaction with Rest Token
 
 The `*` modifier is valid on the rest token `-`. A doubled rest (`-*`) occupies 2 slots of silence.
+
 
 ### Supersession
 
@@ -1950,3 +1953,4 @@ Glyph ( Suffix )*
 | `[2:s+b]:accent` | combined hit `s+b` stretched to 2 slots, each note gets `:accent` |
 | `[2:dd]:accent` | two notes `d` stretched to 2 slots, both get `:accent` |
 | `[2:-]:accent` | **invalid** — rests cannot have articulation modifiers |
+

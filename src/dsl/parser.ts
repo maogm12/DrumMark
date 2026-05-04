@@ -663,6 +663,11 @@ function parseMeasureTokens(
         else break;
       }
 
+      if (stars > 3) {
+        errors.push({ line: lineNumber, column: columnOffset + nextPtr, message: `Too many stars (${stars}). Maximum is 3.` });
+        stars = 3;
+      }
+
       return {
         token: { kind: "basic", value: glyphResult.glyph, dots, halves, stars, modifiers, trackOverride: inheritedTrackOverride },
         next: nextPtr

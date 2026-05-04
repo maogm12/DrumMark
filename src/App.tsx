@@ -319,6 +319,7 @@ const PagePreview = memo(function PagePreview({
   const shellRef = useRef<HTMLDivElement | null>(null);
   const scrollPosRef = useRef({ top: 0, left: 0 });
   const [renderedMarkup, setRenderedMarkup] = useState("");
+  const [isRendering, setIsRendering] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   function handleScroll(e: UIEvent<HTMLDivElement>) {
@@ -333,6 +334,7 @@ const PagePreview = memo(function PagePreview({
 
     const targetTop = scrollPosRef.current.top;
     const targetLeft = scrollPosRef.current.left;
+    setIsRendering(true);
 
     const opts: VexflowRenderOptions = {
       pagePadding,
@@ -353,6 +355,7 @@ const PagePreview = memo(function PagePreview({
       .then((pages) => {
         const markup = pages.map((svg, i) => `<section class="staff-preview-page" data-page="${i+1}">${svg}</section>`).join("");
         setRenderedMarkup(markup);
+        setIsRendering(false);
 
         if (shellRef.current) {
           shellRef.current.scrollTop = targetTop;
@@ -362,6 +365,7 @@ const PagePreview = memo(function PagePreview({
         setError(null);
       })
       .catch((renderError) => {
+        setIsRendering(false);
         const msg = renderError instanceof Error ? renderError.message : String(renderError);
         console.error("VexFlow render error:", renderError);
         setError(msg || "Could not render staff preview.");
@@ -385,6 +389,9 @@ const PagePreview = memo(function PagePreview({
   return (
     <div className="staff-preview-shell" ref={shellRef} onScroll={handleScroll}>
       {error ? <div className="staff-error">{error}</div> : null}
+      {isRendering && !renderedMarkup ? (
+        <div className="staff-rendering">Rendering…</div>
+      ) : null}
       <div className="staff-printable-frame">
         <div className="staff-printable">
           <div className="staff-preview page-view" dangerouslySetInnerHTML={{ __html: renderedMarkup }} />

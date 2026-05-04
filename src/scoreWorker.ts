@@ -5,23 +5,40 @@ import { parseDocumentSkeletonFromLezer } from "./dsl/lezer_skeleton";
 import { buildScoreAst } from "./dsl/ast";
 import { normalizeScoreAst } from "./dsl/normalize";
 
-type ScoreWorkerRequest = {
+type ParseRequest = {
+  type: "parse";
   id: number;
   dsl: string;
   hideVoice2Rests: boolean;
   useLezerParser?: boolean;
 };
 
-type ScoreWorkerResponse = {
+type GenerateXmlRequest = {
+  type: "generateXml";
+  id: number;
+  hideVoice2Rests: boolean;
+};
+
+type ScoreWorkerRequest = ParseRequest | GenerateXmlRequest;
+
+type ParseResponse = {
+  type: "parse";
   id: number;
   score: ReturnType<typeof buildNormalizedScore>;
-  xml: string;
   parserUsed: "regex" | "lezer";
 };
 
-self.onmessage = (event: MessageEvent<ScoreWorkerRequest>) => {
-  const { id, dsl, hideVoice2Rests, useLezerParser } = event.data;
+type XmlResponse = {
+  type: "xml";
+  id: number;
+  xml: string;
+};
 
+type ScoreWorkerResponse = ParseResponse | XmlResponse;
+
+let lastScore: ReturnType<typeof buildNormalizedScore> | null = null;
+
+function doParse(dsl: string, useLezerParser?: boolean): { score: ReturnType<typeof buildNormalizedScore>; parserUsed: "regex" | "lezer" } {
   let score;
   let parserUsed: "regex" | "lezer";
   try {
@@ -40,9 +57,30 @@ self.onmessage = (event: MessageEvent<ScoreWorkerRequest>) => {
     score = buildNormalizedScore(dsl);
     parserUsed = "regex";
   }
-  const xml = buildMusicXml(score, hideVoice2Rests);
-  const response: ScoreWorkerResponse = { id, score, xml, parserUsed };
-  self.postMessage(response);
+  return { score, parserUsed };
+}
+
+self.onmessage = (event: MessageEvent<ScoreWorkerRequest>) => {
+  const msg = event.data;
+
+  if (msg.type === "parse") {
+    const { id, dsl, useLezerParser } = msg;
+    const { score, parserUsed } = doParse(dsl, useLezerParser);
+    lastScore = score;
+    const response: ParseResponse = { type: "parse", id, score, parserUsed };
+    self.postMessage(response);
+  } else if (msg.type === "generateXml") {
+    const { id, hideVoice2Rests } = msg;
+    if (!lastScore) {
+      // Should not happen — XML is only requested after a parse
+      const response: XmlResponse = { type: "xml", id, xml: "" };
+      self.postMessage(response);
+      return;
+    }
+    const xml = buildMusicXml(lastScore, hideVoice2Rests);
+    const response: XmlResponse = { type: "xml", id, xml };
+    self.postMessage(response);
+  }
 };
 
 export {};

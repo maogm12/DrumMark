@@ -3,7 +3,7 @@ import { EditorState, Compartment } from "@codemirror/state";
 import { EditorView, highlightActiveLine, highlightActiveLineGutter, lineNumbers, keymap } from "@codemirror/view";
 import { history, historyKeymap } from "@codemirror/commands";
 import { linter, type Diagnostic } from "@codemirror/lint";
-import { buildMusicXml, buildNormalizedScore, type ParseError } from "./dsl";
+import { buildNormalizedScore, type ParseError } from "./dsl";
 import { type NormalizedScore } from "./dsl";
 import { renderScorePagesToSvgs, type VexflowRenderOptions, DEFAULT_RENDER_OPTIONS } from "./vexflow";
 import { drumMarkEditorTheme, drumMarkLanguage, drumMarkSyntaxHighlighting } from "./drummark";
@@ -597,13 +597,17 @@ export function App() {
     const initialScore = buildNormalizedScore(dsl);
     return {
       score: initialScore,
-      xml: buildMusicXml(initialScore, settings.hideVoice2Rests),
       parserUsed: "regex" as "regex" | "lezer",
     };
   });
+  const [staffXml, setStaffXml] = useState<string | null>(null);
+  const [isXmlPending, setIsXmlPending] = useState(false);
+  const xmlRequestIdRef = useRef(0);
+  const latestXmlIdRef = useRef(0);
+  const pendingExportRef = useRef(false);
+  const exportBasenameRef = useRef(safeExportBasename(undefined));
 
   const score = analysis.score;
-  const staffXml = analysis.xml;
   const hasRenderableScore = useMemo(
     () => score.ast.paragraphs.some((paragraph) => paragraph.measureCount > 0 && paragraph.tracks.length > 0),
     [score],
@@ -625,15 +629,30 @@ export function App() {
     const worker = new Worker(new URL("./scoreWorker.ts", import.meta.url), { type: "module" });
     workerRef.current = worker;
 
-    worker.onmessage = (event: MessageEvent<{ id: number; score: NormalizedScore; xml: string; parserUsed: "regex" | "lezer" }>) => {
-      const { id, score: nextScore, xml: nextXml, parserUsed } = event.data;
+    worker.onmessage = (event: MessageEvent<{ type: string; id: number; score?: NormalizedScore; xml?: string; parserUsed?: "regex" | "lezer" }>) => {
+      const { type, id, score: nextScore, xml: nextXml, parserUsed } = event.data;
       if (id < latestHandledRequestIdRef.current) {
         return;
       }
 
-      latestHandledRequestIdRef.current = id;
-      setAnalysis({ score: nextScore, xml: nextXml, parserUsed });
-      setIsScorePending(id !== requestIdRef.current);
+      if (type === "parse" && nextScore && parserUsed) {
+        latestHandledRequestIdRef.current = id;
+        setAnalysis({ score: nextScore, parserUsed });
+        setIsScorePending(id !== requestIdRef.current);
+      } else if (type === "xml" && nextXml !== undefined) {
+        if (id < latestXmlIdRef.current) return;
+        latestXmlIdRef.current = id;
+        setStaffXml(nextXml);
+        setIsXmlPending(false);
+        if (pendingExportRef.current) {
+          pendingExportRef.current = false;
+          downloadTextFile(
+            `${exportBasenameRef.current}.musicxml`,
+            nextXml,
+            "application/vnd.recordare.musicxml+xml",
+          );
+        }
+      }
     };
 
     return () => {
@@ -652,12 +671,36 @@ export function App() {
     requestIdRef.current = nextId;
     setIsScorePending(true);
     worker.postMessage({
+      type: "parse" as const,
       id: nextId,
       dsl: debouncedAnalysisInput.dsl,
       hideVoice2Rests: debouncedAnalysisInput.hideVoice2Rests,
       useLezerParser,
     });
   }, [debouncedAnalysisInput, useLezerParser]);
+
+  // Request XML when switching to XML tab or when score changes while on XML tab
+  const requestXml = useCallback(() => {
+    const worker = workerRef.current;
+    if (!worker) return;
+    const id = ++xmlRequestIdRef.current;
+    setIsXmlPending(true);
+    worker.postMessage({
+      type: "generateXml" as const,
+      id,
+      hideVoice2Rests: settings.hideVoice2Rests,
+    });
+  }, [settings.hideVoice2Rests]);
+
+  useEffect(() => {
+    if (settings.activeTab === "xml" && score && !isScorePending) {
+      requestXml();
+    }
+  }, [settings.activeTab, score, isScorePending, requestXml]);
+
+  useEffect(() => {
+    exportBasenameRef.current = safeExportBasename(score.ast.headers.title?.value);
+  }, [score]);
 
   useEffect(() => {
     localStorage.setItem("drummark-dsl", dsl);
@@ -715,7 +758,12 @@ export function App() {
   }, []);
 
   function handleMusicXmlExport() {
-    downloadTextFile(`${safeExportBasename(score.ast.headers.title?.value)}.musicxml`, staffXml, "application/vnd.recordare.musicxml+xml");
+    if (staffXml) {
+      downloadTextFile(`${safeExportBasename(score.ast.headers.title?.value)}.musicxml`, staffXml, "application/vnd.recordare.musicxml+xml");
+    } else if (!isXmlPending) {
+      pendingExportRef.current = true;
+      requestXml();
+    }
   }
 
   function handlePrint() {
@@ -1001,12 +1049,24 @@ export function App() {
                     <button className="surface-icon-button" onClick={xmlToggleAll} type="button" title={xmlIsAllCollapsed ? "Expand All" : "Collapse All"}>
                       {xmlIsAllCollapsed ? <ExpandAllIcon /> : <CollapseAllIcon />}
                     </button>
-                    <button className="surface-icon-button" disabled={!canExport} onClick={handleMusicXmlExport} type="button" title="Export MusicXML">
+                    <button className="surface-icon-button" disabled={!canExport || isXmlPending} onClick={handleMusicXmlExport} type="button" title={isXmlPending ? "Generating MusicXML…" : "Export MusicXML"}>
                       <SaveIcon />
                     </button>
                   </div>
                 </div>
-                {settings.activeTab === "xml" ? <MusicXmlPreview xml={staffXml} collapsed={xmlCollapsed} toggle={xmlToggle} /> : null}
+                {settings.activeTab === "xml" ? (
+                  isXmlPending ? (
+                    <div className="xml-preview xml-pending" aria-label="MusicXML preview">
+                      <span>Generating MusicXML…</span>
+                    </div>
+                  ) : staffXml ? (
+                    <MusicXmlPreview xml={staffXml} collapsed={xmlCollapsed} toggle={xmlToggle} />
+                  ) : (
+                    <div className="xml-preview xml-pending" aria-label="MusicXML preview">
+                      <span>Switch to XML tab to generate</span>
+                    </div>
+                  )
+                ) : null}
               </div>
             </div>
 

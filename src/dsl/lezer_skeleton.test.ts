@@ -4,7 +4,7 @@ import { parseDocumentSkeletonFromLezer } from "./lezer_skeleton";
 
 const TEST_CASES = [
   // Simple
-  `title Test Song
+  `title "Test Song"
 time 4/4
 note 1/16
 
@@ -12,17 +12,17 @@ HH | x - x - |
 SD | d - d - |`,
 
   // Medium with modifiers
-  `title Test Song
+  `title "Test Song"
 tempo 120
 time 4/4
 note 1/16
 
-HH | x:x - s:s - x x |
-SD | d:d - d:d - d d |
+HH | x:accent - s:ghost - x x |
+SD | d:flam - d:flam - d d |
 BD | b - b - b b |`,
 
   // Complex with groups and combined hits
-  `title Complex Study
+  `title "Complex Study"
 tempo 96
 time 4/4
 note 1/16
@@ -33,17 +33,17 @@ SD | [d d] - d - | d - [d d] - |
 BD | b - b - [b b] - |`,
 
   // Full featured
-  `title Full Score
-subtitle A Drum Notation Test
-composer Test Author
+  `title "Full Score"
+subtitle "A Drum Notation Test"
+composer "Test Author"
 tempo 120
 time 4/4
 note 1/16
-grouping 2+2+3
+grouping 2+2
 
-HH | x:x - s:s - x x |
+HH | x:accent - s:ghost - x x |
 HF | X - X - X X |
-SD | d:d - d:d - d d |
+SD | d:flam - d:flam - d d |
 BD | b - b - b b |
 T1 | t1 - t2 - t3 t4 |
 RC | r - r - r r |
@@ -53,7 +53,7 @@ SD | d - d - | d - d - |
 BD | b - b - | b - b - |`,
 
   // Anonymous lines
-  `title Anonymous Test
+  `title "Anonymous Test"
 time 4/4
 note 1/16
 
@@ -61,14 +61,14 @@ note 1/16
 SD | d - d - |`,
 
   // Repeat barlines
-  `title Repeat Test
+  `title "Repeat Test"
 time 4/4
 note 1/16
 
 HH |: x - x - :| x - x - |`,
 
   // Navigation markers
-  `title Nav Test
+  `title "Nav Test"
 time 4/4
 note 1/16
 
@@ -86,8 +86,8 @@ function normalizeForCompare(skeleton: ReturnType<typeof parseDocumentSkeleton>)
 }
 
 describe("lezer IR integration", () => {
-  it.skip("matches regex parser output for simple document", () => {
-    // Grammar issue: Value consumes entire header section including track names
+  it("matches regex parser output for simple document", () => {
+    // Value token properly terminated at newline
     const source = TEST_CASES[0];
     const regex = parseDocumentSkeleton(source);
     const lezer = parseDocumentSkeletonFromLezer(source);
@@ -100,8 +100,8 @@ describe("lezer IR integration", () => {
     expect(regex.paragraphs.length).toBe(lezer.paragraphs.length);
   });
 
-  it.skip("matches for medium document with modifiers", () => {
-    // Grammar issue: Value consumes entire header section including track names
+  it("matches for medium document with modifiers", () => {
+    // Value token properly terminated at newline
     const source = TEST_CASES[1];
     const regex = parseDocumentSkeleton(source);
     const lezer = parseDocumentSkeletonFromLezer(source);
@@ -110,8 +110,8 @@ describe("lezer IR integration", () => {
     expect(regex.headers.tempo.value).toBe(lezer.headers.tempo.value);
   });
 
-  it.skip("matches for complex document with groups", () => {
-    // Grammar issue: Value consumes entire header section including track names
+  it("matches for complex document with groups", () => {
+    // Value token properly terminated at newline
     const source = TEST_CASES[2];
     const regex = parseDocumentSkeleton(source);
     const lezer = parseDocumentSkeletonFromLezer(source);
@@ -120,8 +120,8 @@ describe("lezer IR integration", () => {
     expect(regex.headers.grouping.values).toEqual(lezer.headers.grouping.values);
   });
 
-  it.skip("matches for full featured document", () => {
-    // Grammar issue: Value consumes entire header section including track names
+  it("matches for full featured document", () => {
+    // Value token properly terminated at newline
     const source = TEST_CASES[3];
     const regex = parseDocumentSkeleton(source);
     const lezer = parseDocumentSkeletonFromLezer(source);
@@ -135,8 +135,8 @@ describe("lezer IR integration", () => {
     expect(regex.paragraphs.length).toBe(lezer.paragraphs.length);
   });
 
-  it.skip("matches for anonymous lines", () => {
-    // Grammar issue: Value consumes entire header section including track names
+  it("matches for anonymous lines", () => {
+    // Value token properly terminated at newline
     const source = TEST_CASES[4];
     const regex = parseDocumentSkeleton(source);
     const lezer = parseDocumentSkeletonFromLezer(source);
@@ -144,8 +144,8 @@ describe("lezer IR integration", () => {
     expect(regex.paragraphs.length).toBe(lezer.paragraphs.length);
   });
 
-  it.skip("matches for repeat barlines", () => {
-    // Grammar issue: Value consumes entire header section including track names
+  it("matches for repeat barlines", () => {
+    // Value token properly terminated at newline
     const source = TEST_CASES[5];
     const regex = parseDocumentSkeleton(source);
     const lezer = parseDocumentSkeletonFromLezer(source);
@@ -153,8 +153,8 @@ describe("lezer IR integration", () => {
     expect(regex.paragraphs.length).toBe(lezer.paragraphs.length);
   });
 
-  it.skip("produces zero errors for valid source", () => {
-    // Grammar issue: Value consumes entire header section including track names
+  it("produces zero errors for valid source", () => {
+    // Value token properly terminated at newline
     for (const source of TEST_CASES) {
       const regex = parseDocumentSkeleton(source);
       const lezer = parseDocumentSkeletonFromLezer(source);

@@ -136,13 +136,36 @@ function isMetadataField(field: string): field is MetadataHeader["field"] {
   return field === "title" || field === "subtitle" || field === "composer";
 }
 
+function unquoteString(raw: string): { value: string; ok: boolean } {
+  const q = raw[0];
+  if (q !== '"' && q !== "'") return { value: raw, ok: true };
+  const close = raw.indexOf(q, 1);
+  if (close === -1) return { value: raw, ok: false };
+  return { value: raw.slice(1, close), ok: true };
+}
+
 function parseHeaderLine(line: PreprocessedLine, headers: HeaderAccumulator, errors: ParseError[]): boolean {
   const match = line.content.match(/^(\S+)(?:\s+(.*))?$/);
   const field = match?.[1] ?? "";
-  const value = match?.[2]?.trim() ?? "";
+  let rawValue = match?.[2] ?? "";
+  let value = rawValue;
 
   if (!field || !HEADER_FIELDS.includes(field as (typeof HEADER_FIELDS)[number])) {
     return false;
+  }
+
+  // Unquote metadata values
+  if (isMetadataField(field) && rawValue) {
+    const result = unquoteString(rawValue);
+    if (!result.ok) {
+      errors.push({
+        line: line.lineNumber,
+        column: line.raw.indexOf(rawValue) + 1,
+        message: `Unclosed quote in header \`${field}\``,
+      });
+      return true;
+    }
+    value = result.value;
   }
 
   if (!value) {

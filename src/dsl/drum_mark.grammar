@@ -55,10 +55,14 @@ GlyphToken {
 }
 
 BasicGlyph {
-  "c2" | "b2" | "r2" | "t1" | "t2" | "t3" | "t4" |
-  "spl" | "chn" | "cb" | "wb" | "cl" |
-  "x" | "d" | "s" | "b" | "r" | "c" | "o" | "g" | "p" |
-  "X" | "D" | "S" | "B" | "R" | "O" | "G" | "L" |
+  // multi-char tokens first (track names for summon prefix, also valid as glyphs)
+  "HH" | "HF" | "SD" | "BD" | "BD2" | "RC" | "RC2" | "ST" |
+  "spl" | "SPL" | "chn" | "CHN" | "cb" | "CB" | "wb" | "WB" | "cl" | "CL" |
+  "c2" | "C2" | "b2" | "B2" | "r2" | "R2" |
+  "t1" | "T1" | "t2" | "T2" | "t3" | "T3" | "t4" | "T4" |
+  // single-char tokens
+  "x" | "X" | "d" | "D" | "s" | "S" | "b" | "B" | "r" | "R" |
+  "c" | "C" | "o" | "O" | "g" | "G" | "p" | "P" | "L" |
   "-"
 }
 

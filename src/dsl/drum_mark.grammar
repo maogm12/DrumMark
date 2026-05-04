@@ -1,0 +1,114 @@
+@top Document { HeaderSection TrackParagraphs }
+
+@skip { WS }
+
+HeaderSection { HeaderLine* }
+
+HeaderLine {
+  "title" Value |
+  "subtitle" Value |
+  "composer" Value |
+  "tempo" Integer |
+  "time" Integer "/" Integer |
+  "grouping" Integer ("+" Integer)+ |
+  "note" Integer "/" Integer
+}
+
+Value { @asciiLetter+ }
+
+Integer { @digit+ }
+
+TrackParagraphs { TrackParagraph* }
+
+TrackParagraph { TrackLine }
+
+TrackLine {
+  TrackName Barline MeasureContent |
+  Barline MeasureContent
+}
+
+MeasureContent { MeasureToken* }
+
+MeasureToken {
+  GlyphToken |
+  CombinedHit |
+  GroupExpr |
+  NavMarker |
+  NavJump |
+  MeasureRepeat |
+  InlineBracedBlock
+}
+
+GlyphToken {
+  BasicGlyph SuffixChain |
+  BasicGlyph
+}
+
+BasicGlyph {
+  "c2" | "b2" | "r2" | "t1" | "t2" | "t3" | "t4" |
+  "spl" | "chn" | "cb" | "wb" | "cl" |
+  "x" | "d" | "s" | "b" | "r" | "c" | "o" | "g" | "p" |
+  "X" | "D" | "S" | "B" | "R" | "O" | "G" | "L" |
+  "-"
+}
+
+SuffixChain {
+  SuffixChar SuffixChain |
+  SuffixChar
+}
+
+SuffixChar {
+  "." |
+  "*" |
+  "/" |
+  Modifier
+}
+
+Modifier {
+  ":" "accent" | ":" "open" | ":" "half-open" | ":" "close" |
+  ":" "choke" | ":" "bell" | ":" "rim" | ":" "cross" |
+  ":" "flam" | ":" "ghost" | ":" "drag" | ":" "roll" | ":" "dead"
+}
+
+CombinedHit {
+  GlyphToken "+" GlyphToken ("+" GlyphToken)*
+}
+
+GroupExpr {
+  "[" Integer? ":" MeasureContent "]" |
+  "[" MeasureContent "]"
+}
+
+NavMarker { "@segno" | "@coda" }
+
+NavJump {
+  "@fine" | "@dc" | "@ds" |
+  "@dc-al-fine" | "@dc-al-coda" | "@ds-al-fine" | "@ds-al-coda" |
+  "@to-coda"
+}
+
+MeasureRepeat { "%" | "%%" }
+
+TrackName {
+  "HH" | "HF" | "SD" | "BD" | "BD2" |
+  "T1" | "T2" | "T3" | "T4" |
+  "RC" | "RC2" |
+  "C" | "C2" |
+  "SPL" | "CHN" | "CB" | "WB" | "CL" | "ST"
+}
+
+Barline {
+  "||" "." |
+  "||" |
+  "|:x" Integer |
+  ":|x" Integer |
+  "|:" |
+  ":|" |
+  "|." |
+  "|x" Integer |
+  "|"
+}
+
+InlineBracedBlock {
+  "{" MeasureContent "}"
+}

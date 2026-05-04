@@ -1,31 +1,41 @@
-@top Document { HeaderSection TrackParagraphs }
+@top Document { HeaderSection Newline* TrackBody }
 
-@skip { WS }
+@skip { space }
+
+space { " " }
+Newline { "\n" }
+
+@tokens {
+  Integer { @digit+ }
+  String { "\"" !["]* "\"" | "'" ![']* "'" }
+}
 
 HeaderSection { HeaderLine* }
 
 HeaderLine {
-  "title" Value |
-  "subtitle" Value |
-  "composer" Value |
-  "tempo" Integer |
-  "time" Integer "/" Integer |
-  "grouping" Integer ("+" Integer)+ |
-  "note" Integer "/" Integer
+  FreeTextHeader Newline |
+  TempoHeader Newline |
+  TimeHeader Newline |
+  GroupingHeader Newline |
+  NoteHeader Newline |
+  DivisionsHeader Newline
 }
 
-Value { @asciiLetter+ }
+FreeTextHeader { ("title" | "subtitle" | "composer") String }
+TempoHeader { "tempo" Integer }
+TimeHeader { "time" Integer "/" Integer }
+GroupingHeader { "grouping" Integer ("+" Integer)* }
+NoteHeader { "note" Integer "/" Integer }
+DivisionsHeader { "divisions" Integer }
 
-Integer { @digit+ }
-
-TrackParagraphs { TrackParagraph* }
-
-TrackParagraph { TrackLine }
+TrackBody { TrackLine (Newline+ TrackLine)* }
 
 TrackLine {
-  TrackName Barline MeasureContent |
-  Barline MeasureContent
+  TrackName MeasureSection+ |
+  MeasureSection+
 }
+
+MeasureSection { Barline MeasureContent }
 
 MeasureContent { MeasureToken* }
 
@@ -109,6 +119,4 @@ Barline {
   "|"
 }
 
-InlineBracedBlock {
-  "{" MeasureContent "}"
-}
+InlineBracedBlock { "{" MeasureContent "}" }

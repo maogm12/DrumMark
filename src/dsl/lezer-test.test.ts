@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { DrumMarkParser } from "./drum_mark.parser.js";
+import { parser as DrumMarkParser } from "./drum_mark.parser.js";
 
 describe("lezer parser", () => {
   it("parses simple document", () => {

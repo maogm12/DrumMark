@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { parseDocumentSkeleton } from "./parser";
-import { DrumMarkParser } from "./drum_mark.parser";
+import { parser as DrumMarkParser } from "./drum_mark.parser";
 
 const SAMPLE_DOCS = [
   // Simple

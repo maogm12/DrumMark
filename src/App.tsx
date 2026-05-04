@@ -544,6 +544,9 @@ export function App() {
   const [pageZoomMenuOpen, setPageZoomMenuOpen] = useState(false);
   const pageZoomMenuRef = useRef<HTMLDivElement>(null);
   const [xmlCollapsed, setXmlCollapsed] = useState<Set<string>>(new Set());
+  const [titleClickCount, setTitleClickCount] = useState(0);
+  const [debugMenuVisible, setDebugMenuVisible] = useState(false);
+  const [useLezerParser, setUseLezerParser] = useState(false);
 
   const xmlToggle = (path: string) => {
     setXmlCollapsed((prev) => {
@@ -652,6 +655,7 @@ export function App() {
       id: nextId,
       dsl: debouncedAnalysisInput.dsl,
       hideVoice2Rests: debouncedAnalysisInput.hideVoice2Rests,
+      useLezerParser,
     });
   }, [debouncedAnalysisInput]);
 
@@ -905,10 +909,45 @@ export function App() {
         <div className="header-branding">
           <DrumIcon />
           <div>
-            <h1>DrumMark</h1>
+            <h1
+              style={{ cursor: "pointer", userSelect: "none" }}
+              onClick={() => {
+                const newCount = titleClickCount + 1;
+                setTitleClickCount(newCount);
+                if (newCount >= 5) {
+                  setDebugMenuVisible((v) => !v);
+                  setTitleClickCount(0);
+                }
+              }}
+            >
+              DrumMark
+            </h1>
             <p>Text-first notation</p>
           </div>
         </div>
+        {debugMenuVisible && (
+          <div className="debug-menu" style={{
+            position: "absolute",
+            top: 60,
+            left: 10,
+            background: "var(--bg-secondary)",
+            border: "1px solid var(--border-color)",
+            borderRadius: 6,
+            padding: 12,
+            zIndex: 1000,
+            minWidth: 200,
+          }}>
+            <div style={{ fontWeight: "bold", marginBottom: 8 }}>Debug Options</div>
+            <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
+              <input
+                type="checkbox"
+                checked={useLezerParser}
+                onChange={(e) => setUseLezerParser(e.target.checked)}
+              />
+              Use Lezer Parser
+            </label>
+          </div>
+        )}
         <div className="header-actions">
           <a className="export-button" href="docs.html"><BookIcon /> Docs</a>
         </div>

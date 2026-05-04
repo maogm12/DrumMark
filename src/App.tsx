@@ -20,9 +20,9 @@ HF |  - - - - p - - - | - - - - p:close - -                |
 RC |  - - x:bell - - - - - | - - - - x - - - |
 ST |  [2: R L R] - - -     | R - L - R - L - |`;
 
-const seedDsl = `title Advanced Funk
-subtitle Performance Study
-composer G. Mao
+const seedDsl = `title "Advanced Funk"
+subtitle "Performance Study"
+composer "G. Mao"
 tempo 120
 time 4/4
 note 1/16
@@ -544,8 +544,7 @@ export function App() {
   const [pageZoomMenuOpen, setPageZoomMenuOpen] = useState(false);
   const pageZoomMenuRef = useRef<HTMLDivElement>(null);
   const [xmlCollapsed, setXmlCollapsed] = useState<Set<string>>(new Set());
-  const [titleClickCount, setTitleClickCount] = useState(0);
-  const [debugMenuVisible, setDebugMenuVisible] = useState(false);
+  const debugMode = new URLSearchParams(window.location.search).has("debug");
   const [useLezerParser, setUseLezerParser] = useState(false);
 
   const xmlToggle = (path: string) => {
@@ -599,6 +598,7 @@ export function App() {
     return {
       score: initialScore,
       xml: buildMusicXml(initialScore, settings.hideVoice2Rests),
+      parserUsed: "regex" as "regex" | "lezer",
     };
   });
 
@@ -625,14 +625,14 @@ export function App() {
     const worker = new Worker(new URL("./scoreWorker.ts", import.meta.url), { type: "module" });
     workerRef.current = worker;
 
-    worker.onmessage = (event: MessageEvent<{ id: number; score: NormalizedScore; xml: string }>) => {
-      const { id, score: nextScore, xml: nextXml } = event.data;
+    worker.onmessage = (event: MessageEvent<{ id: number; score: NormalizedScore; xml: string; parserUsed: "regex" | "lezer" }>) => {
+      const { id, score: nextScore, xml: nextXml, parserUsed } = event.data;
       if (id < latestHandledRequestIdRef.current) {
         return;
       }
 
       latestHandledRequestIdRef.current = id;
-      setAnalysis({ score: nextScore, xml: nextXml });
+      setAnalysis({ score: nextScore, xml: nextXml, parserUsed });
       setIsScorePending(id !== requestIdRef.current);
     };
 
@@ -657,7 +657,7 @@ export function App() {
       hideVoice2Rests: debouncedAnalysisInput.hideVoice2Rests,
       useLezerParser,
     });
-  }, [debouncedAnalysisInput]);
+  }, [debouncedAnalysisInput, useLezerParser]);
 
   useEffect(() => {
     localStorage.setItem("drummark-dsl", dsl);
@@ -909,45 +909,12 @@ export function App() {
         <div className="header-branding">
           <DrumIcon />
           <div>
-            <h1
-              style={{ cursor: "pointer", userSelect: "none" }}
-              onClick={() => {
-                const newCount = titleClickCount + 1;
-                setTitleClickCount(newCount);
-                if (newCount >= 5) {
-                  setDebugMenuVisible((v) => !v);
-                  setTitleClickCount(0);
-                }
-              }}
-            >
+            <h1>
               DrumMark
             </h1>
             <p>Text-first notation</p>
           </div>
         </div>
-        {debugMenuVisible && (
-          <div className="debug-menu" style={{
-            position: "absolute",
-            top: 60,
-            left: 10,
-            background: "var(--bg-secondary)",
-            border: "1px solid var(--border-color)",
-            borderRadius: 6,
-            padding: 12,
-            zIndex: 1000,
-            minWidth: 200,
-          }}>
-            <div style={{ fontWeight: "bold", marginBottom: 8 }}>Debug Options</div>
-            <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
-              <input
-                type="checkbox"
-                checked={useLezerParser}
-                onChange={(e) => setUseLezerParser(e.target.checked)}
-              />
-              Use Lezer Parser
-            </label>
-          </div>
-        )}
         <div className="header-actions">
           <a className="export-button" href="docs.html"><BookIcon /> Docs</a>
         </div>
@@ -1105,6 +1072,21 @@ export function App() {
                     <input type="range" min="0" max="100" step="1" value={settings.titleStaffGap} onChange={(e) => updateSetting("titleStaffGap", parseFloat(e.target.value))} />
                   </div>
                 </div>
+                {debugMode && (
+                  <div className="settings-section">
+                    <h3 className="settings-section-title">Debug</h3>
+                    <label className="setting-row toggle">
+                      <span>Use Lezer Parser</span>
+                      <div className="toggle-switch">
+                        <input type="checkbox" checked={useLezerParser} onChange={(e) => setUseLezerParser(e.target.checked)} />
+                        <span className="toggle-slider"></span>
+                      </div>
+                    </label>
+                    <div className="setting-row" style={{ fontSize: 11, color: analysis.parserUsed === "lezer" ? "#3fb950" : "var(--text-muted)", fontFamily: "monospace" }}>
+                      <span>parser: {analysis.parserUsed}</span>
+                    </div>
+                  </div>
+                )}
               </aside>
           </div>
         </section>

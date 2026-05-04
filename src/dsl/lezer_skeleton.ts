@@ -1,4 +1,5 @@
 import { parser } from "./drum_mark.parser";
+import { inferGrouping } from "./parser";
 import type {
   DocumentSkeleton,
   TrackParagraph,
@@ -111,13 +112,14 @@ export function parseDocumentSkeletonFromLezer(source: string): DocumentSkeleton
   }
 
   // Defaults
+  const time = (headers.time as DocumentSkeleton["headers"]["time"]) ?? { field: "time" as const, beats: 4, beatUnit: 4, line: 0 };
   const result: DocumentSkeleton = {
     headers: {
       title: headers.title as DocumentSkeleton["headers"]["title"],
       subtitle: headers.subtitle as DocumentSkeleton["headers"]["subtitle"],
       composer: headers.composer as DocumentSkeleton["headers"]["composer"],
       tempo: (headers.tempo as DocumentSkeleton["headers"]["tempo"]) ?? { field: "tempo", value: 120, line: 0 },
-      time: (headers.time as DocumentSkeleton["headers"]["time"]) ?? { field: "time", beats: 4, beatUnit: 4, line: 0 },
+      time,
       grouping: headers.grouping as DocumentSkeleton["headers"]["grouping"],
       note: headers.note as DocumentSkeleton["headers"]["note"],
       divisions: headers.divisions as DocumentSkeleton["headers"]["divisions"],
@@ -125,6 +127,14 @@ export function parseDocumentSkeletonFromLezer(source: string): DocumentSkeleton
     paragraphs: [],
     errors,
   };
+
+  // Infer grouping when not explicitly provided, matching the regex parser behavior
+  if (!result.headers.grouping) {
+    const inferred = inferGrouping(time.beats, time.beatUnit);
+    if (inferred) {
+      result.headers.grouping = { field: "grouping", values: inferred, line: 0 };
+    }
+  }
 
   // --- Parse track body ---
   if (!trackBody) return result;
@@ -290,9 +300,11 @@ function parseHeaderLine(
   } else if (headerNode.name === "NoteHeader") {
     const ints = contentChildren.filter(c => c.name === "Integer");
     if (ints.length === 2) {
+      const num = parseInt(nodeText(ints[0], source), 10);
+      const den = parseInt(nodeText(ints[1], source), 10);
       headers["note"] = {
         field: "note" as const,
-        value: { numerator: parseInt(nodeText(ints[0], source), 10), denominator: parseInt(nodeText(ints[1], source), 10) },
+        value: den / num,
         line: lineNumber,
       };
     }

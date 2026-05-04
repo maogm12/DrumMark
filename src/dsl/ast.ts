@@ -1,6 +1,7 @@
 import { parseDocumentSkeleton } from "./parser";
 import {
   TRACKS,
+  type DocumentSkeleton,
   type MeasureToken,
   type ParseError,
   type ParsedMeasure,
@@ -167,6 +168,7 @@ function isBelowSixtyFourth(numerator: number, denominator: number): boolean {
 }
 
 function validateGrouping(headers: ScoreAst["headers"], errors: ParseError[]): void {
+  if (!headers.grouping) return;
   const groupingTotal = headers.grouping.values.reduce((total, value) => total + value, 0);
   if (groupingTotal !== headers.time.beats) {
     errors.push({
@@ -382,8 +384,10 @@ function validateMeasureMetadata(paragraphs: ScoreParagraph[], errors: ParseErro
   }
 }
 
-export function buildScoreAst(source: string): ScoreAst {
-  const skeleton = parseDocumentSkeleton(source);
+export function buildScoreAst(sourceOrSkeleton: string | DocumentSkeleton): ScoreAst {
+  const skeleton = typeof sourceOrSkeleton === "string"
+    ? parseDocumentSkeleton(sourceOrSkeleton)
+    : sourceOrSkeleton;
   const errors = [...skeleton.errors];
   validateGrouping(skeleton.headers as ScoreAst["headers"], errors);
   const paragraphs: ScoreParagraph[] = [];

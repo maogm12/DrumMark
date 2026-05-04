@@ -100,7 +100,7 @@ function parsePositiveInteger(value: string): number | null {
   return parsed > 0 ? parsed : null;
 }
 
-function inferGrouping(beats: number, beatUnit: number): number[] | null {
+export function inferGrouping(beats: number, beatUnit: number): number[] | null {
   const key = `${beats}/${beatUnit}`;
 
   switch (key) {

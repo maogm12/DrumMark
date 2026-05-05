@@ -12,21 +12,44 @@
 
 ## Specification & Design Review Protocol
 
-To ensure technical integrity and historical traceability, all formal specifications (e.g., `DRUMMARK_SPEC.md`, `DRUM_IR_SPEC.md`) and design proposals must follow this **Linear Ledger Protocol**:
+To ensure technical integrity and historical traceability, all formal specifications (e.g., `DRUMMARK_SPEC.md`, `DRUM_IR_SPEC.md`) and design proposals must follow this **Proposal-based Review Protocol**. Proposals are authored, reviewed, and iterated in isolated files; only the final approved result lands in the spec.
 
-1. **Strict Physical Append**: Never modify the "Base" version OR any previously written Addendum/Review Note. All new content (Addendums, Amendments, or Review Notes) MUST be appended to the **very end of the file**, below the last existing character.
-2. **Chrono-Log Format**: The file must grow downward like a ledger. Each proposal and its associated reviews form a logical unit in the history:
-    - **Addendum Title Format**: `## Addendum [vX.Y]: [Descriptive Title]` (e.g., `## Addendum v1.2: Support for Multi-Measure Repeats`).
-    - **Sequence**: `[Proposal Addendum] -> [Review Round 1] -> [Addendum (Amendment) if needed] -> [Review Round 2] -> [Consolidated Changes]`.
-3. **Prohibition of Anchoring**: Do NOT use `replace` to insert content above an existing "Review Notes" or "Addendum" header. If you need to add a response to a review, it must be a NEW Addendum (Amendment) at the bottom, not an edit to an old one.
-4. **Mandatory Sub-agent Review**: After proposing an update or a new design, the agent MUST invoke a sub-agent to review it.
-    - **Constructive Hostility**: The reviewer must act as a critical architect, searching for logic deadlocks, ambiguities, or implementation gaps.
-    - **No Rubber Stamping**: "Looks good" is an automatic failure. The reviewer must provide specific, actionable critiques or verify complex edge cases.
-    - **Physical Documentation**: The reviewer MUST append their review notes to the very end of the document being reviewed, following the Linear Ledger Protocol.
-    - **Review Round ID**: Every review must clearly state its round number (e.g., `### Review Round 1`).
-5. **Final Approval & Consolidation**:
-    - Implementation may ONLY begin once a sub-agent review concludes with a clear `STATUS: APPROVED`.
-    - **Consolidated Changes**: After receiving final approval from all reviewers, the primary agent MUST append a final `### Consolidated Changes` section. This section must synthesize all agreed-upon changes from the proposal and its subsequent review rounds into a single, cohesive summary for future reference. This summary and all associated review notes are part of the same Addendum's logical record.
+### 1. Proposal File
+
+- **Create a standalone proposal file** in `docs/` for each change, named `<SpecName>_proposal_<topic>.md` (e.g., `DRUMMARK_SPEC_proposal_rehearsal_marks.md`).
+- The proposal file contains the full Addendum text as it would appear in the spec.
+- **Each proposal gets its own file** — concurrent proposals do not block each other.
+
+### 2. Review Iteration (Linear Ledger within the Proposal)
+
+The proposal file itself follows the **Linear Ledger Protocol** for review notes:
+
+- **Strict Physical Append**: Never modify the original proposal text or any previous review round. All review notes and author responses MUST be appended to the **very end of the file**.
+- **Chrono-Log Format**: The file grows downward:
+    - `## Addendum vX.Y: [Title]` (the original proposal)
+    - `### Review Round 1` (reviewer notes)
+    - `### Author Response` (author addresses feedback)
+    - `### Review Round 2` → `### Author Response` → ... until approval
+- **Prohibition of Anchoring**: Do NOT insert content above an existing header. Every response is a new section at the bottom.
+
+### 3. Mandatory Sub-agent Review
+
+After authoring a proposal, the agent MUST invoke a sub-agent to review it:
+
+- **Constructive Hostility**: The reviewer must act as a critical architect, searching for logic deadlocks, ambiguities, or implementation gaps.
+- **No Rubber Stamping**: "Looks good" is an automatic failure. The reviewer must provide specific, actionable critiques or verify complex edge cases.
+- **Physical Documentation**: The reviewer MUST append their review notes to the proposal file, following the Linear Ledger Protocol.
+- **Review Round ID**: Every review must clearly state its round number (e.g., `### Review Round 1`).
+- The reviewer must end with a clear status: `STATUS: CHANGES_REQUESTED` or `STATUS: APPROVED`.
+
+### 4. Final Approval, Consolidation & Archival
+
+- Implementation may ONLY begin once a sub-agent review concludes with `STATUS: APPROVED`.
+- After approval, the author MUST:
+    1. **Append `### Consolidated Changes`** to the proposal file, synthesizing all agreed-upon changes from the proposal and its review rounds into a single, cohesive summary.
+    2. **Append a clean Addendum** to the actual spec file (`DRUMMARK_SPEC.md` etc.) following the Linear Ledger Protocol — no review noise, just the final approved content.
+    3. **Move the proposal file** to `docs/archived/` for historical record.
+- The spec file itself remains append-only: Addendums are added to its end, never inserted above existing content.
 
 ## Rendering Rules
 

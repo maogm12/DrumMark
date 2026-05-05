@@ -444,8 +444,12 @@ function renderXmlTreeLines(node: Node, depth: number, path: string, collapsed: 
   const isCollapsed = collapsed.has(nodePath);
 
   const childNodes = Array.from(el.childNodes);
-  const visibleChildren = childNodes.filter((n) => n.nodeType !== Node.TEXT_NODE || n.textContent?.trim());
-  const hasChildren = visibleChildren.length > 0;
+  const childElements = childNodes.filter((n) => n.nodeType === Node.ELEMENT_NODE);
+  const textContent = childNodes
+    .filter((n) => n.nodeType === Node.TEXT_NODE)
+    .map((n) => n.textContent?.trim())
+    .filter(Boolean)
+    .join("");
 
   const attrs = Array.from(el.attributes).map((attr) => (
     <span key={attr.name} className="xml-attr">
@@ -455,6 +459,23 @@ function renderXmlTreeLines(node: Node, depth: number, path: string, collapsed: 
       <span className="xml-attr-eq">"</span>
     </span>
   ));
+
+  // Leaf element: text content only, no child elements → inline
+  if (childElements.length === 0 && textContent) {
+    return (
+      <div key={`e-${index}`} className="xml-line" style={{ paddingLeft: depth * 16 }}>
+        <span className="xml-toggle xml-toggle-placeholder"/>
+        <span className="xml-bracket">{"<"}</span>
+        <span className="xml-tag">{tagName}</span>
+        {attrs}
+        <span className="xml-bracket">{">"}</span>
+        <span className="xml-text">{textContent}</span>
+        <span className="xml-bracket">{"</"}{tagName}{">"}</span>
+      </div>
+    );
+  }
+
+  const hasChildren = childElements.length > 0;
 
   return (
     <div key={`e-${index}`}>
@@ -471,7 +492,7 @@ function renderXmlTreeLines(node: Node, depth: number, path: string, collapsed: 
         {attrs}
         <span className="xml-bracket">{isCollapsed && hasChildren ? "> [...]" : (hasChildren ? ">" : "/>")}</span>
       </div>
-      {!isCollapsed && visibleChildren.map((child, i) =>
+      {hasChildren && !isCollapsed && childElements.map((child, i) =>
         renderXmlTreeLines(child, depth + 1, `${nodePath}/${i}`, collapsed, toggle, i),
       )}
       {hasChildren && !isCollapsed && (

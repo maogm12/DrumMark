@@ -1,6 +1,6 @@
-title Metadata Demo
-subtitle Subtitle
-composer G Mao
+title "Metadata Demo"
+subtitle "Subtitle"
+composer "G Mao"
 tempo 96
 time 4/4
 note 1/8

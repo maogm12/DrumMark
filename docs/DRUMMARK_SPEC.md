@@ -1954,3 +1954,51 @@ Glyph ( Suffix )*
 | `[2:dd]:accent` | two notes `d` stretched to 2 slots, both get `:accent` |
 | `[2:-]:accent` | **invalid** — rests cannot have articulation modifiers |
 
+## Addendum 2026-05-04: String Quoting for Text Headers
+
+### Status
+
+Proposed
+
+### Scope
+
+This addendum refines Section 3.1 (Supported Header Fields) to require that `title`, `subtitle`, and `composer` values be quoted strings. It also announces the future deprecation of the regex-based parser.
+
+### String Quoting Rule
+
+- `title`, `subtitle`, and `composer` header values MUST be enclosed in single quotes (`'...'`) or double quotes (`"..."`).
+- Unquoted values are no longer supported and will produce a parse error.
+
+**Valid**:
+```
+title "Funk Study No. 1"
+subtitle 'Verse groove'
+composer "G. Mao"
+```
+
+**Invalid** (will produce a hard error):
+```
+title Funk Study No. 1
+subtitle Verse groove
+composer G. Mao
+```
+
+### Why
+
+The regex-based DSL parser previously accepted unquoted title/subtitle/composer values by consuming remaining text on the line. The Lezer grammar parser requires explicit string tokens for text values to avoid ambiguity with other keywords and token types. The quoting requirement unifies both parsers and eliminates edge cases where trailing text could be interpreted as DSL tokens.
+
+### Canonical IR
+
+The IR `Header` type already stores `title`, `subtitle`, and `composer` as `string` fields. The quoting is a syntactic requirement at the DSL level only — the IR is unchanged. Canonical IR string values do not include the quote delimiters.
+
+### Regex Parser Deprecation
+
+- The regex-based parser (`src/dsl/regex/`) is deprecated and will be removed in a future release.
+- All new development targets the Lezer grammar parser exclusively.
+- Users should migrate to the Lezer parser if not already using it (it is the default in the current editor).
+- The spec examples have been updated to reflect quoted string syntax.
+
+### Supersession
+
+This addendum supersedes the `title <text>`, `subtitle <text>`, and `composer <text>` syntax descriptions in Section 3.1, which previously implied unquoted free text.
+

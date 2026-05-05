@@ -70,6 +70,7 @@
                         <span class="docs-nav-group-title">Advanced</span>
                         <a href="#validation" class="docs-nav-link">Validation</a>
                         <a href="#full-example" class="docs-nav-link">Full Example</a>
+                        <a href="#common-patterns" class="docs-nav-link">Common Patterns</a>
                     </div>
                 </nav>
             </aside>
@@ -86,8 +87,9 @@
                                 <p>DrumMark is for drummers who already understand meter, grouping, articulations, and standard kit notation.</p>
                             </div>
                             <div class="docs-description">
-                                <p>DrumMark describes drum notation in plain text. You write rhythm, orchestration, and articulation, and the system compiles that into standard drum notation.</p>
-                                <p>Its goal is not to replace musicianship. Its goal is to encode things drummers already think in terms of, such as meter, beat grouping, accents, grace-note figures, repeats, and sticking, in the shortest stable textual form possible.</p>
+                                <p>DrumMark describes drum notation in plain text. Write what you play, and the system compiles it into standard drum notation.</p>
+                                <p>The rendered example below shows a basic rock beat — hi-hat on every eighth note, snare on beats 2 and 4, bass drum on 1 and 3.</p>
+                                <p>Spaces are optional for readability. Tokens like <code>x</code> (hi-hat), <code>d</code> (drum hit), and <code>b</code> (bass drum) map directly to kit pieces. Every token occupies one rhythmic slot, and the slots fill the measure.</p>
                                 <div class="docs-section-content">
                                     <ul class="docs-list">
                                         <li><strong>Comments:</strong> everything after <code>#</code> on a line is a comment.</li>
@@ -108,7 +110,7 @@
                                 <p>Headers come before any score content and define meter, internal beat grouping, and input resolution.</p>
                                 <div class="docs-section-content">
                                     <ul class="docs-list">
-                                        <li><strong>title / subtitle / composer:</strong> Your score's name and credits. These appear on the printed sheet.</li>
+                                        <li><strong>title / subtitle / composer:</strong> Text headers for your score's name and credits. Values must be quoted with single or double quotes: <code>title "My Song"</code> or <code>subtitle 'Verse A'</code>. These appear on the printed sheet.</li>
                                         <li><strong>tempo:</strong> Quarter-note BPM. Default is 120 if omitted.</li>
                                         <li><strong>time:</strong> The meter (e.g., <code>4/4</code>, <code>3/4</code>, <code>6/8</code>). Required.</li>
                                         <li><strong>note:</strong> The duration of a single <strong>Note Unit</strong> (grid slot, e.g., <code>note 1/16</code>). Required.
@@ -182,6 +184,7 @@
                                         <li><strong>Auto-registration:</strong> once a track appears in a line header, routing block, or <code>Track:</code> prefix, it enters the score's track list and keeps that first-seen ordering.</li>
                                         <li><strong>Auto-rest fill:</strong> if a registered track is omitted in later paragraphs, the system fills it with full-measure rests automatically.</li>
                                     </ul>
+                                    <p><strong>Stem direction (voice):</strong> Drum notation uses two voices per staff. Voice 1 (stems up) covers hands — hi-hat, ride, crash, snare, toms. Voice 2 (stems down) covers feet — bass drum, hi-hat pedal. The system assigns this automatically based on which track you write to.</p>
                                 </div>
                             </div>
                             <div class="example-inject" data-example="tracks"></div>
@@ -210,33 +213,33 @@
                                             <tr><th>Shortcut Token</th><th>Resolves To</th><th>Notes</th></tr>
                                         </thead>
                                         <tbody>
-                                            <tr><td><code>x</code></td><td>Context-aware hit</td><td>In cymbal context it is a cymbal strike; in drum context it is snare cross-stick; in anonymous context it defaults to hi-hat.</td></tr>
-                                            <tr><td><code>s</code><br><code>S</code></td><td><code>SD:d</code><br><code>SD:d:accent</code></td><td>Snare shortcut.</td></tr>
-                                            <tr><td><code>b</code><br><code>B</code></td><td><code>BD:d</code><br><code>BD:d:accent</code></td><td>Bass drum shortcut.</td></tr>
-                                            <tr><td><code>b2</code><br><code>B2</code></td><td><code>BD2:d</code><br><code>BD2:d:accent</code></td><td>Second bass drum.</td></tr>
-                                            <tr><td><code>r</code><br><code>R</code></td><td><code>RC:d</code><br><code>RC:d:accent</code></td><td>Ride shortcut; bare <code>R</code> only means sticking inside <code>ST</code>.</td></tr>
-                                            <tr><td><code>r2</code><br><code>R2</code></td><td><code>RC2:d</code><br><code>RC2:d:accent</code></td><td>Second ride.</td></tr>
-                                            <tr><td><code>c</code><br><code>C</code></td><td><code>C:d</code><br><code>C:d:accent</code></td><td>Crash shortcut.</td></tr>
-                                            <tr><td><code>c2</code><br><code>C2</code></td><td><code>C2:d</code><br><code>C2:d:accent</code></td><td>Second crash.</td></tr>
-                                            <tr><td><code>t1</code><br><code>T1</code></td><td><code>T1:d</code><br><code>T1:d:accent</code></td><td>Tom 1.</td></tr>
-                                            <tr><td><code>t2</code><br><code>T2</code></td><td><code>T2:d</code><br><code>T2:d:accent</code></td><td>Tom 2.</td></tr>
-                                            <tr><td><code>t3</code><br><code>T3</code></td><td><code>T3:d</code><br><code>T3:d:accent</code></td><td>Tom 3.</td></tr>
-                                            <tr><td><code>t4</code><br><code>T4</code></td><td><code>T4:d</code><br><code>T4:d:accent</code></td><td>Tom 4.</td></tr>
-                                            <tr><td><code>o</code><br><code>O</code></td><td><code>HH:d:open</code><br><code>HH:d:open:accent</code></td><td>Open hi-hat hit.</td></tr>
-                                            <tr><td><code>spl</code><br><code>SPL</code></td><td><code>SPL:d</code><br><code>SPL:d:accent</code></td><td>Splash.</td></tr>
-                                            <tr><td><code>chn</code><br><code>CHN</code></td><td><code>CHN:d</code><br><code>CHN:d:accent</code></td><td>China.</td></tr>
+                                            <tr><td><code>x</code></td><td>Context-aware hit</td><td>Hi-hat in cymbal tracks; snare cross-stick in drum tracks; defaults to hi-hat on anonymous lines.</td></tr>
+                                            <tr><td><code>s</code><br><code>S</code></td><td><code>SD:d</code><br><code>SD:d:accent</code></td><td>Snare — the most common shortcut.</td></tr>
+                                            <tr><td><code>b</code><br><code>B</code></td><td><code>BD:d</code><br><code>BD:d:accent</code></td><td>Bass drum.</td></tr>
+                                            <tr><td><code>o</code><br><code>O</code></td><td><code>HH:d:open</code><br><code>HH:d:open:accent</code></td><td>Open hi-hat.</td></tr>
+                                            <tr><td><code>r</code><br><code>R</code></td><td><code>RC:d</code><br><code>RC:d:accent</code></td><td>Ride cymbal. Bare <code>R</code> only means sticking inside <code>ST</code> track.</td></tr>
+                                            <tr><td><code>c</code><br><code>C</code></td><td><code>C:d</code><br><code>C:d:accent</code></td><td>Crash cymbal.</td></tr>
+                                            <tr><td><code>p</code><br><code>P</code></td><td>Local pedal hit<br>Accented local pedal hit</td><td>Hi-hat foot pedal; defaults to <code>HF</code> on anonymous lines.</td></tr>
+                                            <tr><td><code>g</code><br><code>G</code></td><td>Local ghost hit<br>Accented local ghost hit</td><td>Ghost note; defaults to <code>SD:d:ghost</code> on anonymous lines.</td></tr>
+                                            <tr><td><code>R</code><br><code>L</code></td><td><code>ST</code> right hand<br><code>ST</code> left hand</td><td>Sticking — only in <code>ST</code> track or with <code>ST:</code> prefix.</td></tr>
+                                            <tr><td><code>t1</code><br><code>T1</code></td><td><code>T1:d</code><br><code>T1:d:accent</code></td><td>High tom.</td></tr>
+                                            <tr><td><code>t2</code><br><code>T2</code></td><td><code>T2:d</code><br><code>T2:d:accent</code></td><td>Mid tom.</td></tr>
+                                            <tr><td><code>t3</code><br><code>T3</code></td><td><code>T3:d</code><br><code>T3:d:accent</code></td><td>Floor tom.</td></tr>
+                                            <tr><td><code>t4</code><br><code>T4</code></td><td><code>T4:d</code><br><code>T4:d:accent</code></td><td>Low tom.</td></tr>
+                                            <tr><td><code>r2</code><br><code>R2</code></td><td><code>RC2:d</code><br><code>RC2:d:accent</code></td><td>Second ride cymbal.</td></tr>
+                                            <tr><td><code>c2</code><br><code>C2</code></td><td><code>C2:d</code><br><code>C2:d:accent</code></td><td>Second crash cymbal.</td></tr>
+                                            <tr><td><code>b2</code><br><code>B2</code></td><td><code>BD2:d</code><br><code>BD2:d:accent</code></td><td>Second bass drum (double-kick setups).</td></tr>
+                                            <tr><td><code>spl</code><br><code>SPL</code></td><td><code>SPL:d</code><br><code>SPL:d:accent</code></td><td>Splash cymbal.</td></tr>
+                                            <tr><td><code>chn</code><br><code>CHN</code></td><td><code>CHN:d</code><br><code>CHN:d:accent</code></td><td>China cymbal.</td></tr>
                                             <tr><td><code>cb</code><br><code>CB</code></td><td><code>CB:d</code><br><code>CB:d:accent</code></td><td>Cowbell.</td></tr>
                                             <tr><td><code>wb</code><br><code>WB</code></td><td><code>WB:d</code><br><code>WB:d:accent</code></td><td>Wood block.</td></tr>
                                             <tr><td><code>cl</code><br><code>CL</code></td><td><code>CL:d</code><br><code>CL:d:accent</code></td><td>Clap.</td></tr>
-                                            <tr><td><code>p</code><br><code>P</code></td><td>Local pedal hit<br>Accented local pedal hit</td><td>Local fallback token; in anonymous context it falls back to <code>HF</code>.</td></tr>
-                                            <tr><td><code>g</code><br><code>G</code></td><td>Local ghost hit<br>Accented local ghost hit</td><td>Local fallback token; in anonymous context it falls back to <code>SD:d:ghost</code>.</td></tr>
-                                            <tr><td><code>R</code><br><code>L</code></td><td><code>ST</code> right hand<br><code>ST</code> left hand</td><td>Only inside the <code>ST</code> track, or under an explicit <code>ST:</code> override.</td></tr>
                                         </tbody>
                                     </table>
                                     <ul class="docs-list">
-                                        <li><strong>Resolution priority 1:</strong> explicit overrides win. <code>RC:d</code> always routes to <code>RC</code>.</li>
-                                        <li><strong>Resolution priority 2:</strong> static magic tokens come next. Tokens like <code>s</code>, <code>b</code>, <code>r</code>, and <code>c</code> do not change target tracks just because you wrote them on another line.</li>
-                                        <li><strong>Resolution priority 3:</strong> only then does context fallback apply. Bare tokens such as <code>d</code> and <code>x</code> depend on the current named-track or anonymous-track context.</li>
+                                        <li><strong>Explicit always wins:</strong> <code>RC:d</code> means ride cymbal, regardless of which track line you write it on.</li>
+                                        <li><strong>Shortcut tokens are fixed:</strong> <code>s</code> always means snare, <code>b</code> always means bass drum — they don't change meaning on a different track line.</li>
+                                        <li><strong>Bare tokens depend on context:</strong> <code>d</code> and <code>x</code> adapt to whichever track line they appear on, or default to hi-hat on anonymous lines.</li>
                                     </ul>
                                     <div class="docs-mini-table-container">
                                         <table class="docs-table">
@@ -332,8 +335,9 @@
                                 <p>Playing multiple parts simultaneously.</p>
                             </div>
                             <div class="docs-description">
-                                <p>Combined hits use <code>+</code>. Every component starts on the same attack point and shares the same default duration.</p>
+                                <p>Combined hits use <code>+</code>. Every component starts on the same attack point and shares the same duration.</p>
                                 <p><code>x+s</code> is the common hat-plus-snare case, and <code>x+s+b</code> means three simultaneous voices. Explicit forms such as <code>HH:d + SD:d</code> are also valid. Spaces around <code>+</code> are optional.</p>
+                                <p>Each component can carry its own modifiers: <code>s:flam + b</code> is a flam on snare with a normal bass drum hit. A group with trailing modifiers applies them to all components: <code>[2: s+b]:accent</code> adds an accent to both snare and bass drum.</p>
                             </div>
                             <div class="example-inject" data-example="combined-hits"></div>
                         </article>
@@ -346,6 +350,7 @@
                             <div class="docs-description">
                                 <p>The <code>ST</code> track is mainly for saying how something is played, not what is played. It is especially useful in exercises, teaching material, rudiment assignments, jazz ride/snare orchestrations, and any passage where sticking must be explicit.</p>
                                 <p>Write <code>R</code> for right hand and <code>L</code> for left hand. The annotation attaches to the sounding notes at the same attack point; if an <code>ST</code> position has no real note underneath it, that sticking mark is ignored in export.</p>
+                                <p>The <code>ST</code> track is purely annotation — it does not produce notes or count toward measure duration. It exists in parallel with the musical tracks and does not affect rhythmic validation.</p>
                             </div>
                             <div class="example-inject" data-example="sticking"></div>
                         </article>
@@ -358,17 +363,33 @@
                             <div class="docs-description">
                                 <p>Structural markings are score-global, not private to one track. You may write them on any track line, but they apply to the shared global measure.</p>
                                 <div class="docs-section-content">
+                                    <h3>Barlines</h3>
                                     <ul class="docs-list">
-                                        <li><strong>Barlines:</strong> <code>|</code> is normal; <code>|:</code> starts a repeat; <code>:|</code> ends a repeat; <code>||</code> is a double barline; <code>|.</code> explicitly ends the current volta bracket without forcing a final barline.</li>
-                                        <li><strong>Final barline:</strong> the score automatically ends with a final barline on the last measure, so you do not need separate syntax just to draw the ending line.</li>
-                                        <li><strong>Whitespace matters:</strong> <code>||</code> means a double barline with no empty measure inside it, while <code>|  |</code> means there is an actual empty measure between the two barlines.</li>
-                                        <li><strong>Voltas:</strong> <code>|1.</code> is first ending, and <code>|1,2.</code> is a shared ending. A volta ends at a new volta, at <code>:|</code>, or at <code>|.</code>.</li>
-                                        <li><strong>Measure repeats:</strong> <code>%</code> repeats the previous logical measure and <code>%%</code> repeats the previous two logical measures, recursively resolving earlier measure-repeat bars when needed.</li>
-                                        <li><strong>Measure-repeat scope:</strong> <code>%</code> and <code>%%</code> must occupy the whole measure, and if one track declares them on a bar, other tracks on that same bar must stay empty instead of providing ordinary note content.</li>
-                                        <li><strong>Navigation markers:</strong> supported forms are <code>@segno</code>, <code>@coda</code>, <code>@fine</code>, <code>@to-coda</code>, <code>@dc</code>, <code>@ds</code>, <code>@dc-al-fine</code>, <code>@dc-al-coda</code>, <code>@ds-al-fine</code>, and <code>@ds-al-coda</code>. Legacy <code>@da-capo</code> and <code>@dal-segno</code> are rejected.</li>
-                                        <li><strong>Placement rules:</strong> <code>@segno</code> may appear at the measure start or in the interior but not as the last token; <code>@coda</code> only at the start; <code>@fine</code>, <code>@dc</code>, <code>@ds</code>, and the <code>dc/ds-al-*</code> forms only at the end; <code>@to-coda</code> in the interior or at the end, but not at the start.</li>
-                                        <li><strong>Pure navigation bars:</strong> if a measure contains only navigation syntax, start-side forms default to the left edge and end-side forms default to the right edge.</li>
-                                        <li><strong>Conflict rules:</strong> each measure may contain at most one start-side navigation marker (<code>segno</code> or <code>coda</code>) and at most one end-side navigation instruction (<code>fine</code>, <code>to-coda</code>, <code>dc</code>, <code>ds</code>, or a <code>dc/ds-al-*</code> form). Nested or crossing repeat structures are not allowed in v1.</li>
+                                        <li><code>|</code> — normal barline</li>
+                                        <li><code>|:</code> — repeat start</li>
+                                        <li><code>:|</code> — repeat end</li>
+                                        <li><code>||</code> — double barline (no measure between)</li>
+                                        <li><code>|  |</code> — double barline with an empty measure between (whitespace matters)</li>
+                                        <li>The score automatically ends with a final barline — no extra syntax needed.</li>
+                                    </ul>
+                                    <h3>Voltas (Alternative Endings)</h3>
+                                    <ul class="docs-list">
+                                        <li><code>|1.</code> — first ending; <code>|1,2.</code> — shared by 1st and 2nd repetition.</li>
+                                        <li>A volta ends at a new volta, at <code>:|</code>, or at <code>|.</code> (explicit termination).</li>
+                                        <li>Both <code>:|</code> and voltas can span multiple paragraphs — paragraph breaks only affect system layout, not musical structure.</li>
+                                    </ul>
+                                    <h3>Measure Repeats</h3>
+                                    <ul class="docs-list">
+                                        <li><code>%</code> — repeat the previous measure; <code>%%</code> — repeat the previous two measures.</li>
+                                        <li>Measure-repeat bars resolve recursively — if the previous bar is also a repeat, it resolves its content first.</li>
+                                        <li><code>%</code> and <code>%%</code> must occupy the whole measure alone. Other tracks on the same bar must stay empty.</li>
+                                    </ul>
+                                    <h3>Navigation Markers &amp; Jumps</h3>
+                                    <ul class="docs-list">
+                                        <li><strong>Markers:</strong> <code>@segno</code> (segno symbol), <code>@coda</code> (coda symbol), <code>@fine</code> (Fine).</li>
+                                        <li><strong>Jumps:</strong> <code>@dc</code>, <code>@ds</code>, <code>@to-coda</code>, and their <code>al-fine</code>/<code>al-coda</code> variants. Legacy <code>@da-capo</code> and <code>@dal-segno</code> are rejected.</li>
+                                        <li><strong>Placement:</strong> <code>@segno</code> at start or interior (not end); <code>@coda</code> at start only; <code>@fine</code> and jumps at end only; <code>@to-coda</code> interior or end (not start).</li>
+                                        <li>At most one start-side marker and one end-side jump per measure. Nested or crossing repeats are not allowed.</li>
                                     </ul>
                                 </div>
                             </div>
@@ -425,6 +446,49 @@
                                 <p>A complete score demonstrating multiple tracks, complex modifiers, and rhythmic groups.</p>
                             </div>
                             <div class="example-inject" data-example="full-example"></div>
+                        </article>
+
+                        <article class="docs-section-card" id="common-patterns">
+                            <div class="docs-section-header">
+                                <h2>Common Patterns</h2>
+                                <p>A quick-reference cookbook for everyday drum writing.</p>
+                            </div>
+                            <div class="docs-description">
+                                <p>Here are common drum patterns written in DrumMark. Use these as a starting point or a reminder of the syntax.</p>
+                                <div class="docs-section-content">
+                                    <h3>Basic Rock Beat</h3>
+                                    <p>Eighth-note hi-hat, snare on 2 and 4, bass drum on 1 and 3.</p>
+                                    <div class="example-inject" data-example="common-rock"></div>
+
+                                    <h3>16th-Note Groove</h3>
+                                    <p>Hi-hat plays 16th notes; snare and bass drum add syncopation.</p>
+                                    <div class="example-inject" data-example="common-16th"></div>
+
+                                    <h3>Shuffle / Swing</h3>
+                                    <p>Use 12/8 time for a triplet-based shuffle feel.</p>
+                                    <div class="example-inject" data-example="common-shuffle"></div>
+
+                                    <h3>Triplet Fill</h3>
+                                    <p>Groups create tuplets — three notes in the space of two.</p>
+                                    <div class="example-inject" data-example="common-triplet-fill"></div>
+
+                                    <h3>Ghost Note Groove</h3>
+                                    <p>Use <code>:ghost</code> for quiet, nuanced strokes between the backbeats.</p>
+                                    <div class="example-inject" data-example="common-ghost"></div>
+
+                                    <h3>Cross-Stick Verse</h3>
+                                    <p>Use <code>:cross</code> on snare for a tight, woody attack.</p>
+                                    <div class="example-inject" data-example="common-cross-stick"></div>
+
+                                    <h3>Half-Time Feel</h3>
+                                    <p>Halve the snare backbeat — snare only on beat 3.</p>
+                                    <div class="example-inject" data-example="common-half-time"></div>
+
+                                    <h3>Open Hi-Hat Accents</h3>
+                                    <p>Use <code>o</code> (open) and <code>:close</code> for barking hi-hat effects.</p>
+                                    <div class="example-inject" data-example="common-open-hh"></div>
+                                </div>
+                            </div>
                         </article>
                     </div>
                 </div>

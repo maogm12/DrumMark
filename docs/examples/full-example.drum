@@ -1,15 +1,43 @@
-title Funk Groove
-subtitle Section A - Main Theme
-composer Your Name
+title "Fusion Groove"
+subtitle "Demo — Full Feature Showcase"
+composer "G. Mao"
 tempo 108
 time 4/4
-note 1/16
+note 1/8
 grouping 2+2
 
-HH |: x x x x x x x x | x x x x x x o x |
-HF | - - - - - - p - | - - - - - - p - |
-SD | - - d - - - D - | - - d - - - D:g - |
-BD | b - - - b - - - | b - - - B - - - |
-C  | - - - - - - - c | - - - - - - - - |
+# Intro — hats alone, then band enters
+HH | @segno x x x x x x x x |
+SD | - - - - d - - - |
+BD | - - - - b - - - |
 
-| d d d d *3 |
+# Verse — full groove with accents and sticking
+HH | x x x x x x x x |
+SD | - - d - - - D:flam - |
+BD | B - - - b - b - - |
+RC | - - - - d:bell - - - |
+ST | R L R L R L R L |
+
+# Chorus — open hats, crash, combined hits
+HH |: x x o - x:close x x x |
+SD | - - d - - - D - |
+BD | b - - - B - - - |
+C  | c - - - - - - - |
+
+HH | x x o - x:close x x x |
+SD | - - s + b - - D - |
+BD | B - - - b - b - - |
+C  | - - - - c - - - :|
+
+# Bridge — triplet fills, then to-coda
+HH | @to-coda x x x x x x x x |
+T1 | [3: d d d] [3: d d d] - - |
+SD | - - - - - - d d |
+BD | b - - - b - - - |
+
+# Coda — breakdown with measure repeats
+HH | @coda x - x - x - x - |
+SD | - - - - d - - - |
+BD | b - - - - - - - *4 |
+
+| @fine |

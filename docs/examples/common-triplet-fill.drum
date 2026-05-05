@@ -1,0 +1,9 @@
+title "Triplet Fill"
+tempo 100
+time 4/4
+note 1/16
+grouping 1+1+1+1
+
+T1 | - - - - - - - - - - - - [2: d d d] [2: d d d] |
+SD | - - - - - - - - - - - - [2: d d d] [2: d d d] |
+BD | b - - - - - - - - - - - - - - - - |

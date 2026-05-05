@@ -1,0 +1,9 @@
+title "Open Hi-Hat Accents"
+tempo 100
+time 4/4
+note 1/16
+grouping 1+1+1+1
+
+HH | x x x x x x x o x x x x x:close x x x |
+SD | - - - - d - - - - - - - d - - - |
+BD | b - - - - - - - b - - - - - - - |

@@ -1,0 +1,9 @@
+title "16th-Note Groove"
+tempo 96
+time 4/4
+note 1/16
+grouping 1+1+1+1
+
+HH | x x x x x x x x x x x x x x x x |
+SD | - - - - d - - - - - d - d - - - |
+BD | b - - - - - b - - b - - - - - b - |

@@ -1,0 +1,9 @@
+title "Ghost Note Groove"
+tempo 92
+time 4/4
+note 1/16
+grouping 4
+
+HH | x x x x x x x x x x x x x x x x |
+SD | - - d:ghost - d - d:ghost - - - d - d:ghost d:ghost - |
+BD | b - - - - - - - b - b - - - - - |

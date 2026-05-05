@@ -667,7 +667,7 @@ function renderSystemsBatch(
 export async function renderScoreToSvg(score: NormalizedScore, inputOptions: VexflowRenderOptions): Promise<string> {
   const options = { ...DEFAULT_RENDER_OPTIONS, ...inputOptions } as VexflowRenderOptions;
   await ensureVexFlowFonts();
-  
+
   const dims = getScaledDimensions(options);
   const allSystems = groupMeasuresIntoSystems(score);
 
@@ -801,6 +801,8 @@ function renderSystem(context: any, score: NormalizedScore, measures: RenderMeas
     const measure = renderMeasure.measure;
     const stave = new Stave(x + i * measureWidth, y, measureWidth);
     stave.setContext(context);
+    stave.setDefaultLedgerLineStyle({ strokeStyle: "#333", lineWidth: 1 });
+
     const stickings = stickingsByStart(measure.events);
 
     if (i === 0) {
@@ -1163,6 +1165,24 @@ function createVexNotes(
       });
       note.setStemLength(stemLength);
       note.setStemDirection(voiceId === 1 ? 1 : -1);
+
+      // Open noteheads (x, circled-x) don't fully cover the stem at the
+      // connection point. A small offset aligns the stem with the glyph edge.
+      if (keys.some(k => k.endsWith("/X") || k.endsWith("/CX"))) {
+        if (voiceId === 1) {
+          note.checkStem().setOptions({ stemUpYOffset: 5 });
+        } else {
+          note.checkStem().setOptions({ stemDownYOffset: 5 });
+        }
+      }
+
+      // Flag glyphs inherit the notehead font size (30pt), which makes them
+      // look oversized next to the notes. Scale them down.
+      const flag = (note as any).flag;
+      if (flag) {
+        flag.fontInfo = { ...flag.fontInfo, size: 22 };
+      }
+
       layoutNote = { note, aboveRefs: [] };
       layoutNotes.push(layoutNote);
 

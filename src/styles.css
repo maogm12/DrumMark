@@ -949,3 +949,11 @@ input:checked + .toggle-slider:before {
     display: none;
   }
 }
+
+.vf-stem {
+  stroke: #333;
+}
+
+.vf-stem path {
+  stroke-linecap: round;
+}

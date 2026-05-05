@@ -638,11 +638,9 @@ export function App() {
 
     worker.onmessage = (event: MessageEvent<{ type: string; id: number; score?: NormalizedScore; xml?: string; parserUsed?: "regex" | "lezer" }>) => {
       const { type, id, score: nextScore, xml: nextXml, parserUsed } = event.data;
-      if (id < latestHandledRequestIdRef.current) {
-        return;
-      }
 
       if (type === "parse" && nextScore && parserUsed) {
+        if (id < latestHandledRequestIdRef.current) return;
         latestHandledRequestIdRef.current = id;
         setAnalysis({ score: nextScore, parserUsed });
         setIsScorePending(id !== requestIdRef.current);
@@ -797,10 +795,11 @@ export function App() {
             @media print {
               @page { margin: 0; size: auto; }
               body { margin: 0; padding: 0; background: white; }
-              .staff-preview-page { 
-                margin: 0 !important; 
-                padding: 0 !important; 
-                page-break-after: always; 
+              .staff-printable-frame { margin: 0 !important; padding: 0 !important; }
+              .staff-preview-page {
+                margin: 0 !important;
+                padding: 0 !important;
+                page-break-after: always;
                 border: none !important;
                 box-shadow: none !important;
                 background: white !important;

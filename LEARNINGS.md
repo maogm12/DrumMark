@@ -177,15 +177,29 @@ The `![\n]*` is a token-layer negation character set matching any character exce
 
 Regenerated the parser with `npx lezer-generator src/dsl/drum_mark.grammar -o src/dsl/drum_mark.parser.js`.
 
-### Parser Status
+### Lezer Migration Complete (2026-05-06)
 
-The regex parser (`parser.ts`) remains the **primary parser** for `buildScoreAst` (and thus `buildNormalizedScore`, CLI, and the Web Worker fallback). It **cannot be removed yet** because:
+The Lezer parser is now the sole parser in all production code paths. The regex parser remains in the codebase for parity tests and benchmarks only.
 
-- The Lezer parser has behavioral gaps (e.g., `voltaTerminator` metadata) that cause ~17 test failures when used as the default.
-- The Web Worker uses Lezer first with regex fallback, which is the correct layered approach.
+All gaps were fixed in `lezer_skeleton.ts`:
 
-The regex parser has two non-test references:
-- `ast.ts:1` — `import { parseDocumentSkeleton } from "./parser"` (used when `buildScoreAst` receives a raw string)
-- `index.ts:5` — `export * from "./parser"` (re-exports `parseDocumentSkeleton` and `inferGrouping` as public API)
+| Gap | Fix |
+|-----|-----|
+| Leading `\n` prevents header parsing | `source.trim()` before parsing |
+| `\|.` barline treated as final | Changed to `single` with `voltaTerminator` |
+| `\|: :\|` empty measure not created | Allow push even with empty content |
+| `\|  \|` ghost measure not created | Same — push empty measures |
+| No implicit repeat-end for intermediate voltas | Added `sameVoltaIndices` + inference logic |
+| No `\|:xN` repeat count | Extract `xN` from MeasureContent after `:\|` |
+| `note 1/N` in body not parsed | Scan source gaps between track lines for overrides |
+| Non-power-of-2 note values not rejected | Added validation in NoteHeader parsing |
+| Braced block nested GroupExpr duplicated | Filter nested MeasureTokens in inner braced MC |
+| Combined hit `+` in group items → rest | Handle `+` as combined-hit separator in `parseGroupItems` |
 
-Full Lezer migration is a separate, larger effort should be tracked as its own task.
+Production file changes:
+- `ast.ts`: switched `parseDocumentSkeleton` → `parseDocumentSkeletonFromLezer`
+- `scoreWorker.ts`: simplified to use `buildNormalizedScore` directly (no fallback needed)
+- `index.ts`: removed `export * from "./parser"`
+- `drum_mark.grammar`: added `Comment` token
+
+The regex parser (`parser.ts`) now has zero production references. All 345 tests pass with Lezer as the only parser.

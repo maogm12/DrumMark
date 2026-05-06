@@ -35,10 +35,10 @@ function nodeText(node: { from: number; to: number }, source: string): string {
 function getBarlineType(text: string): BarlineType {
   switch (text) {
     case "||": return "double";
-    case "||.": return "final";
+    case "||.": return "double";
     case "|:": return "repeatStart";
     case ":|": return "repeatEnd";
-    case "|.": return "end";
+    case "|.": return "single";
     case "|": return "single";
     default:
       if (text.startsWith("|:x")) return "repeatStart";
@@ -48,6 +48,16 @@ function getBarlineType(text: string): BarlineType {
       if (/^(?:\|:|:\||\|)\s*\d/.test(text) && text.endsWith(".")) return "single";
       return "single";
   }
+}
+
+function isVoltaTerminator(text: string): boolean {
+  if (text === "|." || text === "||.") return true;
+  return false;
+}
+
+function sameVoltaIndices(a: number[], b: number[]): boolean {
+  if (a.length !== b.length) return false;
+  return a.every((v, i) => v === b[i]);
 }
 
 function getVoltaIndicesFromBarline(node: NodeInfo, allNodes: NodeInfo[], source: string): number[] | undefined {
@@ -210,7 +220,13 @@ function parseMeasureTokensFromNodes(
       const items: TokenGlyph[] = [];
       if (innerMC) {
         const innerMCNodes = childNodes(allNodes, innerMC.from, innerMC.to);
-        const innerMTs = innerMCNodes.filter(n => n.name === "MeasureToken");
+        const innerMTs = innerMCNodes.filter(n =>
+          n.name === "MeasureToken" &&
+          !innerMCNodes.some(other =>
+            (other.name === "GroupExpr" || other.name === "InlineBracedBlock") &&
+            other.from < n.from && n.to <= other.to,
+          ),
+        );
         for (const imt of innerMTs) {
           const imtChildren = childNodes(allNodes, imt.from, imt.to);
           // Handle structural nodes inside braced block
@@ -370,47 +386,98 @@ function parseGroupItems(text: string): TokenGlyph[] {
     while (pos < text.length && /\s/.test(text[pos])) pos++;
     if (pos >= text.length) break;
 
+    // Handle combined hit: glyph+glyph (the + is not a suffix char)
     const remaining = text.slice(pos);
-    const token = parseGlyphFromText(remaining);
+    const nextPlus = remaining.indexOf("+");
+    let segmentEnd: number;
 
-    // Calculate how many characters of `remaining` were consumed
-    let consumed = 0;
-
-    // Summon prefix: TrackName:
-    if (token.trackOverride) {
-      consumed += token.trackOverride.length + 1;
-    }
-
-    // Basic glyph value
-    if (token.kind === "basic") {
-      if (token.value === "-") {
-        consumed = Math.max(consumed + 1, 1);
+    if (nextPlus > 0) {
+      // Find the end of the combined hit: the segment before the + plus the + plus next glyph
+      let end = nextPlus;
+      // Skip + and find the next glyph segment
+      let after = nextPlus + 1;
+      while (after < remaining.length && /\s/.test(remaining[after])) after++;
+      const afterToken = parseGlyphFromText(remaining.slice(after));
+      const afterConsumed = calculateTokenConsumption(afterToken);
+      if (afterConsumed > 0) {
+        end = after + afterConsumed;
       } else {
-        consumed += token.value.length;
+        end = after;
       }
-    }
-
-    // Duration chars
-    consumed += (token as TokenGlyph).dots ?? 0;
-    consumed += (token as TokenGlyph).halves ?? 0;
-    consumed += (token as TokenGlyph).stars ?? 0;
-
-    // Modifiers
-    if ("modifiers" in token) {
-      for (const mod of (token as TokenGlyph).modifiers ?? []) {
-        consumed += 1 + mod.length;
+      // Now split the combined hit into individual tokens
+      const hitText = remaining.slice(0, end);
+      const plusParts = hitText.split("+");
+      // Parse each part and combine into a combined token if multiple
+      const hitItems: TokenGlyph[] = [];
+      for (const part of plusParts) {
+        const trimmed = part.trim();
+        const token = parseGlyphFromText(trimmed);
+        if (token.kind === "basic" && token.value !== "-") {
+          hitItems.push(token);
+        } else if (token.kind === "basic" && token.value === "-") {
+          // This shouldn't happen in a combined hit, but skip
+        }
       }
-    }
-
-    if (consumed > 0) {
-      items.push(token);
-      pos += consumed;
+      if (hitItems.length === 1) {
+        items.push(hitItems[0]);
+      } else if (hitItems.length > 1) {
+        items.push({ kind: "combined", items: hitItems });
+      }
+      pos += end;
     } else {
-      pos++; // Skip unrecognized character
+      const token = parseGlyphFromText(remaining);
+      const consumed = calculateTokenConsumption(token);
+      if (consumed > 0) {
+        items.push(token);
+        pos += consumed;
+      } else {
+        pos++; // Skip unrecognized character
+      }
     }
   }
 
   return items;
+}
+
+function calculateTokenConsumption(token: TokenGlyph): number {
+  let consumed = 0;
+
+  if (token.kind === "combined") {
+    // Calculate from items
+    for (const item of token.items) {
+      consumed += calculateTokenConsumption(item);
+    }
+    consumed += (token.items.length - 1); // + signs
+    return consumed;
+  }
+
+  if (token.kind === "group" || token.kind === "braced") {
+    return consumed;
+  }
+
+  // Summon prefix
+  if (token.trackOverride) {
+    consumed += token.trackOverride.length + 1;
+  }
+
+  // Basic glyph value
+  if (token.value === "-") {
+    consumed = Math.max(consumed + 1, 1);
+  } else {
+    consumed += token.value.length;
+  }
+
+  // Duration chars
+  consumed += (token as any).dots ?? 0;
+  consumed += (token as any).halves ?? 0;
+  consumed += (token as any).stars ?? 0;
+
+  // Modifiers
+  for (const mod of (token as any).modifiers ?? []) {
+    consumed += 1 + (mod as string).length;
+  }
+
+  return consumed;
 }
 
 const START_NAV_KINDS: StartNavKind[] = ["segno", "coda"];
@@ -545,6 +612,9 @@ function extractNavFromMeasureTokens(
 }
 
 export function parseDocumentSkeletonFromLezer(source: string): DocumentSkeleton {
+  // Match regex parser behavior: trim leading/trailing whitespace so
+  // test sources with leading \n don't prevent header parsing.
+  source = source.trim();
   const tree = parserInstance.parse(source);
   const allNodes = collectNodes(tree);
 
@@ -615,6 +685,7 @@ export function parseDocumentSkeletonFromLezer(source: string): DocumentSkeleton
   const paragraphs: TrackParagraph[] = [];
   let currentLines: ParsedTrackLine[] = [];
   let currentStartLine = 0;
+  let currentNoteValue: number | undefined;
 
   for (const tl of trackLines) {
     const lineNode = tl.line;
@@ -626,6 +697,7 @@ export function parseDocumentSkeletonFromLezer(source: string): DocumentSkeleton
     let currentMeasureContent: NodeInfo | null = null;
     let currentBarline: NodeInfo | null = null;
     let currentVolta: string | null = null;
+    let currentVoltaTerminator = false;
 
     for (const child of lineChildren) {
       if (child.name === "TrackName") {
@@ -644,12 +716,34 @@ export function parseDocumentSkeletonFromLezer(source: string): DocumentSkeleton
             measures[measures.length - 1].repeatEnd = true;
             measures[measures.length - 1].repeatTimes = 2;
           }
+          if (isVoltaTerminator(endBarlineText)) {
+            measures[measures.length - 1].voltaTerminator = true;
+          }
+          // Implicit repeat-end for intermediate voltas
+          const lastMeasure = measures[measures.length - 1];
+          const endVoltaIndices = getVoltaIndicesFromBarline(child, allNodes, source);
+          if (
+            !lastMeasure.repeatEnd &&
+            lastMeasure.voltaIndices !== undefined &&
+            endVoltaIndices !== undefined &&
+            endBarlineType === "single" &&
+            !sameVoltaIndices(lastMeasure.voltaIndices, endVoltaIndices)
+          ) {
+            lastMeasure.repeatEnd = true;
+            lastMeasure.repeatTimes = 2;
+          }
         }
         currentBarline = child;
 
         // Extract volta indices from new-style volta barlines (|N. |:N. :|N.)
         const voltaIndices = getVoltaIndicesFromBarline(child, allNodes, source);
         currentVolta = voltaIndices ? voltaIndices.join(",") : null;
+
+        // Detect volta terminators (|. ||.) for the next measure
+        const barlineText = nodeText(child, source);
+        if (isVoltaTerminator(barlineText)) {
+          currentVoltaTerminator = true;
+        }
       } else if (child.name === "MeasureContent") {
         // Skip nested MeasureContent inside GroupExpr or InlineBracedBlock
         const isNested = lineChildren.some(
@@ -657,7 +751,31 @@ export function parseDocumentSkeletonFromLezer(source: string): DocumentSkeleton
                n.from < child.from && child.to <= n.to,
         );
         if (!isNested) {
-          currentMeasureContent = child;
+          // Extract :|xN repeat count from MeasureContent following a :| barline.
+          // The Lezer grammar parses :|x2 as barline ":|" + content "x2",
+          // but the x2 is really the repeat count.
+          let repeatCountFromContent: number | undefined;
+          if (measures.length > 0 && currentBarline && measures[measures.length - 1].repeatEnd) {
+            const barlineText = nodeText(currentBarline, source);
+            const contentText = nodeText(child, source);
+            // :|xN — the grammar parses :| as barline, xN as content.
+            // Extract the repeat count and strip from content.
+            if (barlineText === ":|") {
+              const xnMatch = contentText.match(/^x(\d+)$/);
+              if (xnMatch?.[1]) {
+                const n = parseInt(xnMatch[1], 10);
+                if (n >= 1) repeatCountFromContent = n;
+              }
+            }
+          }
+          if (repeatCountFromContent !== undefined) {
+            // Apply the repeat count to the previous measure and
+            // clear the content (it's not real musical content).
+            measures[measures.length - 1].repeatTimes = repeatCountFromContent;
+            currentMeasureContent = null;
+          } else {
+            currentMeasureContent = child;
+          }
         }
       }
       // When we have both a barline and measure content, create a measure
@@ -855,6 +973,7 @@ export function parseDocumentSkeletonFromLezer(source: string): DocumentSkeleton
           startNav?: ParsedStartNav;
           endNav?: ParsedEndNav;
           voltaIndices?: number[];
+          voltaTerminator?: boolean;
           measureRepeatSlashes?: number;
           multiRestCount?: number;
         }) => {
@@ -868,6 +987,7 @@ export function parseDocumentSkeletonFromLezer(source: string): DocumentSkeleton
             ...(opts.startNav ? { startNav: opts.startNav } : {}),
             ...(opts.endNav ? { endNav: opts.endNav } : {}),
             ...(opts.voltaIndices ? { voltaIndices: opts.voltaIndices } : {}),
+            ...(opts.voltaTerminator ? { voltaTerminator: true } : {}),
             ...(opts.measureRepeatSlashes ? { measureRepeatSlashes: opts.measureRepeatSlashes } : {}),
             ...(opts.multiRestCount ? { multiRestCount: opts.multiRestCount } : {}),
           });
@@ -903,9 +1023,12 @@ export function parseDocumentSkeletonFromLezer(source: string): DocumentSkeleton
               startNav: i === 0 ? startNav : undefined,
               endNav: i === inlineRepeatCount - 1 ? endNav : undefined,
               voltaIndices: i === 0 ? voltaIndices : undefined,
+              voltaTerminator: i === 0 ? currentVoltaTerminator : undefined,
             });
           }
-        } else if (tokens.length > 0 || startNav || endNav || measureRepeatSlashes || multiRestCount) {
+        } else {
+          // Push even for empty content — ghost measures and repeat-both
+          // empty measures are semantically meaningful.
           pushMeasure({
             content,
             tokens,
@@ -914,10 +1037,10 @@ export function parseDocumentSkeletonFromLezer(source: string): DocumentSkeleton
             startNav,
             endNav,
             voltaIndices,
+            voltaTerminator: currentVoltaTerminator,
             measureRepeatSlashes,
             multiRestCount,
           });
-          // Clear tokens for multi-rest (content is the rest marker, not notes)
           if (multiRestCount) {
             measures[measures.length - 1].tokens = [];
           }
@@ -926,6 +1049,7 @@ export function parseDocumentSkeletonFromLezer(source: string): DocumentSkeleton
         currentBarline = null;
         currentMeasureContent = null;
         currentVolta = null;
+        currentVoltaTerminator = false;
       }
     }
 
@@ -933,15 +1057,47 @@ export function parseDocumentSkeletonFromLezer(source: string): DocumentSkeleton
     // Only add the line if it has measures
     if (measures.length === 0) continue;
 
-    // If newlineCount > 1 (blank line before), start new paragraph
-    if (tl.newlineCount > 1 && currentLines.length > 0) {
-      paragraphs.push({ startLine: currentStartLine, lines: currentLines });
+    // Detect note 1/N override between this track line and the previous one
+    // (or between header section and first track line).
+    let noteOverride: number | undefined;
+    if (currentLines.length > 0) {
+      const prevLine = currentLines[currentLines.length - 1];
+      const gapStart = (prevLine.source?.startOffset ?? 0) + (prevLine.source?.content.length ?? 0);
+      const gapEnd = lineNode.from;
+      const gapText = source.slice(gapStart, gapEnd);
+      const noteMatch = gapText.match(/^note\s+1\s*\/\s*(\d+)$/m);
+      if (noteMatch?.[1]) {
+        const n = parseInt(noteMatch[1], 10);
+        if (n > 0 && (n & (n - 1)) === 0 && n <= 128) {
+          noteOverride = n;
+        }
+      }
+    } else if (paragraphs.length === 0 && trackBody) {
+      // First paragraph: check between header section end and first track line
+      const gapStart = trackBody.from;
+      const gapEnd = lineNode.from;
+      const gapText = source.slice(gapStart, gapEnd);
+      const noteMatch = gapText.match(/^note\s+1\s*\/\s*(\d+)$/m);
+      if (noteMatch?.[1]) {
+        const n = parseInt(noteMatch[1], 10);
+        if (n > 0 && (n & (n - 1)) === 0 && n <= 128) {
+          noteOverride = n;
+        }
+      }
+    }
+
+    // If newlineCount > 1 (blank line before) or a note 1/N override was found,
+    // start a new paragraph.
+    if ((tl.newlineCount > 1 || noteOverride !== undefined) && currentLines.length > 0) {
+      paragraphs.push({ startLine: currentStartLine, lines: currentLines, noteValue: currentNoteValue });
+      currentNoteValue = undefined;
       currentLines = [];
       currentStartLine = lineNumber;
     }
 
     if (currentLines.length === 0) {
       currentStartLine = lineNumber;
+      currentNoteValue = noteOverride !== undefined ? noteOverride : currentNoteValue;
     }
 
     currentLines.push({
@@ -959,7 +1115,7 @@ export function parseDocumentSkeletonFromLezer(source: string): DocumentSkeleton
   }
 
   if (currentLines.length > 0) {
-    paragraphs.push({ startLine: currentStartLine, lines: currentLines });
+    paragraphs.push({ startLine: currentStartLine, lines: currentLines, noteValue: currentNoteValue });
   }
 
   result.paragraphs = paragraphs;
@@ -1016,11 +1172,21 @@ function parseHeaderLine(
     if (ints.length === 2) {
       const num = parseInt(nodeText(ints[0], source), 10);
       const den = parseInt(nodeText(ints[1], source), 10);
-      headers["note"] = {
-        field: "note" as const,
-        value: den / num,
-        line: lineNumber,
-      };
+      const value = den / num;
+      // Validate: N must be a power of 2 (matching regex parser behavior)
+      if (num !== 1 || value < 1 || value > 128 || (value & (value - 1)) !== 0) {
+        errors.push({
+          line: lineNumber,
+          column: 1,
+          message: "Note must be in the form 1/N where N is a power of 2 (1, 2, 4, 8, 16, 32, 64, 128)",
+        });
+      } else {
+        headers["note"] = {
+          field: "note" as const,
+          value,
+          line: lineNumber,
+        };
+      }
     }
   } else if (headerNode.name === "DivisionsHeader") {
     const intNode = contentChildren.find(c => c.name === "Integer");

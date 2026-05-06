@@ -1,4 +1,4 @@
-import { parseDocumentSkeleton } from "./parser";
+import { parseDocumentSkeletonFromLezer } from "./lezer_skeleton";
 import {
   TRACKS,
   type DocumentSkeleton,
@@ -386,7 +386,7 @@ function validateMeasureMetadata(paragraphs: ScoreParagraph[], errors: ParseErro
 
 export function buildScoreAst(sourceOrSkeleton: string | DocumentSkeleton): ScoreAst {
   const skeleton = typeof sourceOrSkeleton === "string"
-    ? parseDocumentSkeleton(sourceOrSkeleton)
+    ? parseDocumentSkeletonFromLezer(sourceOrSkeleton)
     : sourceOrSkeleton;
   const errors = [...skeleton.errors];
   validateGrouping(skeleton.headers as ScoreAst["headers"], errors);

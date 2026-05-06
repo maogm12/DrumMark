@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "predev": "npm run build-docs",
     "dev": "vite --host",
     "build": "tsc -b && npm run build-docs && vite build",
     "build-docs": "tsx build-docs.ts",

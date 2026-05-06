@@ -1,11 +1,12 @@
 @top Document { HeaderSection Newline* TrackBody }
 
-@skip { space }
+@skip { space | Comment }
 
 space { " " }
 Newline { "\n" }
 
 @tokens {
+  Comment { "#" ![\n]* }
   Integer { @digit+ }
   String { "\"" !["]* "\"" | "'" ![']* "'" }
 }

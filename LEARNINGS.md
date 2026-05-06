@@ -145,3 +145,47 @@
 - Regex-based SVG probes should be flexible: use `[^>]*` for attributes and allow for optional or self-closing tags to avoid CI failures.
 - When changing global layout defaults (like `staffScale` or `pagePadding`), existing tests that rely on absolute SVG coordinates (e.g., `y="190.5"`) will likely break. Prefer coordinate-agnostic assertions (e.g., checking relative positions or counts of elements) to make tests more resilient to design refinements.
 - GitHub Actions should always run the full test suite (`npm test`) before building to catch regressions early.
+
+## 2026-05-05 Addendum: Lezer Comment Handling & Parser Consolidation
+
+### Root Cause
+
+The Lezer grammar (`drum_mark.grammar`) had no `Comment` token. Lines starting with `#` (e.g., `# SD | x x x x | - r - r |`) were parsed as real TrackLine nodes by the Lezer parser, creating multi-line paragraphs with mismatched measure counts. This triggered the validation error "All track lines in a paragraph must have the same measure count" in `ast.ts:425-432`.
+
+The regex parser (`parser.ts`) already handled comments correctly via `preprocessSource` → `splitComment`, but the Lezer skeleton builder (`lezer_skeleton.ts`) bypassed that preprocessing entirely.
+
+### Debugging Methodology (Retro)
+
+- **Do not trust the user's minimal reproducer.** The input `| x x+s x x |` alone parsed correctly. The actual trigger was the `# SD | x x x x | - r - r |` comment line that the user did not include in their report.
+- **When two parsers coexist, trace the active parser path.** The CLI used regex parser (no bug), but the Web Worker path went through `buildScoreAst(skeleton)` with a Lezer-produced skeleton (bug). This path divergence is why the error only appeared in the web UI, not the CLI.
+- **When a Lezer parser treats unexpected input as valid syntax, check the grammar.** The `#` character had no definition in `drum_mark.grammar`, so Lezer's error recovery treated it as skippable noise and parsed the remainder (`SD | ... |`) as a valid TrackLine.
+
+### Fix
+
+Added a `Comment` token to the Lezer grammar following the standard Lezer pattern:
+
+```
+@skip { space | Comment }
+
+@tokens {
+  Comment { "#" ![\n]* }
+  ...
+}
+```
+
+The `![\n]*` is a token-layer negation character set matching any character except newline, zero or more times. This is the Lezer-recommended approach for line comments (analogous to `// ![\n]*` in the docs).
+
+Regenerated the parser with `npx lezer-generator src/dsl/drum_mark.grammar -o src/dsl/drum_mark.parser.js`.
+
+### Parser Status
+
+The regex parser (`parser.ts`) remains the **primary parser** for `buildScoreAst` (and thus `buildNormalizedScore`, CLI, and the Web Worker fallback). It **cannot be removed yet** because:
+
+- The Lezer parser has behavioral gaps (e.g., `voltaTerminator` metadata) that cause ~17 test failures when used as the default.
+- The Web Worker uses Lezer first with regex fallback, which is the correct layered approach.
+
+The regex parser has two non-test references:
+- `ast.ts:1` — `import { parseDocumentSkeleton } from "./parser"` (used when `buildScoreAst` receives a raw string)
+- `index.ts:5` — `export * from "./parser"` (re-exports `parseDocumentSkeleton` and `inferGrouping` as public API)
+
+Full Lezer migration is a separate, larger effort should be tracked as its own task.

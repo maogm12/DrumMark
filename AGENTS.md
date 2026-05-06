@@ -16,7 +16,7 @@ To ensure technical integrity and historical traceability, all formal specificat
 
 ### 1. Proposal File
 
-- **Create a standalone proposal file** in `docs/` for each change, named `<SpecName>_proposal_<topic>.md` (e.g., `DRUMMARK_SPEC_proposal_rehearsal_marks.md`).
+- **Create a standalone proposal file** in `docs/proposals/` for each change, named `<SpecName>_proposal_<topic>.md` (e.g., `DRUMMARK_SPEC_proposal_rehearsal_marks.md`).
 - The proposal file contains the full Addendum text as it would appear in the spec.
 - **Each proposal gets its own file** — concurrent proposals do not block each other.
 
@@ -42,14 +42,50 @@ After authoring a proposal, the agent MUST invoke a sub-agent to review it:
 - **Review Round ID**: Every review must clearly state its round number (e.g., `### Review Round 1`).
 - The reviewer must end with a clear status: `STATUS: CHANGES_REQUESTED` or `STATUS: APPROVED`.
 
-### 4. Final Approval, Consolidation & Archival
+### 4. Execution Planning (Tasks File)
 
-- Implementation may ONLY begin once a sub-agent review concludes with `STATUS: APPROVED`.
-- After approval, the author MUST:
+After the proposal achieves sub-agent `STATUS: APPROVED`, the author MUST create a companion **tasks file** in `docs/proposals/`, named `<SpecName>_tasks_<topic>.md`. This file defines the implementation plan as a sequence of tasks, each mapping to one or more commits.
+
+Each task entry MUST include a status checkbox and the following fields:
+
+```markdown
+### Task N: [Title]
+- [ ] **Status**: Pending
+- **Scope**: modules/files affected (e.g., parser grammar, IR types, renderer, editor integration, syntax highlighting, docs, CLI)
+- **Commits**: list of planned commits with scope prefix (e.g., `feat(parser): add X rule`)
+- **Acceptance Criteria**: verifiable conditions (e.g., `npm run drummark --format ir <input>` produces expected IR)
+- **Dependencies**: which prior tasks must complete first (if any)
+```
+
+When a task is completed during implementation (Section 6), its status is updated to `[x] **Status**: Done`.
+
+The final task MUST always include consolidation of the proposal into the spec (if not already done in Section 5).
+
+After authoring the tasks file, the agent MUST invoke a sub-agent to review it, following the **Linear Ledger Protocol** (append-only, Review Rounds + Author Responses). The reviewer checks for completeness, correct ordering, and coverage of all proposal requirements.
+
+### 5. Final Approval, Consolidation & Stamp
+
+- Implementation may ONLY begin after **both** the proposal and tasks files achieve sub-agent `STATUS: APPROVED`.
+- The author presents both approved files to the user and waits for the user's explicit **stamp** (final human sign-off).
+- Once the user stamps, the author MUST:
     1. **Append `### Consolidated Changes`** to the proposal file, synthesizing all agreed-upon changes from the proposal and its review rounds into a single, cohesive summary.
     2. **Append a clean Addendum** to the actual spec file (`DRUMMARK_SPEC.md` etc.) following the Linear Ledger Protocol — no review noise, just the final approved content.
-    3. **Move the proposal file** to `docs/archived/` for historical record.
 - The spec file itself remains append-only: Addendums are added to its end, never inserted above existing content.
+
+### 6. Implementation
+
+After consolidation is complete, implementation proceeds task-by-task:
+
+- For each task, the agent invokes a sub-agent with the spec, the approved proposal, and the tasks file as context.
+- Small, related changes may be batched within a single task; the sub-agent may commit multiple times within a task as needed.
+- After committing, the agent marks the task complete in the tasks file (e.g., `STATUS: DONE`) and moves to the next task.
+- After each code change, the sub-agent MUST verify acceptance criteria and run `npm run drummark` to confirm no regressions.
+
+### 7. Completion & Archival
+
+- After all tasks are complete, verify the proposal's content is present in the spec file. If not, append it.
+- **Move the proposal file and tasks file** to `docs/archived/` as a permanent historical record.
+- `docs/proposals/` holds active proposals; `docs/archived/` holds completed ones.
 
 ## Rendering Rules
 

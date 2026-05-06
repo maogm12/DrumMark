@@ -29,8 +29,6 @@ type XmlResponse = {
   xml: string;
 };
 
-type ScoreWorkerResponse = ParseResponse | XmlResponse;
-
 let lastScore: ReturnType<typeof buildNormalizedScore> | null = null;
 
 self.onmessage = (event: MessageEvent<ScoreWorkerRequest>) => {

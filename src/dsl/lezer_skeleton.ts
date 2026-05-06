@@ -330,7 +330,7 @@ function parseCombinedHitExpr(
     .map((child) => parseHitExpr(child, allNodes, source, errors))
     .filter((item): item is TokenGlyph => item !== null);
   if (items.length === 0) return null;
-  return items.length === 1 ? items[0] : { kind: "combined", items };
+  return items.length === 1 ? items[0] ?? null : { kind: "combined", items };
 }
 
 function parseMeasureContentNode(
@@ -514,9 +514,10 @@ function extractNavFromMeasureTokens(
     }
   }
 
-  if (navNodes.length === 0) return { nonNavNodes };
+  const firstNavNode = navNodes[0];
+  if (!firstNavNode) return { nonNavNodes };
 
-  const lineNumber = source.slice(0, navNodes[0].from).split("\n").length;
+  const lineNumber = source.slice(0, firstNavNode.from).split("\n").length;
   const pureNavigationMeasure = nonNavNodes.length === 0;
 
   let startNav: ParsedStartNav | undefined;
@@ -688,7 +689,7 @@ export function parseDocumentSkeletonFromLezer(source: string): DocumentSkeleton
   const trackBody = allNodes.find(n => n.name === "TrackBody");
 
   // --- Parse headers ---
-  const headers = {} as Record<string, unknown>;
+  const headers = {} as Record<HeaderField, unknown>;
   if (headerSection) {
     const headerChildren = childNodes(allNodes, headerSection.from, headerSection.to);
     for (const hc of headerChildren) {
@@ -699,17 +700,17 @@ export function parseDocumentSkeletonFromLezer(source: string): DocumentSkeleton
   }
 
   // Defaults
-  const time = (headers.time as DocumentSkeleton["headers"]["time"]) ?? { field: "time" as const, beats: 4, beatUnit: 4, line: 0 };
+  const time = (headers["time"] as DocumentSkeleton["headers"]["time"]) ?? { field: "time" as const, beats: 4, beatUnit: 4, line: 0 };
   const result: DocumentSkeleton = {
     headers: {
-      title: headers.title as DocumentSkeleton["headers"]["title"],
-      subtitle: headers.subtitle as DocumentSkeleton["headers"]["subtitle"],
-      composer: headers.composer as DocumentSkeleton["headers"]["composer"],
-      tempo: (headers.tempo as DocumentSkeleton["headers"]["tempo"]) ?? { field: "tempo", value: 120, line: 0 },
+      title: headers["title"] as DocumentSkeleton["headers"]["title"],
+      subtitle: headers["subtitle"] as DocumentSkeleton["headers"]["subtitle"],
+      composer: headers["composer"] as DocumentSkeleton["headers"]["composer"],
+      tempo: (headers["tempo"] as DocumentSkeleton["headers"]["tempo"]) ?? { field: "tempo", value: 120, line: 0 },
       time,
-      grouping: headers.grouping as DocumentSkeleton["headers"]["grouping"],
-      note: headers.note as DocumentSkeleton["headers"]["note"],
-      divisions: headers.divisions as DocumentSkeleton["headers"]["divisions"],
+      grouping: headers["grouping"] as DocumentSkeleton["headers"]["grouping"],
+      note: headers["note"] as DocumentSkeleton["headers"]["note"],
+      divisions: headers["divisions"] as DocumentSkeleton["headers"]["divisions"],
     },
     paragraphs: [],
     errors,
@@ -733,11 +734,11 @@ export function parseDocumentSkeletonFromLezer(source: string): DocumentSkeleton
   // Collect TrackLines and count newlines between them
   for (let i = 0; i < bodyChildren.length; i++) {
     const node = bodyChildren[i];
-    if (node.name === "TrackLine") {
+    if (node?.name === "TrackLine") {
       let nlCount = 0;
       // Count consecutive Newlines before this TrackLine
       for (let j = i - 1; j >= 0; j--) {
-        if (bodyChildren[j].name === "Newline") nlCount++;
+        if (bodyChildren[j]?.name === "Newline") nlCount++;
         else break;
       }
       trackLines.push({ line: node, newlineCount: nlCount });
@@ -797,6 +798,7 @@ export function parseDocumentSkeletonFromLezer(source: string): DocumentSkeleton
 
     for (let sectionIndex = 0; sectionIndex < measureSections.length; sectionIndex++) {
       const section = measureSections[sectionIndex];
+      if (!section) continue;
       const barlineNode = firstInnerNode(section, allNodes, ["BarlineNode"]);
       const bodyNode = firstInnerNode(section, allNodes, ["MeasureBody"]);
       const boundary = barlineNode
@@ -900,8 +902,9 @@ export function parseDocumentSkeletonFromLezer(source: string): DocumentSkeleton
 
       for (let ti = 0; ti < tokens.length; ti++) {
         const token = tokens[ti];
+        const nextToken = tokens[ti + 1];
         if (
-          token.kind === "basic" &&
+          token?.kind === "basic" &&
           token.dots === 0 &&
           token.halves === 0 &&
           token.stars === 0 &&
@@ -910,8 +913,8 @@ export function parseDocumentSkeletonFromLezer(source: string): DocumentSkeleton
           TRACK_NAMES.has(token.value) &&
           token.value !== "-" &&
           ti + 1 < tokens.length &&
-          tokens[ti + 1].kind === "braced" &&
-          tokens[ti + 1].track === ""
+          nextToken?.kind === "braced" &&
+          nextToken.track === ""
         ) {
           const span = nonNavNodes[ti];
           errors.push({
@@ -919,7 +922,7 @@ export function parseDocumentSkeletonFromLezer(source: string): DocumentSkeleton
             column: span ? span.from - lineNode.from + 1 : 1,
             message: `Legacy routed block syntax \`${token.value} { ... }\` has been removed; use \`@${token.value} { ... }\` instead.`,
           });
-          const braced = tokens[ti + 1] as { kind: "braced"; track: string; items: TokenGlyph[] };
+          const braced = nextToken;
           braced.track = token.value;
           tokens.splice(ti, 1);
         }
@@ -1013,6 +1016,7 @@ export function parseDocumentSkeletonFromLezer(source: string): DocumentSkeleton
       const startIndex = measureIndexBySection[i];
       if (startIndex === undefined) continue;
       const nextSection = measureSections[i + 1];
+      if (!nextSection) continue;
       const nextBarlineNode = firstInnerNode(nextSection, allNodes, ["BarlineNode"]);
       if (!nextBarlineNode) continue;
       const nextBoundary = parseBarlineBoundaryInfo(nextBarlineNode, allNodes, source);
@@ -1086,6 +1090,7 @@ export function parseDocumentSkeletonFromLezer(source: string): DocumentSkeleton
     let noteOverride: number | undefined;
     if (currentLines.length > 0) {
       const prevLine = currentLines[currentLines.length - 1];
+      if (!prevLine) continue;
       const gapStart = (prevLine.source?.startOffset ?? 0) + (prevLine.source?.content.length ?? 0);
       const gapEnd = lineNode.from;
       const gapText = source.slice(gapStart, gapEnd);
@@ -1148,7 +1153,7 @@ export function parseDocumentSkeletonFromLezer(source: string): DocumentSkeleton
 function parseHeaderLine(
   children: NodeInfo[],
   source: string,
-  headers: Record<string, unknown>,
+  headers: Record<HeaderField, unknown>,
   errors: ParseError[],
 ): void {
   const newlineIdx = children.findIndex(c => c.name === "Newline");
@@ -1169,6 +1174,7 @@ function parseHeaderLine(
     let value = "";
     if (remainder.startsWith("\"") || remainder.startsWith("'")) {
       const quote = remainder[0];
+      if (!quote) return;
       const closingIdx = remainder.indexOf(quote, 1);
       if (closingIdx <= 0) {
         errors.push({
@@ -1199,10 +1205,13 @@ function parseHeaderLine(
   } else if (headerNode.name === "TimeHeader") {
     const ints = contentChildren.filter(c => c.name === "Integer");
     if (ints.length === 2) {
+      const beatsNode = ints[0];
+      const beatUnitNode = ints[1];
+      if (!beatsNode || !beatUnitNode) return;
       headers["time"] = {
         field: "time" as const,
-        beats: parseInt(nodeText(ints[0], source), 10),
-        beatUnit: parseInt(nodeText(ints[1], source), 10),
+        beats: parseInt(nodeText(beatsNode, source), 10),
+        beatUnit: parseInt(nodeText(beatUnitNode, source), 10),
         line: lineNumber,
       };
     }
@@ -1213,8 +1222,11 @@ function parseHeaderLine(
   } else if (headerNode.name === "NoteHeader") {
     const ints = contentChildren.filter(c => c.name === "Integer");
     if (ints.length === 2) {
-      const num = parseInt(nodeText(ints[0], source), 10);
-      const den = parseInt(nodeText(ints[1], source), 10);
+      const numNode = ints[0];
+      const denNode = ints[1];
+      if (!numNode || !denNode) return;
+      const num = parseInt(nodeText(numNode, source), 10);
+      const den = parseInt(nodeText(denNode, source), 10);
       const value = den / num;
       // Validate: N must be a power of 2 (matching regex parser behavior)
       if (num !== 1 || value < 1 || value > 128 || (value & (value - 1)) !== 0) {

@@ -212,6 +212,12 @@ note 1/16
 
 HH | x % x x |`;
 
+const BRACED_BLOCKS = `title "Braced Blocks"
+time 4/4
+divisions 4
+
+| HH{x x} SD:d RC{d d:bell} |`;
+
 const NAVIGATION = `title "Navigation"
 time 4/4
 note 1/16
@@ -269,6 +275,7 @@ const ALL_CASES: TestCase[] = [
   { name: "segno anchor", dsl: NAV_SEGNO_ANCHOR },
   { name: "nav only measure", dsl: NAV_ONLY },
   { name: "measure repeat", dsl: MEASURE_REPEAT },
+  { name: "braced blocks", dsl: BRACED_BLOCKS },
 ];
 
 // ============================================================

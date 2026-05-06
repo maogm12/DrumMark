@@ -189,8 +189,33 @@ function parseMeasureTokensFromNodes(
     } else if (node.name === "GlyphToken" && !isInsideContainer(node)) {
       const rawText = nodeText(node, source);
       raw.push({ token: parseGlyphFromText(rawText), rawText });
+    } else if (node.name === "InlineBracedBlock" && !isInsideContainer(node)) {
+      const innerChildren = childNodes(allNodes, node.from, node.to);
+      const innerMC = innerChildren.find(n => n.name === "MeasureContent");
+      const items: TokenGlyph[] = [];
+      if (innerMC) {
+        const innerMCNodes = childNodes(allNodes, innerMC.from, innerMC.to);
+        const innerMTs = innerMCNodes.filter(n => n.name === "MeasureToken");
+        for (const imt of innerMTs) {
+          const imtChildren = childNodes(allNodes, imt.from, imt.to);
+          // Handle structural nodes inside braced block
+          if (imtChildren.some(c => c.name === "GroupExpr" || c.name === "CombinedHit" || c.name === "InlineBracedBlock")) {
+            const innerTokens = parseMeasureTokensFromNodes(imtChildren, allNodes, source);
+            items.push(...innerTokens);
+          } else {
+            const imtText = nodeText(imt, source);
+            const parts = imtText.split("+");
+            const partTokens = parts.map(p => parseGlyphFromText(p.trim()));
+            if (partTokens.length === 1) {
+              items.push(partTokens[0]);
+            } else {
+              items.push({ kind: "combined", items: partTokens });
+            }
+          }
+        }
+      }
+      raw.push({ token: { kind: "braced", track: "", items }, rawText: nodeText(node, source) });
     }
-    // TODO: InlineBracedBlock, NavMarker, NavJump, MeasureRepeat
   }
 
   // Summon prefix merge pass (for cases inside structural spans)
@@ -677,28 +702,49 @@ export function parseDocumentSkeletonFromLezer(source: string): DocumentSkeleton
         const tokens: MeasureToken[] = [];
         if (!measureRepeatSlashes) {
           for (const span of mergedSpans) {
-          const spanText = source.slice(span.from, span.to);
-          const spanChildren = childNodes(allNodes, span.from, span.to);
+            const spanText = source.slice(span.from, span.to);
+            const spanChildren = childNodes(allNodes, span.from, span.to);
 
-          // Use node-based parsing only for spans containing structural nodes
-          const hasStructuralNodes = spanChildren.some(
-            n => n.name === "GroupExpr" || n.name === "InlineBracedBlock" || n.name === "MeasureRepeat",
-          );
+            // Use node-based parsing only for spans containing structural nodes
+            const hasStructuralNodes = spanChildren.some(
+              n => n.name === "GroupExpr" || n.name === "InlineBracedBlock" || n.name === "MeasureRepeat",
+            );
 
-          if (hasStructuralNodes) {
-            const spanTokens = parseMeasureTokensFromNodes(spanChildren, allNodes, source);
-            tokens.push(...spanTokens);
-          } else {
-            // Text-based parsing: split by + and parse each part with parseGlyphFromText
-            const parts = spanText.split("+");
-            const items = parts.map(p => parseGlyphFromText(p.trim()));
-            if (items.length === 1) {
-              tokens.push(items[0]);
+            if (hasStructuralNodes) {
+              const spanTokens = parseMeasureTokensFromNodes(spanChildren, allNodes, source);
+              tokens.push(...spanTokens);
             } else {
-              tokens.push({ kind: "combined", items });
+              // Text-based parsing: split by + and parse each part with parseGlyphFromText
+              const parts = spanText.split("+");
+              const items = parts.map(p => parseGlyphFromText(p.trim()));
+              if (items.length === 1) {
+                tokens.push(items[0]);
+              } else {
+                tokens.push({ kind: "combined", items });
+              }
             }
           }
-        }
+
+          // Post-processing: merge TrackName + braced-block pattern (e.g. HH{x o})
+          for (let ti = 0; ti < tokens.length; ti++) {
+            const token = tokens[ti];
+            if (
+              token.kind === "basic" &&
+              token.dots === 0 && token.halves === 0 && token.stars === 0 &&
+              token.modifiers.length === 0 &&
+              token.trackOverride === undefined &&
+              TRACK_NAMES.has(token.value) &&
+              token.value !== "-" &&
+              ti + 1 < tokens.length &&
+              tokens[ti + 1].kind === "braced" &&
+              tokens[ti + 1].track === ""
+            ) {
+              const braced = tokens[ti + 1] as { kind: "braced"; track: string; items: TokenGlyph[] };
+              braced.track = token.value;
+              tokens.splice(ti, 1);
+              // Don't increment ti — the braced token shifts into current position
+            }
+          }
         }
 
         const voltaIndices = currentVolta ? currentVolta.split(",").map(Number).filter(n => !isNaN(n)) : undefined;

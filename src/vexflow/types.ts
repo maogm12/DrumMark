@@ -18,6 +18,9 @@ export type VexflowRenderOptions = {
   hideVoice2Rests: boolean;
   tempoShiftX: number;
   tempoShiftY: number;
+  measureNumberShiftX: number;
+  measureNumberShiftY: number;
+  measureNumberFontSize: number;
 };
 
 export const DEFAULT_RENDER_OPTIONS: VexflowRenderOptions = {
@@ -31,8 +34,11 @@ export const DEFAULT_RENDER_OPTIONS: VexflowRenderOptions = {
   stemLength: 31,
   voltaGap: -15,
   hideVoice2Rests: false,
-  tempoShiftX: 10,
+  tempoShiftX: 0,
   tempoShiftY: 0,
+  measureNumberShiftX: 0,
+  measureNumberShiftY: 8,
+  measureNumberFontSize: 10,
 };
 
 export type ScoreRenderResult = {

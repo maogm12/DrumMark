@@ -649,6 +649,8 @@ function renderSystemsBatch(
         systemSpacing: dims.systemSpacing,
         tempoShiftX: options.tempoShiftX / dims.staffScale,
         tempoShiftY: options.tempoShiftY / dims.staffScale,
+        measureNumberShiftX: options.measureNumberShiftX / dims.staffScale,
+        measureNumberShiftY: options.measureNumberShiftY / dims.staffScale,
         voltaGap: options.voltaGap / dims.staffScale,
         pagePadding: { 
           ...options.pagePadding, 
@@ -812,7 +814,9 @@ function renderSystem(context: any, score: NormalizedScore, measures: RenderMeas
         const measureNumber = new StaveText((measure.globalIndex + 1).toString(), Modifier.Position.ABOVE, {
           justification: TextJustification.LEFT,
         });
-        measureNumber.setFont("Academico", 10, "italic");
+        measureNumber.setFont("Academico", options.measureNumberFontSize, "italic");
+        measureNumber.setXShift(options.measureNumberShiftX);
+        measureNumber.setYShift(options.measureNumberShiftY);
         stave.addModifier(measureNumber);
       }
 
@@ -823,9 +827,11 @@ function renderSystem(context: any, score: NormalizedScore, measures: RenderMeas
           // We manually add 'x' to the offset and shift it further left (-45) to sit above the clef.
           const tempoText = new StaveTempo(
             { duration: "q", bpm: score.header.tempo },
-            x - 45, 
-            options.tempoShiftY
+            x - 45,
+            0
           );
+          tempoText.setXShift(options.tempoShiftX);
+          tempoText.setYShift(options.tempoShiftY);
           stave.addModifier(tempoText, Modifier.Position.ABOVE);
         }
       }

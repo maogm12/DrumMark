@@ -5,7 +5,7 @@ import { history, historyKeymap } from "@codemirror/commands";
 import { linter, type Diagnostic } from "@codemirror/lint";
 import { buildNormalizedScore, type ParseError } from "./dsl";
 import { type NormalizedScore } from "./dsl";
-import { renderScorePagesToSvgs, type VexflowRenderOptions, DEFAULT_RENDER_OPTIONS } from "./vexflow";
+import { renderScorePagesToSvgs, type VexflowRenderOptions } from "./vexflow";
 import { drumMarkEditorTheme, drumMarkLanguage, drumMarkSyntaxHighlighting } from "./drummark";
 
 const legacySeedDsl = `tempo 96
@@ -303,6 +303,11 @@ const PagePreview = memo(function PagePreview({
   stemLength,
   voltaGap,
   hideVoice2Rests,
+  tempoShiftX,
+  tempoShiftY,
+  measureNumberShiftX,
+  measureNumberShiftY,
+  measureNumberFontSize,
   active,
 }: {
   score: NormalizedScore | null;
@@ -314,6 +319,11 @@ const PagePreview = memo(function PagePreview({
   stemLength: number;
   voltaGap: number;
   hideVoice2Rests: boolean;
+  tempoShiftX: number;
+  tempoShiftY: number;
+  measureNumberShiftX: number;
+  measureNumberShiftY: number;
+  measureNumberFontSize: number;
   active: boolean;
 }) {
   const shellRef = useRef<HTMLDivElement | null>(null);
@@ -347,8 +357,11 @@ const PagePreview = memo(function PagePreview({
       stemLength,
       voltaGap,
       hideVoice2Rests,
-      tempoShiftX: DEFAULT_RENDER_OPTIONS.tempoShiftX,
-      tempoShiftY: DEFAULT_RENDER_OPTIONS.tempoShiftY,
+      tempoShiftX,
+      tempoShiftY,
+      measureNumberShiftX,
+      measureNumberShiftY,
+      measureNumberFontSize,
     };
 
     renderScorePagesToSvgs(score, opts)
@@ -370,7 +383,7 @@ const PagePreview = memo(function PagePreview({
         console.error("VexFlow render error:", renderError);
         setError(msg || "Could not render staff preview.");
       });
-  }, [score, systemSpacing, stemLength, voltaGap, titleStaffGap, headerHeight, active, hideVoice2Rests, pagePadding, staffScale]);
+  }, [score, systemSpacing, stemLength, voltaGap, titleStaffGap, headerHeight, active, hideVoice2Rests, pagePadding, staffScale, tempoShiftX, tempoShiftY, measureNumberShiftX, measureNumberShiftY, measureNumberFontSize]);
 
   if (!score) {
     return (
@@ -518,6 +531,11 @@ interface AppSettings {
   voltaGap: number;
   headerHeight: number;
   activeTab: MainTab;
+  tempoShiftX: number;
+  tempoShiftY: number;
+  measureNumberShiftX: number;
+  measureNumberShiftY: number;
+  measureNumberFontSize: number;
 }
 
 const defaultSettings: AppSettings = {
@@ -531,6 +549,11 @@ const defaultSettings: AppSettings = {
   stemLength: 31,
   voltaGap: -15,
   activeTab: "page",
+  tempoShiftX: 0,
+  tempoShiftY: 0,
+  measureNumberShiftX: 0,
+  measureNumberShiftY: 8,
+  measureNumberFontSize: 10,
 };
 
 export function App() {
@@ -1060,6 +1083,11 @@ export function App() {
                       stemLength={settings.stemLength}
                       voltaGap={settings.voltaGap}
                       hideVoice2Rests={settings.hideVoice2Rests}
+                      tempoShiftX={settings.tempoShiftX}
+                      tempoShiftY={settings.tempoShiftY}
+                      measureNumberShiftX={settings.measureNumberShiftX}
+                      measureNumberShiftY={settings.measureNumberShiftY}
+                      measureNumberFontSize={settings.measureNumberFontSize}
                       active={true}
                     />
                   ) : null}
@@ -1155,8 +1183,33 @@ export function App() {
                   </div>
                 </div>
                 {debugMode && (
-                  <div className="settings-section">
-                    <h3 className="settings-section-title">Debug</h3>
+                  <div className="settings-section debug">
+                    <h3 className="settings-section-title">Debug: Tempo</h3>
+                    <div className="setting-row">
+                      <div className="setting-label"><span>Tempo Shift X (pt)</span><span className="setting-value">{settings.tempoShiftX}</span></div>
+                      <input type="range" min="-100" max="100" step="1" value={settings.tempoShiftX} onChange={(e) => updateSetting("tempoShiftX", parseFloat(e.target.value))} />
+                    </div>
+                    <div className="setting-row">
+                      <div className="setting-label"><span>Tempo Shift Y (pt)</span><span className="setting-value">{settings.tempoShiftY}</span></div>
+                      <input type="range" min="-100" max="100" step="1" value={settings.tempoShiftY} onChange={(e) => updateSetting("tempoShiftY", parseFloat(e.target.value))} />
+                    </div>
+                  </div>
+                )}
+                {debugMode && (
+                  <div className="settings-section debug">
+                    <h3 className="settings-section-title">Debug: Measure Numbers</h3>
+                    <div className="setting-row">
+                      <div className="setting-label"><span>Number Shift X (pt)</span><span className="setting-value">{settings.measureNumberShiftX}</span></div>
+                      <input type="range" min="-100" max="100" step="1" value={settings.measureNumberShiftX} onChange={(e) => updateSetting("measureNumberShiftX", parseFloat(e.target.value))} />
+                    </div>
+                    <div className="setting-row">
+                      <div className="setting-label"><span>Number Shift Y (pt)</span><span className="setting-value">{settings.measureNumberShiftY}</span></div>
+                      <input type="range" min="-100" max="100" step="1" value={settings.measureNumberShiftY} onChange={(e) => updateSetting("measureNumberShiftY", parseFloat(e.target.value))} />
+                    </div>
+                    <div className="setting-row">
+                      <div className="setting-label"><span>Font Size (pt)</span><span className="setting-value">{settings.measureNumberFontSize}</span></div>
+                      <input type="range" min="4" max="24" step="1" value={settings.measureNumberFontSize} onChange={(e) => updateSetting("measureNumberFontSize", parseFloat(e.target.value))} />
+                    </div>
                   </div>
                 )}
               </aside>

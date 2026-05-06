@@ -489,6 +489,17 @@ input {
   color: var(--text-muted);
 }
 
+.settings-section.debug {
+  background: #fffbeb;
+  border: 2px dashed #f59e0b;
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.settings-section.debug .settings-section-title {
+  color: #92400e;
+}
+
 .setting-row {
   display: flex;
   flex-direction: column;

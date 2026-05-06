@@ -86,8 +86,11 @@ async function main() {
       stemLength: 31,
       voltaGap: -15,
       hideVoice2Rests: false,
-      tempoShiftX: 10,
+      tempoShiftX: 0,
       tempoShiftY: 0,
+      measureNumberShiftX: 0,
+      measureNumberShiftY: 8,
+      measureNumberFontSize: 10,
     });
   }
 

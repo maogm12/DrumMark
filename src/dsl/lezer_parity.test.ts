@@ -218,6 +218,12 @@ divisions 4
 
 | HH{x x} SD:d RC{d d:bell} |`;
 
+const MULTI_REST = `title "Multi Rest"
+time 4/4
+note 1/16
+
+HH | x x x x | --- 4 --- | x x x x |`;
+
 const NAVIGATION = `title "Navigation"
 time 4/4
 note 1/16
@@ -276,6 +282,7 @@ const ALL_CASES: TestCase[] = [
   { name: "nav only measure", dsl: NAV_ONLY },
   { name: "measure repeat", dsl: MEASURE_REPEAT },
   { name: "braced blocks", dsl: BRACED_BLOCKS },
+  { name: "multi rest", dsl: MULTI_REST },
 ];
 
 // ============================================================

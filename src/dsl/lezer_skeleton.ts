@@ -766,9 +766,25 @@ export function parseDocumentSkeletonFromLezer(source: string): DocumentSkeleton
           }
         }
 
+        // Detect multi-rest pattern: --- N ---
+        let multiRestCount: number | undefined;
+        const multiRestMatch = content.match(/^-+\s*(\d+)\s*-+$/);
+        if (multiRestMatch?.[1] !== undefined) {
+          const count = parseInt(multiRestMatch[1], 10);
+          if (count < 2) {
+            errors.push({
+              line: lineNumber,
+              column: 1,
+              message: "Multi-measure rest count must be at least 2",
+            });
+          } else {
+            multiRestCount = count;
+          }
+        }
+
         // Skip empty measures caused by trailing barlines with no content,
-        // but keep measures that have navigation markers or measure-repeat
-        if (tokens.length > 0 || startNav || endNav || measureRepeatSlashes) {
+        // but keep measures that have navigation markers, measure-repeat, or multi-rest
+        if (tokens.length > 0 || startNav || endNav || measureRepeatSlashes || multiRestCount) {
           measures.push({
             content,
             tokens,
@@ -778,7 +794,12 @@ export function parseDocumentSkeletonFromLezer(source: string): DocumentSkeleton
             ...(startNav ? { startNav } : {}),
             ...(endNav ? { endNav } : {}),
             ...(measureRepeatSlashes ? { measureRepeatSlashes } : {}),
+            ...(multiRestCount ? { multiRestCount } : {}),
           });
+          // Clear tokens for multi-rest (content is the rest marker, not notes)
+          if (multiRestCount) {
+            measures[measures.length - 1].tokens = [];
+          }
         }
 
         currentBarline = null;

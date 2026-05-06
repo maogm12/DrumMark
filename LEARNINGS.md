@@ -231,3 +231,8 @@ The regex parser (`parser.ts`) now has zero production references. All 345 tests
 - Reusing an existing sigil across multiple syntax families is acceptable only if the spec defines a closed lexical partition. Otherwise typo handling and future syntax growth drift quickly between grammar and lowering.
 - A shorthand can still belong directly to the grammar without being forced into a single compact canonical spelling. For DrumMark multi-rest, the stable property is the local `dash-run + integer + dash-run` structure, not dash-run symmetry.
 - If a shorthand is grammar-owned, it is often cleaner to define only the legal forms and let non-matching inputs fall back to the ordinary grammar, rather than inventing a separate malformed-candidate intent-recovery layer.
+
+## 2026-05-06 Addendum: Closed `@` Namespace for Routed Blocks
+
+- Reusing `@` for non-navigation syntax is safe only if the language keeps a closed namespace split. For DrumMark, `@TrackName` routed blocks and the enumerated navigation directives must be the only legal `@...` forms; there should be no generic fallback `@Identifier` category.
+- A breaking syntax change is easier to keep honest when the parser emits a dedicated migration diagnostic for the removed form, instead of silently accepting a legacy alias.

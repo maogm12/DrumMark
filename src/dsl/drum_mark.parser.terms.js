@@ -48,9 +48,11 @@ export const
   SuffixChar = 46,
   StarSuffixToken = 47,
   Modifier = 48,
-  NavMarker = 49,
-  NavJump = 50,
+  RoutedBracedBlock = 49,
+  RoutedTrackPrefix = 50,
   InlineBracedBlock = 51,
   MeasureContent = 52,
-  InlineRepeatSuffix = 53,
-  InlineRepeatToken = 54
+  NavMarker = 53,
+  NavJump = 54,
+  InlineRepeatSuffix = 55,
+  InlineRepeatToken = 56

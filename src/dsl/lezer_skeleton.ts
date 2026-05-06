@@ -399,6 +399,20 @@ function parseMeasureExpr(
   const summonNode = variantInnerNode(node, allNodes, ["SummonExpr"]);
   if (summonNode) return parseSummonExpr(summonNode, allNodes, source, errors);
 
+  const routedBracedNode = variantInnerNode(node, allNodes, ["RoutedBracedBlock"]);
+  if (routedBracedNode) {
+    const routeNode = firstInnerNode(routedBracedNode, allNodes, ["RoutedTrackPrefix"]);
+    const bracedNode = firstInnerNode(routedBracedNode, allNodes, ["InlineBracedBlock"]);
+    const innerContent = bracedNode
+      ? firstInnerNode(bracedNode, allNodes, ["MeasureContent"])
+      : undefined;
+    return {
+      kind: "braced",
+      track: routeNode ? nodeText(routeNode, source).slice(1) : "",
+      items: innerContent ? parseMeasureContentNode(innerContent, allNodes, source, errors) : [],
+    };
+  }
+
   const bracedNode = variantInnerNode(node, allNodes, ["InlineBracedBlock"]);
   if (bracedNode) {
     const innerContent = firstInnerNode(bracedNode, allNodes, ["MeasureContent"]);
@@ -899,6 +913,12 @@ export function parseDocumentSkeletonFromLezer(source: string): DocumentSkeleton
           tokens[ti + 1].kind === "braced" &&
           tokens[ti + 1].track === ""
         ) {
+          const span = nonNavNodes[ti];
+          errors.push({
+            line: lineNumber,
+            column: span ? span.from - lineNode.from + 1 : 1,
+            message: `Legacy routed block syntax \`${token.value} { ... }\` has been removed; use \`@${token.value} { ... }\` instead.`,
+          });
           const braced = tokens[ti + 1] as { kind: "braced"; track: string; items: TokenGlyph[] };
           braced.track = token.value;
           tokens.splice(ti, 1);

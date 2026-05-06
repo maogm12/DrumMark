@@ -15,6 +15,13 @@ Newline { "\n" }
     "--" "-"* (" " | "\t")* ("1" @digit+ | $[2-9] @digit*) (" " | "\t")* "--" "-"*
   }
   RestGlyph { "-" }
+  RoutedTrackPrefix {
+    "@HH" | "@HF" | "@SD" | "@BD" | "@BD2" |
+    "@T1" | "@T2" | "@T3" | "@T4" |
+    "@RC" | "@RC2" |
+    "@C" | "@C2" |
+    "@SPL" | "@CHN" | "@CB" | "@WB" | "@CL" | "@ST"
+  }
   StarSuffixToken { "*" }
   SummonPrefix {
     "HH:" | "HF:" | "SD:" | "BD:" | "BD2:" |
@@ -72,6 +79,7 @@ MeasureExpr {
   GroupExpr |
   CombinedHitExpr |
   SummonExpr |
+  RoutedBracedBlock |
   BasicNoteExpr |
   NavMarker |
   NavJump |
@@ -81,6 +89,7 @@ MeasureExpr {
 BasicNoteExpr { BasicGlyph SuffixChain? }
 
 SummonExpr { SummonPrefix BasicNoteExpr }
+RoutedBracedBlock { RoutedTrackPrefix InlineBracedBlock }
 
 BasicGlyph {
   // multi-char tokens first

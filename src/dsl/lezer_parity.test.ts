@@ -216,7 +216,7 @@ const BRACED_BLOCKS = `title "Braced Blocks"
 time 4/4
 divisions 4
 
-| HH{x x} SD:d RC{d d:bell} |`;
+| @HH{x x} SD:d @RC{d d:bell} |`;
 
 const MULTI_REST = `title "Multi Rest"
 time 4/4

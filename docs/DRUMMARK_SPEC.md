@@ -187,11 +187,11 @@ The default track for anonymous lines is `HH` for glyph routing.
 
 ### 4.4 Track Routing Scopes
 
-Use braces `{}` to route a block of notes to a specific track without affecting timing:
+Use `@TRACK { ... }` to route a block of notes to a specific track without affecting timing:
 
 ```
-| RC { x x x x } |        # A full measure of Ride
-SD { [3: d d d] }        # Tuplet group on SD
+| @RC { x x x x } |        # A full measure of Ride
+| @SD { [3: d d d] } |    # Tuplet group on SD
 ```
 
 ### 4.5 Voice Convention
@@ -201,7 +201,7 @@ SD { [3: d d d] }        # Tuplet group on SD
 
 ### 4.6 Track Registry and Auto Fill
 
-- Any track mentioned via line header (`SD |`), routing scope (`SD { ... }`), or summoning prefix (`SD:d`) is **automatically registered** in the score.
+- Any track mentioned via line header (`SD |`), routed block directive (`@SD { ... }`), or summoning prefix (`SD:d`) is **automatically registered** in the score.
 - Tracks are ordered based on their first appearance in the document.
 - Once a track is registered, it remains active throughout the score.
 - If a registered track is omitted in a later paragraph, it is auto-filled with full-measure rests.
@@ -2044,7 +2044,7 @@ composer
 The Lezer grammar must structurally represent the following local syntax forms:
 
 - summon prefix, e.g. `SD:d`
-- routed brace block, e.g. `RC { x x x x }`
+- routed block directive, e.g. `@RC { x x x x }`
 - rhythmic group structure, including optional span and trailing group modifiers
 - inline repeat suffix `*N` at measure level
 - multi-measure rest dash-run/integer/dash-run form
@@ -2154,3 +2154,59 @@ Grammar ownership:
 - Multi-rest is a dedicated whole-measure shorthand form.
 - Legal multi-rest exists if and only if the measure body matches the multi-rest rule.
 - Inputs that do not match that rule are simply not multi-rest; the implementation does not need to guess user intent or define a separate malformed-candidate class.
+
+## Addendum: Explicit `@TRACK { ... }` Routed Block Syntax
+
+Long-span routed blocks use explicit directive syntax:
+
+```txt
+@RC { x x x x }
+@SD { [3: d d d] }
+@BD { - d - d }
+```
+
+Rules:
+
+- `@` immediately introduces a routed-block directive.
+- The token after `@` must be a valid `TrackName`.
+- The directive applies only to the immediately following braced block.
+- Canonical spelling is `@TRACK { ... }`.
+- Horizontal whitespace between `@TRACK` and `{` is allowed.
+- A newline or comment between `@TRACK` and the following `{ ... }` block is not allowed.
+- If `@TRACK` is not followed by a braced block on the same logical line, it is a parse error.
+
+Namespace and semantics:
+
+- `@TrackName { ... }` is a routed-block directive class.
+- `@segno`, `@coda`, `@fine`, `@dc`, `@ds`, `@dc-al-fine`, `@dc-al-coda`, `@ds-al-fine`, `@ds-al-coda`, and `@to-coda` remain the full navigation directive class.
+- There is no generic `@Identifier` category.
+- Any other `@...` form is a parse error.
+- Routed-block directives are not navigation markers or jumps.
+- They do not participate in navigation placement legality.
+- They do not produce navigation anchors.
+
+Scope:
+
+- A routed-block directive is a measure-expression form.
+- It is legal anywhere an inline braced block measure expression is legal.
+- It is legal in measure content and nested braced measure content.
+- It is not a valid group item inside `[ ... ]`, unless a future addendum explicitly extends group-item syntax.
+- Measure-level suffix forms such as `*N` still apply only at measure-body level and are unaffected by the routed-block syntax itself.
+
+Track registration:
+
+- Any track mentioned via line header (`SD | ... |`), routed block directive (`@RC { ... }`), or summon prefix (`SD:d`) is automatically registered in the score.
+- Automatic registration for routed blocks occurs only for syntactically complete routed-block directives.
+
+Removed syntax:
+
+```txt
+RC { x x x x }
+SD { [3: d d d] }
+```
+
+These legacy bare routed-block forms are removed and should produce a dedicated migration diagnostic equivalent to:
+
+```txt
+Legacy routed block syntax `RC { ... }` has been removed; use `@RC { ... }` instead.
+```

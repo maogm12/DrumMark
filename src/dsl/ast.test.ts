@@ -45,12 +45,12 @@ SD | d - d - | d - d - |`);
 divisions 4
 
 | x - s - |
-| RC{d d} SD:d |`);
+| @RC{d d} SD:d |`);
 
     expect(score.errors).toEqual([]);
-    // Discoveries: HH (from x), SD (from s and SD:d), RC (from RC{})
+    // Discoveries: HH (from x), SD (from s and SD:d), RC (from @RC{})
     // Note: globalTracks order depends on discovery order.
-    // collection in collectTracksInLine: x->HH, s->SD, RC{}, SD:d->SD
+    // collection in collectTracksInLine: x->HH, s->SD, @RC{}, SD:d->SD
     expect(new Set(score.paragraphs[0].tracks.map(t => t.track))).toContain("HH");
     expect(new Set(score.paragraphs[0].tracks.map(t => t.track))).toContain("SD");
     expect(new Set(score.paragraphs[0].tracks.map(t => t.track))).toContain("RC");
@@ -60,7 +60,7 @@ divisions 4
     const score = buildScoreAst(`time 4/4
 divisions 4
 
-| RC{d - - -} b2 - - - |
+| @RC{d - - -} b2 - - - |
 
 HH | x - - - |`);
 

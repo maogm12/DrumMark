@@ -40,7 +40,7 @@ describe("spec C02 tracks", () => {
     const score = buildScoreAst(`time 4/4
 divisions 4
 
-| x RC { d d } HF:d SD:d |
+| x @RC { d d } HF:d SD:d |
 
 BD2 | d - - - |`);
 
@@ -68,7 +68,7 @@ BD2 | d - - - |`);
     const score = buildScoreAst(`time 4/4
 divisions 4
 
-| x RC { d d } HF:d SD:d |
+| x @RC { d d } HF:d SD:d |
 
 BD2 | d - - - |`);
 
@@ -103,7 +103,7 @@ BD2 | d - - - |`);
     const score = buildNormalizedScore(`time 4/4
 divisions 4
 
-| RC { d } BD:d |
+| @RC { d } BD:d |
 T1 | d - - - |
 
 C2 | d - - - |
@@ -145,5 +145,18 @@ C2 | d - - - |
       { id: "WB", family: "percussion" },
       { id: "CL", family: "percussion" },
     ]);
+  });
+
+  it("reports a dedicated migration diagnostic for legacy bare routed blocks", () => {
+    const doc = parseDocumentSkeleton(`time 4/4
+divisions 4
+
+| x RC { d d } |`);
+
+    expect(doc.errors).toContainEqual({
+      line: 4,
+      column: 5,
+      message: "Legacy routed block syntax `RC { ... }` has been removed; use `@RC { ... }` instead.",
+    });
   });
 });

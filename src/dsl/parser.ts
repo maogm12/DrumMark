@@ -462,7 +462,52 @@ function parseMeasureTokens(
     skipSpaces();
     if (cursor >= content.length) break;
 
-    // 1. Check for Track Identifier: TRACK { ... } or TRACK: ...
+    // 1. Check for routed block directive: @TRACK { ... }
+    const routedTrackNames = [...SORTED_TRACK_NAMES];
+    let handledRoutedBlock = false;
+    if (content[cursor] === "@") {
+      for (const id of routedTrackNames) {
+        if (content.startsWith(`@${id}`, cursor)) {
+          const nextCharPos = cursor + id.length + 1;
+          const remainder = content.slice(nextCharPos);
+          const sepMatch = remainder.match(/^\s*\{/);
+          if (!sepMatch) {
+            break;
+          }
+
+          const idEnd = cursor + id.length + 1 + sepMatch[0]!.length;
+          let braceLevel = 1;
+          let innerEnd = idEnd;
+          while (innerEnd < content.length && braceLevel > 0) {
+            if (content[innerEnd] === "{") braceLevel++;
+            else if (content[innerEnd] === "}") braceLevel--;
+            innerEnd++;
+          }
+
+          if (braceLevel > 0) {
+            errors.push({
+              line: lineNumber,
+              column: columnOffset + cursor + id.length + 2,
+              message: "Unterminated braced scope",
+            });
+            cursor = idEnd;
+            handledRoutedBlock = true;
+            break;
+          }
+
+          const innerContent = content.slice(idEnd, innerEnd - 1);
+          const innerTokens = parseMeasureTokens(innerContent, id as TrackName, lineNumber, columnOffset + idEnd, errors, allowGroups);
+          tokens.push({ kind: "braced", track: id, items: innerTokens });
+          cursor = innerEnd;
+          handledRoutedBlock = true;
+          break;
+        }
+      }
+    }
+
+    if (handledRoutedBlock) continue;
+
+    // 2. Check for Track Identifier: legacy TRACK { ... } or TRACK: ...
     const trackNames = [...SORTED_TRACK_NAMES, "ANONYMOUS"];
     let matchedTrackId: string | null = null;
     for (const id of trackNames) {
@@ -477,6 +522,11 @@ function parseMeasureTokens(
           const fullMatchLength = id.length + sepMatch[0]!.length;
 
           if (separator === "{") {
+            errors.push({
+              line: lineNumber,
+              column: columnOffset + cursor,
+              message: `Legacy routed block syntax \`${id} { ... }\` has been removed; use \`@${id} { ... }\` instead.`,
+            });
             const idEnd = cursor + fullMatchLength;
             let braceLevel = 1;
             let innerEnd = idEnd;
@@ -514,7 +564,7 @@ function parseMeasureTokens(
     if (matchedTrackId === "HANDLED") continue;
     if (cursor >= content.length) break;
 
-    // 2. Check for Group: [ ... ]
+    // 3. Check for Group: [ ... ]
     if (content[cursor] === "[") {
       if (!allowGroups) {
         errors.push({ line: lineNumber, column: columnOffset + cursor + 1, message: "Nested groups are not allowed" });

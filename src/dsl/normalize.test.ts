@@ -43,18 +43,18 @@ SD | x - - - |
     const score = buildNormalizedScore(`time 4/4
 divisions 4
 
-| RC{d d} SD{[d d d]} |`);
+| @RC{d d} @SD{[d d d]} |`);
 
 
     expect(score.errors).toEqual([]);
     const events = score.measures[0].events;
     
-    // RC{d d} takes 2 slots (0, 1)
+    // @RC{d d} takes 2 slots (0, 1)
     expect(events.filter(e => e.track === "RC")).toHaveLength(2);
     expect(events.find(e => e.track === "RC" && e.start.numerator === 0)).toBeDefined();
     expect(events.find(e => e.track === "RC" && e.start.numerator === 1)).toBeDefined();
 
-    // SD{[3: d d d]} takes 1 slot (at slot 2)
+    // @SD{[d d d]} takes 1 slot (at slot 2)
     const sdEvents = events.filter(e => e.track === "SD");
     expect(sdEvents).toHaveLength(3);
     // First SD event at start 2/4 (simplified to 1/2)

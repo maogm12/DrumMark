@@ -28,12 +28,12 @@ SD | d - d - |
     const doc = parseDocumentSkeleton(`time 4/4
 divisions 4
 
-| HH{x x} SD:d RC{d d:bell} |`);
+| @HH{x x} SD:d @RC{d d:bell} |`);
 
     expect(doc.errors).toEqual([]);
     const tokens = doc.paragraphs[0].lines[0].measures[0].tokens;
     
-    // HH{x x}
+    // @HH{x x}
     expect(tokens[0]).toEqual({
       kind: "braced",
       track: "HH",
@@ -54,7 +54,7 @@ divisions 4
       trackOverride: "SD"
     });
 
-    // RC:{d d:bell}
+    // @RC{d d:bell}
     expect(tokens[2]).toEqual({
       kind: "braced",
       track: "RC",

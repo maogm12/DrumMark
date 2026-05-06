@@ -203,3 +203,11 @@ Production file changes:
 - `drum_mark.grammar`: added `Comment` token
 
 The regex parser (`parser.ts`) now has zero production references. All 345 tests pass with Lezer as the only parser.
+
+## 2026-05-06 Addendum: Spec-Driven Syntax Cleanup
+
+- **Spec is the only source of truth.** A syntax is legal if and only if it appears in `DRUMMARK_SPEC.md`. Grammar, parser, skeleton, and tests all derive from the spec — never the other way around.
+- **Deprecated syntax must be removed atomically.** When a notation like `xN` repeat count is declared deprecated, every reference must be deleted in one pass: grammar rule, skeleton builder fallback branches, regex parser branches, test cases that exercise it, README examples, and task list items. Partial cleanup creates "zombie syntax" that future contributors (including the same person six months later) will rediscover and re-implement.
+- **Tests are not authoritative.** A passing test that uses deprecated syntax is a stale test, not a feature requirement. When migrating or refactoring, encountering a test that exercises removed syntax means the test itself should be deleted — not re-supported to make it green.
+- **README examples carry implicit legitimacy.** A syntax that appears in the project's README will be treated as canonical by any engineer joining the project. Deprecated examples must be updated immediately.
+- **Migration fixes must distinguish "missing feature" from "stale test".** During the Lezer migration, the `xN` repeat count appeared as a test failure. It was classified as a "gap" and re-implemented as an extraction hack in the skeleton builder. The correct classification was "stale test that should be deleted". The heuristic: if the spec doesn't define the syntax, any test exercising it is stale, regardless of whether it was passing before the migration.

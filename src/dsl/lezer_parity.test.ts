@@ -200,6 +200,42 @@ HH | [3: d d] - |
 HH | [2: d d d d] - - |
 HH | [2: d d d] - - |`;
 
+const NAVIGATION = `title "Navigation"
+time 4/4
+note 1/16
+
+HH | @segno x - - - | x x @to-coda x | @coda x - - - | x x @fine |`;
+
+const NAV_SEGNO_ANCHOR = `title "Segno Anchor"
+time 4/4
+note 1/16
+
+HH | x @segno x x x |`;
+
+const NAV_ONLY = `title "Nav Only Measure"
+time 4/4
+note 1/16
+
+HH | x x x x | @dc |`;
+
+const NAV_MULTI_START = `title "Multi Start Nav"
+time 4/4
+note 1/16
+
+HH | @segno @coda x x |`;
+
+const NAV_TOCODA_START = `title "ToCoda at Start"
+time 4/4
+note 1/16
+
+HH | @to-coda x x x |`;
+
+const NAV_SEGNO_END = `title "Segno at End"
+time 4/4
+note 1/16
+
+HH | x x x @segno |`;
+
 type TestCase = { name: string; dsl: string };
 
 const ALL_CASES: TestCase[] = [
@@ -217,6 +253,9 @@ const ALL_CASES: TestCase[] = [
   { name: "groups", dsl: GROUPS },
   { name: "groups with tracks", dsl: GROUPS_WITH_TRACKS },
   { name: "group spans", dsl: GROUP_SPANS },
+  { name: "navigation", dsl: NAVIGATION },
+  { name: "segno anchor", dsl: NAV_SEGNO_ANCHOR },
+  { name: "nav only measure", dsl: NAV_ONLY },
 ];
 
 // ============================================================
@@ -242,4 +281,30 @@ describe("lezer parity — skeleton", () => {
       expect(ln).toEqual(rn);
     });
   }
+});
+
+describe("lezer parity — navigation errors", () => {
+  it("reports error for multiple start nav markers", () => {
+    const regex = parseDocumentSkeleton(NAV_MULTI_START);
+    const lezer = parseDocumentSkeletonFromLezer(NAV_MULTI_START);
+    expect(regex.errors.length).toBeGreaterThan(0);
+    expect(lezer.errors.length).toBe(regex.errors.length);
+    expect(lezer.errors[0].message).toContain("multiple start-side navigation");
+  });
+
+  it("reports error for @to-coda at measure start", () => {
+    const regex = parseDocumentSkeleton(NAV_TOCODA_START);
+    const lezer = parseDocumentSkeletonFromLezer(NAV_TOCODA_START);
+    expect(regex.errors.length).toBeGreaterThan(0);
+    expect(lezer.errors.length).toBe(regex.errors.length);
+    expect(lezer.errors[0].message).toContain("may not appear at the beginning");
+  });
+
+  it("reports error for @segno at measure end", () => {
+    const regex = parseDocumentSkeleton(NAV_SEGNO_END);
+    const lezer = parseDocumentSkeletonFromLezer(NAV_SEGNO_END);
+    expect(regex.errors.length).toBeGreaterThan(0);
+    expect(lezer.errors.length).toBe(regex.errors.length);
+    expect(lezer.errors[0].message).toContain("may not appear at the end");
+  });
 });

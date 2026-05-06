@@ -12,6 +12,10 @@ import type {
   BarlineType,
   SourceTrackName,
   ParseError,
+  ParsedStartNav,
+  ParsedEndNav,
+  StartNavKind,
+  EndNavKind,
 } from "./types";
 
 const parserInstance = parser.configure({ strict: false });
@@ -353,6 +357,137 @@ function parseGroupItems(text: string): TokenGlyph[] {
   return items;
 }
 
+const START_NAV_KINDS: StartNavKind[] = ["segno", "coda"];
+const END_NAV_KINDS: EndNavKind[] = ["fine", "dc", "ds", "dc-al-fine", "dc-al-coda", "ds-al-fine", "ds-al-coda", "to-coda"];
+
+interface NavNode {
+  name: string;
+  kind: string;
+  from: number;
+  to: number;
+}
+
+function extractNavFromMeasureTokens(
+  mtNodes: { from: number; to: number; rawText: string }[],
+  allNodes: NodeInfo[],
+  source: string,
+  errors: ParseError[],
+): {
+  nonNavNodes: { from: number; to: number; rawText: string }[];
+  startNav?: ParsedStartNav;
+  endNav?: ParsedEndNav;
+} {
+  const navNodes: NavNode[] = [];
+  const nonNavNodes: { from: number; to: number; rawText: string }[] = [];
+
+  for (const mt of mtNodes) {
+    const mtChildren = childNodes(allNodes, mt.from, mt.to);
+    const navNode = mtChildren.find(
+      c => c.name === "NavMarker" || c.name === "NavJump",
+    );
+    if (navNode) {
+      const text = nodeText(navNode, source);
+      navNodes.push({
+        name: navNode.name,
+        kind: text.slice(1), // strip @
+        from: navNode.from,
+        to: navNode.to,
+      });
+    } else {
+      nonNavNodes.push(mt);
+    }
+  }
+
+  if (navNodes.length === 0) return { nonNavNodes };
+
+  const lineNumber = source.slice(0, navNodes[0].from).split("\n").length;
+  const pureNavigationMeasure = nonNavNodes.length === 0;
+
+  let startNav: ParsedStartNav | undefined;
+  let endNav: ParsedEndNav | undefined;
+  let anchorSeen = 0;
+
+  for (const nav of navNodes) {
+    // Count non-nav tokens that appear before this nav node
+    anchorSeen = nonNavNodes.filter(n => n.to <= nav.from).length;
+    const nonNavAfter = nonNavNodes.length - anchorSeen;
+
+    if (nav.name === "NavMarker") {
+      if (startNav !== undefined) {
+        errors.push({
+          line: lineNumber,
+          column: 1,
+          message: "Measure contains multiple start-side navigation markers",
+        });
+        continue;
+      }
+
+      if (nav.kind === "coda") {
+        if (!pureNavigationMeasure && anchorSeen !== 0) {
+          errors.push({
+            line: lineNumber,
+            column: 1,
+            message: "`@coda` may appear only at the beginning of a measure",
+          });
+          continue;
+        }
+        startNav = { kind: "coda", anchor: "left-edge" };
+      } else {
+        // @segno
+        if (!pureNavigationMeasure && nonNavAfter === 0) {
+          errors.push({
+            line: lineNumber,
+            column: 1,
+            message: "`@segno` may not appear at the end of a measure",
+          });
+          continue;
+        }
+        startNav =
+          pureNavigationMeasure || anchorSeen === 0
+            ? { kind: "segno", anchor: "left-edge" }
+            : { kind: "segno", anchor: { tokenAfter: anchorSeen } };
+      }
+    } else {
+      // NavJump
+      if (endNav !== undefined) {
+        errors.push({
+          line: lineNumber,
+          column: 1,
+          message: "Measure contains multiple end-side navigation instructions",
+        });
+        continue;
+      }
+
+      if (nav.kind === "to-coda") {
+        if (!pureNavigationMeasure && anchorSeen === 0) {
+          errors.push({
+            line: lineNumber,
+            column: 1,
+            message: "`@to-coda` may not appear at the beginning of a measure",
+          });
+          continue;
+        }
+        endNav =
+          pureNavigationMeasure || nonNavAfter === 0
+            ? { kind: "to-coda", anchor: "right-edge" }
+            : { kind: "to-coda", anchor: { tokenBefore: anchorSeen - 1 } };
+      } else {
+        if (!pureNavigationMeasure && nonNavAfter !== 0) {
+          errors.push({
+            line: lineNumber,
+            column: 1,
+            message: `\`@${nav.kind}\` may appear only at the end of a measure`,
+          });
+          continue;
+        }
+        endNav = { kind: nav.kind as EndNavKind, anchor: "right-edge" };
+      }
+    }
+  }
+
+  return { nonNavNodes, startNav, endNav };
+}
+
 export function parseDocumentSkeletonFromLezer(source: string): DocumentSkeleton {
   const tree = parserInstance.parse(source);
   const allNodes = collectNodes(tree);
@@ -496,17 +631,22 @@ export function parseDocumentSkeletonFromLezer(source: string): DocumentSkeleton
           }
         }
 
+        // Separate navigation markers from regular tokens
+        const { nonNavNodes, startNav, endNav } = extractNavFromMeasureTokens(
+          mtNodes, allNodes, source, errors,
+        );
+
         // Merge consecutive MeasureTokens split by summon prefix boundaries.
         // Grammar splits "HH:d" → "HH:" + "d", and CombinedHit "b+SD:d" → "b+SD:" + "d"
         const mergedSpans: { from: number; to: number }[] = [];
-        for (let i = 0; i < mtNodes.length; i++) {
-          let from = mtNodes[i].from;
-          let to = mtNodes[i].to;
-          let rawText = mtNodes[i].rawText;
-          while (rawText.endsWith(":") && i + 1 < mtNodes.length) {
+        for (let i = 0; i < nonNavNodes.length; i++) {
+          let from = nonNavNodes[i].from;
+          let to = nonNavNodes[i].to;
+          let rawText = nonNavNodes[i].rawText;
+          while (rawText.endsWith(":") && i + 1 < nonNavNodes.length) {
             i++;
-            to = mtNodes[i].to;
-            rawText += mtNodes[i].rawText;
+            to = nonNavNodes[i].to;
+            rawText += nonNavNodes[i].rawText;
           }
           mergedSpans.push({ from, to });
         }
@@ -519,8 +659,7 @@ export function parseDocumentSkeletonFromLezer(source: string): DocumentSkeleton
 
           // Use node-based parsing only for spans containing structural nodes
           const hasStructuralNodes = spanChildren.some(
-            n => n.name === "GroupExpr" || n.name === "InlineBracedBlock" ||
-                 n.name === "NavMarker" || n.name === "NavJump" || n.name === "MeasureRepeat",
+            n => n.name === "GroupExpr" || n.name === "InlineBracedBlock" || n.name === "MeasureRepeat",
           );
 
           if (hasStructuralNodes) {
@@ -540,14 +679,34 @@ export function parseDocumentSkeletonFromLezer(source: string): DocumentSkeleton
 
         const voltaIndices = currentVolta ? currentVolta.split(",").map(Number).filter(n => !isNaN(n)) : undefined;
 
-        // Skip empty measures caused by trailing barlines with no content
-        if (tokens.length > 0) {
+        // Build content by stripping nav marker text from the original measure content
+        let content = nodeText(currentMeasureContent, source).trim();
+        if (startNav || endNav) {
+          // Remove @-prefixed tokens that were extracted as nav markers
+          const navTexts: string[] = [];
+          for (const mt of mtNodes) {
+            const mtChildren = childNodes(allNodes, mt.from, mt.to);
+            const navNode = mtChildren.find(
+              c => c.name === "NavMarker" || c.name === "NavJump",
+            );
+            if (navNode) navTexts.push(nodeText(navNode, source));
+          }
+          for (const nt of navTexts) {
+            content = content.replace(nt, "").replace(/\s{2,}/g, " ").trim();
+          }
+        }
+
+        // Skip empty measures caused by trailing barlines with no content,
+        // but keep measures that have navigation markers even if no other tokens
+        if (tokens.length > 0 || startNav || endNav) {
           measures.push({
-            content: nodeText(currentMeasureContent, source).trim(),
+            content,
             tokens,
             repeatStart,
             repeatEnd: false,
             ...(voltaIndices ? { voltaIndices } : {}),
+            ...(startNav ? { startNav } : {}),
+            ...(endNav ? { endNav } : {}),
           });
         }
 

@@ -573,7 +573,6 @@ export function App() {
   const pageZoomMenuRef = useRef<HTMLDivElement>(null);
   const [xmlCollapsed, setXmlCollapsed] = useState<Set<string>>(new Set());
   const debugMode = new URLSearchParams(window.location.search).has("debug");
-  const [useLezerParser, setUseLezerParser] = useState(false);
 
   const xmlToggle = (path: string) => {
     setXmlCollapsed((prev) => {
@@ -623,10 +622,7 @@ export function App() {
   const [isScorePending, setIsScorePending] = useState(false);
   const [analysis, setAnalysis] = useState(() => {
     const initialScore = buildNormalizedScore(dsl);
-    return {
-      score: initialScore,
-      parserUsed: "regex" as "regex" | "lezer",
-    };
+    return { score: initialScore };
   });
   const [staffXml, setStaffXml] = useState<string | null>(null);
   const [isXmlPending, setIsXmlPending] = useState(false);
@@ -657,13 +653,13 @@ export function App() {
     const worker = new Worker(new URL("./scoreWorker.ts", import.meta.url), { type: "module" });
     workerRef.current = worker;
 
-    worker.onmessage = (event: MessageEvent<{ type: string; id: number; score?: NormalizedScore; xml?: string; parserUsed?: "regex" | "lezer" }>) => {
-      const { type, id, score: nextScore, xml: nextXml, parserUsed } = event.data;
+    worker.onmessage = (event: MessageEvent<{ type: string; id: number; score?: NormalizedScore; xml?: string }>) => {
+      const { type, id, score: nextScore, xml: nextXml } = event.data;
 
-      if (type === "parse" && nextScore && parserUsed) {
+      if (type === "parse" && nextScore) {
         if (id < latestHandledRequestIdRef.current) return;
         latestHandledRequestIdRef.current = id;
-        setAnalysis({ score: nextScore, parserUsed });
+        setAnalysis({ score: nextScore });
         setIsScorePending(id !== requestIdRef.current);
       } else if (type === "xml" && nextXml !== undefined) {
         if (id < latestXmlIdRef.current) return;
@@ -701,9 +697,8 @@ export function App() {
       id: nextId,
       dsl: debouncedAnalysisInput.dsl,
       hideVoice2Rests: debouncedAnalysisInput.hideVoice2Rests,
-      useLezerParser,
     });
-  }, [debouncedAnalysisInput, useLezerParser]);
+  }, [debouncedAnalysisInput]);
 
   // Request XML when switching to XML tab or when score changes while on XML tab
   const requestXml = useCallback(() => {
@@ -1162,16 +1157,6 @@ export function App() {
                 {debugMode && (
                   <div className="settings-section">
                     <h3 className="settings-section-title">Debug</h3>
-                    <label className="setting-row toggle">
-                      <span>Use Lezer Parser</span>
-                      <div className="toggle-switch">
-                        <input type="checkbox" checked={useLezerParser} onChange={(e) => setUseLezerParser(e.target.checked)} />
-                        <span className="toggle-slider"></span>
-                      </div>
-                    </label>
-                    <div className="setting-row" style={{ fontSize: 11, color: analysis.parserUsed === "lezer" ? "#3fb950" : "var(--text-muted)", fontFamily: "monospace" }}>
-                      <span>parser: {analysis.parserUsed}</span>
-                    </div>
                   </div>
                 )}
               </aside>

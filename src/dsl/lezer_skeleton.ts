@@ -1,5 +1,5 @@
 import { parser } from "./drum_mark.parser";
-import { inferGrouping } from "./parser";
+import { inferGrouping } from "./grouping";
 import type {
   DocumentSkeleton,
   TrackParagraph,

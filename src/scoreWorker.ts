@@ -10,7 +10,6 @@ type ParseRequest = {
   id: number;
   dsl: string;
   hideVoice2Rests: boolean;
-  useLezerParser?: boolean;
 };
 
 type GenerateXmlRequest = {
@@ -25,7 +24,6 @@ type ParseResponse = {
   type: "parse";
   id: number;
   score: ReturnType<typeof buildNormalizedScore>;
-  parserUsed: "regex" | "lezer";
 };
 
 type XmlResponse = {
@@ -38,41 +36,32 @@ type ScoreWorkerResponse = ParseResponse | XmlResponse;
 
 let lastScore: ReturnType<typeof buildNormalizedScore> | null = null;
 
-function doParse(dsl: string, useLezerParser?: boolean): { score: ReturnType<typeof buildNormalizedScore>; parserUsed: "regex" | "lezer" } {
-  let score;
-  let parserUsed: "regex" | "lezer";
-  try {
-    if (useLezerParser) {
-      const skeleton = parseDocumentSkeletonFromLezer(dsl);
-      const ast = buildScoreAst(skeleton);
-      score = normalizeScoreAst(ast);
-      score.ast = ast;
-      parserUsed = "lezer";
-    } else {
-      score = buildNormalizedScore(dsl);
-      parserUsed = "regex";
-    }
-  } catch (e) {
-    console.error("[scoreWorker] parse error:", e);
-    score = buildNormalizedScore(dsl);
-    parserUsed = "regex";
-  }
-  return { score, parserUsed };
+function doParse(dsl: string): ReturnType<typeof buildNormalizedScore> {
+  const skeleton = parseDocumentSkeletonFromLezer(dsl);
+  const ast = buildScoreAst(skeleton);
+  const score = normalizeScoreAst(ast);
+  score.ast = ast;
+  return score;
 }
 
 self.onmessage = (event: MessageEvent<ScoreWorkerRequest>) => {
   const msg = event.data;
 
   if (msg.type === "parse") {
-    const { id, dsl, useLezerParser } = msg;
-    const { score, parserUsed } = doParse(dsl, useLezerParser);
+    const { id, dsl } = msg;
+    let score: ReturnType<typeof buildNormalizedScore>;
+    try {
+      score = doParse(dsl);
+    } catch (e) {
+      console.error("[scoreWorker] lezer parse error, falling back to regex:", e);
+      score = buildNormalizedScore(dsl);
+    }
     lastScore = score;
-    const response: ParseResponse = { type: "parse", id, score, parserUsed };
+    const response: ParseResponse = { type: "parse", id, score };
     self.postMessage(response);
   } else if (msg.type === "generateXml") {
     const { id, hideVoice2Rests } = msg;
     if (!lastScore) {
-      // Should not happen — XML is only requested after a parse
       const response: XmlResponse = { type: "xml", id, xml: "" };
       self.postMessage(response);
       return;

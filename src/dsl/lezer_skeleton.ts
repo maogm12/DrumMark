@@ -44,8 +44,23 @@ function getBarlineType(text: string): BarlineType {
       if (text.startsWith("|:x")) return "repeatStart";
       if (text.startsWith(":|x")) return "repeatEnd";
       if (text.startsWith("|x")) return "end";
+      // Volta barlines: |N. |:N. :|N.
+      if (/^(?:\|:|:\||\|)\s*\d/.test(text) && text.endsWith(".")) return "single";
       return "single";
   }
+}
+
+function getVoltaIndicesFromBarline(node: NodeInfo, allNodes: NodeInfo[], source: string): number[] | undefined {
+  const nodeTextStr = nodeText(node, source);
+  // New-style volta barline: |N. |:N. :|N. with Integer children
+  if (/^(?:\|:|:\||\|)\s*\d/.test(nodeTextStr) && nodeTextStr.endsWith(".")) {
+    const children = childNodes(allNodes, node.from, node.to);
+    return children
+      .filter(c => c.name === "Integer")
+      .map(c => parseInt(nodeText(c, source), 10))
+      .filter(n => !isNaN(n));
+  }
+  return undefined;
 }
 
 const TRACK_NAMES = new Set([
@@ -298,8 +313,11 @@ function parseGroupExpr(
   source: string,
 ): TokenGlyph {
   const rawText = nodeText(node, source);
-  // rawText is like "[xxxx]", "[3: d p g]", "[ d x ]"
-  const inner = rawText.slice(1, -1); // strip [ and ]
+  // rawText is like "[xxxx]", "[3: d p g]", "[ d x ]", "[d x]:flam"
+  // Strip trailing modifiers first: find "]" and take everything before it + "]"
+  const bracketEnd = rawText.lastIndexOf("]");
+  const innerWithBracket = bracketEnd >= 0 ? rawText.slice(1, bracketEnd) : rawText.slice(1, -1);
+  const inner = innerWithBracket;
 
   let span: number;
   let items: TokenGlyph[];
@@ -320,7 +338,20 @@ function parseGroupExpr(
 
   const count = items.length;
 
-  return { kind: "group", count, span, items, modifiers: [] };
+  // Extract Modifier children (e.g. :flam, :accent after ])
+  const nodeChildren = childNodes(allNodes, node.from, node.to);
+  const groupModifiers: Modifier[] = [];
+  for (const child of nodeChildren) {
+    if (child.name === "Modifier") {
+      const modText = nodeText(child, source);
+      const modName = modText.startsWith(":") ? modText.slice(1) : modText;
+      if (MODIFIER_NAMES.has(modName)) {
+        groupModifiers.push(modName as Modifier);
+      }
+    }
+  }
+
+  return { kind: "group", count, span, items, modifiers: groupModifiers };
 }
 
 function nextPowerOfTwo(n: number): number {
@@ -615,7 +646,10 @@ export function parseDocumentSkeletonFromLezer(source: string): DocumentSkeleton
           }
         }
         currentBarline = child;
-        currentVolta = null;
+
+        // Extract volta indices from new-style volta barlines (|N. |:N. :|N.)
+        const voltaIndices = getVoltaIndicesFromBarline(child, allNodes, source);
+        currentVolta = voltaIndices ? voltaIndices.join(",") : null;
       } else if (child.name === "MeasureContent") {
         // Skip nested MeasureContent inside GroupExpr or InlineBracedBlock
         const isNested = lineChildren.some(
@@ -624,14 +658,6 @@ export function parseDocumentSkeletonFromLezer(source: string): DocumentSkeleton
         );
         if (!isNested) {
           currentMeasureContent = child;
-        }
-      } else if (child.name === "⚠") {
-        // Detect volta markers: error node containing Integer followed by "."
-        const errText = nodeText(child, source);
-        const errChildren = childNodes(allNodes, child.from, child.to);
-        if (errChildren.some(c => c.name === "Integer") && errText.endsWith(".")) {
-          const intNode = errChildren.find(c => c.name === "Integer");
-          if (intNode) currentVolta = nodeText(intNode, source);
         }
       }
       // When we have both a barline and measure content, create a measure

@@ -89,8 +89,8 @@ CombinedHit {
 }
 
 GroupExpr {
-  "[" Integer? ":" MeasureContent "]" |
-  "[" MeasureContent "]"
+  "[" Integer? ":" MeasureContent "]" Modifier* |
+  "[" MeasureContent "]" Modifier*
 }
 
 NavMarker { "@segno" | "@coda" }
@@ -114,11 +114,12 @@ TrackName {
 Barline {
   "||" "." |
   "||" |
-  "|:x" Integer |
-  ":|x" Integer |
+  "|:" Integer ("," Integer)* "." |
+  ":|" Integer ("," Integer)* "." |
   "|:" |
   ":|" |
   "|." |
+  "|" Integer ("," Integer)* "." |
   "|x" Integer |
   "|"
 }

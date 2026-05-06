@@ -272,6 +272,12 @@ note 1/16
 
 HH | x x x @segno |`;
 
+const GROUP_MODIFIERS = `title "Group Modifiers"
+time 4/4
+note 1/16
+
+HH | [d x]:flam [d x]:accent:ghost x x |`;
+
 type TestCase = { name: string; dsl: string };
 
 const ALL_CASES: TestCase[] = [
@@ -297,6 +303,7 @@ const ALL_CASES: TestCase[] = [
   { name: "multi rest", dsl: MULTI_REST },
   { name: "inline repeat", dsl: INLINE_REPEAT },
   { name: "inline repeat multi", dsl: INLINE_REPEAT_MULTI },
+  { name: "group modifiers", dsl: GROUP_MODIFIERS },
 ];
 
 // ============================================================

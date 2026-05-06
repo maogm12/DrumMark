@@ -991,7 +991,7 @@ function buildVoltaSpans(
       blockEnd++;
     }
 
-    const blockX1 = staves[blockStart].getX();
+    const blockX1 = blockStart === 0 ? staves[blockStart].getNoteStartX() : staves[blockStart].getX();
     const blockX2 = staves[blockEnd].getX() + staves[blockEnd].getWidth();
     const spacing = staves[blockStart].getSpacingBetweenLines();
     const lineHeight = 1.5 * spacing;
@@ -1016,7 +1016,7 @@ function buildVoltaSpans(
         end++;
       }
 
-      const x1 = staves[start].getX();
+      const x1 = start === 0 ? staves[start].getNoteStartX() : staves[start].getX();
       const x2 = staves[end].getX() + staves[end].getWidth();
       const endMeasure = measures[end]?.measure;
       if (!endMeasure) {

@@ -41,9 +41,6 @@ function getBarlineType(text: string): BarlineType {
     case "|.": return "single";
     case "|": return "single";
     default:
-      if (text.startsWith("|:x")) return "repeatStart";
-      if (text.startsWith(":|x")) return "repeatEnd";
-      if (text.startsWith("|x")) return "end";
       // Volta barlines: |N. |:N. :|N.
       if (/^(?:\|:|:\||\|)\s*\d/.test(text) && text.endsWith(".")) return "single";
       return "single";
@@ -751,31 +748,7 @@ export function parseDocumentSkeletonFromLezer(source: string): DocumentSkeleton
                n.from < child.from && child.to <= n.to,
         );
         if (!isNested) {
-          // Extract :|xN repeat count from MeasureContent following a :| barline.
-          // The Lezer grammar parses :|x2 as barline ":|" + content "x2",
-          // but the x2 is really the repeat count.
-          let repeatCountFromContent: number | undefined;
-          if (measures.length > 0 && currentBarline && measures[measures.length - 1].repeatEnd) {
-            const barlineText = nodeText(currentBarline, source);
-            const contentText = nodeText(child, source);
-            // :|xN — the grammar parses :| as barline, xN as content.
-            // Extract the repeat count and strip from content.
-            if (barlineText === ":|") {
-              const xnMatch = contentText.match(/^x(\d+)$/);
-              if (xnMatch?.[1]) {
-                const n = parseInt(xnMatch[1], 10);
-                if (n >= 1) repeatCountFromContent = n;
-              }
-            }
-          }
-          if (repeatCountFromContent !== undefined) {
-            // Apply the repeat count to the previous measure and
-            // clear the content (it's not real musical content).
-            measures[measures.length - 1].repeatTimes = repeatCountFromContent;
-            currentMeasureContent = null;
-          } else {
-            currentMeasureContent = child;
-          }
+          currentMeasureContent = child;
         }
       }
       // When we have both a barline and measure content, create a measure

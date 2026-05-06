@@ -283,14 +283,6 @@ function validateAndBuildRepeats(
           continue;
         }
 
-        if (measure.repeatEnd && (existing.times ?? 2) !== (measure.repeatTimes ?? 2)) {
-          errors.push({
-            line: paragraph.startLine,
-            column: 1,
-            message: `Conflicting repeat count at bar ${measure.globalIndex + 1}`,
-          });
-        }
-
         existing.start = existing.start || measure.repeatStart || undefined;
         existing.end = existing.end || measure.repeatEnd || undefined;
         existing.times = existing.end ? existing.times ?? measure.repeatTimes ?? 2 : undefined;

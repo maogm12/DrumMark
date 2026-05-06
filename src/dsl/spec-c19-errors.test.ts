@@ -102,20 +102,6 @@ HH | x x x x :|`);
     });
   });
 
-  it("reports repeat conflicts when tracks disagree on the same boundary", () => {
-    const score = buildScoreAst(`time 4/4
-divisions 4
-
-HH |: x x x x :|x2
-SD |: d d d d :|x3`);
-
-    expect(score.errors).toContainEqual({
-      line: 4,
-      column: 1,
-      message: "Conflicting repeat count at bar 1",
-    });
-  });
-
   it("reports measure slot mismatches in the normalized score", () => {
     const score = buildNormalizedScore(`time 4/4
 divisions 4

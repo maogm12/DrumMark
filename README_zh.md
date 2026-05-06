@@ -34,7 +34,7 @@ time 4/4
 note 1/16
 grouping 2+2
 
-HH |: x - x - o - x - | x:close - X - x - c - :|x2
+HH |: x - x - o - x - | x:close - X - x - c - :|
 SD |  - - d:cross - d - | D:rim - [2: d d:flam] - - -  |
 BD |  p - - - p - - - | p - p - - - p -        |
 ```

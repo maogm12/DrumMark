@@ -24,7 +24,7 @@
 - [x] Implement `c` crash sugar for `HH`
 - [x] Implement `DR` input sugar
 - [x] Implement group parsing (`[n/m: ...]`)
-- [x] Implement repeat parsing (`|:`, `:|`, `:|xN`)
+- [x] Implement repeat parsing (`|:`, `:|`)
 - [x] Build AST types
 - [x] Build normalized event model
 - [x] Align normalized event model documentation with v0 implementation

@@ -190,7 +190,7 @@ All gaps were fixed in `lezer_skeleton.ts`:
 | `\|: :\|` empty measure not created | Allow push even with empty content |
 | `\|  \|` ghost measure not created | Same — push empty measures |
 | No implicit repeat-end for intermediate voltas | Added `sameVoltaIndices` + inference logic |
-| No `\|:xN` repeat count | Extract `xN` from MeasureContent after `:\|` |
+
 | `note 1/N` in body not parsed | Scan source gaps between track lines for overrides |
 | Non-power-of-2 note values not rejected | Added validation in NoteHeader parsing |
 | Braced block nested GroupExpr duplicated | Filter nested MeasureTokens in inner braced MC |

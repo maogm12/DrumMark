@@ -224,6 +224,18 @@ note 1/16
 
 HH | x x x x | --- 4 --- | x x x x |`;
 
+const INLINE_REPEAT = `title "Inline Repeat"
+time 4/4
+note 1/16
+
+HH | d - - - *3 |`;
+
+const INLINE_REPEAT_MULTI = `time 4/4
+note 1/16
+grouping 4
+
+| @segno d - - - @ds-al-coda *1 |`;
+
 const NAVIGATION = `title "Navigation"
 time 4/4
 note 1/16
@@ -283,6 +295,8 @@ const ALL_CASES: TestCase[] = [
   { name: "measure repeat", dsl: MEASURE_REPEAT },
   { name: "braced blocks", dsl: BRACED_BLOCKS },
   { name: "multi rest", dsl: MULTI_REST },
+  { name: "inline repeat", dsl: INLINE_REPEAT },
+  { name: "inline repeat multi", dsl: INLINE_REPEAT_MULTI },
 ];
 
 // ============================================================

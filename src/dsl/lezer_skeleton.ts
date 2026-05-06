@@ -782,19 +782,114 @@ export function parseDocumentSkeletonFromLezer(source: string): DocumentSkeleton
           }
         }
 
-        // Skip empty measures caused by trailing barlines with no content,
-        // but keep measures that have navigation markers, measure-repeat, or multi-rest
-        if (tokens.length > 0 || startNav || endNav || measureRepeatSlashes || multiRestCount) {
+        // Detect inline repeat: content *N or *N
+        let inlineRepeatCount: number | undefined;
+        let inlineRepeatContent: string | undefined;
+        const inlineMatch = content.match(/^(.*?)\s*\*\s*(-?\d+)\s*$/);
+        if (inlineMatch?.[1] !== undefined && inlineMatch?.[2] !== undefined) {
+          const inner = inlineMatch[1].trim();
+          const count = parseInt(inlineMatch[2], 10);
+          if (inner !== "") {
+            if (count < 1) {
+              errors.push({
+                line: lineNumber,
+                column: 1,
+                message: "Repeat count must be at least 1",
+              });
+            } else {
+              inlineRepeatCount = count;
+              inlineRepeatContent = inner;
+            }
+          }
+        } else {
+          const bareMatch = content.match(/^\*(-?\d+)$/);
+          if (bareMatch?.[1] !== undefined) {
+            const count = parseInt(bareMatch[1], 10);
+            if (count < 1) {
+              errors.push({
+                line: lineNumber,
+                column: 1,
+                message: "Repeat count must be at least 1",
+              });
+            } else {
+              inlineRepeatCount = count;
+              inlineRepeatContent = "";
+            }
+          }
+        }
+
+        // Build measure push helper
+        const pushMeasure = (opts: {
+          content: string;
+          tokens: MeasureToken[];
+          repeatStart: boolean;
+          repeatEnd: boolean;
+          repeatTimes?: number;
+          barline?: BarlineType;
+          startNav?: ParsedStartNav;
+          endNav?: ParsedEndNav;
+          voltaIndices?: number[];
+          measureRepeatSlashes?: number;
+          multiRestCount?: number;
+        }) => {
           measures.push({
+            content: opts.content,
+            tokens: opts.tokens,
+            repeatStart: opts.repeatStart,
+            repeatEnd: opts.repeatEnd,
+            ...(opts.repeatTimes ? { repeatTimes: opts.repeatTimes } : {}),
+            ...(opts.barline ? { barline: opts.barline } : {}),
+            ...(opts.startNav ? { startNav: opts.startNav } : {}),
+            ...(opts.endNav ? { endNav: opts.endNav } : {}),
+            ...(opts.voltaIndices ? { voltaIndices: opts.voltaIndices } : {}),
+            ...(opts.measureRepeatSlashes ? { measureRepeatSlashes: opts.measureRepeatSlashes } : {}),
+            ...(opts.multiRestCount ? { multiRestCount: opts.multiRestCount } : {}),
+          });
+        };
+
+        // Push measure(s), expanding inline repeats
+        if (inlineRepeatCount !== undefined) {
+          // Re-parse tokens for the inner content (without *N suffix)
+          let expandedTokens: MeasureToken[];
+          if (inlineRepeatContent === "") {
+            expandedTokens = [];
+          } else {
+            // Split by whitespace, then each part may contain + for combined hits
+            const spaceParts = inlineRepeatContent!.split(/\s+/);
+            expandedTokens = [];
+            for (const part of spaceParts) {
+              const plusParts = part.split("+");
+              const items = plusParts.map(p => parseGlyphFromText(p.trim()));
+              if (items.length === 1) {
+                expandedTokens.push(items[0]);
+              } else {
+                expandedTokens.push({ kind: "combined", items });
+              }
+            }
+          }
+
+          for (let i = 0; i < inlineRepeatCount; i++) {
+            pushMeasure({
+              content: inlineRepeatContent!,
+              tokens: expandedTokens,
+              repeatStart: i === 0 ? repeatStart : false,
+              repeatEnd: false,
+              startNav: i === 0 ? startNav : undefined,
+              endNav: i === inlineRepeatCount - 1 ? endNav : undefined,
+              voltaIndices: i === 0 ? voltaIndices : undefined,
+            });
+          }
+        } else if (tokens.length > 0 || startNav || endNav || measureRepeatSlashes || multiRestCount) {
+          pushMeasure({
             content,
             tokens,
             repeatStart,
             repeatEnd: false,
-            ...(voltaIndices ? { voltaIndices } : {}),
-            ...(startNav ? { startNav } : {}),
-            ...(endNav ? { endNav } : {}),
-            ...(measureRepeatSlashes ? { measureRepeatSlashes } : {}),
-            ...(multiRestCount ? { multiRestCount } : {}),
+            startNav,
+            endNav,
+            voltaIndices,
+            measureRepeatSlashes,
+            multiRestCount,
           });
           // Clear tokens for multi-rest (content is the rest marker, not notes)
           if (multiRestCount) {

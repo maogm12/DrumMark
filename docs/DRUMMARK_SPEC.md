@@ -2002,3 +2002,102 @@ The IR `Header` type already stores `title`, `subtitle`, and `composer` as `stri
 
 This addendum supersedes the `title <text>`, `subtitle <text>`, and `composer <text>` syntax descriptions in Section 3.1, which previously implied unquoted free text.
 
+## Addendum 2026-05-06: Lezer Grammar Formalization and Free-Text Header Restoration
+
+### Status
+
+Approved
+
+### Scope
+
+This addendum restores unquoted free-text support for `title`, `subtitle`, and `composer`, and formalizes the parser boundary for local DrumMark syntax that must be represented directly in the Lezer grammar rather than reconstructed in `lezer_skeleton.ts`.
+
+### Free-Text Header Rule
+
+- `title`, `subtitle`, and `composer` accept either quoted or unquoted values.
+- In the unquoted form, the header value is the remainder of the line after the keyword, trimmed of leading and trailing whitespace.
+- In the unquoted form, `#` starts a comment. Therefore literal `#` requires quoted syntax.
+- Empty values are invalid.
+
+**Valid**:
+```txt
+title Backbeat Study
+subtitle with ghost notes
+composer "C# Minor"
+```
+
+**Invalid**:
+```txt
+title
+composer
+```
+
+### Grammar Ownership of Local Syntax
+
+The Lezer grammar must structurally represent the following local syntax forms:
+
+- summon prefix, e.g. `SD:d`
+- routed brace block, e.g. `RC { x x x x }`
+- rhythmic group structure, including optional span and trailing group modifiers
+- inline repeat suffix `*N` at measure level
+- multi-measure rest `--N--`
+- paragraph-leading `note 1/N` override
+- local barline classes
+
+These forms must not be reconstructed from raw-text rescans, measure-content regexes, or source-gap scanning in `lezer_skeleton.ts`.
+
+### Inline Repeat
+
+- `*N` is a measure-level trailing construct.
+- It may appear either after normal measure content or as the sole content of an otherwise empty measure body.
+- `d*`, `d**`, etc. remain token-local duration modifiers.
+
+Examples:
+```txt
+| d* *2 |
+| - *3 |
+| *4 |
+```
+
+### Multi-Measure Rest
+
+- Multi-rest is a mutually exclusive measure-body form.
+- It cannot be combined with ordinary measure tokens, measure-repeat shorthand, inline repeat, or navigation tokens.
+- Additional adjacent tokens or suffixes are parse errors.
+
+### Paragraph `note 1/N` Override
+
+- A paragraph-level `note 1/N` override attaches to the paragraph it immediately precedes.
+- It may appear only as the first non-comment, non-blank content of that paragraph.
+- At most one override may precede a paragraph's track content.
+- An override appearing after the first track line of a paragraph is a parse error.
+
+### Local Barline Mapping
+
+The grammar-local barline mapping is:
+
+- `|` -> `RegularBarline`
+- `||` -> `DoubleBarline`
+- `|:` -> `RepeatStartBarline`
+- `:|` -> `RepeatEndBarline`
+- `|.` -> `VoltaTerminatorBarline`
+- `||.` -> `DoubleVoltaTerminatorBarline`
+- `|N.` / `|N,M.` -> `VoltaBarline(indices=[...], base="|")`
+- `|:N.` / `|:N,M.` -> `VoltaBarline(indices=[...], base="|:")`
+- `:|N.` / `:|N,M.` -> `VoltaBarline(indices=[...], base=":|")`
+
+Malformed volta barlines are parse errors.
+
+### Boundary Between Grammar and Skeleton
+
+The grammar is responsible for local syntax shape. The skeleton remains responsible for contextual lowering and semantic behavior, including:
+
+- anonymous-track fallback resolution
+- navigation legality and anchor derivation
+- inferred repeat-end behavior for intermediate voltas
+- grouping defaulting
+- duration and grouping-boundary validation
+
+### Supersession
+
+This addendum supersedes Addendum 2026-05-04 ("String Quoting for Text Headers") and any implementation strategy that relies on reconstructing the syntax forms listed above from raw text in `lezer_skeleton.ts`.

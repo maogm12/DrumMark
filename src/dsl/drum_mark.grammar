@@ -6,15 +6,27 @@ space { " " }
 Newline { "\n" }
 
 @tokens {
+  @precedence { InlineRepeatToken, StarSuffixToken }
   Comment { "#" ![\n]* }
   Integer { @digit+ }
-  String { "\"" !["]* "\"" | "'" ![']* "'" }
+  HeaderWord { ![\n# ] ![\n# ]* }
+  InlineRepeatToken { "*" @digit+ }
+  StarSuffixToken { "*" }
+  SummonPrefix {
+    "HH:" | "HF:" | "SD:" | "BD:" | "BD2:" |
+    "T1:" | "T2:" | "T3:" | "T4:" |
+    "RC:" | "RC2:" |
+    "C:" | "C2:" |
+    "SPL:" | "CHN:" | "CB:" | "WB:" | "CL:" | "ST:"
+  }
 }
 
 HeaderSection { HeaderLine* }
 
 HeaderLine {
-  FreeTextHeader Newline |
+  TitleHeader Newline |
+  SubtitleHeader Newline |
+  ComposerHeader Newline |
   TempoHeader Newline |
   TimeHeader Newline |
   GroupingHeader Newline |
@@ -22,7 +34,11 @@ HeaderLine {
   DivisionsHeader Newline
 }
 
-FreeTextHeader { ("title" | "subtitle" | "composer") String }
+HeaderValue { HeaderWord+ }
+
+TitleHeader { "title" HeaderValue }
+SubtitleHeader { "subtitle" HeaderValue }
+ComposerHeader { "composer" HeaderValue }
 TempoHeader { "tempo" Integer }
 TimeHeader { "time" Integer "/" Integer }
 GroupingHeader { "grouping" Integer ("+" Integer)* }
@@ -36,27 +52,33 @@ TrackLine {
   MeasureSection+
 }
 
-MeasureSection { Barline MeasureContent }
+MeasureSection { BarlineNode MeasureBody? }
 
-MeasureContent { MeasureToken* }
+MeasureBody {
+  MeasureRepeatExpr |
+  NonEmptyMeasureContent InlineRepeatSuffix? |
+  InlineRepeatSuffix
+}
 
-MeasureToken {
-  GlyphToken |
-  CombinedHit |
+MeasureContent { MeasureExpr* }
+NonEmptyMeasureContent { MeasureExpr+ }
+
+MeasureExpr {
   GroupExpr |
+  CombinedHitExpr |
+  SummonExpr |
+  BasicNoteExpr |
   NavMarker |
   NavJump |
-  MeasureRepeat |
   InlineBracedBlock
 }
 
-GlyphToken {
-  BasicGlyph SuffixChain |
-  BasicGlyph
-}
+BasicNoteExpr { BasicGlyph SuffixChain? }
+
+SummonExpr { SummonPrefix BasicNoteExpr }
 
 BasicGlyph {
-  // multi-char tokens first (track names for summon prefix, also valid as glyphs)
+  // multi-char tokens first
   "HH" | "HF" | "SD" | "BD" | "BD2" | "RC" | "RC2" | "ST" |
   "spl" | "SPL" | "chn" | "CHN" | "cb" | "CB" | "wb" | "WB" | "cl" | "CL" |
   "c2" | "C2" | "b2" | "B2" | "r2" | "R2" |
@@ -74,7 +96,7 @@ SuffixChain {
 
 SuffixChar {
   "." |
-  "*" |
+  StarSuffixToken |
   "/" |
   Modifier
 }
@@ -85,13 +107,26 @@ Modifier {
   ":" "flam" | ":" "ghost" | ":" "drag" | ":" "roll" | ":" "dead"
 }
 
-CombinedHit {
-  GlyphToken "+" GlyphToken ("+" GlyphToken)*
+HitExpr {
+  SummonExpr |
+  BasicNoteExpr
+}
+
+CombinedHitExpr {
+  HitExpr "+" HitExpr ("+" HitExpr)*
+}
+
+GroupContent { GroupItem* }
+
+GroupItem {
+  CombinedHitExpr |
+  SummonExpr |
+  BasicNoteExpr
 }
 
 GroupExpr {
-  "[" Integer? ":" MeasureContent "]" Modifier* |
-  "[" MeasureContent "]" Modifier*
+  "[" Integer ":" GroupContent "]" Modifier* |
+  "[" GroupContent "]" Modifier*
 }
 
 NavMarker { "@segno" | "@coda" }
@@ -102,7 +137,9 @@ NavJump {
   "@to-coda"
 }
 
-MeasureRepeat { "%" | "%%" }
+MeasureRepeatExpr { "%" "%"* }
+
+InlineRepeatSuffix { InlineRepeatToken }
 
 TrackName {
   "HH" | "HF" | "SD" | "BD" | "BD2" |
@@ -112,16 +149,22 @@ TrackName {
   "SPL" | "CHN" | "CB" | "WB" | "CL" | "ST"
 }
 
-Barline {
-  "||" "." |
-  "||" |
-  "|:" Integer ("," Integer)* "." |
-  ":|" Integer ("," Integer)* "." |
-  "|:" |
-  ":|" |
-  "|." |
-  "|" Integer ("," Integer)* "." |
-  "|"
+BarlineNode {
+  DoubleVoltaTerminatorBarline |
+  DoubleBarline |
+  VoltaBarline |
+  RepeatStartBarline |
+  RepeatEndBarline |
+  VoltaTerminatorBarline |
+  RegularBarline
 }
+
+RegularBarline { "|" }
+DoubleBarline { "||" }
+RepeatStartBarline { "|:" }
+RepeatEndBarline { ":|" }
+VoltaTerminatorBarline { "|." }
+DoubleVoltaTerminatorBarline { "||." }
+VoltaBarline { ("|:" | ":|" | "|") Integer ("," Integer)* "." }
 
 InlineBracedBlock { "{" MeasureContent "}" }

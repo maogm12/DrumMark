@@ -211,3 +211,17 @@ The regex parser (`parser.ts`) now has zero production references. All 345 tests
 - **Tests are not authoritative.** A passing test that uses deprecated syntax is a stale test, not a feature requirement. When migrating or refactoring, encountering a test that exercises removed syntax means the test itself should be deleted — not re-supported to make it green.
 - **README examples carry implicit legitimacy.** A syntax that appears in the project's README will be treated as canonical by any engineer joining the project. Deprecated examples must be updated immediately.
 - **Migration fixes must distinguish "missing feature" from "stale test".** During the Lezer migration, the `xN` repeat count appeared as a test failure. It was classified as a "gap" and re-implemented as an extraction hack in the skeleton builder. The correct classification was "stale test that should be deleted". The heuristic: if the spec doesn't define the syntax, any test exercising it is stale, regardless of whether it was passing before the migration.
+
+## 2026-05-06 Addendum: Lezer Grammar Boundary for DrumMark
+
+- If `lezer_skeleton.ts` has to detect syntax with raw-text rescans, regexes over measure content, or source-gap scanning, the grammar is still under-modeling the language. In this codebase that applies to summon prefixes, routed brace blocks, group internals, inline repeat `*N`, multi-rest `--N--`, paragraph `note 1/N` overrides, and coarse barline classification.
+- Unquoted free-text headers (`title`, `subtitle`, `composer`) are feasible, but only with contextual line-tail parsing scoped to those three header keywords. Reusing ordinary DSL tokens for header text would make `#` comments, spaces, and token collisions brittle.
+- `#` in unquoted free-text headers must remain comment syntax. Literal `#` therefore requires quoting, e.g. `composer "C# Minor"`.
+- Parser design should prefer one parse-tree shape per concrete syntax form. Leaving multiple structural encodings for the same text, such as `||.`, leaks implementation choices into downstream skeleton logic and tests.
+
+## 2026-05-06 Addendum: Neutral Error Lowering in Lezer Skeleton
+
+- Malformed local syntax in `lezer_skeleton.ts` should emit diagnostics and lower to a semantically neutral shape, not to a valid musical token. In particular, an incomplete summon like `SD:` must not synthesize a `-` rest token during recovery, because that changes measure duration and can survive into normalization/rendering.
+- The safe recovery pattern for malformed structural tokens is `TokenGlyph | null` plus filtering at each container boundary (`CombinedHitExpr`, `GroupExpr`, `MeasureContent`). This keeps diagnostics while preventing accidental semantic repair.
+- Invalid shorthand combinations must clear all shorthand metadata before measure construction. For example, `--8-- *2` should not retain `multiRestCount: 8` after reporting the combination error; otherwise a malformed measure silently behaves like a legal multi-rest.
+- The `npm run drummark` CLI only accepts file input. Parser/IR repros for malformed cases should therefore be verified with temporary files rather than stdin piping.

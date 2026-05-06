@@ -200,6 +200,18 @@ HH | [3: d d] - |
 HH | [2: d d d d] - - |
 HH | [2: d d d] - - |`;
 
+const MEASURE_REPEAT = `title "Measure Repeat"
+time 4/4
+note 1/16
+
+HH | x x x x | % | %% | x x x x |`;
+
+const MEASURE_REPEAT_MIXED = `title "Mixed Repeat"
+time 4/4
+note 1/16
+
+HH | x % x x |`;
+
 const NAVIGATION = `title "Navigation"
 time 4/4
 note 1/16
@@ -256,6 +268,7 @@ const ALL_CASES: TestCase[] = [
   { name: "navigation", dsl: NAVIGATION },
   { name: "segno anchor", dsl: NAV_SEGNO_ANCHOR },
   { name: "nav only measure", dsl: NAV_ONLY },
+  { name: "measure repeat", dsl: MEASURE_REPEAT },
 ];
 
 // ============================================================

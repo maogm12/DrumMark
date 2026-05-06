@@ -636,6 +636,28 @@ export function parseDocumentSkeletonFromLezer(source: string): DocumentSkeleton
           mtNodes, allNodes, source, errors,
         );
 
+        // Detect measure-repeat: all non-nav tokens are MeasureRepeat
+        let measureRepeatSlashes: number | undefined;
+        if (nonNavNodes.length > 0) {
+          const repeatNodes = nonNavNodes.filter(n => {
+            const children = childNodes(allNodes, n.from, n.to);
+            return children.some(c => c.name === "MeasureRepeat");
+          });
+          if (repeatNodes.length === nonNavNodes.length) {
+            // All tokens are MeasureRepeat — count % characters
+            measureRepeatSlashes = nonNavNodes.reduce(
+              (sum, n) => sum + n.rawText.length,
+              0,
+            );
+          } else if (repeatNodes.length > 0) {
+            errors.push({
+              line: lineNumber,
+              column: 1,
+              message: "Measure repeat shorthand must occupy the entire measure",
+            });
+          }
+        }
+
         // Merge consecutive MeasureTokens split by summon prefix boundaries.
         // Grammar splits "HH:d" → "HH:" + "d", and CombinedHit "b+SD:d" → "b+SD:" + "d"
         const mergedSpans: { from: number; to: number }[] = [];
@@ -651,9 +673,10 @@ export function parseDocumentSkeletonFromLezer(source: string): DocumentSkeleton
           mergedSpans.push({ from, to });
         }
 
-        // Parse each merged span into tokens
+        // Parse each merged span into tokens (skip for measure-repeats)
         const tokens: MeasureToken[] = [];
-        for (const span of mergedSpans) {
+        if (!measureRepeatSlashes) {
+          for (const span of mergedSpans) {
           const spanText = source.slice(span.from, span.to);
           const spanChildren = childNodes(allNodes, span.from, span.to);
 
@@ -676,6 +699,7 @@ export function parseDocumentSkeletonFromLezer(source: string): DocumentSkeleton
             }
           }
         }
+        }
 
         const voltaIndices = currentVolta ? currentVolta.split(",").map(Number).filter(n => !isNaN(n)) : undefined;
 
@@ -697,8 +721,8 @@ export function parseDocumentSkeletonFromLezer(source: string): DocumentSkeleton
         }
 
         // Skip empty measures caused by trailing barlines with no content,
-        // but keep measures that have navigation markers even if no other tokens
-        if (tokens.length > 0 || startNav || endNav) {
+        // but keep measures that have navigation markers or measure-repeat
+        if (tokens.length > 0 || startNav || endNav || measureRepeatSlashes) {
           measures.push({
             content,
             tokens,
@@ -707,6 +731,7 @@ export function parseDocumentSkeletonFromLezer(source: string): DocumentSkeleton
             ...(voltaIndices ? { voltaIndices } : {}),
             ...(startNav ? { startNav } : {}),
             ...(endNav ? { endNav } : {}),
+            ...(measureRepeatSlashes ? { measureRepeatSlashes } : {}),
           });
         }
 

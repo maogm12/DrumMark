@@ -4,11 +4,11 @@ import { buildNormalizedScore } from "./normalize";
 import { parseDocumentSkeleton } from "./parser";
 
 describe("spec C15: multi-measure rest", () => {
-  it("parses compact and spaced multi-rest forms when the count is at least 2", () => {
+  it("parses compact, spaced, and asymmetric multi-rest forms when the count is at least 2", () => {
     const doc = parseDocumentSkeleton(`time 4/4
 divisions 4
 
-HH | --2-- | - 4 - | -2- |`);
+HH | --2-- | -- 4 -- | ---2-- |`);
 
     expect(doc.errors).toEqual([]);
     expect(doc.paragraphs[0].lines[0].measures).toHaveLength(3);
@@ -18,28 +18,25 @@ HH | --2-- | - 4 - | -2- |`);
       multiRestCount: 2,
     });
     expect(doc.paragraphs[0].lines[0].measures[1]).toMatchObject({
-      content: "- 4 -",
+      content: "-- 4 --",
       tokens: [],
       multiRestCount: 4,
     });
     expect(doc.paragraphs[0].lines[0].measures[2]).toMatchObject({
-      content: "-2-",
+      content: "---2--",
       tokens: [],
       multiRestCount: 2,
     });
   });
 
-  it("rejects count 1 under the current enforced minimum-count rule", () => {
+  it("treats non-matching numeric forms as non-multi-rest input", () => {
     const doc = parseDocumentSkeleton(`time 4/4
 divisions 4
 
 HH | --1-- |`);
 
-    expect(doc.errors).toContainEqual({
-      line: 4,
-      column: 1,
-      message: "Multi-measure rest count must be at least 2",
-    });
+    expect(doc.errors.length).toBeGreaterThan(0);
+    expect(doc.paragraphs[0].lines[0].measures[0]?.multiRestCount).toBeUndefined();
   });
 
   it("treats malformed forms as ordinary measure content instead of multi-rest intent", () => {

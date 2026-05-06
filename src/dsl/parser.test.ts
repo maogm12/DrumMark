@@ -215,11 +215,12 @@ divisions 4
   it("parses multi-rest measures with N >= 2", () => {
     const doc = parseDocumentSkeleton(`time 4/4
 divisions 4
-HH | --2-- | - 4 - |`);
+HH | --2-- | -- 4 -- | ---2-- |`);
 
     expect(doc.errors).toEqual([]);
     expect(doc.paragraphs[0].lines[0].measures[0].multiRestCount).toBe(2);
     expect(doc.paragraphs[0].lines[0].measures[1].multiRestCount).toBe(4);
+    expect(doc.paragraphs[0].lines[0].measures[2].multiRestCount).toBe(2);
   });
 
   it("treats *N as total run length, including *1", () => {

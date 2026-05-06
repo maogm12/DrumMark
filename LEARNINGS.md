@@ -225,3 +225,9 @@ The regex parser (`parser.ts`) now has zero production references. All 345 tests
 - The safe recovery pattern for malformed structural tokens is `TokenGlyph | null` plus filtering at each container boundary (`CombinedHitExpr`, `GroupExpr`, `MeasureContent`). This keeps diagnostics while preventing accidental semantic repair.
 - Invalid shorthand combinations must clear all shorthand metadata before measure construction. For example, `--8-- *2` should not retain `multiRestCount: 8` after reporting the combination error; otherwise a malformed measure silently behaves like a legal multi-rest.
 - The `npm run drummark` CLI only accepts file input. Parser/IR repros for malformed cases should therefore be verified with temporary files rather than stdin piping.
+
+## 2026-05-06 Addendum: Grammar-Friendly Surface Syntax
+
+- Reusing an existing sigil across multiple syntax families is acceptable only if the spec defines a closed lexical partition. Otherwise typo handling and future syntax growth drift quickly between grammar and lowering.
+- A shorthand can still belong directly to the grammar without being forced into a single compact canonical spelling. For DrumMark multi-rest, the stable property is the local `dash-run + integer + dash-run` structure, not dash-run symmetry.
+- If a shorthand is grammar-owned, it is often cleaner to define only the legal forms and let non-matching inputs fall back to the ordinary grammar, rather than inventing a separate malformed-candidate intent-recovery layer.

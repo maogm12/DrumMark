@@ -233,6 +233,52 @@ function parseBasicNoteExpr(node: NodeInfo, source: string): TokenGlyph {
   return parseGlyphFromText(nodeText(node, source));
 }
 
+function recoveredTokensFromText(
+  text: string,
+  track: SourceTrackName | "ANONYMOUS",
+  lineNumber: number,
+  baseColumn: number,
+  errors: ParseError[],
+): MeasureToken[] {
+  const tokens: MeasureToken[] = [];
+
+  for (const match of text.matchAll(/\S+/g)) {
+    const chunk = match[0];
+    const chunkColumn = baseColumn + (match.index ?? 0);
+    if (!chunk) continue;
+
+    if (/^-+.*-+$/.test(chunk)) {
+      for (const char of chunk) {
+        if (char === "-") {
+          tokens.push(parseGlyphFromText("-"));
+        }
+      }
+      for (const unknown of chunk.matchAll(/\d/g)) {
+        errors.push({
+          line: lineNumber,
+          column: chunkColumn + (unknown.index ?? 0) + 1,
+          message: `Unknown token \`${unknown[0]}\` on track ${track}`,
+        });
+      }
+      continue;
+    }
+
+    const token = parseGlyphFromText(chunk);
+    const matchedGlyph = ALL_GLYPHS.find((glyph) => chunk.startsWith(glyph));
+    if (!matchedGlyph || matchedGlyph === "-") {
+      errors.push({
+        line: lineNumber,
+        column: chunkColumn + 1,
+        message: `Unknown token \`${chunk}\` on track ${track}`,
+      });
+      continue;
+    }
+    tokens.push(token);
+  }
+
+  return tokens;
+}
+
 function parseSummonExpr(
   node: NodeInfo,
   allNodes: NodeInfo[],
@@ -544,6 +590,76 @@ function extractNavFromMeasureTokens(
   return { nonNavNodes, startNav, endNav };
 }
 
+function extractNavFromShorthandBodyText(
+  bodyText: string,
+  shorthandRange: { from: number; to: number },
+  lineNumber: number,
+  errors: ParseError[],
+): {
+  startNav?: ParsedStartNav;
+  endNav?: ParsedEndNav;
+} {
+  const navMatches = [...bodyText.matchAll(/@(segno|coda|fine|dc|ds|dc-al-fine|dc-al-coda|ds-al-fine|ds-al-coda|to-coda)/g)];
+  if (navMatches.length === 0) return {};
+
+  let startNav: ParsedStartNav | undefined;
+  let endNav: ParsedEndNav | undefined;
+
+  for (const match of navMatches) {
+    const raw = match[0];
+    const from = match.index ?? 0;
+    const to = from + raw.length;
+    const kind = raw.slice(1);
+
+    if (START_NAV_KINDS.includes(kind as StartNavKind)) {
+      if (startNav !== undefined) {
+        errors.push({
+          line: lineNumber,
+          column: 1,
+          message: "Measure contains multiple start-side navigation markers",
+        });
+        continue;
+      }
+      if (to > shorthandRange.from) {
+        errors.push({
+          line: lineNumber,
+          column: 1,
+          message: kind === "coda"
+            ? "`@coda` may appear only at the beginning of a measure"
+            : "`@segno` may not appear at the end of a measure",
+        });
+        continue;
+      }
+      startNav = { kind: kind as StartNavKind, anchor: "left-edge" };
+      continue;
+    }
+
+    if (END_NAV_KINDS.includes(kind as EndNavKind)) {
+      if (endNav !== undefined) {
+        errors.push({
+          line: lineNumber,
+          column: 1,
+          message: "Measure contains multiple end-side navigation instructions",
+        });
+        continue;
+      }
+      if (from < shorthandRange.to) {
+        errors.push({
+          line: lineNumber,
+          column: 1,
+          message: kind === "to-coda"
+            ? "`@to-coda` may not appear at the beginning of a measure"
+            : `\`@${kind}\` may appear only at the end of a measure`,
+        });
+        continue;
+      }
+      endNav = { kind: kind as EndNavKind, anchor: "right-edge" };
+    }
+  }
+
+  return { startNav, endNav };
+}
+
 export function parseDocumentSkeletonFromLezer(source: string): DocumentSkeleton {
   // Match regex parser behavior: trim leading/trailing whitespace so
   // test sources with leading \n don't prevent header parsing.
@@ -694,7 +810,16 @@ export function parseDocumentSkeletonFromLezer(source: string): DocumentSkeleton
 
       const contentNode = firstInnerNode(bodyNode, allNodes, ["NonEmptyMeasureContent"]);
       const repeatNode = firstInnerNode(bodyNode, allNodes, ["MeasureRepeatExpr"]);
+      const multiRestNode = firstInnerNode(bodyNode, allNodes, ["MultiRestExpr"]);
       const inlineRepeatNode = firstInnerNode(bodyNode, allNodes, ["InlineRepeatSuffix"]);
+      const bodyHasRecoveryErrors = childNodes(allNodes, bodyNode.from, bodyNode.to).some(
+        (child) => child.name === "⚠",
+      );
+      const bodyColumn = bodyNode.from - lineNode.from + 1;
+      const nextSectionStart = sectionIndex + 1 < measureSections.length
+        ? measureSections[sectionIndex + 1]?.from ?? lineNode.to
+        : lineNode.to;
+      const bodyText = source.slice(bodyNode.from, nextSectionStart).trim();
 
       const measureExprNodes = contentNode ? topLevelNamedChildren(contentNode, allNodes, "MeasureExpr") : [];
       const mtNodes = measureExprNodes.map((expr) => ({
@@ -703,24 +828,61 @@ export function parseDocumentSkeletonFromLezer(source: string): DocumentSkeleton
         rawText: nodeText(expr, source),
       }));
 
-      const { nonNavNodes, startNav, endNav } = extractNavFromMeasureTokens(
+      const extractedNav = extractNavFromMeasureTokens(
         mtNodes,
         allNodes,
         source,
         errors,
       );
+      let { nonNavNodes, startNav, endNav } = extractedNav;
+      if ((repeatNode || multiRestNode) && (startNav === undefined || endNav === undefined)) {
+        const shorthandText = repeatNode
+          ? nodeText(repeatNode, source)
+          : multiRestNode
+            ? nodeText(multiRestNode, source)
+            : "";
+        const shorthandIndex = bodyText.indexOf(shorthandText);
+        if (shorthandIndex >= 0) {
+          const fallbackNav = extractNavFromShorthandBodyText(
+            bodyText,
+            { from: shorthandIndex, to: shorthandIndex + shorthandText.length },
+            lineNumber,
+            errors,
+          );
+          startNav ??= fallbackNav.startNav;
+          endNav ??= fallbackNav.endNav;
+        }
+      }
 
-      let measureRepeatSlashes = repeatNode ? nodeText(repeatNode, source).length : undefined;
-      let tokens = measureRepeatSlashes
-        ? []
-        : nonNavNodes.map((span) => {
-      const exprNode = measureExprNodes.find(
-        (expr) => expr.from === span.from && expr.to === span.to,
-      );
-      return exprNode
-        ? parseMeasureExpr(exprNode, allNodes, source, errors)
-        : parseGlyphFromText(span.rawText);
-          }).filter((token): token is MeasureToken => token !== null);
+      let content = bodyHasRecoveryErrors || repeatNode || multiRestNode
+        ? bodyText
+        : contentNode
+          ? nodeText(contentNode, source).trim()
+          : "";
+      const navTexts: string[] = [];
+      for (const mt of mtNodes) {
+        const navNode = childNodes(allNodes, mt.from, mt.to).find(
+          (child) => child.name === "NavMarker" || child.name === "NavJump",
+        );
+        if (navNode) navTexts.push(nodeText(navNode, source));
+      }
+      if (bodyHasRecoveryErrors || repeatNode || multiRestNode) {
+        for (const match of bodyText.matchAll(/@(segno|coda|fine|dc|ds|dc-al-fine|dc-al-coda|ds-al-fine|ds-al-coda|to-coda)/g)) {
+          navTexts.push(match[0]);
+        }
+      }
+      for (const navText of navTexts) {
+        content = content.replace(navText, "").replace(/\s{2,}/g, " ").trim();
+      }
+
+      let tokens = nonNavNodes.map((span) => {
+        const exprNode = measureExprNodes.find(
+          (expr) => expr.from === span.from && expr.to === span.to,
+        );
+        return exprNode
+          ? parseMeasureExpr(exprNode, allNodes, source, errors)
+          : parseGlyphFromText(span.rawText);
+      }).filter((token): token is MeasureToken => token !== null);
 
       for (let ti = 0; ti < tokens.length; ti++) {
         const token = tokens[ti];
@@ -743,64 +905,45 @@ export function parseDocumentSkeletonFromLezer(source: string): DocumentSkeleton
         }
       }
 
-      let content = repeatNode
-        ? nodeText(repeatNode, source).trim()
-        : contentNode
-          ? nodeText(contentNode, source).trim()
-          : "";
-      const navTexts: string[] = [];
-      for (const mt of mtNodes) {
-        const navNode = childNodes(allNodes, mt.from, mt.to).find(
-          (child) => child.name === "NavMarker" || child.name === "NavJump",
-        );
-        if (navNode) navTexts.push(nodeText(navNode, source));
-      }
-      for (const navText of navTexts) {
-        content = content.replace(navText, "").replace(/\s{2,}/g, " ").trim();
-      }
-
-      let malformedMeasureRepeat = false;
-      if (measureRepeatSlashes !== undefined && !/^%+$/.test(content)) {
+      let measureRepeatSlashes: number | undefined;
+      if (/^%+$/.test(content)) {
+        measureRepeatSlashes = content.length;
+        tokens = [];
+      } else if (repeatNode || content.includes("%")) {
         errors.push({
           line: lineNumber,
           column: 1,
           message: "Measure repeat shorthand must occupy the entire measure",
         });
-        measureRepeatSlashes = undefined;
-        malformedMeasureRepeat = true;
       }
 
-      if (measureRepeatSlashes === undefined) {
-        if (/^%+$/.test(content)) {
-          measureRepeatSlashes = content.length;
-          tokens = [];
-        } else if (content.includes("%") && !malformedMeasureRepeat) {
-          errors.push({
-            line: lineNumber,
-            column: 1,
-            message: "Measure repeat shorthand must occupy the entire measure",
-          });
-        }
-      }
-
-      let multiRestCount: number | undefined;
-      const multiRestMatch = content.match(/^-+\s*(\d+)\s*-+$/);
-      if (multiRestMatch?.[1] !== undefined) {
-        const count = parseInt(multiRestMatch[1], 10);
-        if (count < 2) {
-          errors.push({
-            line: lineNumber,
-            column: 1,
-            message: "Multi-measure rest count must be at least 2",
-          });
-        } else {
-          multiRestCount = count;
-          tokens = [];
-        }
+      const multiRestMatch = content.match(/^--+\s*((?:1\d+)|(?:[2-9]\d*))\s*--+$/);
+      const multiRestCount = multiRestMatch?.[1] !== undefined
+        ? parseInt(multiRestMatch[1], 10)
+        : undefined;
+      if (multiRestCount !== undefined) {
+        content = content.replace(/\s+/g, " ").trim();
+        tokens = [];
       }
 
       let inlineRepeatCount: number | undefined;
-      if (inlineRepeatNode) {
+      const inlineRepeatMatch = content.match(/^(.*?)\s*\*\s*(-?\d+)\s*$/);
+      if (inlineRepeatMatch?.[1] !== undefined && inlineRepeatMatch?.[2] !== undefined) {
+        const count = parseInt(inlineRepeatMatch[2], 10);
+        if (count < 1) {
+          errors.push({
+            line: lineNumber,
+            column: 1,
+            message: "Repeat count must be at least 1",
+          });
+        } else {
+          inlineRepeatCount = count;
+          content = inlineRepeatMatch[1].trim();
+          if (bodyHasRecoveryErrors || repeatNode || multiRestNode) {
+            tokens = recoveredTokensFromText(content, track, lineNumber, bodyColumn, errors);
+          }
+        }
+      } else if (inlineRepeatNode) {
         const count = parseInt(nodeText(inlineRepeatNode, source).slice(1), 10);
         if (count < 1) {
           errors.push({
@@ -811,16 +954,8 @@ export function parseDocumentSkeletonFromLezer(source: string): DocumentSkeleton
         } else {
           inlineRepeatCount = count;
         }
-      }
-
-      if (multiRestCount !== undefined && inlineRepeatCount !== undefined) {
-        errors.push({
-          line: lineNumber,
-          column: 1,
-          message: "Multi-measure rest cannot be combined with inline repeat",
-        });
-        multiRestCount = undefined;
-        inlineRepeatCount = undefined;
+      } else if (bodyHasRecoveryErrors && measureRepeatSlashes === undefined && multiRestCount === undefined) {
+        tokens = recoveredTokensFromText(content, track, lineNumber, bodyColumn, errors);
       }
 
       const startIndex = measures.length;
@@ -889,6 +1024,36 @@ export function parseDocumentSkeletonFromLezer(source: string): DocumentSkeleton
       ) {
         lastMeasure.repeatEnd = true;
         lastMeasure.repeatTimes = 2;
+      }
+    }
+
+    if (measures.length >= 2) {
+      const lastMeasure = measures[measures.length - 1];
+      const previousMeasure = measures[measures.length - 2];
+      const metadataOnlyTrailingMeasure =
+        lastMeasure !== undefined &&
+        previousMeasure !== undefined &&
+        lastMeasure.content === "" &&
+        lastMeasure.tokens.length === 0 &&
+        !lastMeasure.repeatStart &&
+        !lastMeasure.repeatEnd &&
+        lastMeasure.measureRepeatSlashes === undefined &&
+        lastMeasure.multiRestCount === undefined &&
+        (
+          lastMeasure.startNav !== undefined ||
+          lastMeasure.endNav !== undefined ||
+          lastMeasure.voltaIndices !== undefined ||
+          lastMeasure.voltaTerminator === true ||
+          lastMeasure.barline !== undefined
+        );
+
+      if (metadataOnlyTrailingMeasure) {
+        if (lastMeasure.startNav !== undefined) previousMeasure.startNav = lastMeasure.startNav;
+        if (lastMeasure.endNav !== undefined) previousMeasure.endNav = lastMeasure.endNav;
+        if (lastMeasure.voltaIndices !== undefined) previousMeasure.voltaIndices = lastMeasure.voltaIndices;
+        if (lastMeasure.voltaTerminator) previousMeasure.voltaTerminator = true;
+        if (lastMeasure.barline !== undefined) previousMeasure.barline = lastMeasure.barline;
+        measures.pop();
       }
     }
 

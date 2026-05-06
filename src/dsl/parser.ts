@@ -1081,10 +1081,7 @@ function parseTrackLine(line: PreprocessedLine, errors: ParseError[]): ParsedTra
     return null;
   }
 
-  return {
-    track: parsed.track,
-    lineNumber: line.lineNumber,
-    measures: measures.flatMap((measure, _measureIndex) => {
+  const expandedMeasures = measures.flatMap((measure, _measureIndex) => {
       const navigation = extractNavigationTokens(measure.content, line, errors);
       const normalizedContent = navigation.content;
       const measureRepeatMatch = normalizedContent.match(/^(%+)$/);
@@ -1113,18 +1110,9 @@ function parseTrackLine(line: PreprocessedLine, errors: ParseError[]): ParsedTra
         return [];
       }
 
-      const multiRestMatch = normalizedContent.match(/^-+\s*(\d+)\s*-+$/);
+      const multiRestMatch = normalizedContent.match(/^--+\s*((?:1\d+)|(?:[2-9]\d*))\s*--+$/);
       if (multiRestMatch?.[1] !== undefined) {
         const count = parseInt(multiRestMatch[1], 10);
-        if (count < 2) {
-          errors.push({
-            line: line.lineNumber,
-            column: 1,
-            message: "Multi-measure rest count must be at least 2",
-          });
-          return [];
-        }
-
         return [{
           content: normalizedContent,
           tokens: [],
@@ -1254,7 +1242,42 @@ function parseTrackLine(line: PreprocessedLine, errors: ParseError[]): ParsedTra
         voltaTerminator: measure.voltaTerminator,
         multiRestCount: measure.multiRestCount,
       }];
-    }),
+    });
+
+  if (expandedMeasures.length >= 2) {
+    const lastMeasure = expandedMeasures[expandedMeasures.length - 1];
+    const previousMeasure = expandedMeasures[expandedMeasures.length - 2];
+    const metadataOnlyTrailingMeasure =
+      lastMeasure !== undefined &&
+      previousMeasure !== undefined &&
+      lastMeasure.content === "" &&
+      (lastMeasure.tokens?.length ?? 0) === 0 &&
+      !lastMeasure.repeatStart &&
+      !lastMeasure.repeatEnd &&
+      lastMeasure.measureRepeatSlashes === undefined &&
+      lastMeasure.multiRestCount === undefined &&
+      (
+        lastMeasure.startNav !== undefined ||
+        lastMeasure.endNav !== undefined ||
+        lastMeasure.voltaIndices !== undefined ||
+        lastMeasure.voltaTerminator === true ||
+        lastMeasure.barline !== undefined
+      );
+
+    if (metadataOnlyTrailingMeasure) {
+      if (lastMeasure.startNav !== undefined) previousMeasure.startNav = lastMeasure.startNav;
+      if (lastMeasure.endNav !== undefined) previousMeasure.endNav = lastMeasure.endNav;
+      if (lastMeasure.voltaIndices !== undefined) previousMeasure.voltaIndices = lastMeasure.voltaIndices;
+      if (lastMeasure.voltaTerminator) previousMeasure.voltaTerminator = true;
+      if (lastMeasure.barline !== undefined) previousMeasure.barline = lastMeasure.barline;
+      expandedMeasures.pop();
+    }
+  }
+
+  return {
+    track: parsed.track,
+    lineNumber: line.lineNumber,
+    measures: expandedMeasures,
     source: line,
   };
 }

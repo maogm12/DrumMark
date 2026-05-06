@@ -6,11 +6,15 @@ space { " " }
 Newline { "\n" }
 
 @tokens {
-  @precedence { InlineRepeatToken, StarSuffixToken }
+  @precedence { MultiRestToken, InlineRepeatToken, RestGlyph, StarSuffixToken }
   Comment { "#" ![\n]* }
   Integer { @digit+ }
   HeaderWord { ![\n# ] ![\n# ]* }
   InlineRepeatToken { "*" @digit+ }
+  MultiRestToken {
+    "--" "-"* (" " | "\t")* ("1" @digit+ | $[2-9] @digit*) (" " | "\t")* "--" "-"*
+  }
+  RestGlyph { "-" }
   StarSuffixToken { "*" }
   SummonPrefix {
     "HH:" | "HF:" | "SD:" | "BD:" | "BD2:" |
@@ -56,6 +60,7 @@ MeasureSection { BarlineNode MeasureBody? }
 
 MeasureBody {
   MeasureRepeatExpr |
+  MultiRestExpr |
   NonEmptyMeasureContent InlineRepeatSuffix? |
   InlineRepeatSuffix
 }
@@ -86,7 +91,7 @@ BasicGlyph {
   // single-char tokens
   "x" | "X" | "d" | "D" | "s" | "S" | "b" | "B" | "r" | "R" |
   "c" | "C" | "o" | "O" | "g" | "G" | "p" | "P" | "L" |
-  "-"
+  RestGlyph
 }
 
 SuffixChain {
@@ -138,6 +143,7 @@ NavJump {
 }
 
 MeasureRepeatExpr { "%" "%"* }
+MultiRestExpr { MultiRestToken }
 
 InlineRepeatSuffix { InlineRepeatToken }
 

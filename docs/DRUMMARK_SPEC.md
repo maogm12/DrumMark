@@ -482,16 +482,23 @@ Complex navigation is handled via markers (targets) and jumps (instructions). Th
 
 ## 10. Multi-Measure Rest
 
-`|--N--|` is the **only** way to specify a multi-measure rest.
+Multi-measure rest is written as a left dash run, an integer count, and a right dash run.
 
 ```
-HH | --8-- |       # 8-measure rest
-HH |- 4 - |        # 4-measure rest (spaces allowed)
+HH | --8-- |
+HH | -- 8 -- |
+HH | ---8---- |
 ```
 
 **Rules**:
-- `N` must be a positive integer ≥ 1.
-- `N` must be surrounded by at least one `-` on each side.
+- The left dash run must contain at least two `-` characters.
+- The right dash run must contain at least two `-` characters.
+- The left and right dash runs do not need to have equal length.
+- Optional horizontal whitespace may appear between the left dash run and the integer.
+- Optional horizontal whitespace may appear between the integer and the right dash run.
+- `N` is an unsigned decimal integer.
+- `N` must be at least `2`.
+- Leading zeros are not allowed.
 - The entire construct must fit within a single measure boundary `| ... |`.
 
 ---
@@ -1494,7 +1501,7 @@ This addendum operationalizes Addendum 2026-04-30C and explicitly supersedes any
   - `@fine`, `@dc`, `@ds`, `@dc-al-fine`, `@dc-al-coda`, `@ds-al-fine`, and `@ds-al-coda` at end mean no non-navigation token follows them.
   - `@to-coda` in interior means at least one non-navigation token precedes it.
   - `@to-coda` at end means no non-navigation token follows it.
-- On shorthand measures such as `%`, `%%`, or `--N--`, the shorthand token counts as a non-navigation token for these legality checks.
+- On shorthand measures such as `%`, `%%`, or multi-rest, the shorthand token counts as a non-navigation token for these legality checks.
 
 ### Merge Rule
 
@@ -2040,7 +2047,7 @@ The Lezer grammar must structurally represent the following local syntax forms:
 - routed brace block, e.g. `RC { x x x x }`
 - rhythmic group structure, including optional span and trailing group modifiers
 - inline repeat suffix `*N` at measure level
-- multi-measure rest `--N--`
+- multi-measure rest dash-run/integer/dash-run form
 - paragraph-leading `note 1/N` override
 - local barline classes
 
@@ -2062,7 +2069,8 @@ Examples:
 ### Multi-Measure Rest
 
 - Multi-rest is a mutually exclusive measure-body form.
-- It cannot be combined with ordinary measure tokens, measure-repeat shorthand, inline repeat, or navigation tokens.
+- It cannot be combined with ordinary measure tokens, measure-repeat shorthand, or inline repeat.
+- Existing navigation directives may still coexist with a multi-rest measure, subject to the navigation-placement rules elsewhere in this spec.
 - Additional adjacent tokens or suffixes are parse errors.
 
 ### Paragraph `note 1/N` Override
@@ -2101,3 +2109,48 @@ The grammar is responsible for local syntax shape. The skeleton remains responsi
 ### Supersession
 
 This addendum supersedes Addendum 2026-05-04 ("String Quoting for Text Headers") and any implementation strategy that relies on reconstructing the syntax forms listed above from raw text in `lezer_skeleton.ts`.
+
+## Addendum: Relaxed Multi-Measure Rest Spelling
+
+Multi-rest is written as a left dash run, an integer count, and a right dash run:
+
+```txt
+HH | --8-- |
+HH | -- 8 -- |
+HH | ---8---- |
+HH | ---- 12 -- |
+```
+
+This addendum supersedes the earlier exact-shape `--N--` rule and the later symmetric compact spelling with a broader relaxed family.
+
+Rules:
+
+- The left dash run must contain at least two `-` characters.
+- The right dash run must contain at least two `-` characters.
+- The left and right dash runs do not need to have equal length.
+- Optional horizontal whitespace may appear between the left dash run and the integer.
+- Optional horizontal whitespace may appear between the integer and the right dash run.
+- `N` is an unsigned decimal integer.
+- `N` must be at least `2`.
+- Leading zeros are not allowed.
+
+Examples of invalid syntax:
+
+```txt
+HH | - 4 - |
+HH | --1-- |
+HH | --08-- |
+HH | -- +8 -- |
+```
+
+Measure exclusivity:
+
+- Multi-rest occupies the entire non-navigation rhythmic content of the measure.
+- It may not be combined with ordinary note tokens, groups, combined hits, summon prefixes, braced blocks, `%`, `%%`, another multi-rest, or inline repeat suffix syntax.
+- Existing navigation directives may still coexist with a multi-rest measure, subject to the navigation-placement rules elsewhere in this spec.
+
+Grammar ownership:
+
+- Multi-rest is a dedicated whole-measure shorthand form.
+- Legal multi-rest exists if and only if the measure body matches the multi-rest rule.
+- Inputs that do not match that rule are simply not multi-rest; the implementation does not need to guess user intent or define a separate malformed-candidate class.

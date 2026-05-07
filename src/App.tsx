@@ -441,6 +441,7 @@ const PagePreview = memo(function PagePreview({
   measureNumberOffsetX,
   measureNumberOffsetY,
   measureNumberFontSize,
+  durationSpacingCompression,
   active,
 }: {
   score: NormalizedScore | null;
@@ -458,6 +459,7 @@ const PagePreview = memo(function PagePreview({
   measureNumberOffsetX: number;
   measureNumberOffsetY: number;
   measureNumberFontSize: number;
+  durationSpacingCompression: number;
   active: boolean;
 }) {
   const shellRef = useRef<HTMLDivElement | null>(null);
@@ -497,6 +499,7 @@ const PagePreview = memo(function PagePreview({
       measureNumberOffsetX,
       measureNumberOffsetY,
       measureNumberFontSize,
+      durationSpacingCompression,
     };
 
     renderScorePagesToSvgs(score, opts)
@@ -518,7 +521,7 @@ const PagePreview = memo(function PagePreview({
         console.error("VexFlow render error:", renderError);
         setError(msg || "Could not render staff preview.");
       });
-  }, [score, systemSpacing, stemLength, voltaSpacing, hairpinOffsetY, headerStaffSpacing, headerHeight, active, hideVoice2Rests, pagePadding, staffScale, tempoOffsetX, tempoOffsetY, measureNumberOffsetX, measureNumberOffsetY, measureNumberFontSize]);
+  }, [score, systemSpacing, stemLength, voltaSpacing, hairpinOffsetY, headerStaffSpacing, headerHeight, active, hideVoice2Rests, pagePadding, staffScale, tempoOffsetX, tempoOffsetY, measureNumberOffsetX, measureNumberOffsetY, measureNumberFontSize, durationSpacingCompression]);
 
   if (!score) {
     return (
@@ -672,6 +675,7 @@ interface AppSettings {
   measureNumberOffsetX: number;
   measureNumberOffsetY: number;
   measureNumberFontSize: number;
+  durationSpacingCompression: number;
 }
 
 const defaultSettings: AppSettings = {
@@ -691,6 +695,7 @@ const defaultSettings: AppSettings = {
   measureNumberOffsetX: 0,
   measureNumberOffsetY: 8,
   measureNumberFontSize: 10,
+  durationSpacingCompression: 0.6,
 };
 
 export function App() {
@@ -720,6 +725,9 @@ export function App() {
       }
       if (parsed.headerHeight === undefined) {
         parsed.headerHeight = 50;
+      }
+      if (parsed.durationSpacingCompression === undefined || parsed.durationSpacingCompression < 0 || parsed.durationSpacingCompression > 1.5) {
+        parsed.durationSpacingCompression = 0.6;
       }
       return { ...defaultSettings, ...parsed };
     } catch {
@@ -1225,6 +1233,7 @@ export function App() {
                       measureNumberOffsetX={settings.measureNumberOffsetX}
                       measureNumberOffsetY={settings.measureNumberOffsetY}
                       measureNumberFontSize={settings.measureNumberFontSize}
+                      durationSpacingCompression={settings.durationSpacingCompression}
                       active={true}
                     />
                   ) : null}
@@ -1416,6 +1425,19 @@ export function App() {
                       max={24}
                       step={1}
                       onChange={(value) => updateSetting("measureNumberFontSize", value)}
+                    />
+                  </div>
+                )}
+                {debugMode && (
+                  <div className="settings-section debug">
+                    <h3 className="settings-section-title">Debug: Note Spacing</h3>
+                    <NumericSettingControl
+                      label="Duration Spacing Compression"
+                      value={settings.durationSpacingCompression}
+                      min={0}
+                      max={1.5}
+                      step={0.05}
+                      onChange={(value) => updateSetting("durationSpacingCompression", value)}
                     />
                   </div>
                 )}

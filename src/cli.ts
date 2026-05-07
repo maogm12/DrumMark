@@ -89,6 +89,7 @@ async function main() {
       measureNumberOffsetX: 0,
       measureNumberOffsetY: 8,
       measureNumberFontSize: 10,
+      durationSpacingCompression: 0.6,
     });
   }
 

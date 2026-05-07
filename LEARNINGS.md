@@ -283,3 +283,8 @@ The regex parser (`parser.ts`) now has zero production references. All 345 tests
 ## 2026-05-06 Addendum: Whole-Measure Voice Rests in VexFlow
 
 - `buildVoiceEntries()` intentionally splits rests at grouping boundaries, but the VexFlow renderer can still collapse an all-rest voice back into a single whole-rest glyph at the final note-building stage. That keeps normal intra-measure rest grouping intact while avoiding visually fragmented full-bar rests in voice 1 or voice 2.
+
+## 2026-05-06 Addendum: Duration-Weighted Intra-Measure Spacing
+
+- VexFlow's existing `Formatter` can be reused for collision-safe baseline layout, then nudged afterward by rewriting `TickContext.setX(...)`. The stable version is to preserve the first and last onset anchors from the formatter and only remap the intermediate contexts.
+- Attaching a small `__drummarkStartKey` marker to each `StaveNote` is enough to reconstruct per-context rhythmic starts after formatting. That avoids depending on VexFlow's internal tick serialization when applying custom spacing logic.

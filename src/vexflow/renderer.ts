@@ -5,6 +5,7 @@ import { DEFAULT_RENDER_OPTIONS, type VexflowRenderOptions } from "./types";
 import {
   buildVoiceEntries,
   compareFractions,
+  getGroupingBoundaries,
   groupingSegmentIndex,
   groupVoiceEvents,
   isBeamable,
@@ -63,10 +64,18 @@ const SKYLINE_GAP = 6;
 const NAV_TEXT_SIZE = 12;
 const NAV_GLYPH_SIZE = 20;
 const VOLTA_TEXT_SIZE = 12;
+const DURATION_SPACING_GROUP_BONUS = 0.12;
+const DURATION_SPACING_MIN_CLAMP = 0.7;
+const DURATION_SPACING_MAX_CLAMP = 1.8;
 
 type RenderMeasure = {
   measure: NormalizedScore["measures"][number];
   kind: "normal" | "measure-repeat-1" | "measure-repeat-2-start" | "measure-repeat-2-stop";
+};
+
+type MeasureSpacingPlan = {
+  orderedStartKeys: string[];
+  normalizedOffsets: number[];
 };
 
 type NavSegment = {
@@ -800,6 +809,164 @@ interface SystemOptions {
   options: VexflowRenderOptions;
 }
 
+function fractionKey(fraction: Fraction): string {
+  return `${fraction.numerator}/${fraction.denominator}`;
+}
+
+function fractionValue(fraction: Fraction): number {
+  return fraction.numerator / fraction.denominator;
+}
+
+function clampNumber(value: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, value));
+}
+
+function buildMeasureSpacingPlan(
+  score: NormalizedScore,
+  measureStart: Fraction,
+  measureDuration: Fraction,
+  voiceEntries: VoiceEntry[][],
+  compression: number,
+): MeasureSpacingPlan | undefined {
+  const normalizedEntries = voiceEntries.flatMap((entries) => {
+    if (entries.length > 0 && entries.every((entry) => entry.kind === "rest")) {
+      return [{ kind: "rest", start: measureStart, duration: measureDuration } satisfies Pick<VoiceEntry, "kind" | "start" | "duration">];
+    }
+    return entries.map((entry) => ({ kind: entry.kind, start: entry.start, duration: entry.duration }));
+  });
+
+  if (normalizedEntries.length <= 1) return undefined;
+
+  const startsByKey = new Map<string, Fraction>();
+  for (const entry of normalizedEntries) {
+    const relativeStart = subtractFractions(entry.start, measureStart);
+    const key = fractionKey(relativeStart);
+    if (!startsByKey.has(key)) {
+      startsByKey.set(key, relativeStart);
+    }
+  }
+
+  const orderedStarts = [...startsByKey.entries()]
+    .map(([key, fraction]) => ({ key, fraction }))
+    .sort((left, right) => compareFractions(left.fraction, right.fraction));
+
+  if (orderedStarts.length <= 1) return undefined;
+
+  const measureEnd = measureDuration;
+  const segmentDurations = orderedStarts.map((start, index) => {
+    const nextStart = orderedStarts[index + 1]?.fraction ?? measureEnd;
+    return subtractFractions(nextStart, start.fraction);
+  });
+
+  const minUnit = segmentDurations.reduce<Fraction | undefined>((currentMin, duration) => {
+    if (compareFractions(duration, { numerator: 0, denominator: 1 }) <= 0) return currentMin;
+    if (!currentMin || compareFractions(duration, currentMin) < 0) return duration;
+    return currentMin;
+  }, undefined);
+  if (!minUnit) return undefined;
+
+  const chunkStartKeys = new Set<string>();
+  for (const boundary of getGroupingBoundaries(measureStart, score.header.grouping, score.header.timeSignature)) {
+    const relativeBoundary = subtractFractions(boundary, measureStart);
+    if (compareFractions(relativeBoundary, measureDuration) >= 0) continue;
+    chunkStartKeys.add(fractionKey(relativeBoundary));
+  }
+
+  const rawWeights = orderedStarts.map(({ key }, index) => {
+    const duration = segmentDurations[index]!;
+    const ratio = fractionValue(duration) / Math.max(fractionValue(minUnit), Number.EPSILON);
+    const durationBonus = compression * Math.log2(ratio + 1);
+    const boundaryBonus = chunkStartKeys.has(key) ? DURATION_SPACING_GROUP_BONUS : 0;
+    return 1 + durationBonus + boundaryBonus;
+  });
+
+  const averageWeight = rawWeights.reduce((sum, weight) => sum + weight, 0) / rawWeights.length;
+  const clampedWeights = rawWeights.map((weight) =>
+    clampNumber(weight, averageWeight * DURATION_SPACING_MIN_CLAMP, averageWeight * DURATION_SPACING_MAX_CLAMP),
+  );
+  const totalWeight = clampedWeights.reduce((sum, weight) => sum + weight, 0);
+
+  let cumulative = 0;
+  const normalizedOffsets = clampedWeights.map((_, index) => {
+    if (index === 0) return 0;
+    cumulative += clampedWeights[index - 1]! / totalWeight;
+    return cumulative;
+  });
+
+  return {
+    orderedStartKeys: orderedStarts.map(({ key }) => key),
+    normalizedOffsets,
+  };
+}
+
+function getSpacingContexts(formatter: any): any[] {
+  const tickContexts = formatter.getTickContexts?.();
+  if (!tickContexts?.list || !tickContexts?.map) return [];
+  return tickContexts.list
+    .map((tick: string) => tickContexts.map[tick])
+    .filter(Boolean);
+}
+
+function getSpacingStartKey(context: any): string | undefined {
+  const tickables = context.getTickables?.() ?? [];
+  for (const tickable of tickables) {
+    const key = (tickable as any).__drummarkStartKey;
+    if (typeof key === "string") return key;
+  }
+  return undefined;
+}
+
+function applyDurationWeightedSpacing(
+  formatter: any,
+  plan: MeasureSpacingPlan | undefined,
+  _noteStartX: number,
+  _availableWidth: number,
+): void {
+  if (!plan) return;
+
+  const contexts = getSpacingContexts(formatter)
+    .map((context) => ({ context, key: getSpacingStartKey(context), metrics: context.getMetrics() }))
+    .filter((item): item is { context: any; key: string; metrics: any } => typeof item.key === "string");
+
+  if (contexts.length <= 1) return;
+
+  const firstContext = contexts[0]!;
+  const lastContext = contexts[contexts.length - 1]!;
+  const firstX = firstContext.context.getX();
+  const lastX = lastContext.context.getX();
+  const usableSpan = lastX - firstX;
+  if (usableSpan <= 0) return;
+
+  const offsetByKey = new Map<string, number>();
+  plan.orderedStartKeys.forEach((key, index) => {
+    offsetByKey.set(key, plan.normalizedOffsets[index] ?? 0);
+  });
+  const finalOffset = offsetByKey.get(lastContext.key) ?? 0;
+  if (finalOffset <= 0) return;
+
+  const positionedXs = contexts.map((item, index) => {
+    if (index === 0) return firstX;
+    const normalizedOffset = offsetByKey.get(item.key) ?? 0;
+    return firstX + (normalizedOffset / finalOffset) * usableSpan;
+  });
+
+  for (let i = 1; i < positionedXs.length; i++) {
+    positionedXs[i] = Math.max(positionedXs[i]!, positionedXs[i - 1]! + 1);
+  }
+  positionedXs[positionedXs.length - 1] = lastX;
+  for (let i = positionedXs.length - 2; i >= 0; i--) {
+    positionedXs[i] = Math.min(positionedXs[i]!, positionedXs[i + 1]! - 1);
+  }
+  positionedXs[0] = firstX;
+  for (let i = 1; i < positionedXs.length; i++) {
+    positionedXs[i] = Math.max(positionedXs[i]!, positionedXs[i - 1]! + 1);
+  }
+
+  contexts.forEach((item, index) => {
+    item.context.setX(positionedXs[index]!);
+  });
+}
+
 function renderSystem(context: any, score: NormalizedScore, measures: RenderMeasure[], sysOpts: SystemOptions) {
   const { x, y, width, isFirstSystem, options } = sysOpts;
   const measureWidth = width / measures.length;
@@ -811,6 +978,7 @@ function renderSystem(context: any, score: NormalizedScore, measures: RenderMeas
   const noteDrawables: any[] = [];
   const repeatTwoBarOverlays: { start: any; end: any }[] = [];
   const layoutNotesByMeasure: LayoutNote[][] = [];
+  const spacingPlansByStave = new Map<any, MeasureSpacingPlan | undefined>();
 
   for (let i = 0; i < measures.length; i++) {
     const renderMeasure = measures[i];
@@ -853,12 +1021,13 @@ function renderSystem(context: any, score: NormalizedScore, measures: RenderMeas
     }
 
     applyStaveBarlines(stave, measure, score);
-    const { voices, beams, tuplets, layoutNotes, drawables } = renderMeasureVoices(score, renderMeasure, stave, stickings, options);
+    const { voices, beams, tuplets, layoutNotes, drawables, spacingPlan } = renderMeasureVoices(score, renderMeasure, stave, stickings, options);
     allVoices.push(...voices);
     allBeams.push(...beams);
     allTuplets.push(...tuplets);
     noteDrawables.push(...drawables);
     layoutNotesByMeasure.push(layoutNotes);
+    spacingPlansByStave.set(stave, spacingPlan);
     staves.push(stave);
 
     if (renderMeasure.kind === "measure-repeat-2-start") {
@@ -870,7 +1039,6 @@ function renderSystem(context: any, score: NormalizedScore, measures: RenderMeas
     }
   }
 
-  const formatter = new Formatter();
   for (let i = 0; i < staves.length; i++) {
     const stave = staves[i];
     const staveVoices = allVoices.filter((voice) => (voice as any)._stave === stave);
@@ -879,7 +1047,9 @@ function renderSystem(context: any, score: NormalizedScore, measures: RenderMeas
     const noteStart = stave.getNoteStartX();
     const noteEnd = stave.getX() + stave.getWidth();
     const availableWidth = Math.max(10, noteEnd - noteStart - 10);
+    const formatter = new Formatter();
     formatter.joinVoices(staveVoices).format(staveVoices, availableWidth);
+    applyDurationWeightedSpacing(formatter, spacingPlansByStave.get(stave), noteStart, availableWidth);
     staveVoices.forEach((voice) => (voice as any).draw(context, stave));
   }
 
@@ -1207,7 +1377,7 @@ function renderMeasureVoices(
   stave: any,
   stickings: Map<string, string>,
   options: VexflowRenderOptions,
-): { voices: any[]; beams: any[]; tuplets: any[]; layoutNotes: LayoutNote[]; drawables: any[] } {
+): { voices: any[]; beams: any[]; tuplets: any[]; layoutNotes: LayoutNote[]; drawables: any[]; spacingPlan?: MeasureSpacingPlan } {
   const measure = renderMeasure.measure;
   const measureDuration = {
     numerator: score.header.timeSignature.beats,
@@ -1241,6 +1411,7 @@ function renderMeasureVoices(
 
   const upEntries = buildVoiceEntries(groupVoiceEvents(upEvents), measureStart, measureDuration, score.header.grouping, score.header.timeSignature);
   const downEntries = buildVoiceEntries(groupVoiceEvents(downEvents), measureStart, measureDuration, score.header.grouping, score.header.timeSignature);
+  const spacingPlan = buildMeasureSpacingPlan(score, measureStart, measureDuration, [upEntries, downEntries], options.durationSpacingCompression);
 
   const beams: any[] = [];
   const tuplets: any[] = [];
@@ -1263,7 +1434,7 @@ function renderMeasureVoices(
   }
 
   attachInteriorNavigation(measure, navAnchors);
-  return { voices, beams, tuplets, layoutNotes, drawables: [] };
+  return { voices, beams, tuplets, layoutNotes, drawables: [], spacingPlan };
 }
 
 function createVexNotes(
@@ -1286,6 +1457,7 @@ function createVexNotes(
     if (hideRests && voiceId === 2) note.setStyle({ fillStyle: "transparent", strokeStyle: "transparent" });
 
     const relativeStart = subtractFractions(entries[0]!.start, measureStart);
+    (note as any).__drummarkStartKey = fractionKey(relativeStart);
     navAnchors.set(`${relativeStart.numerator}/${relativeStart.denominator}`, { note, layoutNote: { note, aboveRefs: [], start: relativeStart } });
     return { notes: [note], layoutNotes: [] };
   }
@@ -1318,6 +1490,7 @@ function createVexNotes(
       }
 
       const relativeStart = subtractFractions(entry.start, measureStart);
+      (note as any).__drummarkStartKey = fractionKey(relativeStart);
       navAnchors.set(`${relativeStart.numerator}/${relativeStart.denominator}`, { note, layoutNote: { note, aboveRefs: [], start: relativeStart } });
       if (currentBeamNotes.length > 1) allBeams.push(new Beam(currentBeamNotes));
       currentBeamNotes = [];
@@ -1359,6 +1532,7 @@ function createVexNotes(
       }
 
       layoutNote = { note, aboveRefs: [], start: subtractFractions(entry.start, measureStart) };
+      (note as any).__drummarkStartKey = fractionKey(layoutNote.start);
       layoutNotes.push(layoutNote);
 
       for (let d = 0; d < durInfo.dots; d++) {

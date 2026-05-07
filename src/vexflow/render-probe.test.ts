@@ -573,4 +573,87 @@ HH | x x x x |`);
     const staveNotes = svg.match(/class="vf-stavenote"/g) ?? [];
     expect(staveNotes).toHaveLength(5);
   });
+
+  it("gives longer starting durations more horizontal space than later shorter starts", async () => {
+    const score = buildNormalizedScore(`time 4/4
+divisions 8
+grouping 2+2
+
+HH | x* x x x x x x |`);
+
+    const svg = await renderScoreToSvg(score, {
+      pagePadding: { top: 24, right: 18, bottom: 24, left: 18 },
+      titleTopPadding: 3.6,
+      titleSubtitleGap: 1.2,
+      headerStaffSpacing: 2.8,
+      systemSpacing: 1,
+      stemLength: 30,
+      hideVoice2Rests: false,
+      durationSpacingCompression: 0.6,
+    });
+
+    const hhNoteXs = [...svg.matchAll(/<text[^>]*x="([0-9.]+)" [^>]*y="[0-9.]+"[^>]*><\/text>/g)]
+      .map((match) => Number(match[1]));
+
+    expect(hhNoteXs).toHaveLength(7);
+    const quarterLikeGap = hhNoteXs[1]! - hhNoteXs[0]!;
+    const eighthLikeGap = hhNoteXs[2]! - hhNoteXs[1]!;
+    expect(quarterLikeGap).toBeGreaterThan(eighthLikeGap);
+  });
+
+  it("keeps cross-voice onsets aligned after duration-weighted spacing is applied", async () => {
+    const score = buildNormalizedScore(`time 4/4
+divisions 8
+grouping 2+2
+
+HH | x* x x x x x x |
+BD | - - b - - - - - |`);
+
+    const svg = await renderScoreToSvg(score, {
+      pagePadding: { top: 24, right: 18, bottom: 24, left: 18 },
+      titleTopPadding: 3.6,
+      titleSubtitleGap: 1.2,
+      headerStaffSpacing: 2.8,
+      systemSpacing: 1,
+      stemLength: 30,
+      hideVoice2Rests: false,
+      durationSpacingCompression: 0.6,
+    });
+
+    const hhNoteXs = [...svg.matchAll(/<text[^>]*x="([0-9.]+)" [^>]*y="[0-9.]+"[^>]*><\/text>/g)]
+      .map((match) => Number(match[1]));
+    const bdNoteXs = [...svg.matchAll(/<text[^>]*x="([0-9.]+)" [^>]*y="[0-9.]+"[^>]*><\/text>/g)]
+      .map((match) => Number(match[1]));
+
+    expect(hhNoteXs).toHaveLength(7);
+    expect(bdNoteXs).toHaveLength(1);
+    expect(bdNoteXs[0]).toBeCloseTo(hhNoteXs[1]!, 2);
+  });
+
+  it("does not over-expand the first short onset in compact mixed-slash notation", async () => {
+    const score = buildNormalizedScore(`time 4/4
+note 1/8
+grouping 1+1+1+1
+
+| s/ss/ ss ss ss |`);
+
+    const svg = await renderScoreToSvg(score, {
+      pagePadding: { top: 24, right: 18, bottom: 24, left: 18 },
+      titleTopPadding: 3.6,
+      titleSubtitleGap: 1.2,
+      headerStaffSpacing: 2.8,
+      systemSpacing: 1,
+      stemLength: 30,
+      hideVoice2Rests: false,
+      durationSpacingCompression: 0.6,
+    });
+
+    const noteXs = [...svg.matchAll(/<text[^>]*x="([0-9.]+)" [^>]*y="[0-9.]+"[^>]*><\/text>/g)]
+      .map((match) => Number(match[1]));
+
+    expect(noteXs.length).toBeGreaterThanOrEqual(4);
+    const firstGap = noteXs[1]! - noteXs[0]!;
+    const secondGap = noteXs[2]! - noteXs[1]!;
+    expect(firstGap).toBeLessThanOrEqual(secondGap * 1.1);
+  });
 });

@@ -455,6 +455,7 @@ const PagePreview = memo(function PagePreview({
   durationSpacingCompression,
   measureWidthCompression,
   active,
+  theme,
 }: {
   score: NormalizedScore | null;
   pagePadding: PagePadding;
@@ -474,6 +475,7 @@ const PagePreview = memo(function PagePreview({
   durationSpacingCompression: number;
   measureWidthCompression: number;
   active: boolean;
+  theme: AppTheme;
 }) {
   const shellRef = useRef<HTMLDivElement | null>(null);
   const scrollPosRef = useRef({ top: 0, left: 0 });
@@ -539,7 +541,7 @@ const PagePreview = memo(function PagePreview({
 
   if (!score) {
     return (
-      <div className="staff-preview-shell" ref={shellRef} onScroll={handleScroll}>
+      <div className={`staff-preview-shell${theme === "dark" ? " staff-preview-shell-dark" : ""}`} ref={shellRef} onScroll={handleScroll}>
         <div className="staff-printable-frame">
           <div className="staff-printable">
             <div className="staff-preview page-view">
@@ -552,7 +554,7 @@ const PagePreview = memo(function PagePreview({
   }
 
   return (
-    <div className="staff-preview-shell" ref={shellRef} onScroll={handleScroll}>
+    <div className={`staff-preview-shell${theme === "dark" ? " staff-preview-shell-dark" : ""}`} ref={shellRef} onScroll={handleScroll}>
       {error ? <div className="staff-error">{error}</div> : null}
       {isRendering && !renderedMarkup ? (
         <div className="staff-rendering">Rendering…</div>
@@ -1260,6 +1262,7 @@ export function App() {
                       durationSpacingCompression={settings.durationSpacingCompression}
                       measureWidthCompression={settings.measureWidthCompression}
                       active={true}
+                      theme={resolvedTheme}
                     />
                   ) : null}
                 </div>

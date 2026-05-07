@@ -396,6 +396,24 @@
   justify-content: center;
 }
 
+:root[data-theme="dark"] .docs-preview-frame {
+  background: #0b1220;
+}
+
+:root[data-theme="dark"] .docs-preview-frame .staff-preview svg {
+  filter: invert(1) hue-rotate(180deg);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]):not([data-theme="dark"]) .docs-preview-frame {
+    background: #0b1220;
+  }
+
+  :root:not([data-theme="light"]):not([data-theme="dark"]) .docs-preview-frame .staff-preview svg {
+    filter: invert(1) hue-rotate(180deg);
+  }
+}
+
 .staff-preview-container {
   width: 100%;
 }

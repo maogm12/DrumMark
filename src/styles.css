@@ -1007,6 +1007,14 @@ input:checked + .toggle-slider:before {
   margin-bottom: 0;
 }
 
+.staff-preview-shell-dark .staff-preview-page {
+  background: #0b1220;
+}
+
+.staff-preview-shell-dark .staff-preview-page svg {
+  filter: invert(1) hue-rotate(180deg);
+}
+
 .staff-preview svg {
   width: 100% !important;
   height: auto !important;

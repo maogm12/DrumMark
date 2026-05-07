@@ -1,4 +1,8 @@
-@top Document { HeaderSection Newline* TrackBody }
+@top Document { LeadingNewlines? CoreDocument }
+
+LeadingNewlines { Newline | Newline LeadingNewlines }
+
+CoreDocument { HeaderThenBodyWithLead | HeaderThenBody | HeaderSection | TrackBody }
 
 @skip { space | Comment }
 
@@ -32,7 +36,11 @@ Newline { "\n" }
   }
 }
 
-HeaderSection { HeaderLine* }
+HeaderThenBodyWithLead { HeaderSection Newline+ TrackBodyWithLead }
+
+HeaderThenBody { HeaderSection TrackBody }
+
+HeaderSection { HeaderLine+ }
 
 HeaderLine {
   TitleHeader Newline |
@@ -55,6 +63,8 @@ TimeHeader { "time" Integer "/" Integer }
 GroupingHeader { "grouping" Integer ("+" Integer)* }
 NoteHeader { "note" Integer "/" Integer }
 DivisionsHeader { "divisions" Integer }
+
+TrackBodyWithLead { ParagraphNoteOverride Newline+ TrackLine (Newline TrackBodyTail)* | TrackLine (Newline TrackBodyTail)* }
 
 TrackBody { TrackLine (Newline TrackBodyTail)* }
 

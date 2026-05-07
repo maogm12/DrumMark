@@ -164,10 +164,11 @@ describe("lezer IR integration", () => {
     }
   });
 
-  it("handles paragraph note overrides structurally between body paragraphs", () => {
+  it("handles paragraph note overrides for the first and later body paragraphs", () => {
     const source = `time 4/4
-note 1/16
+note 1/4
 
+note 1/16
 HH | d d d d d d d d d d d d d d d d |
 
 note 1/8
@@ -177,7 +178,8 @@ HH | d d d d d d d d |`;
 
     expect(lezer.errors).toEqual([]);
     expect(lezer.paragraphs).toHaveLength(2);
-    expect(lezer.paragraphs[0]?.noteValue).toBeUndefined();
+    expect(lezer.headers.note?.value).toBe(4);
+    expect(lezer.paragraphs[0]?.noteValue).toBe(16);
     expect(lezer.paragraphs[1]?.noteValue).toBe(8);
   });
 

@@ -293,3 +293,8 @@ The regex parser (`parser.ts`) now has zero production references. All 345 tests
 
 - System-level measure width allocation is safest when it happens before stave creation and only changes each stave's `x` and `width`; downstream geometry such as hairpins and volta spans can then continue to read from final stave/note positions without special casing.
 - Two-bar repeat placeholders need explicit pair handling even under content-weighted width allocation. Treating the `measure-repeat-2-start` / `measure-repeat-2-stop` pair as a shared width unit keeps the overlay centered and avoids visibly mismatched physical bars.
+
+## 2026-05-07 Addendum: First-Paragraph `note` Override Parsing
+
+- On the Lezer path, the first body paragraph can legally start with a paragraph-level `note 1/N` override only when the header block and body are separated by a blank line. Without that separator, `note 1/N` at the top of the file must stay parseable as a global header, or the grammar becomes ambiguous.
+- The safe grammar shape is to split document entry into two body forms: `HeaderSection TrackBody` for compact header-to-body transitions, and `HeaderSection Newline+ TrackBodyWithLead` for the blank-line-separated case where the first paragraph may begin with `ParagraphNoteOverride`.

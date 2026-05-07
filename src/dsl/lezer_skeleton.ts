@@ -763,7 +763,7 @@ export function parseDocumentSkeletonFromLezer(source: string): DocumentSkeleton
 
   // Find top-level nodes
   const headerSection = allNodes.find(n => n.name === "HeaderSection");
-  const trackBody = allNodes.find(n => n.name === "TrackBody");
+  const trackBody = allNodes.find(n => n.name === "TrackBodyWithLead" || n.name === "TrackBody");
 
   // --- Parse headers ---
   const headers = {} as Record<HeaderField, unknown>;

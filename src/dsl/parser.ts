@@ -1400,11 +1400,33 @@ export function parseDocumentSkeleton(source: string): DocumentSkeleton {
   const lines = preprocessSource(source);
   const errors: ParseError[] = [];
   const headers: HeaderAccumulator = {};
-  
-  // bodyStartIndex should be the index of the first real track line (contains '|')
-  let bodyStartIndex = lines.findIndex((line) => line.kind === "content" && line.content.includes("|"));
-  if (bodyStartIndex === -1) {
-    bodyStartIndex = lines.length;
+
+  // If headers are separated from body by a blank line, the body may begin with
+  // a paragraph-level `note 1/N` override before the first track line.
+  let bodyStartIndex = lines.length;
+  let sawNonBlank = false;
+  for (let index = 0; index < lines.length; index += 1) {
+    const line = lines[index];
+    if (!line) continue;
+
+    if (line.kind === "blank") {
+      if (sawNonBlank) {
+        const nextContentIndex = lines.findIndex((candidate, candidateIndex) =>
+          candidateIndex > index && candidate.kind === "content",
+        );
+        if (nextContentIndex !== -1) {
+          bodyStartIndex = nextContentIndex;
+          break;
+        }
+      }
+      continue;
+    }
+
+    sawNonBlank = true;
+    if (line.kind === "content" && line.content.includes("|")) {
+      bodyStartIndex = index;
+      break;
+    }
   }
 
   // Parse headers from all content lines preceding the first track line

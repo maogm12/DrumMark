@@ -313,4 +313,22 @@ HH | x - x - x - x - |`);
     expect(doc.paragraphs[0].noteValue).toBeUndefined(); // Uses global
     expect(doc.paragraphs[1].noteValue).toBe(16); // Overridden
   });
+
+  it("treats a paragraph-leading note override before the first body paragraph as paragraph scope", () => {
+    const doc = parseDocumentSkeleton(`time 4/4
+note 1/8
+tempo 120
+
+note 1/16
+HH | d d d d d d d d d d d d d d d d |
+
+note 1/8
+SD | d d d d d d d d |`);
+
+    expect(doc.errors).toEqual([]);
+    expect(doc.headers.note?.value).toBe(8);
+    expect(doc.paragraphs).toHaveLength(2);
+    expect(doc.paragraphs[0].noteValue).toBe(16);
+    expect(doc.paragraphs[1].noteValue).toBe(8);
+  });
 });

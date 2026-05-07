@@ -33,6 +33,27 @@ SD | d d d d d d d d |
     expect(score.measures[1]!.events).toHaveLength(8);
   });
 
+  it("should honor a first-paragraph note override after a blank line following headers", () => {
+    const source = `
+time 4/4
+note 1/8
+tempo 120
+
+note 1/16
+HH | d d d d d d d d d d d d d d d d |
+
+note 1/8
+SD | d d d d d d d d |
+`;
+    const score = buildNormalizedScore(source);
+    expect(score.errors).toHaveLength(0);
+    expect(score.header.noteValue).toBe(8);
+    expect(score.measures[0]!.noteValue).toBe(16);
+    expect(score.measures[1]!.noteValue).toBe(8);
+    expect(score.measures[0]!.events).toHaveLength(16);
+    expect(score.measures[1]!.events).toHaveLength(8);
+  });
+
   it("should calculate correct slots for non-4/4 time signatures", () => {
     const source = `
 time 6/8

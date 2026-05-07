@@ -10,7 +10,7 @@ Newline { "\n" }
   Comment { "#" ![\n]* }
   Integer { @digit+ }
   HeaderWord { ![\n# ] ![\n# ]* }
-  InlineRepeatToken { "*" @digit+ }
+  InlineRepeatToken { "*" "-"? @digit+ }
   MultiRestToken {
     "--" "-"* (" " | "\t")* ("1" @digit+ | $[2-9] @digit*) (" " | "\t")* "--" "-"*
   }
@@ -56,7 +56,15 @@ GroupingHeader { "grouping" Integer ("+" Integer)* }
 NoteHeader { "note" Integer "/" Integer }
 DivisionsHeader { "divisions" Integer }
 
-TrackBody { TrackLine (Newline+ TrackLine)* }
+TrackBody { TrackLine (Newline TrackBodyTail)* }
+
+TrackBodyTail {
+  Newline+ ParagraphNoteOverride Newline+ TrackLine |
+  Newline+ TrackLine |
+  TrackLine
+}
+
+ParagraphNoteOverride { "note" Integer "/" Integer }
 
 TrackLine {
   TrackName MeasureSection+ |

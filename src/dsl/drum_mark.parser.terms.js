@@ -55,4 +55,6 @@ export const
   NavMarker = 53,
   NavJump = 54,
   InlineRepeatSuffix = 55,
-  InlineRepeatToken = 56
+  InlineRepeatToken = 56,
+  TrackBodyTail = 57,
+  ParagraphNoteOverride = 58

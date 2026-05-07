@@ -163,4 +163,79 @@ describe("lezer IR integration", () => {
       expect(lezer.errors, `lezer parser errors for: ${source.slice(0, 50)}`).toEqual([]);
     }
   });
+
+  it("handles paragraph note overrides structurally between body paragraphs", () => {
+    const source = `time 4/4
+note 1/16
+
+HH | d d d d d d d d d d d d d d d d |
+
+note 1/8
+HH | d d d d d d d d |`;
+
+    const lezer = parseDocumentSkeletonFromLezer(source);
+
+    expect(lezer.errors).toEqual([]);
+    expect(lezer.paragraphs).toHaveLength(2);
+    expect(lezer.paragraphs[0]?.noteValue).toBeUndefined();
+    expect(lezer.paragraphs[1]?.noteValue).toBe(8);
+  });
+
+  it("reports header diagnostics on the lezer path", () => {
+    const unknownHeader = parseDocumentSkeletonFromLezer(`swing 8ths
+time 4/4
+divisions 4
+
+HH | x - x - |`);
+
+    expect(unknownHeader.errors).toContainEqual({
+      line: 1,
+      column: 1,
+      message: "Unknown header `swing`",
+    });
+
+    const lateHeader = parseDocumentSkeletonFromLezer(`time 4/4
+divisions 4
+
+HH | x - x - |
+tempo 120`);
+
+    expect(lateHeader.errors).toContainEqual({
+      line: 5,
+      column: 1,
+      message: "Headers must appear before track content",
+    });
+  });
+
+  it("keeps legacy bare routed blocks invalid instead of upgrading them to @TRACK semantics", () => {
+    const lezer = parseDocumentSkeletonFromLezer(`time 4/4
+divisions 4
+
+| x RC { d d } |`);
+
+    expect(lezer.errors).toContainEqual({
+      line: 4,
+      column: 5,
+      message: "Legacy routed block syntax `RC { ... }` has been removed; use `@RC { ... }` instead.",
+    });
+    expect(lezer.paragraphs[0]?.lines[0]?.measures[0]?.tokens.some(
+      (token) => token.kind === "braced" && token.track === "RC",
+    )).toBe(false);
+    expect(lezer.paragraphs[0]?.lines[0]?.measures[0]?.tokens.some(
+      (token) => token.kind === "basic" && token.value === "RC",
+    )).toBe(false);
+  });
+
+  it("reports non-positive inline repeat counts from structured suffix nodes", () => {
+    const lezer = parseDocumentSkeletonFromLezer(`time 4/4
+divisions 4
+
+| d - - - *-1 |`);
+
+    expect(lezer.errors).toContainEqual({
+      line: 4,
+      column: 1,
+      message: "Repeat count must be at least 1",
+    });
+  });
 });

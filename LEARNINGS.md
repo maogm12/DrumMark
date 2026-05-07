@@ -242,3 +242,9 @@ The regex parser (`parser.ts`) now has zero production references. All 345 tests
 - `tsconfig.app.json` enables both `noUncheckedIndexedAccess` and `noPropertyAccessFromIndexSignature`, so parser-lowering code must treat every `array[i]` and `record.key` access as potentially absent even when control flow makes it look obvious.
 - Generated Lezer parser files such as `src/dsl/drum_mark.parser.js` need a companion `.d.ts` shim if they are imported from TypeScript under `strict` mode and no upstream declaration is emitted.
 - In `lezer_skeleton.ts`, the safest way to satisfy strict typing without changing parsing behavior is to introduce local guards at array/index boundaries and preserve existing lowering logic, rather than weakening compiler settings or replacing the source containers with looser types.
+
+## 2026-05-06 Addendum: Paragraph `note` Overrides in Lezer
+
+- A body-level `note 1/N` override cannot simply be added as another top-level `TrackBody` alternative, because it creates an LR conflict with header-level `note` lines at document start. The viable grammar shape is to admit paragraph overrides only in body-continuation positions, after the parser is already inside `TrackBody`.
+- For DrumMark's current grammar, a stable pattern is: `TrackBody` starts with `TrackLine`, and later continuations distinguish ordinary next lines from blank-line-prefixed paragraph override segments. That removes source-gap scanning for override semantics without destabilizing header parsing.
+- Once paragraph overrides are structural tree nodes, the skeleton should treat the node itself as authoritative paragraph-boundary evidence. Re-checking newline counts around that node is old-parser thinking and causes false "not at beginning of paragraph" diagnostics.

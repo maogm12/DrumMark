@@ -1,5 +1,6 @@
 import { parser } from "./drum_mark.parser";
 import { inferGrouping } from "./grouping";
+import { preprocessSource } from "./preprocess";
 import type {
   DocumentSkeleton,
   TrackParagraph,
@@ -30,6 +31,10 @@ type HeaderField = (typeof HEADER_FIELDS)[number];
 
 function nodeText(node: { from: number; to: number }, source: string): string {
   return source.slice(node.from, node.to);
+}
+
+function firstToken(text: string): string | undefined {
+  return text.split(/\s+/, 1)[0] || undefined;
 }
 
 function sameVoltaIndices(a: number[], b: number[]): boolean {
@@ -429,22 +434,13 @@ function parseMeasureExpr(
   return parseGlyphFromText(nodeText(node, source));
 }
 
-function readNoteOverrideFromGap(
-  gapText: string,
+function parseNoteValue(
+  num: number,
+  den: number,
   lineNumber: number,
   errors: ParseError[],
 ): number | undefined {
-  const matches = [...gapText.matchAll(/^note\s+1\s*\/\s*(\d+)\s*$/gm)];
-  if (matches.length === 0) return undefined;
-  if (matches.length > 1) {
-    errors.push({
-      line: lineNumber,
-      column: 1,
-      message: "At most one paragraph note override may precede a paragraph",
-    });
-    return undefined;
-  }
-  const value = parseInt(matches[0]?.[1] ?? "", 10);
+  const value = den / num;
   if (!(value > 0 && (value & (value - 1)) === 0 && value <= 128)) {
     errors.push({
       line: lineNumber,
@@ -456,21 +452,79 @@ function readNoteOverrideFromGap(
   return value;
 }
 
-function hasParagraphBreakBeforeOverride(gapText: string): boolean {
-  const lines = gapText.split("\n");
-  let blankLikeCount = 0;
-  for (const line of lines) {
-    const trimmed = line.trim();
-    if (trimmed === "") {
-      blankLikeCount++;
-      continue;
-    }
-    if (trimmed.startsWith("#")) {
-      continue;
-    }
-    return blankLikeCount >= 2;
+function parseParagraphNoteOverride(
+  node: NodeInfo,
+  allNodes: NodeInfo[],
+  source: string,
+  errors: ParseError[],
+): number | undefined {
+  const ints = childNodes(allNodes, node.from, node.to).filter((child) => child.name === "Integer");
+  const numNode = ints[0];
+  const denNode = ints[1];
+  const lineNumber = source.slice(0, node.from).split("\n").length;
+
+  if (!numNode || !denNode) {
+    errors.push({
+      line: lineNumber,
+      column: 1,
+      message: "Note must be in the form 1/N where N is a power of 2 (1, 2, 4, 8, 16, 32, 64, 128)",
+    });
+    return undefined;
   }
-  return false;
+
+  return parseNoteValue(
+    parseInt(nodeText(numNode, source), 10),
+    parseInt(nodeText(denNode, source), 10),
+    lineNumber,
+    errors,
+  );
+}
+
+function collectHeaderDiagnostics(source: string, errors: ParseError[]): void {
+  const lines = preprocessSource(source);
+  let bodyStartIndex = lines.findIndex((line) => line.kind === "content" && line.content.includes("|"));
+  if (bodyStartIndex === -1) {
+    bodyStartIndex = lines.length;
+  }
+
+  for (let index = 0; index < bodyStartIndex; index += 1) {
+    const line = lines[index];
+    if (!line || line.kind !== "content") continue;
+    const token = firstToken(line.content);
+    if (
+      token &&
+      /^[a-z][a-z0-9-]*$/i.test(token) &&
+      /^[a-z]/.test(token) &&
+      !HEADER_FIELDS.includes(token as HeaderField)
+    ) {
+      errors.push({
+        line: line.lineNumber,
+        column: 1,
+        message: `Unknown header \`${token}\``,
+      });
+    }
+  }
+
+  const bodyLines = lines.slice(bodyStartIndex);
+  const unexpectedHeader = bodyLines.find((line) => {
+    if (line.kind !== "content") return false;
+    const token = firstToken(line.content);
+    if (!token || !HEADER_FIELDS.includes(token as HeaderField)) {
+      return false;
+    }
+    if (token === "note" && /^note\s+1\s*\/\s*-?\d+\s*$/.test(line.content)) {
+      return false;
+    }
+    return true;
+  });
+
+  if (unexpectedHeader) {
+    errors.push({
+      line: unexpectedHeader.lineNumber,
+      column: 1,
+      message: "Headers must appear before track content",
+    });
+  }
 }
 
 const START_NAV_KINDS: StartNavKind[] = ["segno", "coda"];
@@ -683,6 +737,7 @@ export function parseDocumentSkeletonFromLezer(source: string): DocumentSkeleton
   const allNodes = collectNodes(tree);
 
   const errors: ParseError[] = [];
+  collectHeaderDiagnostics(source, errors);
 
   // Find top-level nodes
   const headerSection = allNodes.find(n => n.name === "HeaderSection");
@@ -728,33 +783,59 @@ export function parseDocumentSkeletonFromLezer(source: string): DocumentSkeleton
   if (!trackBody) return result;
 
   const bodyChildren = childNodes(allNodes, trackBody.from, trackBody.to);
-  const trackLines: { line: NodeInfo; newlineCount: number }[] = [];
+  const bodyItems: Array<{ node: NodeInfo; newlineCount: number; kind: "trackLine" | "noteOverride" }> = [];
 
-  // Walk body children: TrackLine, Newline+, TrackLine, ...
-  // Collect TrackLines and count newlines between them
   for (let i = 0; i < bodyChildren.length; i++) {
     const node = bodyChildren[i];
-    if (node?.name === "TrackLine") {
+    if (node?.name === "TrackLine" || node?.name === "ParagraphNoteOverride") {
       let nlCount = 0;
-      // Count consecutive Newlines before this TrackLine
       for (let j = i - 1; j >= 0; j--) {
         if (bodyChildren[j]?.name === "Newline") nlCount++;
         else break;
       }
-      trackLines.push({ line: node, newlineCount: nlCount });
+      bodyItems.push({
+        node,
+        newlineCount: nlCount,
+        kind: node.name === "TrackLine" ? "trackLine" : "noteOverride",
+      });
     }
   }
 
-  // Group TrackLines into paragraphs
   const paragraphs: TrackParagraph[] = [];
   let currentLines: ParsedTrackLine[] = [];
   let currentStartLine = 0;
   let currentNoteValue: number | undefined;
+  let pendingNoteValue: number | undefined;
+  let pendingParagraphStartLine: number | undefined;
 
-  for (const tl of trackLines) {
-    const lineNode = tl.line;
-    const lineChildren = childNodes(allNodes, lineNode.from, lineNode.to);
+  for (const item of bodyItems) {
+    const lineNode = item.node;
     const lineNumber = source.slice(0, lineNode.from).split("\n").length;
+
+    if (item.kind === "noteOverride") {
+      const overrideValue = parseParagraphNoteOverride(lineNode, allNodes, source, errors);
+
+      if (currentLines.length > 0) {
+        paragraphs.push({ startLine: currentStartLine, lines: currentLines, noteValue: currentNoteValue });
+        currentLines = [];
+        currentNoteValue = undefined;
+      }
+
+      if (pendingNoteValue !== undefined) {
+        errors.push({
+          line: lineNumber,
+          column: 1,
+          message: "At most one paragraph note override may precede a paragraph",
+        });
+        continue;
+      }
+
+      pendingNoteValue = overrideValue;
+      pendingParagraphStartLine = lineNumber;
+      continue;
+    }
+
+    const lineChildren = childNodes(allNodes, lineNode.from, lineNode.to);
 
     let track: SourceTrackName | "ANONYMOUS" = "ANONYMOUS";
     const lineTrack = lineChildren.find((child) => child.name === "TrackName");
@@ -922,8 +1003,6 @@ export function parseDocumentSkeletonFromLezer(source: string): DocumentSkeleton
             column: span ? span.from - lineNode.from + 1 : 1,
             message: `Legacy routed block syntax \`${token.value} { ... }\` has been removed; use \`@${token.value} { ... }\` instead.`,
           });
-          const braced = nextToken;
-          braced.track = token.value;
           tokens.splice(ti, 1);
         }
       }
@@ -940,9 +1019,11 @@ export function parseDocumentSkeletonFromLezer(source: string): DocumentSkeleton
         });
       }
 
-      const multiRestMatch = content.match(/^--+\s*((?:1\d+)|(?:[2-9]\d*))\s*--+$/);
-      const multiRestCount = multiRestMatch?.[1] !== undefined
-        ? parseInt(multiRestMatch[1], 10)
+      const multiRestCountMatch = multiRestNode
+        ? nodeText(multiRestNode, source).match(/\d+/)
+        : null;
+      const multiRestCount = multiRestCountMatch?.[0] !== undefined
+        ? parseInt(multiRestCountMatch[0], 10)
         : undefined;
       if (multiRestCount !== undefined) {
         content = content.replace(/\s+/g, " ").trim();
@@ -950,23 +1031,7 @@ export function parseDocumentSkeletonFromLezer(source: string): DocumentSkeleton
       }
 
       let inlineRepeatCount: number | undefined;
-      const inlineRepeatMatch = content.match(/^(.*?)\s*\*\s*(-?\d+)\s*$/);
-      if (inlineRepeatMatch?.[1] !== undefined && inlineRepeatMatch?.[2] !== undefined) {
-        const count = parseInt(inlineRepeatMatch[2], 10);
-        if (count < 1) {
-          errors.push({
-            line: lineNumber,
-            column: 1,
-            message: "Repeat count must be at least 1",
-          });
-        } else {
-          inlineRepeatCount = count;
-          content = inlineRepeatMatch[1].trim();
-          if (bodyHasRecoveryErrors || repeatNode || multiRestNode) {
-            tokens = recoveredTokensFromText(content, track, lineNumber, bodyColumn, errors);
-          }
-        }
-      } else if (inlineRepeatNode) {
+      if (inlineRepeatNode) {
         const count = parseInt(nodeText(inlineRepeatNode, source).slice(1), 10);
         if (count < 1) {
           errors.push({
@@ -1085,38 +1150,12 @@ export function parseDocumentSkeletonFromLezer(source: string): DocumentSkeleton
     // Only add the line if it has measures
     if (measures.length === 0) continue;
 
-    // Detect note 1/N override between this track line and the previous one
-    // (or between header section and first track line).
-    let noteOverride: number | undefined;
-    if (currentLines.length > 0) {
-      const prevLine = currentLines[currentLines.length - 1];
-      if (!prevLine) continue;
-      const gapStart = (prevLine.source?.startOffset ?? 0) + (prevLine.source?.content.length ?? 0);
-      const gapEnd = lineNode.from;
-      const gapText = source.slice(gapStart, gapEnd);
-      const candidate = readNoteOverrideFromGap(gapText, lineNumber, errors);
-      if (candidate !== undefined) {
-        if (hasParagraphBreakBeforeOverride(gapText)) {
-          noteOverride = candidate;
-        } else {
-          errors.push({
-            line: lineNumber,
-            column: 1,
-            message: "Paragraph note override must appear at the beginning of a new paragraph",
-          });
-        }
-      }
-    } else if (paragraphs.length === 0 && trackBody) {
-      // First paragraph: check between header section end and first track line
-      const gapStart = headerSection?.to ?? 0;
-      const gapEnd = lineNode.from;
-      const gapText = source.slice(gapStart, gapEnd);
-      noteOverride = readNoteOverrideFromGap(gapText, lineNumber, errors);
-    }
-
-    // If newlineCount > 1 (blank line before) or a note 1/N override was found,
-    // start a new paragraph.
-    if ((tl.newlineCount > 1 || noteOverride !== undefined) && currentLines.length > 0) {
+    const previousTrackLine = currentLines[currentLines.length - 1];
+    if (
+      currentLines.length > 0 &&
+      previousTrackLine !== undefined &&
+      lineNumber > previousTrackLine.lineNumber + 1
+    ) {
       paragraphs.push({ startLine: currentStartLine, lines: currentLines, noteValue: currentNoteValue });
       currentNoteValue = undefined;
       currentLines = [];
@@ -1124,8 +1163,10 @@ export function parseDocumentSkeletonFromLezer(source: string): DocumentSkeleton
     }
 
     if (currentLines.length === 0) {
-      currentStartLine = lineNumber;
-      currentNoteValue = noteOverride !== undefined ? noteOverride : currentNoteValue;
+      currentStartLine = pendingParagraphStartLine ?? lineNumber;
+      currentNoteValue = pendingNoteValue !== undefined ? pendingNoteValue : currentNoteValue;
+      pendingNoteValue = undefined;
+      pendingParagraphStartLine = undefined;
     }
 
     currentLines.push({
@@ -1227,15 +1268,8 @@ function parseHeaderLine(
       if (!numNode || !denNode) return;
       const num = parseInt(nodeText(numNode, source), 10);
       const den = parseInt(nodeText(denNode, source), 10);
-      const value = den / num;
-      // Validate: N must be a power of 2 (matching regex parser behavior)
-      if (num !== 1 || value < 1 || value > 128 || (value & (value - 1)) !== 0) {
-        errors.push({
-          line: lineNumber,
-          column: 1,
-          message: "Note must be in the form 1/N where N is a power of 2 (1, 2, 4, 8, 16, 32, 64, 128)",
-        });
-      } else {
+      const value = parseNoteValue(num, den, lineNumber, errors);
+      if (value !== undefined) {
         headers["note"] = {
           field: "note" as const,
           value,

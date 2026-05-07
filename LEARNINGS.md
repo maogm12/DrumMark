@@ -265,3 +265,8 @@ The regex parser (`parser.ts`) now has zero production references. All 345 tests
 
 - Current user-facing syntax has moved beyond the older docs baseline in four places that are easy to miss in static docs: free-text `title` / `subtitle` / `composer` headers are valid again, routed blocks require explicit `@TRACK { ... }`, multi-rest accepts relaxed dash-run spellings instead of only `--N--`, and hairpins use zero-duration `<`, `>`, `!` control tokens.
 - The docs templates and README examples are part of the surface-language contract. When a spec addendum changes canonical spelling or migration rules, both English and Chinese docs need the same update pass or examples drift immediately.
+
+## 2026-05-06 Addendum: CLI AST Output Contract
+
+- The repository CLI is most useful as a staged inspection pipeline: `input -> ast -> ir -> xml/svg`. `ast` should expose parser/lowering structure before normalization, while `ir` should remain the normalized score without the embedded AST payload.
+- Keeping CLI JSON formatting in a small helper is safer than open-coding `delete score.ast` in the command entrypoint; otherwise adding an `ast` mode later encourages drift between output modes.

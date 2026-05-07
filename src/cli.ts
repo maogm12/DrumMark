@@ -6,6 +6,7 @@ import { registerFont } from "canvas";
 import { buildNormalizedScore } from "./dsl/normalize";
 import { renderScoreToSvg } from "./vexflow/renderer";
 import { buildMusicXml } from "./dsl/musicxml";
+import { formatScoreJson, type CliOutputFormat } from "./cli_output";
 
 // --- JSDOM Environment Setup (Copied from render-cli.ts) ---
 const dom = new JSDOM('<!DOCTYPE html><html><body><div id="container"></div></body></html>', {
@@ -35,7 +36,7 @@ async function main() {
   const args = process.argv.slice(2);
   const params = {
     input: "",
-    format: "ir" as "ir" | "svg" | "xml",
+    format: "ir" as CliOutputFormat,
     output: "" as string | null
   };
 
@@ -54,7 +55,7 @@ async function main() {
   }
 
   if (!params.input) {
-    console.error("Usage: npm run drummark -- <input-file> [--format ir|svg|xml] [--output path]");
+    console.error("Usage: npm run drummark -- <input-file> [--format ast|ir|svg|xml] [--output path]");
     process.exit(1);
   }
 
@@ -67,11 +68,8 @@ async function main() {
   }
 
   let result = "";
-  if (params.format === "ir") {
-    // Strip the AST for cleaner JSON
-    const output = { ...score };
-    delete (output as any).ast;
-    result = JSON.stringify(output, null, 2);
+  if (params.format === "ast" || params.format === "ir") {
+    result = formatScoreJson(score, params.format);
   } else if (params.format === "xml") {
     result = buildMusicXml(score);
   } else if (params.format === "svg") {
@@ -94,7 +92,7 @@ async function main() {
     });
   }
 
-  if (!params.output && params.format !== "ir") {
+  if (!params.output && (params.format === "xml" || params.format === "svg")) {
     // For XML and SVG, if no output is specified, default to <input>.<ext>
     params.output = params.input.replace(/\.[^/.]+$/, "") + (params.format === "xml" ? ".xml" : ".svg");
   }

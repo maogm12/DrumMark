@@ -96,6 +96,13 @@ After consolidation is complete, implementation proceeds task-by-task:
 ## Debugging Tools
 
 - **Initial Diagnosis**: When encountering parser, normalization, or rendering bugs, ALWAYS use `npm run drummark` to isolate the problem.
+    - Treat the CLI pipeline as `input -> ast -> ir -> xml/svg`.
+    - Use `--format ast` to inspect parser / AST shaping problems before normalization.
     - Use `--format ir` to verify if the issue is in the parser/normalization phase.
     - Use `--format svg` or `--format xml` to verify if the issue is in the rendering/export phase.
+    - Typical usage:
+      - `npm run drummark -- <input-file> --format ast`
+      - `npm run drummark -- <input-file> --format ir`
+      - `npm run drummark -- <input-file> --format svg`
+      - `npm run drummark -- <input-file> --format xml`
 - **Verification**: After applying a fix, use the tool to verify the output in the relevant format.

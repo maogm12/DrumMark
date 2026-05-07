@@ -2,6 +2,7 @@ import { EditorView } from "@codemirror/view";
 import { HighlightStyle, StreamLanguage, syntaxHighlighting, StringStream, type StreamParser } from "@codemirror/language";
 import { tags } from "@lezer/highlight";
 import { TRACKS, MODIFIERS } from "./dsl/types";
+import type { AppTheme } from "./theme";
 
 type HeaderField = "title" | "subtitle" | "composer" | "tempo" | "time" | "divisions" | "note" | "grouping";
 type LineMode = "unknown" | "header" | "track";
@@ -445,35 +446,36 @@ export const drumMarkStreamParser: StreamParser<DslState> = {
 export const drumMarkLanguage = StreamLanguage.define(drumMarkStreamParser);
 
 export const drumMarkHighlightStyle = HighlightStyle.define([
-  { tag: tags.lineComment, color: "#94a3b8", fontStyle: "italic" },
-  { tag: tags.heading, color: "#0f766e", fontWeight: "700" },
-  { tag: tags.keyword, color: "#0284c7", fontWeight: "600" },
-  { tag: tags.string, color: "#0f172a" },
-  { tag: tags.integer, color: "#059669" },
-  { tag: tags.arithmeticOperator, color: "#0f766e", fontWeight: "600" },
-  { tag: tags.punctuation, color: "#94a3b8" },
-  { tag: tags.labelName, color: "#0f172a", fontWeight: "700" },
-  { tag: tags.attributeName, color: "#0f766e", fontWeight: "700" },
-  { tag: tags.attributeValue, color: "#2563eb", fontWeight: "600" },
-  { tag: tags.typeName, color: "#7c3aed", fontWeight: "600" },
-  { tag: tags.separator, color: "#f43f5e", fontWeight: "700" },
-  { tag: tags.controlOperator, color: "#e11d48", fontWeight: "700" },
-  { tag: tags.operator, color: "#0284c7", fontWeight: "700" },
-  { tag: tags.annotation, color: "#be123c" },
-  { tag: tags.squareBracket, color: "#fb7185", fontWeight: "700" },
-  { tag: tags.modifier, color: "#7c3aed", fontStyle: "italic" },
-  { tag: tags.null, color: "#cbd5e1" },
-  { tag: tags.atom, color: "#1e293b" },
-  { tag: tags.tagName, color: "#0369a1" },
-  { tag: tags.bool, color: "#0f766e" },
+  { tag: tags.lineComment, color: "var(--syntax-comment)", fontStyle: "italic" },
+  { tag: tags.heading, color: "var(--syntax-heading)", fontWeight: "700" },
+  { tag: tags.keyword, color: "var(--syntax-keyword)", fontWeight: "600" },
+  { tag: tags.string, color: "var(--syntax-string)" },
+  { tag: tags.integer, color: "var(--syntax-number)" },
+  { tag: tags.arithmeticOperator, color: "var(--syntax-operator-muted)", fontWeight: "600" },
+  { tag: tags.punctuation, color: "var(--syntax-punctuation)" },
+  { tag: tags.labelName, color: "var(--syntax-label)", fontWeight: "700" },
+  { tag: tags.attributeName, color: "var(--syntax-heading)", fontWeight: "700" },
+  { tag: tags.attributeValue, color: "var(--syntax-attribute)", fontWeight: "600" },
+  { tag: tags.typeName, color: "var(--syntax-type)", fontWeight: "600" },
+  { tag: tags.separator, color: "var(--syntax-separator)", fontWeight: "700" },
+  { tag: tags.controlOperator, color: "var(--syntax-control)", fontWeight: "700" },
+  { tag: tags.operator, color: "var(--syntax-keyword)", fontWeight: "700" },
+  { tag: tags.annotation, color: "var(--syntax-annotation)" },
+  { tag: tags.squareBracket, color: "var(--syntax-bracket)", fontWeight: "700" },
+  { tag: tags.modifier, color: "var(--syntax-type)", fontStyle: "italic" },
+  { tag: tags.null, color: "var(--syntax-null)" },
+  { tag: tags.atom, color: "var(--syntax-atom)" },
+  { tag: tags.tagName, color: "var(--syntax-tag)" },
+  { tag: tags.bool, color: "var(--syntax-bool)" },
   { tag: tags.strong, fontWeight: "800" },
-  { tag: tags.name, color: "#475569" },
+  { tag: tags.name, color: "var(--syntax-name)" },
 ]);
 
-export const drumMarkEditorTheme = EditorView.theme({
+const editorThemeSpec = {
   "&": {
     height: "100%",
-    backgroundColor: "#ffffff",
+    backgroundColor: "var(--editor-bg)",
+    color: "var(--text-main)",
     fontFamily: "var(--font-mono)",
     fontSize: "0.9rem",
   },
@@ -495,7 +497,7 @@ export const drumMarkEditorTheme = EditorView.theme({
     padding: "0 0 0 16px",
   },
   ".cm-gutters": {
-    backgroundColor: "var(--bg-sidebar)",
+    backgroundColor: "var(--editor-gutter-bg)",
     color: "var(--text-muted)",
     borderRight: "1px solid var(--border-subtle)",
   },
@@ -511,13 +513,22 @@ export const drumMarkEditorTheme = EditorView.theme({
     backgroundColor: "transparent",
   },
   ".cm-activeLine": {
-    backgroundColor: "rgba(2, 132, 199, 0.05)",
+    backgroundColor: "var(--editor-active-line)",
   },
   ".cm-cursor": {
     borderLeftColor: "var(--text-main)",
   },
   ".cm-selectionBackground, ::selection": {
-    backgroundColor: "rgba(14, 165, 233, 0.16) !important",
+    backgroundColor: "var(--editor-selection) !important",
+  },
+  ".cm-panels": {
+    backgroundColor: "var(--bg-elevated)",
+    color: "var(--text-main)",
+  },
+  ".cm-tooltip": {
+    backgroundColor: "var(--bg-elevated)",
+    color: "var(--text-main)",
+    border: "1px solid var(--border-strong)",
   },
   ".cm-focused": {
     outline: "none",
@@ -525,9 +536,16 @@ export const drumMarkEditorTheme = EditorView.theme({
   ".cm-editor.cm-focused": {
     outline: "none",
   },
-}, { dark: false });
+} as const;
+
+const drumMarkEditorThemeLight = EditorView.theme(editorThemeSpec, { dark: false });
+const drumMarkEditorThemeDark = EditorView.theme(editorThemeSpec, { dark: true });
 
 export const drumMarkSyntaxHighlighting = syntaxHighlighting(drumMarkHighlightStyle);
+
+export function getDrumMarkEditorTheme(theme: AppTheme) {
+  return theme === "dark" ? drumMarkEditorThemeDark : drumMarkEditorThemeLight;
+}
 
 export function highlightDslStatic(code: string): string {
   const state = drumMarkStreamParser.startState!(2);

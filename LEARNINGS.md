@@ -298,3 +298,9 @@ The regex parser (`parser.ts`) now has zero production references. All 345 tests
 
 - On the Lezer path, the first body paragraph can legally start with a paragraph-level `note 1/N` override only when the header block and body are separated by a blank line. Without that separator, `note 1/N` at the top of the file must stay parseable as a global header, or the grammar becomes ambiguous.
 - The safe grammar shape is to split document entry into two body forms: `HeaderSection TrackBody` for compact header-to-body transitions, and `HeaderSection Newline+ TrackBodyWithLead` for the blank-line-separated case where the first paragraph may begin with `ParagraphNoteOverride`.
+
+## 2026-05-07 Addendum: Dark Mode Theme Resolution
+
+- If JS treats invalid root `data-theme` values as “no explicit override”, CSS must do the same. A selector like `:root:not([data-theme])` is not equivalent, because `data-theme="foo"` disables the CSS fallback while JS may still resolve to system dark, splitting shell/docs and CodeMirror into different themes.
+- For theme precedence that supports both explicit override and system fallback, the safe CSS pattern is `:root[data-theme="dark"]` for the forced-dark branch and `:root:not([data-theme="light"]):not([data-theme="dark"])` for the system-driven dark branch.
+- White paper surfaces need their own invariant tokens (`--paper-*`) rather than reusing generic card tokens, or dark-mode refactors will eventually darken score preview pages by accident.

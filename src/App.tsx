@@ -1,4 +1,4 @@
-import { memo, useCallback, useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode, type UIEvent, type WheelEvent as ReactWheelEvent } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type PointerEvent as ReactPointerEvent, type ReactNode, type UIEvent, type WheelEvent as ReactWheelEvent } from "react";
 import { EditorState, Compartment } from "@codemirror/state";
 import { EditorView, highlightActiveLine, highlightActiveLineGutter, lineNumbers, keymap } from "@codemirror/view";
 import { history, historyKeymap } from "@codemirror/commands";
@@ -6,7 +6,8 @@ import { linter, type Diagnostic } from "@codemirror/lint";
 import { buildNormalizedScore, type ParseError } from "./dsl";
 import { type NormalizedScore } from "./dsl";
 import { renderScorePagesToSvgs, type VexflowRenderOptions } from "./vexflow";
-import { drumMarkEditorTheme, drumMarkLanguage, drumMarkSyntaxHighlighting } from "./drummark";
+import { getDrumMarkEditorTheme, drumMarkLanguage, drumMarkSyntaxHighlighting } from "./drummark";
+import { resolveDocumentTheme, subscribeToThemeChanges, type AppTheme } from "./theme";
 
 const legacySeedDsl = `tempo 96
 time 4/4
@@ -328,8 +329,9 @@ function DrumIcon() {
 }
 
 const linterCompartment = new Compartment();
+const editorThemeCompartment = new Compartment();
 
-function DslEditor({ value, onChange, errors }: { value: string; onChange: (value: string) => void; errors: ParseError[] }) {
+function DslEditor({ value, onChange, errors, theme }: { value: string; onChange: (value: string) => void; errors: ParseError[]; theme: AppTheme }) {
   const hostRef = useRef<HTMLDivElement | null>(null);
   const viewRef = useRef<EditorView | null>(null);
   const onChangeRef = useRef(onChange);
@@ -361,7 +363,7 @@ function DslEditor({ value, onChange, errors }: { value: string; onChange: (valu
           }),
           drumMarkLanguage,
           drumMarkSyntaxHighlighting,
-          drumMarkEditorTheme,
+          editorThemeCompartment.of(getDrumMarkEditorTheme(theme)),
           linterCompartment.of(
             linter((v) => {
               return errors.map((err) => {
@@ -394,6 +396,15 @@ function DslEditor({ value, onChange, errors }: { value: string; onChange: (valu
       view.destroy();
     };
   }, []);
+
+  useEffect(() => {
+    const view = viewRef.current;
+    if (!view) return;
+
+    view.dispatch({
+      effects: editorThemeCompartment.reconfigure(getDrumMarkEditorTheme(theme)),
+    });
+  }, [theme]);
 
   useEffect(() => {
     const view = viewRef.current;
@@ -704,6 +715,11 @@ const defaultSettings: AppSettings = {
 };
 
 export function App() {
+  const resolvedTheme: AppTheme = useSyncExternalStore(
+    (listener) => subscribeToThemeChanges(listener),
+    () => resolveDocumentTheme(),
+    (): AppTheme => "light",
+  );
   const [dsl, setDsl] = useState(() => {
     const saved = localStorage.getItem("drummark-dsl");
     if (!saved || saved === legacySeedDsl) {
@@ -1177,7 +1193,7 @@ export function App() {
               </div>
             </div>
           </header>
-          <DslEditor value={dsl} onChange={setDsl} errors={score.errors} />
+          <DslEditor value={dsl} onChange={setDsl} errors={score.errors} theme={resolvedTheme} />
         </section>
 
         <div className="resizer" onMouseDown={handleMouseDown} />

@@ -10,7 +10,7 @@
 
 > **Text-first drum notation for the modern drummer.**
 
-**DrumMark** is a lightweight web application designed for drummers. It features a custom syntax that allows you to write drum scores as quickly as typing code, generating professional-grade sheet music in real-time.
+**DrumMark** is a lightweight web application designed for drummers. It features a custom syntax that lets you write drum scores as quickly as typing code, then compile them into professional sheet music in real time.
 
 ---
 
@@ -19,8 +19,9 @@
 - ✍️ **Text-Driven:** Forget tedious mouse clicks. Record your ideas using simple characters (`x`, `d`, `p`).
 - ⚡ **Live Preview:** Real-time rendering engine based on VexFlow 5.
 - 🎼 **Professional Export:** Generate standard MusicXML compatible with MuseScore, Sibelius, or Finale.
-- 📏 **Rhythmic Precision:** Supports complex meters (e.g., 7/8), duration modifiers (dots `.` and halves `/`), automatic beaming, and advanced tuplets.
+- 📏 **Rhythmic Precision:** Supports complex meters (e.g., 7/8), `note 1/N` grid resolution, duration modifiers (`.`, `/`, `*`), automatic beaming, and advanced tuplets.
 - 🥁 **Full Technique Support:** Covers rimshots, flams, chokes, bells, and more across all major drum kit components.
+- 🔀 **Score Structure:** Supports repeats, voltas, navigation markers/jumps, multi-measure rests, inline repeats, and crescendo / decrescendo hairpins.
 
 ---
 
@@ -45,7 +46,7 @@ BD |  p - - - p - - - | p - p - - - p -        |
 - `BD`: Bass Drum
 - `RC`/`C`: Ride / Crash Cymbal
 - `| ... |`: Anonymous track lines with global magic tokens like `s`, `b`, `t1`, `c`
-- `SD { ... }`: Track routing scopes for bulk routing without rewriting each token
+- `@SD { ... }`: Track routing scopes for bulk routing without rewriting each token
 
 ---
 

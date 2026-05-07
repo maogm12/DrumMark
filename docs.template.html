@@ -65,6 +65,7 @@
                         <a href="#repeats" class="docs-nav-link">Repeats & Jumps</a>
                         <a href="#multi-rest" class="docs-nav-link">Multi-Measure Rests</a>
                         <a href="#inline-repeat" class="docs-nav-link">Inline Repeats</a>
+                        <a href="#hairpins" class="docs-nav-link">Hairpins</a>
                     </div>
                     <div class="docs-nav-group">
                         <span class="docs-nav-group-title">Advanced</span>
@@ -110,7 +111,7 @@
                                 <p>Headers come before any score content and define meter, internal beat grouping, and input resolution.</p>
                                 <div class="docs-section-content">
                                     <ul class="docs-list">
-                                        <li><strong>title / subtitle / composer:</strong> Text headers for your score's name and credits. Values must be quoted with single or double quotes: <code>title "My Song"</code> or <code>subtitle 'Verse A'</code>. These appear on the printed sheet.</li>
+                                        <li><strong>title / subtitle / composer:</strong> Text headers for your score's name and credits. They accept either quoted or unquoted text: <code>title My Song</code> or <code>subtitle "Verse A"</code>. In unquoted form, the value is the rest of the line, and literal <code>#</code> requires quotes.</li>
                                         <li><strong>tempo:</strong> Quarter-note BPM. Default is 120 if omitted.</li>
                                         <li><strong>time:</strong> The meter (e.g., <code>4/4</code>, <code>3/4</code>, <code>6/8</code>). Required.</li>
                                         <li><strong>note:</strong> The duration of a single <strong>Note Unit</strong> (grid slot, e.g., <code>note 1/16</code>). Required.
@@ -180,8 +181,8 @@
                                     <ul class="docs-list">
                                         <li><strong>Anonymous tracks:</strong> start directly with a barline, such as <code>| x - s - x - s |</code>. They are useful for drum-tab-style fast entry.</li>
                                         <li><strong>Explicit summoning:</strong> use <code>Track:token</code> to force a single event onto a specific track, such as <code>SD:d</code>, <code>BD:d</code>, <code>RC:d:bell</code>, or <code>ST:R</code>.</li>
-                                        <li><strong>Routing blocks:</strong> use <code>TRACK { ... }</code> to route a whole span of content to one target, such as <code>| RC { x x x x } |</code> or <code>SD { [3: d d d] }</code>.</li>
-                                        <li><strong>Auto-registration:</strong> once a track appears in a line header, routing block, or <code>Track:</code> prefix, it enters the score's track list and keeps that first-seen ordering.</li>
+                                        <li><strong>Routing blocks:</strong> use <code>@TRACK { ... }</code> to route a whole span of content to one target, such as <code>| @RC { x x x x } |</code> or <code>| x x @SD { [3: d d d] } x |</code>. Legacy bare forms like <code>RC { ... }</code> are removed.</li>
+                                        <li><strong>Auto-registration:</strong> once a track appears in a line header, routed block directive, or <code>Track:</code> prefix, it enters the score's track list and keeps that first-seen ordering.</li>
                                         <li><strong>Auto-rest fill:</strong> if a registered track is omitted in later paragraphs, the system fills it with full-measure rests automatically.</li>
                                     </ul>
                                     <p><strong>Stem direction (voice):</strong> Drum notation uses two voices per staff. Voice 1 (stems up) covers hands — hi-hat, ride, crash, snare, toms. Voice 2 (stems down) covers feet — bass drum, hi-hat pedal. The system assigns this automatically based on which track you write to.</p>
@@ -257,6 +258,7 @@
                                     <ul class="docs-list">
                                         <li><strong>Base duration:</strong> <code>d</code> and <code>-</code> both start at exactly one input slot.</li>
                                         <li><strong>Exact timing:</strong> durations are computed with exact rational math, not floating-point approximation. That means forms like <code>d..</code>, <code>d///</code>, and <code>d.//</code> are summed exactly before measure validation.</li>
+                                        <li><strong>Inline-repeat disambiguation:</strong> <code>d*</code> is a doubled note, while trailing measure-level <code>*N</code> stays an inline repeat, such as <code>| d* *2 |</code> or <code>| *4 |</code>.</li>
                                     </ul>
                                 </div>
                             </div>
@@ -286,6 +288,7 @@
                                         </tbody>
                                     </table>
                                     <p><strong>Syntax:</strong> <code>&lt;token&gt;:&lt;modifier&gt;</code> or <code>Track:d:&lt;modifier&gt;</code>. Modifier legality follows the final resolved physical track, not the line where the token was typed. You can chain legal combinations such as <code>SD:d:rim:accent</code> or <code>RC:d:bell:accent</code>.</p>
+                                    <p><strong>Suffix order:</strong> duration suffixes and articulation suffixes can be interleaved. <code>d.*:accent</code> and <code>d:accent.*</code> are equivalent, and group suffixes like <code>[2: s+b]:accent</code> apply to every sounding note in the group.</p>
                                     <ul class="docs-list">
                                         <li><strong>Hi-hat:</strong> <code>HH | d:open - d:close - d:ghost - d:dead - |</code></li>
                                         <li><strong>Ride / Cymbals:</strong> <code>RC | d:bell - d:drag - d:roll - - |</code> and <code>C | d:choke:accent - - - - - - - |</code></li>
@@ -386,10 +389,11 @@
                                     </ul>
                                     <h3>Navigation Markers &amp; Jumps</h3>
                                     <ul class="docs-list">
-                                        <li><strong>Markers:</strong> <code>@segno</code> (segno symbol), <code>@coda</code> (coda symbol), <code>@fine</code> (Fine).</li>
-                                        <li><strong>Jumps:</strong> <code>@dc</code>, <code>@ds</code>, <code>@to-coda</code>, and their <code>al-fine</code>/<code>al-coda</code> variants. Legacy <code>@da-capo</code> and <code>@dal-segno</code> are rejected.</li>
+                                        <li><strong>Start-side markers:</strong> <code>@segno</code> and <code>@coda</code>. <code>@segno</code> may be at measure start or interior; <code>@coda</code> is left-edge only.</li>
+                                        <li><strong>End-side instructions:</strong> <code>@fine</code>, <code>@dc</code>, <code>@ds</code>, <code>@to-coda</code>, and their <code>al-fine</code>/<code>al-coda</code> variants. Legacy <code>@da-capo</code> and <code>@dal-segno</code> are rejected.</li>
                                         <li><strong>Placement:</strong> <code>@segno</code> at start or interior (not end); <code>@coda</code> at start only; <code>@fine</code> and jumps at end only; <code>@to-coda</code> interior or end (not start).</li>
-                                        <li>At most one start-side marker and one end-side jump per measure. Nested or crossing repeats are not allowed.</li>
+                                        <li><strong>Cardinality:</strong> at most one start-side navigation item and at most one end-side navigation item per logical measure. Nested or crossing repeats are not allowed.</li>
+                                        <li><strong>Barline interaction:</strong> <code>@fine</code> forces a final barline; <code>@dc</code>/<code>@ds</code> variants force at least a double barline; end-side jumps other than <code>@to-coda</code> cannot share a measure with a repeat-end barline.</li>
                                     </ul>
                                 </div>
                             </div>
@@ -402,7 +406,12 @@
                                 <p>Standard notation for extended periods of silence.</p>
                             </div>
                             <div class="docs-description">
-                                <p>Multi-measure rests only accept the form <code>|--N--|</code>, for example <code>|--8--|</code>. There must be at least one <code>-</code> on each side of the number, and the whole structure must occupy a single measure.</p>
+                                <p>Multi-measure rests use a left dash run, an integer count, and a right dash run. Both dash runs must contain at least two <code>-</code> characters, but they do not need to be the same length.</p>
+                                <ul class="docs-list">
+                                    <li><strong>Valid examples:</strong> <code>| --8-- |</code>, <code>| -- 8 -- |</code>, <code>| ---8---- |</code>, <code>| ---- 12 -- |</code>.</li>
+                                    <li><strong>Invalid examples:</strong> <code>| - 4 - |</code>, <code>| --1-- |</code>, <code>| --08-- |</code>.</li>
+                                    <li><strong>Whole-measure only:</strong> multi-rest cannot be combined with ordinary notes, groups, another multi-rest, <code>%</code>/<code>%%</code>, or inline repeat suffixes.</li>
+                                </ul>
                             </div>
                             <div class="example-inject" data-example="multi-rest"></div>
                         </article>
@@ -414,8 +423,25 @@
                             </div>
                             <div class="docs-description">
                                 <p><code>*N</code> at the end of a measure expands the current measure into <code>N</code> total consecutive copies, not "repeat it N more times." For example, <code>*4</code> produces four measures total.</p>
+                                <p>It may follow ordinary measure content, or it may be the entire measure body by itself: <code>| d* *2 |</code>, <code>| - *3 |</code>, <code>| *4 |</code>.</p>
                             </div>
                             <div class="example-inject" data-example="inline-repeat"></div>
+                        </article>
+
+                        <article class="docs-section-card" id="hairpins">
+                            <div class="docs-section-header">
+                                <h2>Hairpins</h2>
+                                <p>Crescendo and decrescendo spans inside measures.</p>
+                            </div>
+                            <div class="docs-description">
+                                <p>Hairpins are zero-duration control tokens. <code>&lt;</code> starts a crescendo, <code>&gt;</code> starts a decrescendo, and <code>!</code> closes the active hairpin at the current rhythmic position.</p>
+                                <ul class="docs-list">
+                                    <li><strong>Placement:</strong> hairpins are legal in ordinary measure content, braced content, and rhythmic groups.</li>
+                                    <li><strong>Carry-forward:</strong> if a hairpin is not closed with <code>!</code>, it continues to the end of the current measure and carries into the next measure until closed.</li>
+                                    <li><strong>Zero duration:</strong> hairpin tokens do not consume rhythmic weight and do not change grouping math.</li>
+                                </ul>
+                            </div>
+                            <div class="example-inject" data-example="hairpins"></div>
                         </article>
 
                         <article class="docs-section-card" id="validation">

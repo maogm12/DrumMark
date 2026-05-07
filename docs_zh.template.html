@@ -65,6 +65,7 @@
                         <a href="#repeats" class="docs-nav-link">重复与跳转</a>
                         <a href="#multi-rest" class="docs-nav-link">多小节休止</a>
                         <a href="#inline-repeat" class="docs-nav-link">内联重复</a>
+                        <a href="#hairpins" class="docs-nav-link">渐强 / 渐弱</a>
                     </div>
                     <div class="docs-nav-group">
                         <span class="docs-nav-group-title">高级进阶</span>
@@ -110,7 +111,7 @@
                                 <p>头部写在所有谱面内容之前，用来定义拍号、内部分拍和输入分辨率。</p>
                                 <div class="docs-section-content">
                                     <ul class="docs-list">
-                                        <li><strong>title / subtitle / composer:</strong> 乐曲的名称和作者信息。值必须用单引号或双引号括起来：<code>title "我的歌"</code> 或 <code>subtitle '副歌A'</code>。这些会印在乐谱上。</li>
+                                        <li><strong>title / subtitle / composer:</strong> 乐曲的名称和作者信息。既支持带引号，也支持不带引号：<code>title 我的歌</code> 或 <code>subtitle "副歌A"</code>。不带引号时，值就是关键字后面的整行文本；如果要写字面量 <code>#</code>，必须加引号。</li>
                                         <li><strong>tempo:</strong> 四分音符 BPM。如不指定默认为 120。</li>
                                         <li><strong>time:</strong> 拍号（如 <code>4/4</code>、<code>3/4</code>、<code>6/8</code>）。必填。</li>
                                         <li><strong>note:</strong> 单个 <strong>Note Unit (网格槽位)</strong> 的时值（如 <code>note 1/16</code>）。必填。
@@ -180,8 +181,8 @@
                                     <ul class="docs-list">
                                         <li><strong>匿名轨：</strong> 直接以小节线开头，例如 <code>| x - s - x - s |</code>。适合像 drum tab 一样快速录入。</li>
                                         <li><strong>显式召唤：</strong> 用 <code>Track:token</code> 强制把单个音符送到指定轨道，例如 <code>SD:d</code>、<code>BD:d</code>、<code>RC:d:bell</code>、<code>ST:R</code>。</li>
-                                        <li><strong>路由块：</strong> 用 <code>TRACK { ... }</code> 批量指定一段内容的目标轨道，例如 <code>| RC { x x x x } |</code> 或 <code>SD { [3: d d d] }</code>。</li>
-                                        <li><strong>自动注册：</strong> 轨道只要在行表头、路由块或 <code>Track:</code> 前缀里出现过，就会进入整首谱的轨道列表，并按首次出现顺序固定下来。</li>
+                                        <li><strong>路由块：</strong> 用 <code>@TRACK { ... }</code> 批量指定一段内容的目标轨道，例如 <code>| @RC { x x x x } |</code> 或 <code>| x x @SD { [3: d d d] } x |</code>。旧写法 <code>RC { ... }</code> 已移除。</li>
+                                        <li><strong>自动注册：</strong> 轨道只要在行表头、路由块指令或 <code>Track:</code> 前缀里出现过，就会进入整首谱的轨道列表，并按首次出现顺序固定下来。</li>
                                         <li><strong>自动补休止：</strong> 某个已注册轨道如果在后面的段落里没写，系统会自动补整小节休止。</li>
                                     </ul>
                                     <p><strong>符杆方向（声部）：</strong> 鼓谱每个谱表分两个声部。声部 1（符杆朝上）覆盖手击部分——踩镲、叮叮、Crash、军鼓、通鼓。声部 2（符杆朝下）覆盖脚部——底鼓、踩镲踏板。系统会根据你写的轨道自动分配。</p>
@@ -257,6 +258,7 @@
                                     <ul class="docs-list">
                                         <li><strong>基础时值：</strong> <code>d</code> 与 <code>-</code> 的基础长度都是 1 个输入槽位。</li>
                                         <li><strong>精确时值：</strong> 系统内部用精确分数计算时值，而不是浮点近似。所以 <code>d..</code>、<code>d///</code>、<code>d.//</code> 都会严格相加后再做整小节校验。</li>
+                                        <li><strong>与内联重复区分：</strong> <code>d*</code> 是时值翻倍的单个音，而小节尾部的 <code>*N</code> 仍表示内联重复，例如 <code>| d* *2 |</code> 或 <code>| *4 |</code>。</li>
                                     </ul>
                                 </div>
                             </div>
@@ -286,6 +288,7 @@
                                         </tbody>
                                     </table>
                                     <p><strong>语法：</strong><code>&lt;token&gt;:&lt;modifier&gt;</code> 或 <code>Track:d:&lt;modifier&gt;</code>。modifier 合法性看“最终解析到的物理轨道”，不是看它写在哪一行。可以链式写合法组合，例如 <code>SD:d:rim:accent</code> 或 <code>RC:d:bell:accent</code>。</p>
+                                    <p><strong>后缀顺序：</strong> 时值后缀和技巧后缀可以交错出现。<code>d.*:accent</code> 与 <code>d:accent.*</code> 等价；group 后缀如 <code>[2: s+b]:accent</code> 会作用到组里所有实际发声的音。</p>
                                     <ul class="docs-list">
                                         <li><strong>踩镲：</strong><code>HH | d:open - d:close - d:ghost - d:dead - |</code></li>
                                         <li><strong>叮叮镲 / 其他镲片：</strong><code>RC | d:bell - d:drag - d:roll - - |</code> 与 <code>C | d:choke:accent - - - - - - - |</code></li>
@@ -362,9 +365,9 @@
                             </div>
                             <div class="docs-description">
                                 <p>结构性记号是全谱级别的，不是单轨私有信息。它们可以写在任意一轨，但会作用于同一全局小节。</p>
-                                <div class=”docs-section-content”>
+                                <div class="docs-section-content">
                                     <h3>小节线</h3>
-                                    <ul class=”docs-list”>
+                                    <ul class="docs-list">
                                         <li><code>|</code> — 常规小节线</li>
                                         <li><code>|:</code> — 反复开始</li>
                                         <li><code>:|</code> — 反复结束</li>
@@ -373,23 +376,24 @@
                                         <li>最后一个小节自动补终止粗线——无需额外语法。</li>
                                     </ul>
                                     <h3>Volta（房子/跳小节）</h3>
-                                    <ul class=”docs-list”>
+                                    <ul class="docs-list">
                                         <li><code>|1.</code> — 一房；<code>|1,2.</code> — 一二房共用。</li>
                                         <li>Volta 终止于新的 volta、<code>:|</code> 或 <code>|.</code>（显式终止符）。</li>
                                         <li><code>:|</code> 和 volta 可以跨段落——空行只影响排版换系统，不改变音乐结构。</li>
                                     </ul>
                                     <h3>小节反复</h3>
-                                    <ul class=”docs-list”>
+                                    <ul class="docs-list">
                                         <li><code>%</code> — 重复前 1 小节；<code>%%</code> — 重复前 2 小节。</li>
                                         <li>小节反复可递归解析——如果前面也是 repeat，会先解析其内容。</li>
                                         <li><code>%</code> 和 <code>%%</code> 必须单独占满整个小节，同一小节的其他轨道必须留空。</li>
                                     </ul>
                                     <h3>导航标记与跳转</h3>
-                                    <ul class=”docs-list”>
-                                        <li><strong>标记：</strong> <code>@segno</code>（segno 符号），<code>@coda</code>（coda 符号），<code>@fine</code>（Fine）。</li>
-                                        <li><strong>跳转：</strong> <code>@dc</code>、<code>@ds</code>、<code>@to-coda</code> 及各自的 <code>al-fine</code>/<code>al-coda</code> 变体。旧写法 <code>@da-capo</code> 和 <code>@dal-segno</code> 会报错。</li>
+                                    <ul class="docs-list">
+                                        <li><strong>起始侧标记：</strong> <code>@segno</code> 和 <code>@coda</code>。其中 <code>@segno</code> 可在小节起始或中间，<code>@coda</code> 只能贴左边界。</li>
+                                        <li><strong>结束侧指令：</strong> <code>@fine</code>、<code>@dc</code>、<code>@ds</code>、<code>@to-coda</code> 及各自的 <code>al-fine</code>/<code>al-coda</code> 变体。旧写法 <code>@da-capo</code> 和 <code>@dal-segno</code> 会报错。</li>
                                         <li><strong>位置：</strong> <code>@segno</code> 在开头或中间（不能在结尾）；<code>@coda</code> 只能在开头；<code>@fine</code> 和跳转指令只能在结尾；<code>@to-coda</code> 在中间或结尾（不能在开头）。</li>
-                                        <li>同一小节最多一个 start-side 标记和一个 end-side 跳转。不允许嵌套反复或交叉反复。</li>
+                                        <li><strong>数量限制：</strong> 同一逻辑小节最多一个起始侧导航项、最多一个结束侧导航项。不允许嵌套反复或交叉反复。</li>
+                                        <li><strong>小节线联动：</strong> <code>@fine</code> 会强制终止线，<code>@dc</code>/<code>@ds</code> 系列至少强制双小节线；除 <code>@to-coda</code> 外的结束侧跳转不能与反复结束线同存。</li>
                                     </ul>
                                 </div>
                             </div>
@@ -402,7 +406,12 @@
                                 <p>长段沉默的标准记谱方式。</p>
                             </div>
                             <div class="docs-description">
-                                <p>多小节休止只接受 <code>|--N--|</code> 这一种写法，例如 <code>|--8--|</code>。数字两侧至少各要有一个 <code>-</code>，并且整个结构必须完整落在单个小节里。</p>
+                                <p>多小节休止由左侧一串横线、整数计数和右侧一串横线组成。左右两边都至少要有两个 <code>-</code>，但长度不必对称。</p>
+                                <ul class="docs-list">
+                                    <li><strong>合法示例：</strong> <code>| --8-- |</code>、<code>| -- 8 -- |</code>、<code>| ---8---- |</code>、<code>| ---- 12 -- |</code>。</li>
+                                    <li><strong>非法示例：</strong> <code>| - 4 - |</code>、<code>| --1-- |</code>、<code>| --08-- |</code>。</li>
+                                    <li><strong>必须独占整小节：</strong> 不能与普通音符、group、其他 multi-rest、<code>%</code>/<code>%%</code> 或内联重复后缀共存。</li>
+                                </ul>
                             </div>
                             <div class="example-inject" data-example="multi-rest"></div>
                         </article>
@@ -414,8 +423,25 @@
                             </div>
                             <div class="docs-description">
                                 <p><code>*N</code> 写在小节末尾，表示把当前小节扩展成总共连续 <code>N</code> 个相同小节，而不是“再重复 N 次”。例如 <code>*4</code> 的结果是总共 4 小节。</p>
+                                <p>它既可以跟在普通内容后面，也可以单独成为整个小节主体：<code>| d* *2 |</code>、<code>| - *3 |</code>、<code>| *4 |</code>。</p>
                             </div>
                             <div class="example-inject" data-example="inline-repeat"></div>
+                        </article>
+
+                        <article class="docs-section-card" id="hairpins">
+                            <div class="docs-section-header">
+                                <h2>渐强 / 渐弱</h2>
+                                <p>在小节内部表达动态跨度。</p>
+                            </div>
+                            <div class="docs-description">
+                                <p>Hairpin 是零时值控制 token。<code>&lt;</code> 开始渐强，<code>&gt;</code> 开始渐弱，<code>!</code> 在当前位置结束当前 hairpin。</p>
+                                <ul class="docs-list">
+                                    <li><strong>位置：</strong> 可出现在普通小节内容、花括号内容和节奏组里。</li>
+                                    <li><strong>跨小节延续：</strong> 如果没有用 <code>!</code> 显式结束，它会延续到当前小节末尾，并继续带到后续小节，直到被关闭。</li>
+                                    <li><strong>零时值：</strong> hairpin 自身不占用节奏权重，也不改变 grouping 或时值计算。</li>
+                                </ul>
+                            </div>
+                            <div class="example-inject" data-example="hairpins"></div>
                         </article>
 
                         <article class="docs-section-card" id="validation">

@@ -260,3 +260,8 @@ The regex parser (`parser.ts`) now has zero production references. All 345 tests
 - VexFlow `StaveHairpin` has no API to render a cropped middle slice of a longer wedge. Cross-system continuation therefore has to be simulated with overextended endpoint shifts plus SVG clipping in the renderer layer.
 - When injecting custom SVG `<clipPath>` nodes into VexFlow's `SVGContext`, DrumMark must set `clipPathUnits="userSpaceOnUse"`. Without that, browsers may interpret the clip rect in bounding-box space, which makes absolute stave coordinates ineffective and lets hairpins bleed to the page edge.
 - Clip IDs must be unique across systems in the same page SVG. Reusing simple per-system indices risks later `<clipPath>` definitions shadowing earlier ones.
+
+## 2026-05-06 Addendum: Docs Sync Baseline
+
+- Current user-facing syntax has moved beyond the older docs baseline in four places that are easy to miss in static docs: free-text `title` / `subtitle` / `composer` headers are valid again, routed blocks require explicit `@TRACK { ... }`, multi-rest accepts relaxed dash-run spellings instead of only `--N--`, and hairpins use zero-duration `<`, `>`, `!` control tokens.
+- The docs templates and README examples are part of the surface-language contract. When a spec addendum changes canonical spelling or migration rules, both English and Chinese docs need the same update pass or examples drift immediately.

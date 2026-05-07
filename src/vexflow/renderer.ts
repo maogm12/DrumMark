@@ -591,7 +591,7 @@ function getScaledDimensions(options: VexflowRenderOptions) {
     pagePaddingLeft: options.pagePadding.left / staffScale,
     pagePaddingRight: options.pagePadding.right / staffScale,
     headerHeight: options.headerHeight / staffScale,
-    titleStaffGap: options.titleStaffGap / staffScale,
+    headerStaffSpacing: options.headerStaffSpacing / staffScale,
   };
 }
 
@@ -662,11 +662,11 @@ function renderSystemsBatch(
       options: {
         ...options,
         systemSpacing: dims.systemSpacing,
-        tempoShiftX: options.tempoShiftX / dims.staffScale,
-        tempoShiftY: options.tempoShiftY / dims.staffScale,
-        measureNumberShiftX: options.measureNumberShiftX / dims.staffScale,
-        measureNumberShiftY: options.measureNumberShiftY / dims.staffScale,
-        voltaGap: options.voltaGap / dims.staffScale,
+        tempoOffsetX: options.tempoOffsetX / dims.staffScale,
+        tempoOffsetY: options.tempoOffsetY / dims.staffScale,
+        measureNumberOffsetX: options.measureNumberOffsetX / dims.staffScale,
+        measureNumberOffsetY: options.measureNumberOffsetY / dims.staffScale,
+        voltaSpacing: options.voltaSpacing / dims.staffScale,
         pagePadding: { 
           ...options.pagePadding, 
           top: dims.pagePaddingTop, 
@@ -692,7 +692,7 @@ export async function renderScoreToSvg(score: NormalizedScore, inputOptions: Vex
   const systemWidth = physicalWidth / dims.staffScale;
   const staffHeight = 100;
   
-  const totalLogicalHeight = dims.pagePaddingTop + dims.headerHeight + dims.titleStaffGap + 
+  const totalLogicalHeight = dims.pagePaddingTop + dims.headerHeight + dims.headerStaffSpacing + 
                              allSystems.length * (staffHeight + dims.systemSpacing) + dims.pagePaddingBottom;
   const totalPhysicalHeight = totalLogicalHeight * dims.staffScale;
 
@@ -715,12 +715,12 @@ export async function renderScoreToSvg(score: NormalizedScore, inputOptions: Vex
 
   drawHeaderWithVexFlow(context, score, systemWidth, {
     ...options,
-    titleStaffGap: dims.titleStaffGap,
+    headerStaffSpacing: dims.headerStaffSpacing,
     headerHeight: dims.headerHeight,
     pagePadding: { ...options.pagePadding, top: dims.pagePaddingTop, left: dims.pagePaddingLeft, right: dims.pagePaddingRight }
   }, dims.pagePaddingTop + dims.headerHeight);
 
-  const yStart = dims.pagePaddingTop + dims.headerHeight + dims.titleStaffGap;
+  const yStart = dims.pagePaddingTop + dims.headerHeight + dims.headerStaffSpacing;
   renderSystemsBatch(context, score, allSystems, 0, systemWidth, yStart, dims, options);
 
   return finalizeSvg(container);
@@ -764,11 +764,11 @@ export async function renderScorePagesToSvgs(score: NormalizedScore, inputOption
     if (isFirstPage) {
       drawHeaderWithVexFlow(context, score, pageWidth, {
         ...options,
-        titleStaffGap: dims.titleStaffGap,
+        headerStaffSpacing: dims.headerStaffSpacing,
         headerHeight: dims.headerHeight,
         pagePadding: { ...options.pagePadding, top: dims.pagePaddingTop, left: dims.pagePaddingLeft, right: dims.pagePaddingRight }
       }, dims.pagePaddingTop + dims.headerHeight);
-      yOffset = dims.pagePaddingTop + dims.headerHeight + dims.titleStaffGap;
+      yOffset = dims.pagePaddingTop + dims.headerHeight + dims.headerStaffSpacing;
     } else {
       yOffset = dims.pagePaddingTop;
     }
@@ -785,7 +785,7 @@ export async function renderScorePagesToSvgs(score: NormalizedScore, inputOption
       systemIdx++;
     }
 
-    renderSystemsBatch(context, score, currentBatch, startBatchIdx, pageWidth, isFirstPage ? (dims.pagePaddingTop + dims.headerHeight + dims.titleStaffGap) : dims.pagePaddingTop, dims, options);
+    renderSystemsBatch(context, score, currentBatch, startBatchIdx, pageWidth, isFirstPage ? (dims.pagePaddingTop + dims.headerHeight + dims.headerStaffSpacing) : dims.pagePaddingTop, dims, options);
     svgs.push(finalizeSvg(container));
   }
   return svgs;
@@ -830,8 +830,8 @@ function renderSystem(context: any, score: NormalizedScore, measures: RenderMeas
           justification: TextJustification.LEFT,
         });
         measureNumber.setFont("Academico", options.measureNumberFontSize, "italic");
-        measureNumber.setXShift(options.measureNumberShiftX);
-        measureNumber.setYShift(options.measureNumberShiftY);
+        measureNumber.setXShift(options.measureNumberOffsetX);
+        measureNumber.setYShift(options.measureNumberOffsetY);
         stave.addModifier(measureNumber);
       }
 
@@ -845,8 +845,8 @@ function renderSystem(context: any, score: NormalizedScore, measures: RenderMeas
             x - 45,
             0
           );
-          tempoText.setXShift(options.tempoShiftX);
-          tempoText.setYShift(options.tempoShiftY);
+          tempoText.setXShift(options.tempoOffsetX);
+          tempoText.setYShift(options.tempoOffsetY);
           stave.addModifier(tempoText, Modifier.Position.ABOVE);
         }
       }
@@ -887,7 +887,7 @@ function renderSystem(context: any, score: NormalizedScore, measures: RenderMeas
   allTuplets.forEach((tuplet) => tuplet.setContext(context).draw());
   noteDrawables.forEach((drawable) => drawable.setContext(context).draw());
 
-  const systemLayout = buildSystemLayoutState(score, measures, staves, layoutNotesByMeasure, options.voltaGap);
+  const systemLayout = buildSystemLayoutState(score, measures, staves, layoutNotesByMeasure, options.voltaSpacing);
   staves.forEach((stave) => stave.setContext(context).draw());
   buildHairpinSpans(score, measures, layoutNotesByMeasure).forEach((span, index) => {
     const clipY = Math.min(span.startStave.getY(), span.endStave.getY());
@@ -926,7 +926,7 @@ function renderSystem(context: any, score: NormalizedScore, measures: RenderMeas
       .setPosition(Modifier.Position.BELOW)
       .setRenderOptions({
         height: 12,
-        yShift: options.hairpinShiftY ?? 0,
+        yShift: options.hairpinOffsetY ?? 0,
         leftShiftPx: span.leftShiftPx,
         rightShiftPx: span.rightShiftPx,
         leftShiftTicks: 0,
@@ -1049,7 +1049,7 @@ function buildSystemLayoutState(
   measures: RenderMeasure[],
   staves: any[],
   layoutNotesByMeasure: LayoutNote[][],
-  voltaGap: number,
+  voltaSpacing: number,
 ): SystemLayoutState {
   const fallbackTop = Math.min(...staves.map((stave) => stave.getYForTopText(1)));
   const skyline = new TopSkyline(staves[0]?.getX() ?? 0, (staves.at(-1)?.getX() ?? 0) + (staves.at(-1)?.getWidth() ?? 0), fallbackTop);
@@ -1062,7 +1062,7 @@ function buildSystemLayoutState(
   }
 
   const edgeNavs = buildEdgeNavs(measures, staves, skyline);
-  const voltaSpans = buildVoltaSpans(score, measures, staves, skyline, voltaGap);
+  const voltaSpans = buildVoltaSpans(score, measures, staves, skyline, voltaSpacing);
   return { skyline, edgeNavs, voltaSpans };
 }
 
@@ -1132,7 +1132,7 @@ function buildVoltaSpans(
   measures: RenderMeasure[],
   staves: any[],
   skyline: TopSkyline,
-  voltaGap: number,
+  voltaSpacing: number,
 ): PendingVoltaSpan[] {
   const spans: PendingVoltaSpan[] = [];
   let blockStart = 0;
@@ -1153,7 +1153,7 @@ function buildVoltaSpans(
     const spacing = staves[blockStart].getSpacingBetweenLines();
     const lineHeight = 1.5 * spacing;
     const occupiedTop = skyline.sample(blockX1, blockX2);
-    const sharedLineY = occupiedTop - voltaGap - (lineHeight + VOLTA_TEXT_SIZE + 2);
+    const sharedLineY = occupiedTop - voltaSpacing - (lineHeight + VOLTA_TEXT_SIZE + 2);
 
     let index = blockStart;
     while (index <= blockEnd) {

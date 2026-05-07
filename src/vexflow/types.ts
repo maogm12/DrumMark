@@ -11,16 +11,16 @@ export type VexflowRenderOptions = {
   pageHeight: number;
   staffScale: number;
   headerHeight: number;
-  titleStaffGap: number;
+  headerStaffSpacing: number;
   systemSpacing: number;
   stemLength: number;
-  voltaGap: number;
-  hairpinShiftY?: number;
+  voltaSpacing: number;
+  hairpinOffsetY?: number;
   hideVoice2Rests: boolean;
-  tempoShiftX: number;
-  tempoShiftY: number;
-  measureNumberShiftX: number;
-  measureNumberShiftY: number;
+  tempoOffsetX: number;
+  tempoOffsetY: number;
+  measureNumberOffsetX: number;
+  measureNumberOffsetY: number;
   measureNumberFontSize: number;
 };
 
@@ -30,16 +30,16 @@ export const DEFAULT_RENDER_OPTIONS: VexflowRenderOptions = {
   pageHeight: 792,
   staffScale: 0.75,
   headerHeight: 50,
-  titleStaffGap: 60,
+  headerStaffSpacing: 60,
   systemSpacing: 30,
   stemLength: 31,
-  voltaGap: -15,
-  hairpinShiftY: -15,
+  voltaSpacing: -15,
+  hairpinOffsetY: -15,
   hideVoice2Rests: false,
-  tempoShiftX: 0,
-  tempoShiftY: 0,
-  measureNumberShiftX: 0,
-  measureNumberShiftY: 8,
+  tempoOffsetX: 0,
+  tempoOffsetY: 0,
+  measureNumberOffsetX: 0,
+  measureNumberOffsetY: 8,
   measureNumberFontSize: 10,
 };
 

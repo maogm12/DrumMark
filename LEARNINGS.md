@@ -270,3 +270,12 @@ The regex parser (`parser.ts`) now has zero production references. All 345 tests
 
 - The repository CLI is most useful as a staged inspection pipeline: `input -> ast -> ir -> xml/svg`. `ast` should expose parser/lowering structure before normalization, while `ir` should remain the normalized score without the embedded AST payload.
 - Keeping CLI JSON formatting in a small helper is safer than open-coding `delete score.ast` in the command entrypoint; otherwise adding an `ast` mode later encourages drift between output modes.
+
+## 2026-05-06 Addendum: Settings Terminology
+
+- Settings labels are easier to keep coherent if they follow one semantic split: use `Spacing` for distance between two layout elements, `Offset X/Y` for nudging one rendered element, `Margins` for page insets, and `Height` / `Length` / `Scale` / `Font Size` for pure size controls.
+- The code should mirror the UI vocabulary. If the UI says `Volta Spacing` and `Tempo Offset Y`, the render-option field names should not stay as `voltaGap` or `tempoShiftY`, or the terminology drift returns the next time the panel is edited.
+
+## 2026-05-06 Addendum: User-Facing Settings Labels
+
+- Internal render vocabulary does not automatically make good UI copy. Terms like `offset`, `shift`, and even `spacing` are implementation-friendly, but end users understand visual intent more quickly through phrases like `Distance Between Systems`, `Tempo Marking Up/Down Position`, and `Volta Distance from Notes`.

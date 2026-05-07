@@ -1,4 +1,4 @@
-import { memo, useCallback, useEffect, useMemo, useRef, useState, type ReactNode, type UIEvent } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode, type UIEvent, type WheelEvent as ReactWheelEvent } from "react";
 import { EditorState, Compartment } from "@codemirror/state";
 import { EditorView, highlightActiveLine, highlightActiveLineGutter, lineNumbers, keymap } from "@codemirror/view";
 import { history, historyKeymap } from "@codemirror/commands";
@@ -144,6 +144,138 @@ function SaveIcon() {
       <polyline points="17 21 17 13 7 13 7 21" />
       <polyline points="7 3 7 8 15 8" />
     </svg>
+  );
+}
+
+function clampNumber(value: number, min: number, max: number) {
+  return Math.min(max, Math.max(min, value));
+}
+
+function stepPrecision(step: number) {
+  const stepText = step.toString();
+  const decimal = stepText.indexOf(".");
+  return decimal >= 0 ? stepText.length - decimal - 1 : 0;
+}
+
+function normalizeSteppedValue(value: number, min: number, max: number, step: number) {
+  const precision = stepPrecision(step);
+  const clamped = clampNumber(value, min, max);
+  return Number(clamped.toFixed(precision));
+}
+
+function NumericSettingControl({
+  label,
+  value,
+  min,
+  max,
+  step,
+  onChange,
+}: {
+  label: string;
+  value: number;
+  min: number;
+  max: number;
+  step: number;
+  onChange: (value: number) => void;
+}) {
+  const inputMode = stepPrecision(step) > 0 ? "decimal" : "numeric";
+  const rangeRef = useRef<HTMLInputElement | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+
+  const applyValue = (next: number) => {
+    onChange(normalizeSteppedValue(next, min, max, step));
+  };
+
+  const handleRangePointerDown = (event: ReactPointerEvent<HTMLInputElement>) => {
+    const input = rangeRef.current;
+    if (!input) return;
+
+    event.preventDefault();
+    const startX = event.clientX;
+    const startValue = value;
+    input.setPointerCapture(event.pointerId);
+
+    const handlePointerMove = (moveEvent: PointerEvent) => {
+      const rect = input.getBoundingClientRect();
+      if (rect.width <= 0) return;
+
+      const deltaRatio = (moveEvent.clientX - startX) / rect.width;
+      const rawValue = startValue + deltaRatio * (max - min);
+      const steppedValue = min + Math.round((rawValue - min) / step) * step;
+      applyValue(steppedValue);
+    };
+
+    const handlePointerUp = () => {
+      setIsDragging(false);
+      input.removeEventListener("pointermove", handlePointerMove);
+      input.removeEventListener("pointerup", handlePointerUp);
+      input.removeEventListener("pointercancel", handlePointerUp);
+    };
+
+    setIsDragging(true);
+    input.addEventListener("pointermove", handlePointerMove);
+    input.addEventListener("pointerup", handlePointerUp);
+    input.addEventListener("pointercancel", handlePointerUp);
+  };
+
+  const handleRangeWheel = (event: ReactWheelEvent<HTMLInputElement>) => {
+    event.preventDefault();
+    const direction = event.deltaY < 0 ? 1 : -1;
+    applyValue(value + direction * step);
+  };
+
+  return (
+    <div className="setting-row numeric-setting-row">
+      <div className="setting-label">
+        <span>{label}</span>
+      </div>
+      <input
+        ref={rangeRef}
+        className={isDragging ? "setting-range is-dragging" : "setting-range"}
+        type="range"
+        min={min}
+        max={max}
+        step={step}
+        value={value}
+        onChange={(e) => applyValue(parseFloat(e.target.value))}
+        onPointerDown={handleRangePointerDown}
+        onWheel={handleRangeWheel}
+      />
+      <div className="setting-stepper">
+        <button
+          className="setting-stepper-button"
+          type="button"
+          aria-label={`Decrease ${label}`}
+          onClick={() => applyValue(value - step)}
+        >
+          -
+        </button>
+        <input
+          className="setting-stepper-input"
+          type="number"
+          inputMode={inputMode}
+          min={min}
+          max={max}
+          step={step}
+          value={value}
+          onFocus={(e) => e.target.select()}
+          onChange={(e) => {
+            const next = parseFloat(e.target.value);
+            if (!Number.isNaN(next)) {
+              applyValue(next);
+            }
+          }}
+        />
+        <button
+          className="setting-stepper-button"
+          type="button"
+          aria-label={`Increase ${label}`}
+          onClick={() => applyValue(value + step)}
+        >
+          +
+        </button>
+      </div>
+    </div>
   );
 }
 
@@ -298,16 +430,16 @@ const PagePreview = memo(function PagePreview({
   pagePadding,
   staffScale,
   headerHeight,
-  titleStaffGap,
+  headerStaffSpacing,
   systemSpacing,
   stemLength,
-  voltaGap,
-  hairpinShiftY,
+  voltaSpacing,
+  hairpinOffsetY,
   hideVoice2Rests,
-  tempoShiftX,
-  tempoShiftY,
-  measureNumberShiftX,
-  measureNumberShiftY,
+  tempoOffsetX,
+  tempoOffsetY,
+  measureNumberOffsetX,
+  measureNumberOffsetY,
   measureNumberFontSize,
   active,
 }: {
@@ -315,16 +447,16 @@ const PagePreview = memo(function PagePreview({
   pagePadding: PagePadding;
   staffScale: number;
   headerHeight: number;
-  titleStaffGap: number;
+  headerStaffSpacing: number;
   systemSpacing: number;
   stemLength: number;
-  voltaGap: number;
-  hairpinShiftY: number;
+  voltaSpacing: number;
+  hairpinOffsetY: number;
   hideVoice2Rests: boolean;
-  tempoShiftX: number;
-  tempoShiftY: number;
-  measureNumberShiftX: number;
-  measureNumberShiftY: number;
+  tempoOffsetX: number;
+  tempoOffsetY: number;
+  measureNumberOffsetX: number;
+  measureNumberOffsetY: number;
   measureNumberFontSize: number;
   active: boolean;
 }) {
@@ -354,16 +486,16 @@ const PagePreview = memo(function PagePreview({
       pageWidth: pdfPageWidth,
       pageHeight: pdfPageHeight,
       headerHeight,
-      titleStaffGap,
+      headerStaffSpacing,
       systemSpacing,
       stemLength,
-      voltaGap,
-      hairpinShiftY,
+      voltaSpacing,
+      hairpinOffsetY,
       hideVoice2Rests,
-      tempoShiftX,
-      tempoShiftY,
-      measureNumberShiftX,
-      measureNumberShiftY,
+      tempoOffsetX,
+      tempoOffsetY,
+      measureNumberOffsetX,
+      measureNumberOffsetY,
       measureNumberFontSize,
     };
 
@@ -386,7 +518,7 @@ const PagePreview = memo(function PagePreview({
         console.error("VexFlow render error:", renderError);
         setError(msg || "Could not render staff preview.");
       });
-  }, [score, systemSpacing, stemLength, voltaGap, hairpinShiftY, titleStaffGap, headerHeight, active, hideVoice2Rests, pagePadding, staffScale, tempoShiftX, tempoShiftY, measureNumberShiftX, measureNumberShiftY, measureNumberFontSize]);
+  }, [score, systemSpacing, stemLength, voltaSpacing, hairpinOffsetY, headerStaffSpacing, headerHeight, active, hideVoice2Rests, pagePadding, staffScale, tempoOffsetX, tempoOffsetY, measureNumberOffsetX, measureNumberOffsetY, measureNumberFontSize]);
 
   if (!score) {
     return (
@@ -528,17 +660,17 @@ interface AppSettings {
   pagePadding: PagePadding;
   pageScale: number;
   staffScale: number;
-  titleStaffGap: number;
+  headerStaffSpacing: number;
   systemSpacing: number;
   stemLength: number;
-  voltaGap: number;
-  hairpinShiftY: number;
+  voltaSpacing: number;
+  hairpinOffsetY: number;
   headerHeight: number;
   activeTab: MainTab;
-  tempoShiftX: number;
-  tempoShiftY: number;
-  measureNumberShiftX: number;
-  measureNumberShiftY: number;
+  tempoOffsetX: number;
+  tempoOffsetY: number;
+  measureNumberOffsetX: number;
+  measureNumberOffsetY: number;
   measureNumberFontSize: number;
 }
 
@@ -547,17 +679,17 @@ const defaultSettings: AppSettings = {
   pagePadding: { top: 30, right: 50, bottom: 30, left: 50 },
   pageScale: 0.8,
   staffScale: 0.75,
-  titleStaffGap: 60,
+  headerStaffSpacing: 60,
   headerHeight: 50,
   systemSpacing: 30,
   stemLength: 31,
-  voltaGap: -15,
-  hairpinShiftY: -15,
+  voltaSpacing: -15,
+  hairpinOffsetY: -15,
   activeTab: "page",
-  tempoShiftX: 0,
-  tempoShiftY: 0,
-  measureNumberShiftX: 0,
-  measureNumberShiftY: 8,
+  tempoOffsetX: 0,
+  tempoOffsetY: 0,
+  measureNumberOffsetX: 0,
+  measureNumberOffsetY: 8,
   measureNumberFontSize: 10,
 };
 
@@ -574,24 +706,20 @@ export function App() {
     if (!saved) return defaultSettings;
     try {
       const parsed = JSON.parse(saved);
-      // Migration: Ensure pageScale is 1.0 if not defined or coming from old system
       if (parsed.pageScale === undefined || parsed.pageScale < 0.2 || parsed.pageScale > 5) {
         parsed.pageScale = 1.0;
       }
       if (parsed.stemLength === undefined || parsed.stemLength < 20 || parsed.stemLength > 40) {
         parsed.stemLength = 31;
       }
-      if (parsed.voltaGap === undefined || parsed.voltaGap < -16 || parsed.voltaGap > 16) {
-        parsed.voltaGap = -15;
+      if (parsed.voltaSpacing === undefined || parsed.voltaSpacing < -16 || parsed.voltaSpacing > 16) {
+        parsed.voltaSpacing = -15;
       }
-      if (parsed.hairpinShiftY === undefined || parsed.hairpinShiftY < -40 || parsed.hairpinShiftY > 40) {
-        parsed.hairpinShiftY = -15;
+      if (parsed.hairpinOffsetY === undefined || parsed.hairpinOffsetY < -40 || parsed.hairpinOffsetY > 40) {
+        parsed.hairpinOffsetY = -15;
       }
       if (parsed.headerHeight === undefined) {
         parsed.headerHeight = 50;
-      }
-      if (parsed.previewMode && !parsed.activeTab) {
-        parsed.activeTab = parsed.previewMode === "xml" ? "xml" : "page";
       }
       return { ...defaultSettings, ...parsed };
     } catch {
@@ -1086,16 +1214,16 @@ export function App() {
                       pagePadding={settings.pagePadding}
                       staffScale={settings.staffScale}
                       headerHeight={settings.headerHeight}
-                      titleStaffGap={settings.titleStaffGap}
+                      headerStaffSpacing={settings.headerStaffSpacing}
                       systemSpacing={settings.systemSpacing}
                       stemLength={settings.stemLength}
-                      voltaGap={settings.voltaGap}
-                      hairpinShiftY={settings.hairpinShiftY}
+                      voltaSpacing={settings.voltaSpacing}
+                      hairpinOffsetY={settings.hairpinOffsetY}
                       hideVoice2Rests={settings.hideVoice2Rests}
-                      tempoShiftX={settings.tempoShiftX}
-                      tempoShiftY={settings.tempoShiftY}
-                      measureNumberShiftX={settings.measureNumberShiftX}
-                      measureNumberShiftY={settings.measureNumberShiftY}
+                      tempoOffsetX={settings.tempoOffsetX}
+                      tempoOffsetY={settings.tempoOffsetY}
+                      measureNumberOffsetX={settings.measureNumberOffsetX}
+                      measureNumberOffsetY={settings.measureNumberOffsetY}
                       measureNumberFontSize={settings.measureNumberFontSize}
                       active={true}
                     />
@@ -1127,13 +1255,13 @@ export function App() {
                   )
                 ) : null}
               </div>
-            </div>
+              </div>
 
             <aside className={`settings-panel${settingsVisible ? " active" : ""}`}>
               <div className="settings-section">
-                <h3 className="settings-section-title">Score View</h3>
+                <h3 className="settings-section-title">Notation</h3>
                 <label className="setting-row toggle">
-                  <span>Hide Voice 2 Rests</span>
+                  <span>Hide lower-voice rests</span>
                   <div className="toggle-switch">
                     <input type="checkbox" checked={settings.hideVoice2Rests} onChange={(e) => updateSetting("hideVoice2Rests", e.target.checked)} />
                     <span className="toggle-slider"></span>
@@ -1142,87 +1270,153 @@ export function App() {
               </div>
                   <div className="settings-section">
                     <h3 className="settings-section-title">Page Layout</h3>
-                    <div className="setting-row">
-                      <div className="setting-label"><span>Staff Scale</span><span className="setting-value">{(settings.staffScale * 100).toFixed(0)}%</span></div>
-                      <input type="range" min="0.3" max="1.5" step="0.05" value={settings.staffScale} onChange={(e) => updateSetting("staffScale", parseFloat(e.target.value))} />
-                    </div>
-                  <div className="setting-row">
-                    <div className="setting-label"><span>System Spacing (pt)</span><span className="setting-value">{settings.systemSpacing.toFixed(0)}</span></div>
-                    <input type="range" min="0" max="100" step="1" value={settings.systemSpacing} onChange={(e) => updateSetting("systemSpacing", parseFloat(e.target.value))} />
-                  </div>
-                  <div className="setting-row">
-                    <div className="setting-label"><span>Stem Length (pt)</span><span className="setting-value">{settings.stemLength}</span></div>
-                    <input type="range" min="15" max="50" step="1" value={settings.stemLength} onChange={(e) => updateSetting("stemLength", parseInt(e.target.value, 10))} />
-                  </div>
-                  <div className="setting-row">
-                    <div className="setting-label"><span>Volta Gap (pt)</span><span className="setting-value">{settings.voltaGap}</span></div>
-                    <input type="range" min="-20" max="20" step="1" value={settings.voltaGap} onChange={(e) => updateSetting("voltaGap", parseInt(e.target.value, 10))} />
-                  </div>
-                  <div className="setting-row">
-                    <div className="setting-label"><span>Hairpin Shift Y (pt)</span><span className="setting-value">{settings.hairpinShiftY}</span></div>
-                    <input type="range" min="-40" max="40" step="1" value={settings.hairpinShiftY} onChange={(e) => updateSetting("hairpinShiftY", parseInt(e.target.value, 10))} />
-                  </div>
+                    <NumericSettingControl
+                      label="Staff Size"
+                      value={settings.staffScale}
+                      min={0.3}
+                      max={1.5}
+                      step={0.05}
+                      onChange={(value) => updateSetting("staffScale", value)}
+                    />
+                  <NumericSettingControl
+                    label="Distance Between Systems"
+                    value={settings.systemSpacing}
+                    min={0}
+                    max={100}
+                    step={1}
+                    onChange={(value) => updateSetting("systemSpacing", value)}
+                  />
+                  <NumericSettingControl
+                    label="Note Stem Length"
+                    value={settings.stemLength}
+                    min={15}
+                    max={50}
+                    step={1}
+                    onChange={(value) => updateSetting("stemLength", value)}
+                  />
+                  <NumericSettingControl
+                    label="Volta Distance from Notes"
+                    value={settings.voltaSpacing}
+                    min={-20}
+                    max={20}
+                    step={1}
+                    onChange={(value) => updateSetting("voltaSpacing", value)}
+                  />
+                  <NumericSettingControl
+                    label="Hairpin Vertical Position"
+                    value={settings.hairpinOffsetY}
+                    min={-40}
+                    max={40}
+                    step={1}
+                    onChange={(value) => updateSetting("hairpinOffsetY", value)}
+                  />
                   <div className="padding-grid-container">
-                    <span className="setting-label-small">Margins (pt)</span>
+                    <span className="setting-label-small">Page Margins</span>
                     <div className="padding-grid">
-                      {([["Top", "top", 800], ["Right", "right", 400], ["Bottom", "bottom", 800], ["Left", "left", 400]] as const).map(([label, key, limit]) => (
-                        <div className="padding-input" key={key}>
-                          <span>{label}</span>
-                          <input
-                            type="number"
-                            inputMode="numeric"
-                            min="0"
-                            max={limit}
-                            value={settings.pagePadding[key]}
-                            onFocus={(e) => e.target.select()}
-                            onChange={(e) => {
-                              const val = parseInt(e.target.value, 10);
-                              updatePagePadding(key, isNaN(val) ? 0 : Math.max(0, Math.min(val, limit)));
-                            }}
-                          />
-                        </div>
-                      ))}                    </div>
+                      <NumericSettingControl
+                        label="Top Margin"
+                        value={settings.pagePadding.top}
+                        min={0}
+                        max={800}
+                        step={1}
+                        onChange={(value) => updatePagePadding("top", value)}
+                      />
+                      <div className="padding-grid-middle">
+                        <NumericSettingControl
+                          label="Left Margin"
+                          value={settings.pagePadding.left}
+                          min={0}
+                          max={400}
+                          step={1}
+                          onChange={(value) => updatePagePadding("left", value)}
+                        />
+                        <NumericSettingControl
+                          label="Right Margin"
+                          value={settings.pagePadding.right}
+                          min={0}
+                          max={400}
+                          step={1}
+                          onChange={(value) => updatePagePadding("right", value)}
+                        />
+                      </div>
+                      <NumericSettingControl
+                        label="Bottom Margin"
+                        value={settings.pagePadding.bottom}
+                        min={0}
+                        max={800}
+                        step={1}
+                        onChange={(value) => updatePagePadding("bottom", value)}
+                      />
+                    </div>
                   </div>
                 </div>
                 <div className="settings-section">
-                  <h3 className="settings-section-title">Header Spacing</h3>
-                  <div className="setting-row">
-                    <div className="setting-label"><span>Header Height (pt)</span><span className="setting-value">{settings.headerHeight.toFixed(0)}</span></div>
-                    <input type="range" min="10" max="300" step="1" value={settings.headerHeight} onChange={(e) => updateSetting("headerHeight", parseFloat(e.target.value))} />
-                  </div>
-                  <div className="setting-row">
-                    <div className="setting-label"><span>Header to Staff (pt)</span><span className="setting-value">{settings.titleStaffGap.toFixed(0)}</span></div>
-                    <input type="range" min="0" max="100" step="1" value={settings.titleStaffGap} onChange={(e) => updateSetting("titleStaffGap", parseFloat(e.target.value))} />
-                  </div>
+                  <h3 className="settings-section-title">Title Area</h3>
+                  <NumericSettingControl
+                    label="Title Area Height"
+                    value={settings.headerHeight}
+                    min={10}
+                    max={300}
+                    step={1}
+                    onChange={(value) => updateSetting("headerHeight", value)}
+                  />
+                  <NumericSettingControl
+                    label="Distance from Title Area to Staff"
+                    value={settings.headerStaffSpacing}
+                    min={0}
+                    max={100}
+                    step={1}
+                    onChange={(value) => updateSetting("headerStaffSpacing", value)}
+                  />
                 </div>
                 {debugMode && (
                   <div className="settings-section debug">
-                    <h3 className="settings-section-title">Debug: Tempo</h3>
-                    <div className="setting-row">
-                      <div className="setting-label"><span>Tempo Shift X (pt)</span><span className="setting-value">{settings.tempoShiftX}</span></div>
-                      <input type="range" min="-100" max="100" step="1" value={settings.tempoShiftX} onChange={(e) => updateSetting("tempoShiftX", parseFloat(e.target.value))} />
-                    </div>
-                    <div className="setting-row">
-                      <div className="setting-label"><span>Tempo Shift Y (pt)</span><span className="setting-value">{settings.tempoShiftY}</span></div>
-                      <input type="range" min="-100" max="100" step="1" value={settings.tempoShiftY} onChange={(e) => updateSetting("tempoShiftY", parseFloat(e.target.value))} />
-                    </div>
+                    <h3 className="settings-section-title">Debug: Tempo Marking</h3>
+                    <NumericSettingControl
+                      label="Tempo Marking Left/Right Position"
+                      value={settings.tempoOffsetX}
+                      min={-100}
+                      max={100}
+                      step={1}
+                      onChange={(value) => updateSetting("tempoOffsetX", value)}
+                    />
+                    <NumericSettingControl
+                      label="Tempo Marking Up/Down Position"
+                      value={settings.tempoOffsetY}
+                      min={-100}
+                      max={100}
+                      step={1}
+                      onChange={(value) => updateSetting("tempoOffsetY", value)}
+                    />
                   </div>
                 )}
                 {debugMode && (
                   <div className="settings-section debug">
                     <h3 className="settings-section-title">Debug: Measure Numbers</h3>
-                    <div className="setting-row">
-                      <div className="setting-label"><span>Number Shift X (pt)</span><span className="setting-value">{settings.measureNumberShiftX}</span></div>
-                      <input type="range" min="-100" max="100" step="1" value={settings.measureNumberShiftX} onChange={(e) => updateSetting("measureNumberShiftX", parseFloat(e.target.value))} />
-                    </div>
-                    <div className="setting-row">
-                      <div className="setting-label"><span>Number Shift Y (pt)</span><span className="setting-value">{settings.measureNumberShiftY}</span></div>
-                      <input type="range" min="-100" max="100" step="1" value={settings.measureNumberShiftY} onChange={(e) => updateSetting("measureNumberShiftY", parseFloat(e.target.value))} />
-                    </div>
-                    <div className="setting-row">
-                      <div className="setting-label"><span>Font Size (pt)</span><span className="setting-value">{settings.measureNumberFontSize}</span></div>
-                      <input type="range" min="4" max="24" step="1" value={settings.measureNumberFontSize} onChange={(e) => updateSetting("measureNumberFontSize", parseFloat(e.target.value))} />
-                    </div>
+                    <NumericSettingControl
+                      label="Measure Number Left/Right Position"
+                      value={settings.measureNumberOffsetX}
+                      min={-100}
+                      max={100}
+                      step={1}
+                      onChange={(value) => updateSetting("measureNumberOffsetX", value)}
+                    />
+                    <NumericSettingControl
+                      label="Measure Number Up/Down Position"
+                      value={settings.measureNumberOffsetY}
+                      min={-100}
+                      max={100}
+                      step={1}
+                      onChange={(value) => updateSetting("measureNumberOffsetY", value)}
+                    />
+                    <NumericSettingControl
+                      label="Measure Number Size"
+                      value={settings.measureNumberFontSize}
+                      min={4}
+                      max={24}
+                      step={1}
+                      onChange={(value) => updateSetting("measureNumberFontSize", value)}
+                    />
                   </div>
                 )}
               </aside>

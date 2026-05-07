@@ -279,3 +279,7 @@ The regex parser (`parser.ts`) now has zero production references. All 345 tests
 ## 2026-05-06 Addendum: User-Facing Settings Labels
 
 - Internal render vocabulary does not automatically make good UI copy. Terms like `offset`, `shift`, and even `spacing` are implementation-friendly, but end users understand visual intent more quickly through phrases like `Distance Between Systems`, `Tempo Marking Up/Down Position`, and `Volta Distance from Notes`.
+
+## 2026-05-06 Addendum: Whole-Measure Voice Rests in VexFlow
+
+- `buildVoiceEntries()` intentionally splits rests at grouping boundaries, but the VexFlow renderer can still collapse an all-rest voice back into a single whole-rest glyph at the final note-building stage. That keeps normal intra-measure rest grouping intact while avoiding visually fragmented full-bar rests in voice 1 or voice 2.

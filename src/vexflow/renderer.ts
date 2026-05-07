@@ -1278,6 +1278,18 @@ function createVexNotes(
   stemLength: number,
   hideRests = false,
 ): { notes: any[]; layoutNotes: LayoutNote[] } {
+  if (entries.length > 0 && entries.every((entry) => entry.kind === "rest")) {
+    const note = new StaveNote({
+      keys: [voiceId === 1 ? "B/4" : "F/4"],
+      duration: "wr",
+    });
+    if (hideRests && voiceId === 2) note.setStyle({ fillStyle: "transparent", strokeStyle: "transparent" });
+
+    const relativeStart = subtractFractions(entries[0]!.start, measureStart);
+    navAnchors.set(`${relativeStart.numerator}/${relativeStart.denominator}`, { note, layoutNote: { note, aboveRefs: [], start: relativeStart } });
+    return { notes: [note], layoutNotes: [] };
+  }
+
   const notes: any[] = [];
   const layoutNotes: LayoutNote[] = [];
   let currentBeamNotes: any[] = [];

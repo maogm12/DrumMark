@@ -531,4 +531,46 @@ BD | p - - - p - - - |`);
     expect(bdNoteXs[0]).toBeCloseTo(hhNoteXs[0]!, 2);
     expect(bdNoteXs[1]).toBeCloseTo(hhNoteXs[4]!, 2);
   });
+
+  it("collapses an empty upper voice into a single whole-rest glyph", async () => {
+    const score = buildNormalizedScore(`time 4/4
+divisions 4
+grouping 2+2
+
+BD | b - - - |`);
+
+    const svg = await renderScoreToSvg(score, {
+      pagePadding: { top: 24, right: 18, bottom: 24, left: 18 },
+      titleTopPadding: 3.6,
+      titleSubtitleGap: 1.2,
+      headerStaffSpacing: 2.8,
+      systemSpacing: 1,
+      stemLength: 30,
+      hideVoice2Rests: false,
+    });
+
+    const staveNotes = svg.match(/class="vf-stavenote"/g) ?? [];
+    expect(staveNotes).toHaveLength(4);
+  });
+
+  it("collapses a shown empty lower voice into a single whole-rest glyph", async () => {
+    const score = buildNormalizedScore(`time 4/4
+divisions 4
+grouping 2+2
+
+HH | x x x x |`);
+
+    const svg = await renderScoreToSvg(score, {
+      pagePadding: { top: 24, right: 18, bottom: 24, left: 18 },
+      titleTopPadding: 3.6,
+      titleSubtitleGap: 1.2,
+      headerStaffSpacing: 2.8,
+      systemSpacing: 1,
+      stemLength: 30,
+      hideVoice2Rests: false,
+    });
+
+    const staveNotes = svg.match(/class="vf-stavenote"/g) ?? [];
+    expect(staveNotes).toHaveLength(5);
+  });
 });

@@ -656,4 +656,56 @@ grouping 1+1+1+1
     const secondGap = noteXs[2]! - noteXs[1]!;
     expect(firstGap).toBeLessThanOrEqual(secondGap * 1.1);
   });
+
+  it("allocates more system width to a dense measure than a sparse neighboring measure", async () => {
+    const score = buildNormalizedScore(`time 4/4
+divisions 8
+grouping 2+2
+
+HH | x - - - - - - - | x x x x x x x x |`);
+
+    const svg = await renderScoreToSvg(score, {
+      pagePadding: { top: 24, right: 18, bottom: 24, left: 18 },
+      titleTopPadding: 3.6,
+      titleSubtitleGap: 1.2,
+      headerStaffSpacing: 2.8,
+      systemSpacing: 1,
+      stemLength: 30,
+      hideVoice2Rests: false,
+      measureWidthCompression: 0.75,
+    });
+
+    const staveMatches = [...svg.matchAll(/<path fill="none" d="M([0-9.]+) [0-9.]+L([0-9.]+) [0-9.]+"[^>]*>/g)];
+    expect(staveMatches).toHaveLength(10);
+
+    const firstWidth = Number(staveMatches[0]?.[2]) - Number(staveMatches[0]?.[1]);
+    const secondWidth = Number(staveMatches[5]?.[2]) - Number(staveMatches[5]?.[1]);
+    expect(secondWidth).toBeGreaterThan(firstWidth);
+  });
+
+  it("keeps the two physical bars of a two-bar repeat at the same width", async () => {
+    const score = buildNormalizedScore(`time 4/4
+divisions 4
+
+HH | x - - - | x x - - | %% |
+BD | b - - - | b - b - | %% |`);
+
+    const svg = await renderScoreToSvg(score, {
+      pagePadding: { top: 24, right: 18, bottom: 24, left: 18 },
+      titleTopPadding: 3.6,
+      titleSubtitleGap: 1.2,
+      headerStaffSpacing: 2.8,
+      systemSpacing: 1,
+      stemLength: 30,
+      hideVoice2Rests: false,
+      measureWidthCompression: 0.75,
+    });
+
+    const staveMatches = [...svg.matchAll(/<path fill="none" d="M([0-9.]+) [0-9.]+L([0-9.]+) [0-9.]+"[^>]*>/g)];
+    expect(staveMatches).toHaveLength(20);
+
+    const thirdWidth = Number(staveMatches[10]?.[2]) - Number(staveMatches[10]?.[1]);
+    const fourthWidth = Number(staveMatches[15]?.[2]) - Number(staveMatches[15]?.[1]);
+    expect(thirdWidth).toBeCloseTo(fourthWidth, 3);
+  });
 });

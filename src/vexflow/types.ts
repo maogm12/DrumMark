@@ -23,6 +23,7 @@ export type VexflowRenderOptions = {
   measureNumberOffsetY: number;
   measureNumberFontSize: number;
   durationSpacingCompression: number;
+  measureWidthCompression: number;
 };
 
 export const DEFAULT_RENDER_OPTIONS: VexflowRenderOptions = {
@@ -43,6 +44,7 @@ export const DEFAULT_RENDER_OPTIONS: VexflowRenderOptions = {
   measureNumberOffsetY: 8,
   measureNumberFontSize: 10,
   durationSpacingCompression: 0.6,
+  measureWidthCompression: 0.75,
 };
 
 export type ScoreRenderResult = {

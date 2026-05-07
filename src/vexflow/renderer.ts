@@ -67,6 +67,8 @@ const VOLTA_TEXT_SIZE = 12;
 const DURATION_SPACING_GROUP_BONUS = 0.12;
 const DURATION_SPACING_MIN_CLAMP = 0.7;
 const DURATION_SPACING_MAX_CLAMP = 1.8;
+const MEASURE_WIDTH_MIN_CLAMP = 0.72;
+const MEASURE_WIDTH_MAX_CLAMP = 1.6;
 
 type RenderMeasure = {
   measure: NormalizedScore["measures"][number];
@@ -76,6 +78,11 @@ type RenderMeasure = {
 type MeasureSpacingPlan = {
   orderedStartKeys: string[];
   normalizedOffsets: number[];
+};
+
+type MeasureWidthPlan = {
+  widths: number[];
+  xOffsets: number[];
 };
 
 type NavSegment = {
@@ -967,9 +974,142 @@ function applyDurationWeightedSpacing(
   });
 }
 
+function buildMeasureEntries(
+  score: NormalizedScore,
+  renderMeasure: RenderMeasure,
+): VoiceEntry[][] {
+  const measureDuration = {
+    numerator: score.header.timeSignature.beats,
+    denominator: score.header.timeSignature.beatUnit,
+  };
+  const measureStart = multiplyFraction(measureDuration, renderMeasure.measure.globalIndex);
+  const upEvents = renderMeasure.measure.events.filter((event: any) => voiceForTrack(event.track) === 1 && event.track !== "ST");
+  const downEvents = renderMeasure.measure.events.filter((event: any) => voiceForTrack(event.track) === 2 && event.track !== "ST");
+
+  const upEntries = buildVoiceEntries(groupVoiceEvents(upEvents), measureStart, measureDuration, score.header.grouping, score.header.timeSignature);
+  const downEntries = buildVoiceEntries(groupVoiceEvents(downEvents), measureStart, measureDuration, score.header.grouping, score.header.timeSignature);
+  return [upEntries, downEntries];
+}
+
+function buildMeasureContentWeight(
+  score: NormalizedScore,
+  renderMeasure: RenderMeasure,
+  compression: number,
+): number {
+  if (renderMeasure.measure.multiRest) return 1;
+  if (renderMeasure.kind === "measure-repeat-1" || renderMeasure.kind === "measure-repeat-2-start" || renderMeasure.kind === "measure-repeat-2-stop") {
+    return 1;
+  }
+
+  const measureDuration = {
+    numerator: score.header.timeSignature.beats,
+    denominator: score.header.timeSignature.beatUnit,
+  };
+  const measureStart = multiplyFraction(measureDuration, renderMeasure.measure.globalIndex);
+  const entriesByVoice = buildMeasureEntries(score, renderMeasure);
+  const upEntries = entriesByVoice[0] ?? [];
+  const downEntries = entriesByVoice[1] ?? [];
+  const visibleVoices = [upEntries, downEntries].filter((entries): entries is VoiceEntry[] => entries.some((entry) => entry.kind === "notes"));
+  const contributingEntries: VoiceEntry[] = visibleVoices.length > 0 ? visibleVoices.flat() : [];
+  if (contributingEntries.length === 0) return 1;
+
+  const segmentKeys = new Set(
+    contributingEntries.map((entry) => fractionKey(subtractFractions(entry.start, measureStart))),
+  );
+  const segmentCount = Math.max(1, segmentKeys.size);
+
+  const stickingCount = renderMeasure.measure.events.filter((event) => event.kind === "sticking").length;
+  const hasTuplet = renderMeasure.measure.events.some((event) => event.tuplet !== undefined);
+  const hasGrace = renderMeasure.measure.events.some((event) => modifierIsGrace(event));
+  const contentBonus = compression * Math.log2(segmentCount);
+  const modifierBonus =
+    (hasTuplet ? 0.15 : 0)
+    + (stickingCount >= 3 ? 0.1 : 0)
+    + (hasGrace ? 0.1 : 0);
+
+  return 1 + contentBonus + modifierBonus;
+}
+
+function normalizeMeasureWeightsToWidths(weights: number[], totalWidth: number): number[] {
+  if (weights.length === 0) return [];
+  const equalWidth = totalWidth / weights.length;
+  const minWidth = equalWidth * MEASURE_WIDTH_MIN_CLAMP;
+  const maxWidth = equalWidth * MEASURE_WIDTH_MAX_CLAMP;
+  const widths = new Array<number>(weights.length).fill(0);
+  const remaining = new Set(weights.map((_, index) => index));
+  let remainingWidth = totalWidth;
+  let remainingWeight = weights.reduce((sum, weight) => sum + weight, 0);
+
+  while (remaining.size > 0) {
+    let changed = false;
+
+    for (const index of [...remaining]) {
+      const proposed = remainingWidth * (weights[index]! / remainingWeight);
+      if (proposed < minWidth) {
+        widths[index] = minWidth;
+        remaining.delete(index);
+        remainingWidth -= minWidth;
+        remainingWeight -= weights[index]!;
+        changed = true;
+      } else if (proposed > maxWidth) {
+        widths[index] = maxWidth;
+        remaining.delete(index);
+        remainingWidth -= maxWidth;
+        remainingWeight -= weights[index]!;
+        changed = true;
+      }
+    }
+
+    if (!changed) {
+      for (const index of remaining) {
+        widths[index] = remainingWidth * (weights[index]! / remainingWeight);
+      }
+      break;
+    }
+
+    if (remainingWeight <= 0) {
+      const fallback = remaining.size > 0 ? remainingWidth / remaining.size : 0;
+      for (const index of remaining) {
+        widths[index] = fallback;
+      }
+      break;
+    }
+  }
+
+  return widths;
+}
+
+function buildMeasureWidthPlan(
+  score: NormalizedScore,
+  measures: RenderMeasure[],
+  totalWidth: number,
+  compression: number,
+): MeasureWidthPlan {
+  const weights = measures.map((measure) => buildMeasureContentWeight(score, measure, compression));
+
+  for (let i = 0; i < measures.length - 1; i++) {
+    if (measures[i]?.kind === "measure-repeat-2-start" && measures[i + 1]?.kind === "measure-repeat-2-stop") {
+      const sharedWeight = Math.max(weights[i] ?? 1, weights[i + 1] ?? 1);
+      weights[i] = sharedWeight;
+      weights[i + 1] = sharedWeight;
+      i += 1;
+    }
+  }
+
+  const widths = normalizeMeasureWeightsToWidths(weights, totalWidth);
+  const xOffsets: number[] = [];
+  let cursor = 0;
+  for (const measureWidth of widths) {
+    xOffsets.push(cursor);
+    cursor += measureWidth;
+  }
+
+  return { widths, xOffsets };
+}
+
 function renderSystem(context: any, score: NormalizedScore, measures: RenderMeasure[], sysOpts: SystemOptions) {
   const { x, y, width, isFirstSystem, options } = sysOpts;
-  const measureWidth = width / measures.length;
+  const widthPlan = buildMeasureWidthPlan(score, measures, width, options.measureWidthCompression);
 
   const staves: any[] = [];
   const allVoices: any[] = [];
@@ -984,7 +1124,9 @@ function renderSystem(context: any, score: NormalizedScore, measures: RenderMeas
     const renderMeasure = measures[i];
     if (!renderMeasure) continue;
     const measure = renderMeasure.measure;
-    const stave = new Stave(x + i * measureWidth, y, measureWidth);
+    const staveX = x + (widthPlan.xOffsets[i] ?? 0);
+    const staveWidth = widthPlan.widths[i] ?? (width / Math.max(1, measures.length));
+    const stave = new Stave(staveX, y, staveWidth);
     stave.setContext(context);
     stave.setDefaultLedgerLineStyle({ strokeStyle: "#333", lineWidth: 1 });
 
@@ -1033,7 +1175,11 @@ function renderSystem(context: any, score: NormalizedScore, measures: RenderMeas
     if (renderMeasure.kind === "measure-repeat-2-start") {
       const next = measures[i + 1];
       if (next?.kind === "measure-repeat-2-stop") {
-        const nextStave = new Stave(x + (i + 1) * measureWidth, y, measureWidth);
+        const nextStave = new Stave(
+          x + (widthPlan.xOffsets[i + 1] ?? 0),
+          y,
+          widthPlan.widths[i + 1] ?? staveWidth,
+        );
         repeatTwoBarOverlays.push({ start: stave, end: nextStave });
       }
     }

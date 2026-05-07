@@ -288,3 +288,8 @@ The regex parser (`parser.ts`) now has zero production references. All 345 tests
 
 - VexFlow's existing `Formatter` can be reused for collision-safe baseline layout, then nudged afterward by rewriting `TickContext.setX(...)`. The stable version is to preserve the first and last onset anchors from the formatter and only remap the intermediate contexts.
 - Attaching a small `__drummarkStartKey` marker to each `StaveNote` is enough to reconstruct per-context rhythmic starts after formatting. That avoids depending on VexFlow's internal tick serialization when applying custom spacing logic.
+
+## 2026-05-07 Addendum: Content-Weighted Measure Widths
+
+- System-level measure width allocation is safest when it happens before stave creation and only changes each stave's `x` and `width`; downstream geometry such as hairpins and volta spans can then continue to read from final stave/note positions without special casing.
+- Two-bar repeat placeholders need explicit pair handling even under content-weighted width allocation. Treating the `measure-repeat-2-start` / `measure-repeat-2-stop` pair as a shared width unit keeps the overlay centered and avoids visibly mismatched physical bars.

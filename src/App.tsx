@@ -442,6 +442,7 @@ const PagePreview = memo(function PagePreview({
   measureNumberOffsetY,
   measureNumberFontSize,
   durationSpacingCompression,
+  measureWidthCompression,
   active,
 }: {
   score: NormalizedScore | null;
@@ -460,6 +461,7 @@ const PagePreview = memo(function PagePreview({
   measureNumberOffsetY: number;
   measureNumberFontSize: number;
   durationSpacingCompression: number;
+  measureWidthCompression: number;
   active: boolean;
 }) {
   const shellRef = useRef<HTMLDivElement | null>(null);
@@ -500,6 +502,7 @@ const PagePreview = memo(function PagePreview({
       measureNumberOffsetY,
       measureNumberFontSize,
       durationSpacingCompression,
+      measureWidthCompression,
     };
 
     renderScorePagesToSvgs(score, opts)
@@ -521,7 +524,7 @@ const PagePreview = memo(function PagePreview({
         console.error("VexFlow render error:", renderError);
         setError(msg || "Could not render staff preview.");
       });
-  }, [score, systemSpacing, stemLength, voltaSpacing, hairpinOffsetY, headerStaffSpacing, headerHeight, active, hideVoice2Rests, pagePadding, staffScale, tempoOffsetX, tempoOffsetY, measureNumberOffsetX, measureNumberOffsetY, measureNumberFontSize, durationSpacingCompression]);
+  }, [score, systemSpacing, stemLength, voltaSpacing, hairpinOffsetY, headerStaffSpacing, headerHeight, active, hideVoice2Rests, pagePadding, staffScale, tempoOffsetX, tempoOffsetY, measureNumberOffsetX, measureNumberOffsetY, measureNumberFontSize, durationSpacingCompression, measureWidthCompression]);
 
   if (!score) {
     return (
@@ -676,6 +679,7 @@ interface AppSettings {
   measureNumberOffsetY: number;
   measureNumberFontSize: number;
   durationSpacingCompression: number;
+  measureWidthCompression: number;
 }
 
 const defaultSettings: AppSettings = {
@@ -696,6 +700,7 @@ const defaultSettings: AppSettings = {
   measureNumberOffsetY: 8,
   measureNumberFontSize: 10,
   durationSpacingCompression: 0.6,
+  measureWidthCompression: 0.75,
 };
 
 export function App() {
@@ -728,6 +733,9 @@ export function App() {
       }
       if (parsed.durationSpacingCompression === undefined || parsed.durationSpacingCompression < 0 || parsed.durationSpacingCompression > 1.5) {
         parsed.durationSpacingCompression = 0.6;
+      }
+      if (parsed.measureWidthCompression === undefined || parsed.measureWidthCompression < 0 || parsed.measureWidthCompression > 1.5) {
+        parsed.measureWidthCompression = 0.75;
       }
       return { ...defaultSettings, ...parsed };
     } catch {
@@ -1234,6 +1242,7 @@ export function App() {
                       measureNumberOffsetY={settings.measureNumberOffsetY}
                       measureNumberFontSize={settings.measureNumberFontSize}
                       durationSpacingCompression={settings.durationSpacingCompression}
+                      measureWidthCompression={settings.measureWidthCompression}
                       active={true}
                     />
                   ) : null}
@@ -1438,6 +1447,19 @@ export function App() {
                       max={1.5}
                       step={0.05}
                       onChange={(value) => updateSetting("durationSpacingCompression", value)}
+                    />
+                  </div>
+                )}
+                {debugMode && (
+                  <div className="settings-section debug">
+                    <h3 className="settings-section-title">Debug: Measure Widths</h3>
+                    <NumericSettingControl
+                      label="Measure Width Compression"
+                      value={settings.measureWidthCompression}
+                      min={0}
+                      max={1.5}
+                      step={0.05}
+                      onChange={(value) => updateSetting("measureWidthCompression", value)}
                     />
                   </div>
                 )}

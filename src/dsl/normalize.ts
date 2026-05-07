@@ -12,6 +12,7 @@ import {
 import {
   type EndNav,
   type Fraction,
+  type HairpinIntent,
   type NormalizedEvent,
   type NormalizedHeader,
   type NormalizedScore,
@@ -161,6 +162,16 @@ type ResolvedToken = {
   track: TrackName;
   glyph: Exclude<BasicGlyph, "-">;
   modifiers: Modifier[];
+};
+
+type HairpinState = {
+  activeType: HairpinIntent["type"] | null;
+  activeStart: Fraction | null;
+  startMeasureIndex: number | null;
+};
+
+type TrackHairpinResult = {
+  hairpins: HairpinIntent[];
 };
 
 function applyModifiersToToken(token: TokenGlyph, modifiers: Modifier[]): TokenGlyph {
@@ -350,6 +361,186 @@ function tokenToEvents(
   return [];
 }
 
+function hairpinSignature(hairpin: HairpinIntent): string {
+  return `${hairpin.type}:${hairpin.startMeasureIndex}:${hairpin.start.numerator}/${hairpin.start.denominator}->${hairpin.endMeasureIndex}:${hairpin.end.numerator}/${hairpin.end.denominator}`;
+}
+
+function fractionsKey(fraction: Fraction): string {
+  return `${fraction.numerator}/${fraction.denominator}`;
+}
+
+function pushHairpinFragment(
+  state: HairpinState,
+  hairpins: HairpinIntent[],
+  endMeasureIndex: number,
+  end: Fraction,
+): void {
+  if (!state.activeType || !state.activeStart || state.startMeasureIndex === null) return;
+  if (state.startMeasureIndex === endMeasureIndex && fractionsEqual(state.activeStart, end)) return;
+  hairpins.push({
+    type: state.activeType,
+    start: state.activeStart,
+    startMeasureIndex: state.startMeasureIndex,
+    end,
+    endMeasureIndex,
+  });
+}
+
+function collectHairpinsFromToken(
+  token: TokenGlyph,
+  measureIndex: number,
+  start: Fraction,
+  duration: Fraction,
+  state: HairpinState,
+  hairpins: HairpinIntent[],
+  errors: ScoreAst["errors"],
+  line: number,
+): void {
+  if (token.kind === "crescendo_start" || token.kind === "decrescendo_start") {
+    const nextType: HairpinIntent["type"] = token.kind === "crescendo_start" ? "crescendo" : "decrescendo";
+    if (state.activeType && state.activeStart && fractionsEqual(state.activeStart, start) && state.activeType !== nextType) {
+      errors.push({
+        line,
+        column: 1,
+        message: `Conflicting hairpin start types at the same position`,
+      });
+      state.activeType = nextType;
+      state.startMeasureIndex = measureIndex;
+      return;
+    }
+    pushHairpinFragment(state, hairpins, measureIndex, start);
+    state.activeType = nextType;
+    state.activeStart = start;
+    state.startMeasureIndex = measureIndex;
+    return;
+  }
+
+  if (token.kind === "hairpin_end") {
+    if (!state.activeType || !state.activeStart) {
+      errors.push({
+        line,
+        column: 1,
+        message: "`!` without preceding `<` or `>`",
+      });
+      return;
+    }
+    pushHairpinFragment(state, hairpins, measureIndex, start);
+    state.activeType = null;
+    state.activeStart = null;
+    state.startMeasureIndex = null;
+    return;
+  }
+
+  if (token.kind === "combined") {
+    for (const item of token.items) {
+      collectHairpinsFromToken(item, measureIndex, start, duration, state, hairpins, errors, line);
+    }
+    return;
+  }
+
+  if (token.kind === "braced") {
+    const totalWeight = calculateTokenWeightAsFraction(token);
+    let currentStart = start;
+    for (const item of token.items) {
+      const itemWeight = calculateTokenWeightAsFraction(item);
+      const itemDuration = fractionsEqual(totalWeight, { numerator: 0, denominator: 1 })
+        ? { numerator: 0, denominator: 1 }
+        : multiplyFractions(duration, divideFractions(itemWeight, totalWeight));
+      collectHairpinsFromToken(item, measureIndex, currentStart, itemDuration, state, hairpins, errors, line);
+      currentStart = addFractions(currentStart, itemDuration);
+    }
+    return;
+  }
+
+  if (token.kind === "group") {
+    const totalWeight = token.items.reduce(
+      (sum, item) => addFractions(sum, calculateTokenWeightAsFraction(item)),
+      { numerator: 0, denominator: 1 },
+    );
+    let currentStart = start;
+    for (const item of token.items) {
+      const itemWeight = calculateTokenWeightAsFraction(item);
+      const itemDuration = fractionsEqual(totalWeight, { numerator: 0, denominator: 1 })
+        ? { numerator: 0, denominator: 1 }
+        : multiplyFractions(duration, divideFractions(itemWeight, totalWeight));
+      collectHairpinsFromToken(item, measureIndex, currentStart, itemDuration, state, hairpins, errors, line);
+      currentStart = addFractions(currentStart, itemDuration);
+    }
+  }
+}
+
+function collectTrackHairpins(
+  measure: ScoreAst["paragraphs"][number]["tracks"][number]["measures"][number],
+  globalMeasureIndex: number,
+  noteValue: number,
+  timeSignature: ScoreAst["headers"]["time"],
+  state: HairpinState,
+  errors: ScoreAst["errors"],
+): TrackHairpinResult {
+  const divisions = (timeSignature.beats * noteValue) / timeSignature.beatUnit;
+  const slotDuration = simplify({
+    numerator: 1,
+    denominator: noteValue,
+  });
+  const hairpins: HairpinIntent[] = [];
+  let currentSlotOffset: Fraction = { numerator: 0, denominator: 1 };
+
+  for (const token of measure.tokens) {
+    const weight = calculateTokenWeightAsFraction(token);
+    const tokenStart = multiplyFractions(slotDuration, currentSlotOffset);
+    const tokenDuration = multiplyFractions(slotDuration, weight);
+    collectHairpinsFromToken(token, globalMeasureIndex, tokenStart, tokenDuration, state, hairpins, errors, measure.sourceLine || 0);
+    currentSlotOffset = addFractions(currentSlotOffset, weight);
+  }
+
+  const divisionsFrac: Fraction = { numerator: divisions, denominator: 1 };
+  if (!fractionsEqual(currentSlotOffset, divisionsFrac) && measure.measureRepeat === undefined && measure.multiRest === undefined) {
+    // Duration diagnostics are already emitted elsewhere; keep the state machine aligned with the nominal bar end.
+  }
+
+  return {
+    hairpins,
+  };
+}
+
+function mergeMeasureHairpins(
+  globalMeasureIndex: number,
+  sourceLine: number,
+  perTrack: HairpinIntent[],
+  errors: ScoreAst["errors"],
+): { hairpins?: HairpinIntent[] } {
+  const signatures = new Set<string>();
+  const merged: HairpinIntent[] = [];
+  for (const hairpin of perTrack) {
+    const signature = hairpinSignature(hairpin);
+    if (signatures.has(signature)) continue;
+    signatures.add(signature);
+    merged.push(hairpin);
+  }
+
+  const startsByPosition = new Map<string, Set<HairpinIntent["type"]>>();
+  for (const hairpin of merged) {
+    const key = fractionsKey(hairpin.start);
+    const types = startsByPosition.get(key) ?? new Set<HairpinIntent["type"]>();
+    types.add(hairpin.type);
+    startsByPosition.set(key, types);
+  }
+  for (const [key, types] of startsByPosition) {
+    if (types.size > 1) {
+      errors.push({
+        line: sourceLine,
+        column: 1,
+        message: `Conflicting hairpin start types at position ${key} in bar ${globalMeasureIndex + 1}`,
+      });
+    }
+  }
+
+  merged.sort((left, right) => compareFractions(left.start, right.start) || compareFractions(left.end, right.end));
+  return {
+    hairpins: merged.length > 0 ? merged : undefined,
+  };
+}
+
 function validateModifierLegality(
   token: TokenGlyph,
   contextTrack: TrackName | "ANONYMOUS",
@@ -397,6 +588,8 @@ export function normalizeScoreAst(ast: ScoreAst): NormalizedScore {
   const measures: NormalizedScore["measures"] = [];
   const voltaSeeds: (NormalizedScore["measures"][number]["volta"] | undefined)[] = [];
   const voltaTerminators: boolean[] = [];
+  const trackHairpinStates = new Map<string, HairpinState>();
+  const completedHairpinsByStartMeasure = new Map<number, HairpinIntent[]>();
   let globalMeasureIndex = 0;
 
   for (const [paragraphIndex, paragraph] of ast.paragraphs.entries()) {
@@ -407,12 +600,30 @@ export function normalizeScoreAst(ast: ScoreAst): NormalizedScore {
         .map((trackLine) => trackLine.measures[measureInParagraph])
         .filter((measure): measure is NonNullable<typeof measure> => measure !== undefined);
       const resolvedTrackNavs: Array<{ startNav?: StartNav; endNav?: EndNav; sourceLine: number }> = [];
-
       for (const trackLine of paragraph.tracks) {
         const measure = trackLine.measures[measureInParagraph];
         if (!measure) continue;
 
         sourceLine = measure.sourceLine || sourceLine;
+        const trackKey = "__global_hairpin_state__";
+        const priorState = trackHairpinStates.get(trackKey) ?? {
+          activeType: null,
+          activeStart: null,
+          startMeasureIndex: null,
+        };
+        const trackHairpins = collectTrackHairpins(
+          measure,
+          globalMeasureIndex,
+          paragraph.noteValue,
+          ast.headers.time,
+          priorState,
+          ast.errors,
+        );
+        trackHairpinStates.set(trackKey, priorState);
+        for (const hairpin of trackHairpins.hairpins) {
+          const existing = completedHairpinsByStartMeasure.get(hairpin.startMeasureIndex) ?? [];
+          completedHairpinsByStartMeasure.set(hairpin.startMeasureIndex, [...existing, hairpin]);
+        }
 
         const activeNoteValue = paragraph.noteValue;
         const divisions = (ast.headers.time.beats * activeNoteValue) / ast.headers.time.beatUnit;
@@ -615,6 +826,34 @@ export function normalizeScoreAst(ast: ScoreAst): NormalizedScore {
     const lastMeasure = measures[measures.length - 1];
     if (lastMeasure && (lastMeasure.barline === undefined || lastMeasure.barline === "regular")) {
       lastMeasure.barline = "final";
+    }
+  }
+
+  if (measures.length > 0) {
+    const finalMeasureDuration = {
+      numerator: ast.headers.time.beats,
+      denominator: ast.headers.time.beatUnit,
+    };
+    for (const state of trackHairpinStates.values()) {
+      if (!state.activeType || !state.activeStart || state.startMeasureIndex === null) continue;
+      const existing = completedHairpinsByStartMeasure.get(state.startMeasureIndex) ?? [];
+      pushHairpinFragment(state, existing, measures.length - 1, finalMeasureDuration);
+      completedHairpinsByStartMeasure.set(state.startMeasureIndex, existing);
+      state.activeType = null;
+      state.activeStart = null;
+      state.startMeasureIndex = null;
+    }
+  }
+
+  for (const [startMeasureIndex, hairpins] of completedHairpinsByStartMeasure) {
+    const merged = mergeMeasureHairpins(
+      startMeasureIndex,
+      measures[startMeasureIndex]?.sourceLine ?? 1,
+      hairpins,
+      ast.errors,
+    );
+    if (measures[startMeasureIndex]) {
+      measures[startMeasureIndex]!.hairpins = merged.hairpins;
     }
   }
 

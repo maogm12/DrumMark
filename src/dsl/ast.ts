@@ -219,6 +219,15 @@ function validateGroupToken(
     validateGroupToken(item, measureDurationNumerator, measureDurationDenominator, divisions, errors, line);
   }
 
+  if (token.count === 0) {
+    errors.push({
+      line,
+      column: 1,
+      message: "Group must contain at least one duration-consuming item",
+    });
+    return;
+  }
+
   // itemDuration = (measureDuration * span) / (divisions * count)
   const itemDuration = simplify({
     numerator: measureDurationNumerator * token.span,

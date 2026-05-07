@@ -106,7 +106,10 @@ export type TokenGlyph =
   | { kind: "basic"; value: BasicGlyph; dots: number; halves: number; stars: number; modifiers: Modifier[]; trackOverride?: string }
   | { kind: "group"; count: number; span: number; items: TokenGlyph[]; modifiers: Modifier[] }
   | { kind: "combined"; items: TokenGlyph[] }
-  | { kind: "braced"; track: string; items: TokenGlyph[] };
+  | { kind: "braced"; track: string; items: TokenGlyph[] }
+  | { kind: "crescendo_start" }
+  | { kind: "decrescendo_start" }
+  | { kind: "hairpin_end" };
 
 export type MeasureToken = TokenGlyph;
 
@@ -337,6 +340,14 @@ export type MultiRestIntent = {
   count: number;
 };
 
+export type HairpinIntent = {
+  type: "crescendo" | "decrescendo";
+  start: Fraction;
+  startMeasureIndex: number;
+  end: Fraction;
+  endMeasureIndex: number;
+};
+
 export type NormalizedEvent = {
   track: TrackName;
   paragraphIndex: number;
@@ -369,6 +380,7 @@ export type NormalizedMeasure = {
   measureRepeat?: MeasureRepeatIntent;
   multiRest?: MultiRestIntent;
   multiRestCount?: number;
+  hairpins?: HairpinIntent[];
   noteValue: number;
 };
 

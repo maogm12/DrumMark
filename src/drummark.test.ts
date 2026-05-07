@@ -132,4 +132,11 @@ describe("drumMarkStreamParser", () => {
       { text: "# click", style: "comment" },
     ]);
   });
+
+  it("highlights hairpin markers as distinct structural tokens", () => {
+    expect(tokenizeLine("HH | d < d ! |")).toEqual(expect.arrayContaining([
+      { text: "<", style: "hairpin-marker" },
+      { text: "!", style: "hairpin-marker" },
+    ]));
+  });
 });

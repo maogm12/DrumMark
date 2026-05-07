@@ -2210,3 +2210,44 @@ These legacy bare routed-block forms are removed and should produce a dedicated 
 ```txt
 Legacy routed block syntax `RC { ... }` has been removed; use `@RC { ... }` instead.
 ```
+
+## Addendum 2026-05-06-D: Crescendo / Decrescendo Hairpins
+
+Syntax:
+
+- `<` starts a crescendo hairpin.
+- `>` starts a decrescendo / diminuendo hairpin.
+- `!` ends the active hairpin at the current rhythmic position.
+
+Hairpin tokens are zero-duration measure expressions. They are legal in ordinary measure content, inline braced content, and rhythmic groups `[ ... ]` / `[N: ... ]`.
+
+Normalization:
+
+- Hairpins normalize to `NormalizedMeasure.hairpins?: HairpinIntent[]`.
+- `HairpinIntent` has shape `{ type: "crescendo" | "decrescendo"; start: Fraction; end: Fraction }`.
+- `start` and `end` use the same musical-time `Fraction` convention as `NormalizedEvent.start`.
+- If a hairpin is not explicitly closed with `!`, it closes at the end of the current measure and carries forward into the next measure as the same active type.
+- Carry-forward propagates across paragraph boundaries. Rendering may split at system boundaries, but semantic carry-forward is not reset by layout.
+- Hairpin tokens inside rhythmic groups participate in the same measure-level state machine as ordinary measure tokens. They consume no rhythmic weight and do not advance group-local position.
+
+Validation:
+
+- At most one hairpin start position may be declared globally per measure position.
+- Same-type declarations at the same position across tracks collapse to one logical hairpin declaration.
+- Different hairpin types at the same position across tracks are an error.
+- Hairpin declarations at different positions across tracks within the same logical fragment are an error.
+- A group is invalid if, after filtering out hairpin tokens, it contains no duration-consuming items.
+
+Rendering:
+
+- Hairpins are rendered through VexFlow primitives, specifically `StaveHairpin`.
+- Multi-measure hairpins may merge only within the same rendered system.
+- A system break splits rendering into multiple `StaveHairpin` segments while preserving semantic continuity.
+- Manual SVG / HTML / Canvas simulation of hairpin wedges is not part of the score-rendering model.
+
+MusicXML:
+
+- Hairpins export as `<direction><direction-type><wedge .../></direction-type></direction>`.
+- `<` maps to `type="crescendo"`, `>` maps to `type="diminuendo"`.
+- Explicit or implicit termination maps to `type="stop"`.
+- Multi-measure spans use `crescendo` / `diminuendo` in the first measure, `continue` in intermediate measures, and `stop` in the terminating measure.

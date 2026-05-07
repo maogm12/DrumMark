@@ -260,6 +260,10 @@ function readTrackToken(stream: StringStream, state: DslState): string | null {
     return "hit-combinator";
   }
 
+  if (stream.match("<") || stream.match(">") || stream.match("!")) {
+    return "hairpin-marker";
+  }
+
   if (stream.match("{")) {
     if (state.pendingScopeTrack) {
       state.scopeTracks.push(state.pendingScopeTrack);
@@ -420,6 +424,7 @@ export const drumMarkStreamParser: StreamParser<DslState> = {
     "group-bracket": tags.squareBracket,
     "group-count": tags.integer,
     "hit-combinator": tags.operator,
+    "hairpin-marker": tags.special(tags.annotation),
     punctuation: tags.punctuation,
     modifier: tags.modifier,
     "duration-modifier": tags.arithmeticOperator,

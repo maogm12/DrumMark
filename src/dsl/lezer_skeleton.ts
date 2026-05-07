@@ -366,6 +366,12 @@ function parseGroupExpr(
         if (summonNode) return parseSummonExpr(summonNode, allNodes, source, errors);
         const basicNode = firstInnerNode(item, allNodes, ["BasicNoteExpr"]);
         if (basicNode) return parseBasicNoteExpr(basicNode, source);
+        const crescendoNode = firstInnerNode(item, allNodes, ["CrescendoStart"]);
+        if (crescendoNode) return { kind: "crescendo_start" } as const;
+        const decrescendoNode = firstInnerNode(item, allNodes, ["DecrescendoStart"]);
+        if (decrescendoNode) return { kind: "decrescendo_start" } as const;
+        const hairpinEndNode = firstInnerNode(item, allNodes, ["HairpinEnd"]);
+        if (hairpinEndNode) return { kind: "hairpin_end" } as const;
         return parseGlyphFromText(nodeText(item, source));
       }).filter((item): item is TokenGlyph => item !== null)
     : [];
@@ -382,7 +388,11 @@ function parseGroupExpr(
 
   return {
     kind: "group",
-    count: items.length,
+    count: items.filter((item) =>
+      item.kind !== "crescendo_start"
+      && item.kind !== "decrescendo_start"
+      && item.kind !== "hairpin_end"
+    ).length,
     span: spanNode ? parseInt(nodeText(spanNode, source), 10) : 1,
     items,
     modifiers: groupModifiers,
@@ -430,6 +440,18 @@ function parseMeasureExpr(
 
   const basicNode = variantInnerNode(node, allNodes, ["BasicNoteExpr"]);
   if (basicNode) return parseBasicNoteExpr(basicNode, source);
+
+  if (variantInnerNode(node, allNodes, ["CrescendoStart"])) {
+    return { kind: "crescendo_start" };
+  }
+
+  if (variantInnerNode(node, allNodes, ["DecrescendoStart"])) {
+    return { kind: "decrescendo_start" };
+  }
+
+  if (variantInnerNode(node, allNodes, ["HairpinEnd"])) {
+    return { kind: "hairpin_end" };
+  }
 
   return parseGlyphFromText(nodeText(node, source));
 }

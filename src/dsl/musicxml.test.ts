@@ -153,6 +153,21 @@ HH | @segno x x x x | x x x @fine | x x x @dc |`);
     expect(xml).toContain("<words>D.C.</words>");
   });
 
+  it("exports hairpins as MusicXML wedges with start/continue/stop semantics", () => {
+    const score = buildNormalizedScore(`time 4/4
+divisions 4
+
+HH | < d d d d | d d d d | d < d d ! |`);
+
+    const xml = buildMusicXml(score);
+
+    expect(xml).toContain('<wedge type="crescendo" number="1"/>');
+    expect(xml).toContain('<wedge type="continue" number="1"/>');
+    expect(xml).toContain('<wedge type="stop" number="1"/>');
+    expect(xml).toContain('<offset>4</offset>');
+    expect(xml).toContain('<offset>12</offset>');
+  });
+
   it("stops a volta at `|.` without exporting a final bar-style unless the score actually ends there", () => {
     const score = buildNormalizedScore(`time 4/4
 divisions 4

@@ -88,6 +88,9 @@ MeasureExpr {
   CombinedHitExpr |
   SummonExpr |
   RoutedBracedBlock |
+  CrescendoStart |
+  DecrescendoStart |
+  HairpinEnd |
   BasicNoteExpr |
   NavMarker |
   NavJump |
@@ -143,6 +146,9 @@ GroupContent { GroupItem* }
 GroupItem {
   CombinedHitExpr |
   SummonExpr |
+  CrescendoStart |
+  DecrescendoStart |
+  HairpinEnd |
   BasicNoteExpr
 }
 
@@ -158,6 +164,10 @@ NavJump {
   "@dc-al-fine" | "@dc-al-coda" | "@ds-al-fine" | "@ds-al-coda" |
   "@to-coda"
 }
+
+CrescendoStart { "<" }
+DecrescendoStart { ">" }
+HairpinEnd { "!" }
 
 MeasureRepeatExpr { "%" "%"* }
 MultiRestExpr { MultiRestToken }

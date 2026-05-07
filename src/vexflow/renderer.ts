@@ -4,6 +4,7 @@ import type { NormalizedEvent, NormalizedScore } from "../dsl/types";
 import { DEFAULT_RENDER_OPTIONS, type VexflowRenderOptions } from "./types";
 import {
   buildVoiceEntries,
+  compareFractions,
   groupingSegmentIndex,
   groupVoiceEvents,
   isBeamable,
@@ -51,6 +52,7 @@ const {
   StaveText,
   TextJustification,
   RendererBackends,
+  StaveHairpin,
   Stem,
 } = VexFlow;
 
@@ -83,6 +85,7 @@ type SkylineRef = {
 type LayoutNote = {
   note: any;
   aboveRefs: SkylineRef[];
+  start: Fraction;
 };
 
 type NavAnchor = {
@@ -107,6 +110,18 @@ type SystemLayoutState = {
   skyline: TopSkyline;
   edgeNavs: PendingEdgeNav[];
   voltaSpans: PendingVoltaSpan[];
+};
+
+type HairpinSpan = {
+  type: "crescendo" | "decrescendo";
+  firstNote: any;
+  lastNote: any;
+  leftShiftPx: number;
+  rightShiftPx: number;
+  clipLeftX: number;
+  clipRightX: number;
+  startStave: any;
+  endStave: any;
 };
 
 class TopSkyline {
@@ -874,6 +889,55 @@ function renderSystem(context: any, score: NormalizedScore, measures: RenderMeas
 
   const systemLayout = buildSystemLayoutState(score, measures, staves, layoutNotesByMeasure, options.voltaGap);
   staves.forEach((stave) => stave.setContext(context).draw());
+  buildHairpinSpans(score, measures, layoutNotesByMeasure).forEach((span, index) => {
+    const clipY = Math.min(span.startStave.getY(), span.endStave.getY());
+    const clipH = Math.max(
+      span.startStave.getY() + span.startStave.getHeight(),
+      span.endStave.getY() + span.endStave.getHeight(),
+    ) - clipY + 60;
+
+    if (context.openGroup && context.closeGroup && context.svg) {
+      const clipId = `hairpin-clip-${measures[0]?.measure.globalIndex ?? 0}-${index}`;
+      let defs = context.svg.querySelector('defs');
+      if (!defs) {
+        defs = context.create('defs');
+        context.svg.prepend(defs);
+      }
+      const clipPath = context.create('clipPath');
+      clipPath.setAttribute('id', clipId);
+      clipPath.setAttribute('clipPathUnits', 'userSpaceOnUse');
+      const clipRect = context.create('rect');
+      clipRect.setAttribute('x', String(span.clipLeftX));
+      clipRect.setAttribute('y', String(clipY));
+      clipRect.setAttribute('width', String(span.clipRightX - span.clipLeftX));
+      clipRect.setAttribute('height', String(clipH));
+      clipPath.appendChild(clipRect);
+      defs.appendChild(clipPath);
+
+      const group = context.openGroup();
+      group.setAttribute('clip-path', `url(#${clipId})`);
+    }
+
+    new StaveHairpin(
+      { firstNote: span.firstNote, lastNote: span.lastNote },
+      span.type === "crescendo" ? StaveHairpin.type.CRESC : StaveHairpin.type.DECRESC,
+    )
+      .setContext(context)
+      .setPosition(Modifier.Position.BELOW)
+      .setRenderOptions({
+        height: 12,
+        yShift: options.hairpinShiftY ?? 0,
+        leftShiftPx: span.leftShiftPx,
+        rightShiftPx: span.rightShiftPx,
+        leftShiftTicks: 0,
+        rightShiftTicks: 0,
+      })
+      .drawWithStyle();
+
+    if (context.openGroup && context.closeGroup && context.svg) {
+      context.closeGroup();
+    }
+  });
   systemLayout.edgeNavs.forEach(({ overlay }) => overlay.setContext(context).draw());
   systemLayout.voltaSpans.forEach(({ overlay }) => overlay.setContext(context).draw());
 
@@ -885,6 +949,99 @@ function renderSystem(context: any, score: NormalizedScore, measures: RenderMeas
     new Formatter().joinVoices([voice]).format([voice], overlayStave.getWidth() - 10);
     voice.draw(context, overlayStave);
   });
+}
+
+function firstLayoutNoteAtOrAfter(layoutNotes: LayoutNote[], start: Fraction): LayoutNote | undefined {
+  return [...layoutNotes]
+    .sort((left, right) => compareFractions(left.start, right.start))
+    .find((layoutNote) => compareFractions(layoutNote.start, start) >= 0);
+}
+
+function lastLayoutNoteBefore(layoutNotes: LayoutNote[], end: Fraction): LayoutNote | undefined {
+  return [...layoutNotes]
+    .sort((left, right) => compareFractions(left.start, right.start))
+    .filter((layoutNote) => compareFractions(layoutNote.start, end) < 0)
+    .at(-1);
+}
+
+function buildHairpinSpans(
+  score: NormalizedScore,
+  measures: RenderMeasure[],
+  layoutNotesByMeasure: LayoutNote[][],
+): HairpinSpan[] {
+  const spans: HairpinSpan[] = [];
+  if (measures.length === 0) return spans;
+  const measureDuration = {
+    numerator: score.header.timeSignature.beats,
+    denominator: score.header.timeSignature.beatUnit,
+  };
+  const systemStart = measures[0]!.measure.globalIndex;
+  const systemEnd = measures.at(-1)!.measure.globalIndex;
+  const allHairpins = score.measures.flatMap((measure) => measure.hairpins ?? []);
+
+  for (const hairpin of allHairpins) {
+    if (hairpin.endMeasureIndex < systemStart || hairpin.startMeasureIndex > systemEnd) continue;
+
+    const segmentStartMeasure = Math.max(hairpin.startMeasureIndex, systemStart);
+    const segmentEndMeasure = Math.min(hairpin.endMeasureIndex, systemEnd);
+    const startOffset = measures.findIndex((measure) => measure.measure.globalIndex === segmentStartMeasure);
+    const endOffset = measures.findIndex((measure) => measure.measure.globalIndex === segmentEndMeasure);
+    if (startOffset < 0 || endOffset < 0) continue;
+
+    const segmentStart = hairpin.startMeasureIndex === segmentStartMeasure
+      ? hairpin.start
+      : { numerator: 0, denominator: 1 };
+    const segmentEnd = hairpin.endMeasureIndex === segmentEndMeasure
+      ? hairpin.end
+      : measureDuration;
+
+    const firstLayoutNote = firstLayoutNoteAtOrAfter(layoutNotesByMeasure[startOffset] ?? [], segmentStart);
+    const lastLayoutNote = lastLayoutNoteBefore(layoutNotesByMeasure[endOffset] ?? [], segmentEnd);
+    if (!firstLayoutNote?.note || !lastLayoutNote?.note) continue;
+
+    const startAnchor = firstLayoutNote.note.getModifierStartXY(Modifier.Position.BELOW, 0);
+    const endAnchor = lastLayoutNote.note.getModifierStartXY(Modifier.Position.BELOW, 0);
+    const startStave = firstLayoutNote.note.checkStave();
+    const endStave = lastLayoutNote.note.checkStave();
+    const clipStartsAtMeasureBoundary = segmentStartMeasure !== hairpin.startMeasureIndex;
+    const clipEndsAtMeasureBoundary = segmentEndMeasure !== hairpin.endMeasureIndex;
+    const segmentLeftX = clipStartsAtMeasureBoundary ? startStave.getX() : startAnchor.x;
+    const segmentRightX = clipEndsAtMeasureBoundary ? endStave.getX() + endStave.getWidth() : endAnchor.x;
+    const visibleWidth = segmentRightX - segmentLeftX;
+    if (!(visibleWidth > 0)) continue;
+
+    const measureWidth = measureDuration.numerator / measureDuration.denominator;
+    const totalStart = (segmentStartMeasure - hairpin.startMeasureIndex) * measureWidth
+      + segmentStart.numerator / segmentStart.denominator
+      - hairpin.start.numerator / hairpin.start.denominator;
+    const totalEnd = (segmentEndMeasure - hairpin.startMeasureIndex) * measureWidth
+      + segmentEnd.numerator / segmentEnd.denominator
+      - hairpin.start.numerator / hairpin.start.denominator;
+    const totalSpan = (hairpin.endMeasureIndex - hairpin.startMeasureIndex) * measureWidth
+      + hairpin.end.numerator / hairpin.end.denominator
+      - hairpin.start.numerator / hairpin.start.denominator;
+    const segmentSpan = totalEnd - totalStart;
+    if (!(totalSpan > 0) || !(segmentSpan > 0)) continue;
+
+    const continuationLeftWidth = visibleWidth * (totalStart / segmentSpan);
+    const continuationRightWidth = visibleWidth * ((totalSpan - totalEnd) / segmentSpan);
+    const leftShiftPx = startAnchor.x - segmentLeftX - continuationLeftWidth;
+    const rightShiftPx = segmentRightX - endAnchor.x + continuationRightWidth;
+
+    spans.push({
+      type: hairpin.type,
+      firstNote: firstLayoutNote.note,
+      lastNote: lastLayoutNote.note,
+      leftShiftPx,
+      rightShiftPx,
+      clipLeftX: segmentLeftX,
+      clipRightX: segmentRightX,
+      startStave,
+      endStave,
+    });
+  }
+
+  return spans;
 }
 
 function buildSystemLayoutState(
@@ -1149,7 +1306,7 @@ function createVexNotes(
       }
 
       const relativeStart = subtractFractions(entry.start, measureStart);
-      navAnchors.set(`${relativeStart.numerator}/${relativeStart.denominator}`, { note, layoutNote: { note, aboveRefs: [] } });
+      navAnchors.set(`${relativeStart.numerator}/${relativeStart.denominator}`, { note, layoutNote: { note, aboveRefs: [], start: relativeStart } });
       if (currentBeamNotes.length > 1) allBeams.push(new Beam(currentBeamNotes));
       currentBeamNotes = [];
       currentBeamSegment = -1;
@@ -1189,7 +1346,7 @@ function createVexNotes(
         flag.fontInfo = { ...flag.fontInfo, size: 22 };
       }
 
-      layoutNote = { note, aboveRefs: [] };
+      layoutNote = { note, aboveRefs: [], start: subtractFractions(entry.start, measureStart) };
       layoutNotes.push(layoutNote);
 
       for (let d = 0; d < durInfo.dots; d++) {

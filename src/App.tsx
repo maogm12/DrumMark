@@ -302,6 +302,7 @@ const PagePreview = memo(function PagePreview({
   systemSpacing,
   stemLength,
   voltaGap,
+  hairpinShiftY,
   hideVoice2Rests,
   tempoShiftX,
   tempoShiftY,
@@ -318,6 +319,7 @@ const PagePreview = memo(function PagePreview({
   systemSpacing: number;
   stemLength: number;
   voltaGap: number;
+  hairpinShiftY: number;
   hideVoice2Rests: boolean;
   tempoShiftX: number;
   tempoShiftY: number;
@@ -356,6 +358,7 @@ const PagePreview = memo(function PagePreview({
       systemSpacing,
       stemLength,
       voltaGap,
+      hairpinShiftY,
       hideVoice2Rests,
       tempoShiftX,
       tempoShiftY,
@@ -383,7 +386,7 @@ const PagePreview = memo(function PagePreview({
         console.error("VexFlow render error:", renderError);
         setError(msg || "Could not render staff preview.");
       });
-  }, [score, systemSpacing, stemLength, voltaGap, titleStaffGap, headerHeight, active, hideVoice2Rests, pagePadding, staffScale, tempoShiftX, tempoShiftY, measureNumberShiftX, measureNumberShiftY, measureNumberFontSize]);
+  }, [score, systemSpacing, stemLength, voltaGap, hairpinShiftY, titleStaffGap, headerHeight, active, hideVoice2Rests, pagePadding, staffScale, tempoShiftX, tempoShiftY, measureNumberShiftX, measureNumberShiftY, measureNumberFontSize]);
 
   if (!score) {
     return (
@@ -529,6 +532,7 @@ interface AppSettings {
   systemSpacing: number;
   stemLength: number;
   voltaGap: number;
+  hairpinShiftY: number;
   headerHeight: number;
   activeTab: MainTab;
   tempoShiftX: number;
@@ -548,6 +552,7 @@ const defaultSettings: AppSettings = {
   systemSpacing: 30,
   stemLength: 31,
   voltaGap: -15,
+  hairpinShiftY: -15,
   activeTab: "page",
   tempoShiftX: 0,
   tempoShiftY: 0,
@@ -578,6 +583,9 @@ export function App() {
       }
       if (parsed.voltaGap === undefined || parsed.voltaGap < -16 || parsed.voltaGap > 16) {
         parsed.voltaGap = -15;
+      }
+      if (parsed.hairpinShiftY === undefined || parsed.hairpinShiftY < -40 || parsed.hairpinShiftY > 40) {
+        parsed.hairpinShiftY = -15;
       }
       if (parsed.headerHeight === undefined) {
         parsed.headerHeight = 50;
@@ -1082,6 +1090,7 @@ export function App() {
                       systemSpacing={settings.systemSpacing}
                       stemLength={settings.stemLength}
                       voltaGap={settings.voltaGap}
+                      hairpinShiftY={settings.hairpinShiftY}
                       hideVoice2Rests={settings.hideVoice2Rests}
                       tempoShiftX={settings.tempoShiftX}
                       tempoShiftY={settings.tempoShiftY}
@@ -1148,6 +1157,10 @@ export function App() {
                   <div className="setting-row">
                     <div className="setting-label"><span>Volta Gap (pt)</span><span className="setting-value">{settings.voltaGap}</span></div>
                     <input type="range" min="-20" max="20" step="1" value={settings.voltaGap} onChange={(e) => updateSetting("voltaGap", parseInt(e.target.value, 10))} />
+                  </div>
+                  <div className="setting-row">
+                    <div className="setting-label"><span>Hairpin Shift Y (pt)</span><span className="setting-value">{settings.hairpinShiftY}</span></div>
+                    <input type="range" min="-40" max="40" step="1" value={settings.hairpinShiftY} onChange={(e) => updateSetting("hairpinShiftY", parseInt(e.target.value, 10))} />
                   </div>
                   <div className="padding-grid-container">
                     <span className="setting-label-small">Margins (pt)</span>

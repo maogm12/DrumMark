@@ -132,6 +132,13 @@ export function voiceForTrack(track: TrackName): VoiceId {
 }
 
 export function calculateTokenWeightAsFraction(token: TokenGlyph): Fraction {
+  if (
+    token.kind === "crescendo_start"
+    || token.kind === "decrescendo_start"
+    || token.kind === "hairpin_end"
+  ) {
+    return { numerator: 0, denominator: 1 };
+  }
   if (token.kind === "group") {
     return { numerator: token.span, denominator: 1 };
   }

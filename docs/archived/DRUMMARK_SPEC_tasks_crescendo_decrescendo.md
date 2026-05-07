@@ -3,7 +3,7 @@
 ## Execution Plan: Crescendo & Decrescendo Hairpins
 
 ### Task 1: Grammar — Add hairpin tokens to Lezer grammar
-- [ ] **Status**: Pending
+- [x] **Status**: Done
 - **Scope**: `src/dsl/drum_mark.grammar`
 - **Commits**:
   - `feat(grammar): add CrescendoStart, DecrescendoStart, HairpinEnd tokens`
@@ -15,7 +15,7 @@
 - **Dependencies**: none
 
 ### Task 2: IR Types — Add HairpinIntent type and NormalizedMeasure field
-- [ ] **Status**: Pending
+- [x] **Status**: Done
 - **Scope**: `src/dsl/types.ts`
 - **Commits**:
   - `feat(ir): add HairpinIntent type and hairpins field to NormalizedMeasure`
@@ -27,7 +27,7 @@
 - **Dependencies**: none (can run parallel to Task 1)
 
 ### Task 3: Lezer Skeleton — Wire hairpin tokens into parse tree
-- [ ] **Status**: Pending
+- [x] **Status**: Done
 - **Scope**: `src/dsl/lezer_skeleton.ts`
 - **Commits**:
   - `feat(parser): extract hairpin tokens from Lezer parse tree into AST`
@@ -37,7 +37,7 @@
 - **Dependencies**: Task 1
 
 ### Task 4: Normalization — Implement cross-measure carry-forward algorithm
-- [ ] **Status**: Pending
+- [x] **Status**: Done
 - **Scope**: `src/dsl/normalize.ts`, `src/dsl/types.ts`
 - **Commits**:
   - `feat(normalize): implement hairpin carry-forward and HairpinIntent emission`
@@ -56,7 +56,7 @@
 - **Dependencies**: Task 2, Task 3
 
 ### Task 5: VexFlow Rendering — Two-pass hairpin wedge overlay
-- [ ] **Status**: Pending
+- [x] **Status**: Done
 - **Scope**: `src/vexflow/renderer.ts`
 - **Commits**:
   - `feat(renderer): two-pass hairpin wedge rendering with skyline integration`
@@ -72,7 +72,7 @@
 - **Dependencies**: Task 4
 
 ### Task 6: MusicXML Export — Add wedge elements
-- [ ] **Status**: Pending
+- [x] **Status**: Done
 - **Scope**: `src/dsl/musicxml.ts`
 - **Commits**:
   - `feat(musicxml): export hairpins as MusicXML wedge elements`
@@ -85,7 +85,7 @@
 - **Dependencies**: Task 4
 
 ### Task 7: Syntax Highlighting — Add hairpin token colors
-- [ ] **Status**: Pending
+- [x] **Status**: Done
 - **Scope**: `src/drummark.ts` (or relevant editor/highlighting module)
 - **Commits**:
   - `feat(highlight): add syntax highlighting for < > ! hairpin tokens`
@@ -94,7 +94,7 @@
 - **Dependencies**: Task 1
 
 ### Task 8: Consolidate into SPEC
-- [ ] **Status**: Pending
+- [x] **Status**: Done
 - **Scope**: `docs/DRUMMARK_SPEC.md`
 - **Commits**:
   - `docs(spec): consolidate crescendo/decrescendo addendum into DRUMMARK_SPEC.md`
@@ -124,5 +124,52 @@ Review of the tasks file amendments for hairpin-in-group support.
 - **No new tasks needed:** The grammar change is a simplification (fewer token categories), and the normalization change is additive (extraction loop + three `case` clauses in weight function). The renderer (Task 5) and MusicXML (Task 6) are unaffected — they operate on `HairpinIntent` at the measure level, which remains unchanged.
 - **Acceptance criteria:** Now cover boundary-spanning hairpins (e.g., `d < [2: d d ! d]` where `<` is outside and `!` is inside) and group-level hairpin position correctness.
 - **Minor:** No dependency change — Task 4 still depends on Tasks 2 and 3. The group extraction logic is part of the same normalization loop.
+
+STATUS: APPROVED
+
+## Post-Approval Amendment 2026-05-06-B: Execution Order And Rendering Alignment
+
+### Task Amendment Summary
+
+This amendment supersedes parts of Tasks 3, 5, and 8 to match the approved implementation constraints and the current codebase.
+
+- **Spec gate before implementation:** Spec consolidation is not an end-of-plan implementation task. After proposal/tasks approval and user stamp, append the clean addendum to `docs/DRUMMARK_SPEC.md` before starting Task 1. Task 8 is therefore reclassified as a pre-implementation gate and removed from the executable task sequence.
+- **Task 3 verification correction:** Replace the acceptance criterion "`npm run drummark --format ir <file-with-hairpins>` shows hairpin AST nodes in the raw IR" with parser-level verification through tests or direct skeleton/AST entry points. The CLI strips `ast` from IR output.
+- **Task 5 rendering correction:** Replace "Draw SVG `<polygon>` wedges" with "Render wedges through VexFlow `StaveHairpin` segments." Cross-system spans are split into one segment per rendered system. No custom SVG overlay implementation is permitted.
+
+### Effective Task Reinterpretation
+
+#### Gate 0: Consolidate Into SPEC
+
+- **Status**: Required before Task 1
+- **Scope**: `docs/DRUMMARK_SPEC.md`
+- **Action**: Append the clean, approved hairpin addendum after user stamp.
+
+#### Task 3: Lezer Skeleton
+
+Updated acceptance criteria:
+
+- Skeleton / AST tests confirm `CrescendoStart`, `DecrescendoStart`, and `HairpinEnd` lower into the expected token shapes.
+- Normalized CLI IR confirms `hairpins` in the normalized output, not raw AST visibility.
+
+#### Task 5: VexFlow Rendering
+
+Updated implementation notes:
+
+- Use VexFlow `StaveHairpin` for rendered wedges.
+- Merge consecutive compatible measures only within the same rendered system.
+- Split multi-measure spans at system boundaries into separate VexFlow hairpin segments.
+- Do not add manual SVG `<polygon>` or other non-VexFlow score drawing code.
+
+### Review Round 2 (Tasks Amendment)
+
+**Date:** 2026-05-06
+
+Review of the execution-order and rendering-alignment amendment.
+
+- **Execution order:** Correct. Reclassifying spec consolidation as Gate 0 brings the task plan back into compliance with `AGENTS.md`.
+- **Task 3 acceptance:** Correct. The prior CLI-based AST assertion was impossible because `src/cli.ts` removes `ast` before serializing IR.
+- **Task 5 rendering scope:** Correct. The repository permits VexFlow-driven score rendering only; using `StaveHairpin` is consistent with that rule and with the installed VexFlow surface.
+- **No missing scope introduced:** The amendment changes validation and rendering mechanics, not DSL behavior, normalization semantics, or MusicXML shape.
 
 STATUS: APPROVED

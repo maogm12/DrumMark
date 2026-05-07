@@ -15,6 +15,7 @@ export type VexflowRenderOptions = {
   systemSpacing: number;
   stemLength: number;
   voltaGap: number;
+  hairpinShiftY?: number;
   hideVoice2Rests: boolean;
   tempoShiftX: number;
   tempoShiftY: number;
@@ -33,6 +34,7 @@ export const DEFAULT_RENDER_OPTIONS: VexflowRenderOptions = {
   systemSpacing: 30,
   stemLength: 31,
   voltaGap: -15,
+  hairpinShiftY: -15,
   hideVoice2Rests: false,
   tempoShiftX: 0,
   tempoShiftY: 0,

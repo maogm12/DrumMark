@@ -1341,6 +1341,78 @@ The core design -- three single-character tokens (`<`, `>`, `!`) with explicit t
 
 STATUS: APPROVED
 
+### Final Ledger Continuation 2026-05-06
+
+This section is intentionally appended at the physical end of the proposal file to restore a clear continuation point for future review history.
+
+Authoritative pre-implementation corrections for this proposal are:
+
+- Hairpin rendering must use VexFlow `StaveHairpin`, not custom SVG wedges.
+- Spec consolidation is a pre-implementation gate after user stamp, not a trailing task.
+- CLI `npm run drummark --format ir` validates normalized `hairpins` output only; parser / skeleton token-shape checks belong in tests or direct parser entry points.
+
+No additional DSL change is introduced here. This is a ledger-order correction plus a final statement of the stamped implementation constraints now reflected in `docs/DRUMMARK_SPEC.md`.
+
+### Ledger Correction 2026-05-06
+
+The "Post-Approval Amendment 2026-05-06: Implementation Protocol Alignment" section was authored with correct content but landed above earlier ledger material due to authoring error. For chronological reading and future append-only compliance, this note marks the end-of-file continuation point.
+
+No design change is introduced by this correction. The amendment content already present in the file remains authoritative.
+
+---
+
+## Post-Approval Amendment 2026-05-06: Implementation Protocol Alignment
+
+This amendment does not change the user-facing DSL. It resolves implementation-direction conflicts discovered during pre-implementation review.
+
+### Scope
+
+- Align the rendering strategy with repository rendering rules.
+- Align implementation order with the repository's spec/stamp gate.
+- Align verification language with the current CLI and production parser pipeline.
+
+### Amendment
+
+#### 1. Rendering Strategy
+
+The earlier rendering text that required "custom SVG elements" is superseded.
+
+VexFlow 5 already provides `StaveHairpin` for crescendo / decrescendo wedges. Hairpins must therefore be rendered through VexFlow primitives, not by emitting custom SVG overlays or manual polygon drawing.
+
+Implementation constraints:
+
+- Single-system hairpin spans use `StaveHairpin` attached to the resolved first/last anchor notes.
+- Multi-measure hairpins are represented as one or more VexFlow hairpin segments, merged only when the spanned measures remain on the same rendered system.
+- A system break terminates the current rendered segment and starts a new one on the next system.
+- The renderer may compute segment grouping after formatting, but the drawn wedge itself must still be emitted by VexFlow.
+
+#### 2. Consolidation Order
+
+The approved clean addendum must be appended to `docs/DRUMMARK_SPEC.md` after user stamp and before implementation begins.
+
+This supersedes any interpretation that spec consolidation is a trailing implementation task. Consolidation is a gate, not a post-feature cleanup step.
+
+#### 3. Verification Language
+
+The CLI `npm run drummark --format ir` emits normalized score JSON with the `ast` field removed. It is suitable for validating normalized `hairpins` output, but not for asserting raw parse-tree / AST node presence.
+
+AST- or skeleton-level verification must therefore reference test code or direct parser/skeleton entry points rather than CLI IR output.
+
+### Review Round 9
+
+**Date:** 2026-05-06
+
+Targeted review of the Implementation Protocol Alignment amendment.
+
+- **Rendering correction:** Verified against the installed VexFlow package. `node_modules/vexflow/build/esm/src/stavehairpin.js` exports `StaveHairpin`, with built-in crescendo / decrescendo types and configurable render options (`height`, `yShift`, tick/pixel shifts). Requiring custom SVG wedges would conflict with repository rendering rules and is no longer justified.
+- **System-break handling:** The amendment correctly narrows merging semantics from "one continuous polygon" to "one or more VexFlow hairpin segments." This matches the actual rendering surface: a single `StaveHairpin` has one `firstNote` and one `lastNote`, so cross-system spans must be segmented at layout boundaries.
+- **Spec gate correction:** Verified against `AGENTS.md`. Approved proposal + approved tasks + user stamp precede spec consolidation, and spec consolidation precedes implementation. Treating consolidation as Task 8 in the implementation sequence is procedurally wrong; calling it a gate is the correct correction.
+- **CLI verification correction:** Verified against `src/cli.ts`. The `ir` path clones the normalized score and deletes `ast` before printing JSON. Therefore the earlier task wording that expected raw AST visibility from CLI IR output was invalid. The amendment fixes this without changing the feature itself.
+
+No new DSL ambiguity or normalization issues were introduced by this amendment.
+
+STATUS: APPROVED
+
 
 ### Consolidated Changes
 

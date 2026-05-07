@@ -248,3 +248,15 @@ The regex parser (`parser.ts`) now has zero production references. All 345 tests
 - A body-level `note 1/N` override cannot simply be added as another top-level `TrackBody` alternative, because it creates an LR conflict with header-level `note` lines at document start. The viable grammar shape is to admit paragraph overrides only in body-continuation positions, after the parser is already inside `TrackBody`.
 - For DrumMark's current grammar, a stable pattern is: `TrackBody` starts with `TrackLine`, and later continuations distinguish ordinary next lines from blank-line-prefixed paragraph override segments. That removes source-gap scanning for override semantics without destabilizing header parsing.
 - Once paragraph overrides are structural tree nodes, the skeleton should treat the node itself as authoritative paragraph-boundary evidence. Re-checking newline counts around that node is old-parser thinking and causes false "not at beginning of paragraph" diagnostics.
+
+## 2026-05-06 Addendum: Hairpin Implementation Constraints
+
+- VexFlow 5 already exposes `StaveHairpin` in the installed package (`node_modules/vexflow/build/esm/src/stavehairpin.js`). For DrumMark hairpins, the default rendering direction should therefore be VexFlow-native, not custom SVG wedge generation.
+- `StaveHairpin` renders one wedge between a `firstNote` and `lastNote` with configurable `height`, `yShift`, and tick/pixel shifts. Cross-system hairpins are not a single primitive; they need to be split into one VexFlow hairpin segment per rendered system.
+- The repository CLI path `npm run drummark --format ir` is normalized-score output only. `src/cli.ts` deletes the `ast` field before printing JSON, so CLI IR can validate normalized `hairpins` data but cannot validate raw parser / skeleton node presence.
+
+## 2026-05-06 Addendum: SVG Clip Paths for Continued Hairpins
+
+- VexFlow `StaveHairpin` has no API to render a cropped middle slice of a longer wedge. Cross-system continuation therefore has to be simulated with overextended endpoint shifts plus SVG clipping in the renderer layer.
+- When injecting custom SVG `<clipPath>` nodes into VexFlow's `SVGContext`, DrumMark must set `clipPathUnits="userSpaceOnUse"`. Without that, browsers may interpret the clip rect in bounding-box space, which makes absolute stave coordinates ineffective and lets hairpins bleed to the page edge.
+- Clip IDs must be unique across systems in the same page SVG. Reusing simple per-system indices risks later `<clipPath>` definitions shadowing earlier ones.

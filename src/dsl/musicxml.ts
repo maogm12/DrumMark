@@ -19,6 +19,7 @@ import {
   type InstrumentSpec,
   type VoiceEntry,
 } from "./logic";
+import type { HairpinIntent } from "./types";
 
 type VoiceId = 1 | 2;
 
@@ -98,6 +99,57 @@ function measureStyleXml(measure: ExportMeasure): string {
   }
 
   return styles.length > 0 ? `<measure-style>${styles.join("")}</measure-style>` : "";
+}
+
+function hairpinStartType(type: HairpinIntent["type"]): "crescendo" | "diminuendo" {
+  return type === "crescendo" ? "crescendo" : "diminuendo";
+}
+
+function wedgeDirectionXml(type: string, number: number, offset: number, placement: "above" | "below" = "below"): string {
+  return `<direction placement="${placement}"><direction-type><wedge type="${type}" number="${number}"/></direction-type><offset>${offset}</offset></direction>`;
+}
+
+function hairpinDirectionsXml(
+  exportMeasures: ExportMeasure[],
+  measureIndex: number,
+  divisions: number,
+): string {
+  const current = exportMeasures[measureIndex];
+  if (!current) return "";
+
+  const currentMeasureIndex = current.measure.globalIndex;
+  const fragments: string[] = [];
+  const allHairpins = exportMeasures.flatMap((measure) => measure.contentMeasure.hairpins ?? []);
+
+  allHairpins.forEach((hairpin, index) => {
+    const number = index + 1;
+    if (currentMeasureIndex < hairpin.startMeasureIndex || currentMeasureIndex > hairpin.endMeasureIndex) {
+      return;
+    }
+
+    if (hairpin.startMeasureIndex === hairpin.endMeasureIndex) {
+      if (currentMeasureIndex !== hairpin.startMeasureIndex) return;
+      fragments.push(
+        wedgeDirectionXml(hairpinStartType(hairpin.type), number, fractionToDivisions(hairpin.start, divisions)),
+        wedgeDirectionXml("stop", number, fractionToDivisions(hairpin.end, divisions)),
+      );
+      return;
+    }
+
+    if (currentMeasureIndex === hairpin.startMeasureIndex) {
+      fragments.push(wedgeDirectionXml(hairpinStartType(hairpin.type), number, fractionToDivisions(hairpin.start, divisions)));
+      return;
+    }
+
+    if (currentMeasureIndex === hairpin.endMeasureIndex) {
+      fragments.push(wedgeDirectionXml("stop", number, fractionToDivisions(hairpin.end, divisions)));
+      return;
+    }
+
+    fragments.push(wedgeDirectionXml("continue", number, 0));
+  });
+
+  return fragments.join("");
 }
 
 function leftBarlineXml(measure: NormalizedScore["measures"][number], previous?: NormalizedScore["measures"][number]): string {
@@ -518,7 +570,14 @@ function stickingsByStart(events: NormalizedEvent[]): Map<string, string> {
   return new Map([...byStart].map(([key, values]) => [key, values.join(" ")]));
 }
 
-function measureXml(score: NormalizedScore, exportMeasure: ExportMeasure, divisions: number, forceLineBreak: boolean, hideVoice2Rests: boolean): string {
+function measureXml(
+  score: NormalizedScore,
+  exportMeasures: ExportMeasure[],
+  exportMeasure: ExportMeasure,
+  divisions: number,
+  forceLineBreak: boolean,
+  hideVoice2Rests: boolean,
+): string {
   const measure = exportMeasure.measure;
   const contentMeasure = exportMeasure.contentMeasure;
   const measureDuration = {
@@ -558,6 +617,7 @@ function measureXml(score: NormalizedScore, exportMeasure: ExportMeasure, divisi
       : "";
   const markerDirection = startNavDirectionXml(measure.startNav);
   const jumpDirection = endNavDirectionXml(measure.endNav);
+  const hairpinDirections = hairpinDirectionsXml(exportMeasures, exportMeasure.outputIndex, divisions);
   const repeatStart = leftBarlineXml(measure, previousMeasure);
   const repeatEnd = rightBarlineXml(measure, nextMeasure);
   const print = exportMeasure.outputIndex === 0
@@ -732,6 +792,7 @@ function measureXml(score: NormalizedScore, exportMeasure: ExportMeasure, divisi
     repeatStart,
     markerDirection,
     jumpDirection,
+    hairpinDirections,
     ...content,
     repeatEnd,
     "</measure>",
@@ -826,7 +887,7 @@ export function buildMusicXml(score: NormalizedScore, hideVoice2Rests: boolean =
   const measures = exportMeasures.map((exportMeasure, index) => {
     const prevExportMeasure = exportMeasures[index - 1];
     const forceLineBreak = index > 0 && prevExportMeasure?.measure.sourceLine !== exportMeasure.measure.sourceLine;
-    return measureXml(score, exportMeasure, divisions, forceLineBreak, hideVoice2Rests);
+    return measureXml(score, exportMeasures, exportMeasure, divisions, forceLineBreak, hideVoice2Rests);
   }).join("");
 
   return `<?xml version="1.0" encoding="UTF-8"?>

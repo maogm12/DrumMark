@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
 import { describe, expect, it, vi } from "vitest";
-import { Glyphs, StaveNote, Stem } from "vexflow";
+import { Glyphs, StaveHairpin, StaveNote, Stem } from "vexflow";
 import { buildNormalizedScore } from "../dsl/normalize";
 import { renderScoreToSvg } from "./renderer";
 
@@ -36,7 +36,7 @@ divisions 4
     const stemSpy = vi.spyOn(StaveNote.prototype, "setStemLength");
     const extensionSpy = vi.spyOn(Stem.prototype, "setExtension");
 
-    await renderScoreToSvg(score, {
+    const svg = await renderScoreToSvg(score, {
       pagePadding: { top: 24, right: 18, bottom: 24, left: 18 },
       titleTopPadding: 3.6,
       titleSubtitleGap: 1.2,
@@ -72,6 +72,91 @@ divisions 4
     expect(svg).toContain(Glyphs.segno);
     expect(svg).toContain("To");
     expect(svg).toContain(Glyphs.coda);
+  });
+
+  it("renders hairpins through VexFlow StaveHairpin", async () => {
+    const score = buildNormalizedScore(`time 4/4
+divisions 4
+
+HH | d < d d ! |`);
+
+    const hairpinSpy = vi.spyOn(StaveHairpin.prototype, "draw");
+    const renderOptionsSpy = vi.spyOn(StaveHairpin.prototype, "setRenderOptions");
+
+    const svg = await renderScoreToSvg(score, {
+      pagePadding: { top: 24, right: 18, bottom: 24, left: 18 },
+      titleTopPadding: 3.6,
+      titleSubtitleGap: 1.2,
+      titleStaffGap: 2.8,
+      systemSpacing: 1,
+      stemLength: 30,
+      hairpinShiftY: 9,
+      hideVoice2Rests: true,
+    });
+
+    expect(svg).toContain("<svg");
+    expect(hairpinSpy).toHaveBeenCalled();
+    expect(renderOptionsSpy).toHaveBeenCalledWith(expect.objectContaining({ yShift: 9 }));
+    hairpinSpy.mockRestore();
+    renderOptionsSpy.mockRestore();
+  });
+
+  it("ends a carry-forward hairpin on the note before a later-system closing `!`", async () => {
+    const score = buildNormalizedScore(`time 4/4
+divisions 4
+
+HH | < d d d d | d d d d | d d d d | d d d d | d d d d | d d d d | ! d d d d |`);
+
+    const hairpinSpy = vi.spyOn(StaveHairpin.prototype, "draw");
+
+    const svg = await renderScoreToSvg(score, {
+      pagePadding: { top: 24, right: 18, bottom: 24, left: 18 },
+      titleTopPadding: 3.6,
+      titleSubtitleGap: 1.2,
+      titleStaffGap: 2.8,
+      systemSpacing: 1,
+      stemLength: 30,
+      hideVoice2Rests: true,
+    });
+
+    expect(score.errors).toEqual([]);
+    expect(hairpinSpy).toHaveBeenCalledTimes(1);
+    hairpinSpy.mockRestore();
+  });
+
+  it("renders a cross-system hairpin as continued slices of one long wedge", async () => {
+    const score = buildNormalizedScore(`time 4/4
+divisions 4
+
+HH | < d d d d | d d d d | d d d d | d d d d | d d d d | d d d d | d d ! d d |`);
+
+    const hairpinSpy = vi.spyOn(StaveHairpin.prototype, "draw");
+    const renderOptionsSpy = vi.spyOn(StaveHairpin.prototype, "setRenderOptions");
+
+    const svg = await renderScoreToSvg(score, {
+      pagePadding: { top: 24, right: 18, bottom: 24, left: 18 },
+      titleTopPadding: 3.6,
+      titleSubtitleGap: 1.2,
+      titleStaffGap: 2.8,
+      systemSpacing: 1,
+      stemLength: 30,
+      hideVoice2Rests: true,
+    });
+
+    expect(score.errors).toEqual([]);
+    expect(hairpinSpy).toHaveBeenCalledTimes(2);
+    expect(renderOptionsSpy).toHaveBeenCalledTimes(2);
+    expect(svg).toContain('clipPathUnits="userSpaceOnUse"');
+    expect(svg).toContain('clip-path="url(#hairpin-clip-');
+
+    const firstSegment = renderOptionsSpy.mock.calls[0]?.[0];
+    const secondSegment = renderOptionsSpy.mock.calls[1]?.[0];
+    expect(firstSegment?.rightShiftPx).toBeGreaterThan(0);
+    expect(secondSegment?.leftShiftPx).toBeLessThan(0);
+    expect(secondSegment?.rightShiftPx).toBe(0);
+
+    hairpinSpy.mockRestore();
+    renderOptionsSpy.mockRestore();
   });
 
   it("renders fine and dc/ds family navigation above the stave on the same row as symbols", async () => {

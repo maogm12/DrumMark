@@ -183,4 +183,20 @@ HH | x x x x x x x x x |`); // 9 slots in 8-slot measure
       message: "Track `HH` measure 1 has invalid duration: used 9/1 slots, expected 8",
     }));
   });
+
+  it("keeps AST construction stable when a token exceeds exact duration range", () => {
+    const score = buildScoreAst(`time 4/4
+note 1/16
+grouping 4
+
+HH | x${"*".repeat(1100)} |`);
+
+    expect(score.errors).toEqual([]);
+    expect(score.paragraphs[0].tracks[0].measures[0].tokens).toHaveLength(1);
+    expect(score.paragraphs[0].tracks[0].measures[0].tokens[0]).toMatchObject({
+      kind: "basic",
+      value: "x",
+      stars: 1100,
+    });
+  });
 });

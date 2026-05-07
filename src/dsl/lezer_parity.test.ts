@@ -164,6 +164,20 @@ grouping 4
 
 HH | x... x//// x../ x./// x* x x |`;
 
+const LARGE_STARS = `title "Large Stars"
+time 4/4
+note 1/16
+grouping 4
+
+HH | x**** |`;
+
+const LARGE_STAR_SLASH_CANCELLATION = `title "Large Star Slash Cancellation"
+time 4/4
+note 1/16
+grouping 4
+
+HH | x${"*".repeat(60)}${"/".repeat(60)} - - - - - - - - - - - - - - - |`;
+
 const REPEAT_BARLINES = `title "Repeats"
 time 4/4
 note 1/16
@@ -290,6 +304,8 @@ const ALL_CASES: TestCase[] = [
   { name: "chained modifiers", dsl: CHAINED_MODIFIERS },
   { name: "combined hits", dsl: COMBINED_HITS },
   { name: "durations", dsl: DURATIONS },
+  { name: "large stars", dsl: LARGE_STARS },
+  { name: "large star slash cancellation", dsl: LARGE_STAR_SLASH_CANCELLATION },
   { name: "repeat barlines", dsl: REPEAT_BARLINES },
   { name: "voltas", dsl: VOLTAS },
   { name: "groups", dsl: GROUPS },
@@ -312,21 +328,24 @@ const ALL_CASES: TestCase[] = [
 
 describe("lezer parity — skeleton", () => {
   for (const { name, dsl } of ALL_CASES) {
-    it(`matches regex parser for ${name}`, () => {
-      const regex = parseDocumentSkeleton(dsl);
+    it(`keeps Lezer aligned with the deprecated manual parser for ${name}`, () => {
+      const manual = parseDocumentSkeleton(dsl);
       const lezer = parseDocumentSkeletonFromLezer(dsl);
 
-      // Header parity
-      compareHeaders(regex, lezer);
-
-      // Error parity
+      // Lezer is the authoritative production parser.
       expect(lezer.errors.length, "lezer should produce no errors").toBe(0);
-      expect(regex.errors.length, "regex should produce no errors").toBe(0);
+      expect(
+        manual.errors,
+        "deprecated manual parser drifted from the Lezer transitional parity target",
+      ).toEqual(lezer.errors);
 
-      // Full structural parity (ignoring source metadata)
-      const rn = normalize(regex);
-      const ln = normalize(lezer);
-      expect(ln).toEqual(rn);
+      if (manual.errors.length === 0) {
+        // Transitional structural parity while the manual parser is still retained.
+        compareHeaders(manual, lezer);
+        const rn = normalize(manual);
+        const ln = normalize(lezer);
+        expect(ln).toEqual(rn);
+      }
     });
   }
 });

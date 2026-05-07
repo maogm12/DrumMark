@@ -1,6 +1,7 @@
 import { buildScoreAst } from "./ast";
 import {
   addFractions,
+  basicTokenExceedsExactDurationRange,
   multiplyFractions,
   divideFractions,
   simplify,
@@ -365,6 +366,19 @@ function hairpinSignature(hairpin: HairpinIntent): string {
   return `${hairpin.type}:${hairpin.startMeasureIndex}:${hairpin.start.numerator}/${hairpin.start.denominator}->${hairpin.endMeasureIndex}:${hairpin.end.numerator}/${hairpin.end.denominator}`;
 }
 
+function findDurationOverflowToken(token: TokenGlyph): Extract<TokenGlyph, { kind: "basic" }> | null {
+  if (token.kind === "basic") {
+    return basicTokenExceedsExactDurationRange(token) ? token : null;
+  }
+  if (token.kind === "combined" || token.kind === "group" || token.kind === "braced") {
+    for (const item of token.items) {
+      const offender = findDurationOverflowToken(item);
+      if (offender) return offender;
+    }
+  }
+  return null;
+}
+
 function fractionsKey(fraction: Fraction): string {
   return `${fraction.numerator}/${fraction.denominator}`;
 }
@@ -486,6 +500,10 @@ function collectTrackHairpins(
   let currentSlotOffset: Fraction = { numerator: 0, denominator: 1 };
 
   for (const token of measure.tokens) {
+    const overflowToken = findDurationOverflowToken(token);
+    if (overflowToken) {
+      continue;
+    }
     const weight = calculateTokenWeightAsFraction(token);
     const tokenStart = multiplyFractions(slotDuration, currentSlotOffset);
     const tokenDuration = multiplyFractions(slotDuration, weight);
@@ -605,6 +623,24 @@ export function normalizeScoreAst(ast: ScoreAst): NormalizedScore {
         if (!measure) continue;
 
         sourceLine = measure.sourceLine || sourceLine;
+        const overflowTokenInMeasure = measure.tokens
+          .map((token) => findDurationOverflowToken(token))
+          .find((token): token is Extract<TokenGlyph, { kind: "basic" }> => token !== null);
+
+        if (overflowTokenInMeasure) {
+          ast.errors.push({
+            line: measure.sourceLine || 0,
+            column: 1,
+            message: `Token \`${overflowTokenInMeasure.value}\` exceeds the exact duration range under current modifier counts`,
+          });
+          resolvedTrackNavs.push({
+            startNav: resolveParsedStartNav(measure.startNav, []),
+            endNav: resolveParsedEndNav(measure.endNav, []),
+            sourceLine: measure.sourceLine || sourceLine,
+          });
+          continue;
+        }
+
         const trackKey = "__global_hairpin_state__";
         const priorState = trackHairpinStates.get(trackKey) ?? {
           activeType: null,

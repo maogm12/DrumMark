@@ -46,7 +46,19 @@ HH | x... x//// x../ x./// |`);
     expect(calculateTokenWeightAsFraction(basicToken("d", 0, 0, 1))).toEqual({ numerator: 2, denominator: 1 });
     expect(calculateTokenWeightAsFraction(basicToken("d", 0, 0, 2))).toEqual({ numerator: 4, denominator: 1 });
     expect(calculateTokenWeightAsFraction(basicToken("d", 0, 0, 3))).toEqual({ numerator: 8, denominator: 1 });
+    expect(calculateTokenWeightAsFraction(basicToken("d", 0, 0, 4))).toEqual({ numerator: 16, denominator: 1 });
     expect(calculateTokenWeightAsFraction(basicToken("-", 0, 0, 1))).toEqual({ numerator: 2, denominator: 1 });
+  });
+
+  it("preserves large star-slash cancellation exactly", () => {
+    expect(calculateTokenWeightAsFraction(basicToken("d", 0, 60, 60))).toEqual({ numerator: 1, denominator: 1 });
+  });
+
+  it("preserves exact power-of-two weights beyond 52-bit safe integers", () => {
+    expect(calculateTokenWeightAsFraction(basicToken("d", 0, 0, 60))).toEqual({
+      numerator: Math.pow(2, 60),
+      denominator: 1,
+    });
   });
 
   it("combines dots and stars commutatively", () => {
@@ -68,6 +80,106 @@ HH | x* x x |`);
       { track: "HH", start: { numerator: 1, denominator: 2 }, duration: { numerator: 1, denominator: 4 } },
       { track: "HH", start: { numerator: 3, denominator: 4 }, duration: { numerator: 1, denominator: 4 } },
     ]);
+  });
+
+  it("allows more than three stars when the resulting measure weight is still valid", () => {
+    const score = buildNormalizedScore(`time 4/4
+note 1/16
+grouping 4
+
+HH | x**** |`);
+
+    expect(score.errors).toEqual([]);
+    const events = score.measures[0]?.events ?? [];
+    expect(events).toHaveLength(1);
+    expect(events[0]).toMatchObject({
+      track: "HH",
+      start: { numerator: 0, denominator: 1 },
+      duration: { numerator: 1, denominator: 1 },
+    });
+  });
+
+  it("does not hang on truly overflowing star runs and reports an explicit overflow diagnostic", () => {
+    const score = buildNormalizedScore(`time 4/4
+note 1/16
+grouping 4
+
+HH | x${"*".repeat(1100)} |`);
+
+    expect(
+      score.errors.some((error) =>
+        error.message.includes("exceeds the exact duration range under current modifier counts"),
+      ),
+    ).toBe(true);
+    expect(score.measures[0]?.events ?? []).toEqual([]);
+  });
+
+  it("pins the binary exponent boundary at 1023/1024", () => {
+    expect(calculateTokenWeightAsFraction(basicToken("d", 0, 0, 1023))).toEqual({
+      numerator: Math.pow(2, 1023),
+      denominator: 1,
+    });
+
+    const score = buildNormalizedScore(`time 4/4
+note 1/16
+grouping 4
+
+HH | x${"*".repeat(1024)} |`);
+
+    expect(
+      score.errors.some((error) =>
+        error.message.includes("exceeds the exact duration range under current modifier counts"),
+      ),
+    ).toBe(true);
+  });
+
+  it("reports overflow for combined dot-plus-star exponents that exceed exact range", () => {
+    const combined = `${".".repeat(52)}${"*".repeat(972)}`;
+    const score = buildNormalizedScore(`time 4/4
+note 1/16
+grouping 4
+
+HH | x${combined} |`);
+
+    expect(
+      score.errors.some((error) =>
+        error.message.includes("exceeds the exact duration range under current modifier counts"),
+      ),
+    ).toBe(true);
+    expect(score.measures[0]?.events ?? []).toEqual([]);
+  });
+
+  it("keeps large star-slash cancellation valid on the authoritative normalization path", () => {
+    const balanced = `${"*".repeat(60)}${"/".repeat(60)}`;
+    const rests = Array.from({ length: 15 }, () => "-").join(" ");
+    const score = buildNormalizedScore(`time 4/4
+note 1/16
+grouping 4
+
+HH | x${balanced} ${rests} |`);
+
+    expect(score.errors).toEqual([]);
+    const events = score.measures[0]?.events ?? [];
+    expect(events[0]).toMatchObject({
+      track: "HH",
+      start: { numerator: 0, denominator: 1 },
+      duration: { numerator: 1, denominator: 16 },
+    });
+  });
+
+  it("drops the whole overflowing measure contribution instead of emitting misaligned later events", () => {
+    const score = buildNormalizedScore(`time 4/4
+note 1/16
+grouping 4
+
+HH | x${"*".repeat(1100)} x x x |`);
+
+    expect(
+      score.errors.some((error) =>
+        error.message.includes("exceeds the exact duration range under current modifier counts"),
+      ),
+    ).toBe(true);
+    expect(score.measures[0]?.events ?? []).toEqual([]);
   });
 
   it("parses d*3 as doubled note + inline repeat ×3 (star is consumed by inline repeat)", () => {

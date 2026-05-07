@@ -89,4 +89,20 @@ SD | [2: < !] d d |`);
       }),
     );
   });
+
+  it("does not leak hairpin state from an overflowed measure", () => {
+    const score = buildNormalizedScore(`time 4/4
+note 1/16
+grouping 4
+
+HH | < x${"*".repeat(1100)} ! | x - - - - - - - - - - - - - - - |`);
+
+    expect(
+      score.errors.some((error) =>
+        error.message.includes("exceeds the exact duration range under current modifier counts"),
+      ),
+    ).toBe(true);
+    expect(score.measures[0]?.hairpins).toBeUndefined();
+    expect(score.measures[1]?.hairpins).toBeUndefined();
+  });
 });

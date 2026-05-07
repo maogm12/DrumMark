@@ -17,6 +17,7 @@ import {
 } from "./types";
 import {
   resolveFallbackTrack,
+  basicTokenExceedsExactDurationRange,
   calculateTokenWeightAsFraction,
   addFractions,
   compareFractions,
@@ -70,8 +71,10 @@ function normalizeExplicitMeasure(
   const needsRestFill = measure.tokens.length === 0 && measure.multiRestCount === undefined;
   let tokens = needsRestFill ? makeRestTokens(divisions) : [...measure.tokens];
 
+  const containsOverflowToken = tokens.some((token) => tokenExceedsExactDurationRange(token));
+
   const divisionsFrac: Fraction = { numerator: divisions, denominator: 1 };
-  if (measure.multiRestCount === undefined) {
+  if (measure.multiRestCount === undefined && !containsOverflowToken) {
     const currentWeight = tokens.reduce(
       (sum, t) => addFractions(sum, calculateTokenWeightAsFraction(t)),
       { numerator: 0, denominator: 1 },
@@ -108,6 +111,16 @@ function normalizeExplicitMeasure(
     ...(measure.measureRepeatSlashes !== undefined ? { measureRepeat: { slashes: measure.measureRepeatSlashes } } : {}),
     ...(measure.multiRestCount !== undefined ? { multiRest: { count: measure.multiRestCount } } : {}),
   };
+}
+
+function tokenExceedsExactDurationRange(token: TokenGlyph): boolean {
+  if (token.kind === "basic") {
+    return basicTokenExceedsExactDurationRange(token);
+  }
+  if (token.kind === "combined" || token.kind === "group" || token.kind === "braced") {
+    return token.items.some((item) => tokenExceedsExactDurationRange(item));
+  }
+  return false;
 }
 
 function collectTracksInToken(token: TokenGlyph, tracks: Set<TrackName>, contextTrack: TrackName | "ANONYMOUS"): void {

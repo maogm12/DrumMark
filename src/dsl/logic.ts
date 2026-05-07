@@ -2,6 +2,25 @@ import type { Fraction, NormalizedEvent, NormalizedScore, TrackName, TokenGlyph 
 export type { Fraction };
 
 // --- Fraction Math ---
+export const MAX_EXACT_POWER_OF_TWO_EXPONENT = 1023;
+
+function safePowerOfTwo(exponent: number): number {
+  return exponent > MAX_EXACT_POWER_OF_TWO_EXPONENT
+    ? Number.MAX_SAFE_INTEGER
+    : Math.pow(2, exponent);
+}
+
+export function basicTokenExceedsExactDurationRange(token: Extract<TokenGlyph, { kind: "basic" }>): boolean {
+  const positiveBinaryExponent = Math.max(token.stars - token.halves, 0);
+  const negativeBinaryExponent = Math.max(token.halves - token.stars, 0);
+  const numeratorExponent = token.dots + 1 + positiveBinaryExponent;
+  const denominatorExponent = token.dots + negativeBinaryExponent;
+
+  if (token.dots > 52) return true;
+  if (numeratorExponent > MAX_EXACT_POWER_OF_TWO_EXPONENT) return true;
+  if (denominatorExponent > MAX_EXACT_POWER_OF_TWO_EXPONENT) return true;
+  return false;
+}
 
 export function gcd(a: number, b: number): number {
   let x = Math.round(Math.abs(a));
@@ -166,12 +185,17 @@ export function calculateTokenWeightAsFraction(token: TokenGlyph): Fraction {
   // dots=3: 1.875 = 15/8
   // numerator = 2^(dots+1) - 1, denominator = 2^dots
 
-  const dotNumerator = (1 << (token.dots + 1)) - 1;
-  const dotDenominator = 1 << token.dots;
+  const dotPower = safePowerOfTwo(token.dots);
+  const dotNextPower = safePowerOfTwo(token.dots + 1);
+  const dotNumerator = dotNextPower === Number.MAX_SAFE_INTEGER ? Number.MAX_SAFE_INTEGER : dotNextPower - 1;
+  const dotDenominator = dotPower;
   const dotWeight: Fraction = { numerator: dotNumerator, denominator: dotDenominator };
 
-  const halfDivider = 1 << token.halves;
-  const starMultiplier = 1 << token.stars; // 2^stars
+  // Reduce star/slash cancellation first so large symmetric runs still compute
+  // the correct base weight before any saturation is applied.
+  const netBinaryExponent = token.stars - token.halves;
+  const starMultiplier = netBinaryExponent > 0 ? safePowerOfTwo(netBinaryExponent) : 1;
+  const halfDivider = netBinaryExponent < 0 ? safePowerOfTwo(-netBinaryExponent) : 1;
   return simplify({
     numerator: dotWeight.numerator * starMultiplier,
     denominator: dotWeight.denominator * halfDivider,

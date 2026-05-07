@@ -184,6 +184,19 @@ divisions 4
     ]);
   });
 
+  it("accepts more than three star duration modifiers without a parser error", () => {
+    const doc = parseDocumentSkeleton(`time 4/4
+note 1/16
+grouping 4
+
+HH | x**** |`);
+
+    expect(doc.errors).toEqual([]);
+    expect(doc.paragraphs[0].lines[0].measures[0].tokens).toEqual([
+      { kind: "basic", value: "x", dots: 0, halves: 0, stars: 4, modifiers: [], trackOverride: undefined },
+    ]);
+  });
+
   it("rejects the removed DR track", () => {
     const doc = parseDocumentSkeleton(`time 4/4
 divisions 4

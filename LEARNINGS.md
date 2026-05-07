@@ -304,3 +304,29 @@ The regex parser (`parser.ts`) now has zero production references. All 345 tests
 - If JS treats invalid root `data-theme` values as “no explicit override”, CSS must do the same. A selector like `:root:not([data-theme])` is not equivalent, because `data-theme="foo"` disables the CSS fallback while JS may still resolve to system dark, splitting shell/docs and CodeMirror into different themes.
 - For theme precedence that supports both explicit override and system fallback, the safe CSS pattern is `:root[data-theme="dark"]` for the forced-dark branch and `:root:not([data-theme="light"]):not([data-theme="dark"])` for the system-driven dark branch.
 - White paper surfaces need their own invariant tokens (`--paper-*`) rather than reusing generic card tokens, or dark-mode refactors will eventually darken score preview pages by accident.
+
+## 2026-05-07 Addendum: Repo-Wide Audit Baseline
+
+- `docs/DRUMMARK_SPEC.md` and the parser are still out of sync on doubled-duration stars: the spec now says there is no per-token `*` limit, while `src/dsl/parser.ts` still hard-caps stars at 3 and emits a dedicated error. This is a true language-surface mismatch, not just wording drift.
+- DrumMark currently has two meaningful parser paths in play: the manual/regex skeleton path centered on `parseDocumentSkeleton(...)`, and the Lezer skeleton path used by `ast.ts` and parity tests. Proposal authors and implementers need to confirm which layer is authoritative before designing syntax work, or review discussion starts from the wrong architectural assumption.
+- The current app and renderer hotspots are large enough to be treated as architecture boundaries rather than ordinary files: `src/App.tsx`, `src/vexflow/renderer.ts`, `src/dsl/parser.ts`, and `src/dsl/lezer_skeleton.ts` are each well past the point where small feature work remains low-risk.
+
+## 2026-05-07 Addendum: Parser Ownership Decision
+
+- The repo-wide audit stream now has an explicit parser direction: the Lezer-based path is the authoritative parser for normalized semantics, and the older regex/manual parser is on a deprecation path rather than being preserved as a co-equal long-term authority.
+- Once a parser path is marked deprecated, no new syntax or semantic feature should be allowed to land only there. Transitional uses like parity comparison or rollback guard are acceptable only if they are explicitly documented as temporary.
+
+## 2026-05-07 Addendum: Unlimited Star Duration Math
+
+- Removing the old parser-side `stars > 3` cap is not enough by itself. Duration math must also avoid JavaScript bit-shift operators like `1 << stars`, because those silently become 32-bit and stop representing `2^stars` correctly once star counts grow.
+- For DrumMark's uncapped `*` duration suffixes, the safe implementation is ordinary exponentiation (`Math.pow(2, stars)` or equivalent), with measure validation remaining the real guardrail against unusable note weights.
+
+## 2026-05-07 Addendum: Exact-Range Overflow For Large Binary Duration Exponents
+
+- "No syntactic star cap" and "unbounded exact arithmetic" are different guarantees. After `*` and `/` cancellation, if the remaining net binary exponent exceeds the implementation's exact numeric range, the compiler should emit an explicit overflow diagnostic instead of silently re-capping syntax or hanging in fraction math.
+- Large symmetric `*`/`/` runs must still cancel exactly before any overflow guard is applied. The overflow check belongs on the surviving net exponent, not on raw star count alone.
+
+## 2026-05-07 Addendum: Duration-Modifier Overflow Scope
+
+- The exact-range overflow story is broader than star counts alone. Large dot runs can also exceed exact numeric representation even when parsing succeeds, so overflow detection should be framed in terms of the full duration modifier combination, not just `stars - halves`.
+- Once a measure contains an overflowed token, normalization should avoid emitting partial IR for later tokens in that same track-measure from a stale slot offset. Reporting the diagnostic and dropping that track-measure contribution is safer than fabricating misaligned events.

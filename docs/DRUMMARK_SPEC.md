@@ -1887,6 +1887,7 @@ The formula produces the same result regardless of order.
 ### Validation
 
 There is no per-token star limit. A token with many `*` modifiers simply has a large weight. Measure validation ensures the total weight of all tokens in a measure does not exceed the measure capacity (`MeasureDuration / NoteDuration`). If a token's weight would cause the measure to overflow, a normal "measure duration mismatch" error is raised.
+An implementation may also emit a numeric overflow diagnostic if the resulting duration implied by the modifier counts exceeds the exact arithmetic range of that implementation. This is not a syntactic star cap.
 
 
 ### Interaction with Rest Token

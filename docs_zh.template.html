@@ -52,19 +52,19 @@
                     </div>
                     <div class="docs-nav-group">
                         <span class="docs-nav-group-title">核心语法</span>
-                        <a href="#headers" class="docs-nav-link">头部与元数据</a>
+                        <a href="#headers" class="docs-nav-link">乐谱头部</a>
                         <a href="#tracks" class="docs-nav-link">轨道与乐器</a>
                         <a href="#tokens" class="docs-nav-link">符号与节奏</a>
-                        <a href="#modifiers" class="docs-nav-link">修饰符与技巧</a>
+                        <a href="#modifiers" class="docs-nav-link">奏法与技巧</a>
                         <a href="#groups" class="docs-nav-link">节奏组</a>
                         <a href="#combined-hits" class="docs-nav-link">组合击打</a>
                         <a href="#sticking" class="docs-nav-link">左右手</a>
                     </div>
                     <div class="docs-nav-group">
-                        <span class="docs-nav-group-title">结构与流向</span>
+                        <span class="docs-nav-group-title">结构与导航</span>
                         <a href="#repeats" class="docs-nav-link">重复与跳转</a>
                         <a href="#multi-rest" class="docs-nav-link">多小节休止</a>
-                        <a href="#inline-repeat" class="docs-nav-link">内联重复</a>
+                        <a href="#inline-repeat" class="docs-nav-link">快速重复</a>
                         <a href="#hairpins" class="docs-nav-link">渐强 / 渐弱</a>
                     </div>
                     <div class="docs-nav-group">
@@ -104,7 +104,7 @@
 
                         <article class="docs-section-card" id="headers">
                             <div class="docs-section-header">
-                                <h2>头部与元数据</h2>
+                                <h2>乐谱头部</h2>
                                 <p>定义乐谱的技术基础。</p>
                             </div>
                             <div class="docs-description">
@@ -258,7 +258,7 @@
                                     <ul class="docs-list">
                                         <li><strong>基础时值：</strong> <code>d</code> 与 <code>-</code> 的基础长度都是 1 个输入槽位。</li>
                                         <li><strong>精确时值：</strong> 系统内部用精确分数计算时值，而不是浮点近似。所以 <code>d..</code>、<code>d///</code>、<code>d.//</code> 都会严格相加后再做整小节校验。</li>
-                                        <li><strong>与内联重复区分：</strong> <code>d*</code> 是时值翻倍的单个音，而小节尾部的 <code>*N</code> 仍表示内联重复，例如 <code>| d* *2 |</code> 或 <code>| *4 |</code>。</li>
+                                        <li><strong>与快速重复区分：</strong> <code>d*</code> 是时值翻倍的单个音，而小节尾部的 <code>*N</code> 仍表示快速重复，例如 <code>| d* *2 |</code> 或 <code>| *4 |</code>。</li>
                                     </ul>
                                 </div>
                             </div>
@@ -267,7 +267,7 @@
 
                         <article class="docs-section-card" id="modifiers">
                             <div class="docs-section-header">
-                                <h2>修饰符与技巧</h2>
+                                <h2>奏法与技巧</h2>
                                 <p>为击打添加细节和发音方式。</p>
                             </div>
                             <div class="docs-description">
@@ -410,7 +410,7 @@
                                 <ul class="docs-list">
                                     <li><strong>合法示例：</strong> <code>| --8-- |</code>、<code>| -- 8 -- |</code>、<code>| ---8---- |</code>、<code>| ---- 12 -- |</code>。</li>
                                     <li><strong>非法示例：</strong> <code>| - 4 - |</code>、<code>| --1-- |</code>、<code>| --08-- |</code>。</li>
-                                    <li><strong>必须独占整小节：</strong> 不能与普通音符、group、其他 multi-rest、<code>%</code>/<code>%%</code> 或内联重复后缀共存。</li>
+                                    <li><strong>必须独占整小节：</strong> 不能与普通音符、group、其他 multi-rest、<code>%</code>/<code>%%</code> 或快速重复后缀共存。</li>
                                 </ul>
                             </div>
                             <div class="example-inject" data-example="multi-rest"></div>
@@ -418,7 +418,7 @@
 
                         <article class="docs-section-card" id="inline-repeat">
                             <div class="docs-section-header">
-                                <h2>内联重复</h2>
+                                <h2>快速重复</h2>
                                 <p>快速就地复制小节。</p>
                             </div>
                             <div class="docs-description">

@@ -10,18 +10,18 @@
   "tabs.xml": "XML",
   "panes.preview": "预览",
 
-  "status.valid": "✓ 有效",
-  "status.errors_one": "发现 {{count}} 个诊断问题",
-  "status.errors_other": "发现 {{count}} 个诊断问题",
+  "status.valid": "✓ 无错误",
+  "status.errors_one": "{{count}} 个错误",
+  "status.errors_other": "{{count}} 个错误",
   "status.lines": "{{count}} 小节",
   "status.repeats": "{{count}} 反复",
 
-  "preview.rendering": "渲染中…",
-  "preview.error": "无法渲染乐谱预览",
+  "preview.rendering": "绘制中…",
+  "preview.error": "无法生成乐谱预览",
 
   "toolbar.zoomAria": "缩放",
   "toolbar.zoomTitle": "缩放 {{percent}}%",
-  "toolbar.fitWidth": "适应宽度",
+  "toolbar.fitWidth": "铺满",
   "toolbar.print": "打印乐谱",
   "toolbar.settings": "设置",
   "toolbar.expandAll": "全部展开",
@@ -37,7 +37,7 @@
   "alert.printPopup": "请允许弹窗以使用打印功能。",
 
   "settings.pageLayout": "页面布局",
-  "settings.notes": "音符",
+  "settings.notes": "音符显示",
   "settings.staffLayout": "谱表与布局",
   "settings.topMargin": "上边距",
   "settings.bottomMargin": "下边距",
@@ -46,11 +46,11 @@
   "settings.hideVoice2Rests": "隐藏第二声部休止符",
   "settings.stemLength": "符干长度",
   "settings.staffScale": "谱表缩放",
-  "settings.systemSpacing": "系统间距",
+  "settings.systemSpacing": "谱行间距",
   "settings.titleHeight": "标题区高度",
   "settings.titleGap": "标题间距",
-  "settings.voltaOffset": "Volta 偏移",
-  "settings.hairpinOffset": "渐强渐弱纵向偏移",
+  "settings.voltaOffset": "房子偏移",
+  "settings.hairpinOffset": "强弱记号偏移",
   "settings.decrease": "减小 {{label}}",
   "settings.increase": "增大 {{label}}"
 }

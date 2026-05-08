@@ -955,7 +955,7 @@ function renderSystem(context: any, score: NormalizedScore, measures: RenderMeas
 
     const noteStart = stave.getNoteStartX();
     const noteEnd = stave.getX() + stave.getWidth();
-    const availableWidth = Math.max(10, noteEnd - noteStart - 10);
+    const availableWidth = Math.max(10, noteEnd - noteStart - Stave.defaultPadding);
     const formatter = new Formatter();
     formatter.joinVoices(staveVoices).format(staveVoices, availableWidth);
     applyDurationWeightedSpacing(formatter, spacingPlansByStave.get(stave), noteStart, availableWidth);

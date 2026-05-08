@@ -399,3 +399,8 @@ The regex parser (`parser.ts`) now has zero production references. All 345 tests
   targetScrollX = newCenterOffset + cursorInContentX * ratio - mx
   ```
 - Force layout recalculation with `void shell.scrollWidth` before assigning `shell.scrollLeft` to ensure the browser has applied the new CSS `width`.
+
+## 2026-05-07 Addendum: Disabling Chrome Swipe Navigation
+
+- Chrome's two-finger horizontal swipe (back/forward page navigation) is a browser-level gesture that bypasses `wheel` event interception and per-element `overscroll-behavior`.
+- The only CSS-based fix is `html { overscroll-behavior-x: none; }` — applied to the root element, not individual scroll containers. This tells Chrome that the entire page has no horizontal overscroll to consume, so the swipe gesture is never interpreted as a navigation intent.

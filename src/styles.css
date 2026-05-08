@@ -1089,6 +1089,10 @@ input {
 
 /* --- Staff Preview & Printable Styles --- */
 
+html {
+  overscroll-behavior-x: none;
+}
+
 .staff-preview-shell {
   position: absolute;
   inset: 0;

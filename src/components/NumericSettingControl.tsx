@@ -1,3 +1,5 @@
+import { useRef, useState, useEffect } from "react";
+
 function clampNumber(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
 }
@@ -14,6 +16,10 @@ function normalizeSteppedValue(value: number, min: number, max: number, step: nu
   return Number(clamped.toFixed(precision));
 }
 
+function inRange(value: number, min: number, max: number): boolean {
+  return value >= min && value <= max;
+}
+
 export function NumericSettingControl({
   label,
   value,
@@ -23,6 +29,7 @@ export function NumericSettingControl({
   onChange,
   ariaLabelDecrease,
   ariaLabelIncrease,
+  unit = "",
 }: {
   label: string;
   value: number;
@@ -32,12 +39,44 @@ export function NumericSettingControl({
   onChange: (value: number) => void;
   ariaLabelDecrease?: string;
   ariaLabelIncrease?: string;
+  unit?: string;
 }) {
   const inputMode = stepPrecision(step) > 0 ? "decimal" : "numeric";
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [editing, setEditing] = useState(false);
+  const [rawText, setRawText] = useState("");
+  const lastCommitted = useRef(value);
+
+  useEffect(() => {
+    if (!editing) {
+      setRawText(`${value}${unit}`);
+    }
+  }, [value, editing, unit]);
 
   const applyValue = (next: number) => {
-    onChange(normalizeSteppedValue(next, min, max, step));
+    const clamped = normalizeSteppedValue(next, min, max, step);
+    lastCommitted.current = clamped;
+    onChange(clamped);
   };
+
+  const parseInput = (text: string) => parseFloat(text.replace(unit, ""));
+
+  const commit = () => {
+    setEditing(false);
+    const parsed = parseInput(rawText);
+    if (!Number.isNaN(parsed)) {
+      applyValue(parsed);
+    } else {
+      setRawText(`${lastCommitted.current}${unit}`);
+    }
+  };
+
+  const isInvalid = editing && (() => {
+    const stripped = rawText.replace(unit, "");
+    if (stripped === "" || stripped === "-") return false;
+    const parsed = parseInput(rawText);
+    return !Number.isNaN(parsed) && !inRange(parsed, min, max);
+  })();
 
   return (
     <div className="setting-row numeric-setting-row">
@@ -47,23 +86,40 @@ export function NumericSettingControl({
           className="setting-stepper-button"
           type="button"
           aria-label={ariaLabelDecrease ?? `Decrease ${label}`}
+          disabled={value <= min}
           onClick={() => applyValue(value - step)}
         >
           -
         </button>
         <input
-          className="setting-stepper-input"
-          type="number"
+          ref={inputRef}
+          className={`setting-stepper-input${isInvalid ? " setting-stepper-input-invalid" : ""}`}
+          type="text"
           inputMode={inputMode}
-          min={min}
-          max={max}
-          step={step}
-          value={value}
-          onFocus={(e) => e.target.select()}
+          value={editing ? rawText : `${value}${unit}`}
+          onFocus={() => {
+            setEditing(true);
+            setRawText(String(value));
+          }}
+          onBlur={commit}
           onChange={(e) => {
-            const next = parseFloat(e.target.value);
-            if (!Number.isNaN(next)) {
-              applyValue(next);
+            const raw = e.target.value;
+            setRawText(raw);
+            const parsed = parseInput(raw);
+            if (raw === "" || raw === "-") return;
+            if (!Number.isNaN(parsed) && inRange(parsed, min, max)) {
+              applyValue(parsed);
+            }
+          }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              commit();
+              inputRef.current?.blur();
+            }
+            if (e.key === "Escape") {
+              setEditing(false);
+              setRawText(`${lastCommitted.current}${unit}`);
+              inputRef.current?.blur();
             }
           }}
         />
@@ -71,6 +127,7 @@ export function NumericSettingControl({
           className="setting-stepper-button"
           type="button"
           aria-label={ariaLabelIncrease ?? `Increase ${label}`}
+          disabled={value >= max}
           onClick={() => applyValue(value + step)}
         >
           +

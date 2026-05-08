@@ -870,6 +870,30 @@ input {
 
 .setting-stepper-input:focus-visible {
   box-shadow: 0 0 0 2px var(--accent-primary);
+  border-radius: 4px;
+  z-index: 1;
+  position: relative;
+}
+
+.setting-stepper-button:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.setting-stepper-input-invalid {
+  border-color: var(--accent-danger) !important;
+  color: var(--accent-danger);
+}
+
+.setting-stepper-input-invalid:focus-visible {
+  box-shadow: 0 0 0 2px var(--accent-danger);
+  border-radius: 4px;
+}
+
+.setting-stepper-input:focus-visible {
+  box-shadow: 0 0 0 2px var(--accent-primary);
+  border-radius: 4px;
   z-index: 1;
   position: relative;
 }
@@ -883,6 +907,35 @@ input {
 .setting-stepper-input[type="number"] {
   appearance: textfield;
   -moz-appearance: textfield;
+}
+
+.setting-stepper-unit {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  padding-right: 2px;
+  flex-shrink: 0;
+}
+
+.setting-stepper-input::-webkit-outer-spin-button,
+.setting-stepper-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.setting-stepper-button:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.setting-stepper-input-invalid {
+  border-color: var(--accent-danger) !important;
+  color: var(--accent-danger);
+}
+
+.setting-stepper-input-invalid:focus-visible {
+  box-shadow: 0 0 0 2px var(--accent-danger);
+  border-radius: 4px;
 }
 
 .toggle-root {

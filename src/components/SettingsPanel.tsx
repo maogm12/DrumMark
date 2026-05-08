@@ -5,6 +5,40 @@ import type { AppSettings } from "../hooks/useAppSettings";
 import type { PagePadding } from "../vexflow/types";
 import { useT } from "../i18n/context";
 
+function Numeric({
+  labelKey,
+  value,
+  min,
+  max,
+  step,
+  onChange,
+  unit,
+}: {
+  labelKey: string;
+  value: number;
+  min: number;
+  max: number;
+  step: number;
+  onChange: (value: number) => void;
+  unit?: string;
+}) {
+  const { t } = useT();
+  const label = t(labelKey as Parameters<typeof t>[0]);
+  return (
+    <NumericSettingControl
+      label={label}
+      value={value}
+      min={min}
+      max={max}
+      step={step}
+      onChange={onChange}
+      unit={unit}
+      ariaLabelDecrease={t("settings.decrease", { label })}
+      ariaLabelIncrease={t("settings.increase", { label })}
+    />
+  );
+}
+
 export function SettingsPanel({
   settings,
   updateSetting,
@@ -17,37 +51,6 @@ export function SettingsPanel({
   debugMode: boolean;
 }) {
   const { t } = useT();
-
-  const Numeric = ({
-    labelKey,
-    value,
-    min,
-    max,
-    step,
-    onChange,
-  }: {
-    labelKey: string;
-    value: number;
-    min: number;
-    max: number;
-    step: number;
-    onChange: (value: number) => void;
-  }) => {
-    const label = t(labelKey as Parameters<typeof t>[0]);
-    return (
-      <NumericSettingControl
-        label={label}
-        value={value}
-        min={min}
-        max={max}
-        step={step}
-        onChange={onChange}
-        ariaLabelDecrease={t("settings.decrease", { label })}
-        ariaLabelIncrease={t("settings.increase", { label })}
-      />
-    );
-  };
-
   return (
     <Accordion.Root type="multiple" className="settings-accordion">
       <Accordion.Item value="page-layout">
@@ -89,7 +92,7 @@ export function SettingsPanel({
           <span className="settings-accordion-chevron" aria-hidden />
         </Accordion.Trigger>
         <Accordion.Content className="settings-content">
-          <Numeric labelKey="settings.staffSize" value={settings.staffScale} min={0.3} max={1.5} step={0.05} onChange={(value) => updateSetting("staffScale", value)} />
+          <Numeric labelKey="settings.staffScale" value={Math.round(settings.staffScale * 100)} min={30} max={150} step={5} unit="%" onChange={(value) => updateSetting("staffScale", value / 100)} />
           <Numeric labelKey="settings.systemSpacing" value={settings.systemSpacing} min={0} max={100} step={1} onChange={(value) => updateSetting("systemSpacing", value)} />
           <Numeric labelKey="settings.titleHeight" value={settings.headerHeight} min={10} max={300} step={1} onChange={(value) => updateSetting("headerHeight", value)} />
           <Numeric labelKey="settings.titleGap" value={settings.headerStaffSpacing} min={0} max={100} step={1} onChange={(value) => updateSetting("headerStaffSpacing", value)} />

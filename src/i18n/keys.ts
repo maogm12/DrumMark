@@ -45,7 +45,7 @@ export const I18N_KEYS = [
   "settings.rightMargin",
   "settings.hideVoice2Rests",
   "settings.stemLength",
-  "settings.staffSize",
+  "settings.staffScale",
   "settings.systemSpacing",
   "settings.titleHeight",
   "settings.titleGap",

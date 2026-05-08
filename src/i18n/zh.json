@@ -45,7 +45,7 @@
   "settings.rightMargin": "右边距",
   "settings.hideVoice2Rests": "隐藏第二声部休止符",
   "settings.stemLength": "符干长度",
-  "settings.staffSize": "谱表尺寸",
+  "settings.staffScale": "谱表缩放",
   "settings.systemSpacing": "系统间距",
   "settings.titleHeight": "标题区高度",
   "settings.titleGap": "标题间距",

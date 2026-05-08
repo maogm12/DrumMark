@@ -138,3 +138,31 @@ After consolidation is complete, implementation proceeds task-by-task:
 
 - Directional tints must define a `:root[data-theme="dark"]` variant. Light-mode hardcoded colors (e.g., `#eff6ff`) have no meaning in dark mode — use translucent accent values (`rgba(59, 130, 246, 0.15)`) instead.
 - The system-dark `@media (prefers-color-scheme: dark)` block must mirror explicit dark-theme variants using the established `:root:not([data-theme="light"]):not([data-theme="dark"])` selector pattern.
+
+## Internationalization (i18n)
+
+### Architecture
+- All user-facing UI strings live in `src/i18n/en.json` (source of truth) and `src/i18n/zh.json` (Chinese translations).
+- Keys are typed via `src/i18n/keys.ts` — `I18nKey` is a union of all valid key names, preventing typos at compile time.
+- Runtime: `src/i18n/context.tsx` exports `<I18nProvider>` (wraps app root in `main.tsx`) and `useT()` hook. `t(key, params?)` replaces `{{param}}` placeholders.
+
+### Adding a New Key
+1. Add the key to `I18N_KEYS` array in `src/i18n/keys.ts`
+2. Add the English value to `src/i18n/en.json`
+3. Add the Chinese value (or `""` stub) to `src/i18n/zh.json`
+4. Use `const { t } = useT()` in the component, then `t("key.name")` in JSX
+
+### Adding a Language
+1. Add the locale code to the `Locale` type in `src/i18n/context.tsx`
+2. Create `src/i18n/<locale>.json` with all keys from `en.json`
+3. Add to the `bundles` map in `context.tsx`
+4. Add locale detection logic in `resolveLocale()`
+
+### Pluralization
+- No pluralization engine. Use `_one` / `_other` suffix convention (e.g., `status.errors_one`, `status.errors_other`).
+- Caller is responsible for selecting the correct key based on count.
+- Chinese has no plural morphology — map both `*_one` and `*_other` to the same template.
+
+### Scope
+- **Translated**: UI chrome (tabs, buttons, tooltips, aria-labels), status bar, settings labels, preview states, alerts.
+- **Not translated**: Debug section labels, music notation terms (D.C., Fine, Coda — standard Italian), CLI output, parser error messages, docs page.

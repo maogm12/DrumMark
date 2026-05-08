@@ -6,6 +6,7 @@ import { createRoot } from "react-dom/client";
 import { flushSync } from "react-dom";
 import { SettingsPanel } from "./SettingsPanel";
 import { defaultSettings } from "../hooks/useAppSettings";
+import { I18nProvider } from "../i18n/context";
 
 beforeAll(() => {
   if (!globalThis.window) return;
@@ -26,7 +27,7 @@ function renderSync(jsx: React.ReactElement): HTMLElement {
   const container = document.createElement("div");
   const root = createRoot(container);
   flushSync(() => {
-    root.render(jsx);
+    root.render(<I18nProvider>{jsx}</I18nProvider>);
   });
   return container;
 }

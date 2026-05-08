@@ -21,6 +21,8 @@ export function NumericSettingControl({
   max,
   step,
   onChange,
+  ariaLabelDecrease,
+  ariaLabelIncrease,
 }: {
   label: string;
   value: number;
@@ -28,6 +30,8 @@ export function NumericSettingControl({
   max: number;
   step: number;
   onChange: (value: number) => void;
+  ariaLabelDecrease?: string;
+  ariaLabelIncrease?: string;
 }) {
   const inputMode = stepPrecision(step) > 0 ? "decimal" : "numeric";
 
@@ -42,7 +46,7 @@ export function NumericSettingControl({
         <button
           className="setting-stepper-button"
           type="button"
-          aria-label={`Decrease ${label}`}
+          aria-label={ariaLabelDecrease ?? `Decrease ${label}`}
           onClick={() => applyValue(value - step)}
         >
           -
@@ -66,7 +70,7 @@ export function NumericSettingControl({
         <button
           className="setting-stepper-button"
           type="button"
-          aria-label={`Increase ${label}`}
+          aria-label={ariaLabelIncrease ?? `Increase ${label}`}
           onClick={() => applyValue(value + step)}
         >
           +

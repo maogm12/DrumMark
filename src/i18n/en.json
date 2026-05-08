@@ -1,0 +1,56 @@
+{
+  "brand.subtitle": "Text-first notation",
+
+  "theme.toggle": "Toggle theme",
+  "lang.toggle": "Switch language",
+  "nav.docs": "Docs",
+
+  "tabs.editor": "Editor",
+  "tabs.page": "Page",
+  "tabs.xml": "XML",
+  "panes.preview": "Preview",
+
+  "status.valid": "✓ Valid",
+  "status.errors_one": "{{count}} diagnostic issue found",
+  "status.errors_other": "{{count}} diagnostic issues found",
+  "status.lines": "{{count}} measures",
+  "status.repeats": "{{count}} repeats",
+
+  "preview.rendering": "Rendering…",
+  "preview.error": "Could not render staff preview",
+
+  "toolbar.zoomAria": "Zoom",
+  "toolbar.zoomTitle": "Zoom {{percent}}%",
+  "toolbar.fitWidth": "Fit Width",
+  "toolbar.print": "Print Score",
+  "toolbar.settings": "Settings",
+  "toolbar.expandAll": "Expand All",
+  "toolbar.collapseAll": "Collapse All",
+  "toolbar.export": "Export MusicXML",
+
+  "generating.musicxml": "Generating MusicXML…",
+  "xml.emptyState": "Switch to XML tab to generate",
+  "xml.previewAria": "MusicXML preview",
+
+  "errorPanel.title": "Errors",
+  "errorPanel.close": "Close",
+  "alert.printPopup": "Please allow popups to use the print feature.",
+
+  "settings.pageLayout": "Page Layout",
+  "settings.notes": "Notes",
+  "settings.staffLayout": "Staff & Layout",
+  "settings.topMargin": "Top Margin",
+  "settings.bottomMargin": "Bottom Margin",
+  "settings.leftMargin": "Left Margin",
+  "settings.rightMargin": "Right Margin",
+  "settings.hideVoice2Rests": "Hide secondary voice rests",
+  "settings.stemLength": "Note Stem Length",
+  "settings.staffSize": "Staff Size",
+  "settings.systemSpacing": "System Spacing",
+  "settings.titleHeight": "Title Area Height",
+  "settings.titleGap": "Title Gap",
+  "settings.voltaOffset": "Volta Offset",
+  "settings.hairpinOffset": "Hairpin Vertical Offset",
+  "settings.decrease": "Decrease {{label}}",
+  "settings.increase": "Increase {{label}}"
+}

@@ -10,6 +10,7 @@ import { getDrumMarkEditorTheme, drumMarkLanguage, drumMarkSyntaxHighlighting } 
 import { resolveDocumentTheme, subscribeToThemeChanges, type AppTheme } from "./theme";
 import { useAppSettings } from "./hooks/useAppSettings";
 import { SettingsPanel } from "./components/SettingsPanel";
+import { useT } from "./i18n/context";
 import * as Tabs from "@radix-ui/react-tabs";
 import * as Popover from "@radix-ui/react-popover";
 import type { MainTab } from "./hooks/useAppSettings";
@@ -372,6 +373,7 @@ const PagePreview = memo(function PagePreview({
   active: boolean;
   theme: AppTheme;
 }) {
+  const { t } = useT();
   const shellRef = useRef<HTMLDivElement | null>(null);
   const scrollPosRef = useRef({ top: 0, left: 0 });
   const [renderedMarkup, setRenderedMarkup] = useState("");
@@ -430,7 +432,7 @@ const PagePreview = memo(function PagePreview({
         setIsRendering(false);
         const msg = renderError instanceof Error ? renderError.message : String(renderError);
         console.error("VexFlow render error:", renderError);
-        setError(msg || "Could not render staff preview.");
+        setError(msg || t("preview.error"));
       });
   }, [score, systemSpacing, stemLength, voltaSpacing, hairpinOffsetY, headerStaffSpacing, headerHeight, active, hideVoice2Rests, pagePadding, staffScale, tempoOffsetX, tempoOffsetY, measureNumberOffsetX, measureNumberOffsetY, measureNumberFontSize, durationSpacingCompression, measureWidthCompression]);
 
@@ -452,7 +454,7 @@ const PagePreview = memo(function PagePreview({
     <div className={`staff-preview-shell${theme === "dark" ? " staff-preview-shell-dark" : ""}`} ref={shellRef} onScroll={handleScroll}>
       {error ? <div className="staff-error">{error}</div> : null}
       {isRendering && !renderedMarkup ? (
-        <div className="staff-rendering">Rendering…</div>
+        <div className="staff-rendering">{t("preview.rendering")}</div>
       ) : null}
       <div className="staff-printable-frame">
         <div className="staff-printable">
@@ -468,20 +470,21 @@ function MusicXmlPreview({ xml, collapsed, toggle }: {
   collapsed: Set<string>;
   toggle: (path: string) => void;
 }) {
+  const { t } = useT();
   const parser = new DOMParser();
   const doc = parser.parseFromString(xml, "text/xml");
   const parseError = doc.querySelector("parsererror");
 
   if (parseError) {
     return (
-      <div className="xml-preview" aria-label="MusicXML preview">
+      <div className="xml-preview" aria-label={t("xml.previewAria")}>
         <pre>{xml}</pre>
       </div>
     );
   }
 
   return (
-    <div className="xml-preview" aria-label="MusicXML preview">
+    <div className="xml-preview" aria-label={t("xml.previewAria")}>
       {renderXmlTreeLines(doc.documentElement, 0, "", collapsed, toggle, 0)}
     </div>
   );
@@ -587,6 +590,7 @@ export function App() {
     settingsVisible,
     setSettingsVisible,
   } = useAppSettings();
+  const { t, locale, setLocale } = useT();
   const [pageZoomMenuOpen, setPageZoomMenuOpen] = useState(false);
   const pageZoomMenuOpenRef = useRef(pageZoomMenuOpen);
   useEffect(() => { pageZoomMenuOpenRef.current = pageZoomMenuOpen; }, [pageZoomMenuOpen]);
@@ -776,7 +780,7 @@ export function App() {
   function handlePrint() {
     const printWindow = window.open("", "_blank");
     if (!printWindow) {
-      window.alert("Please allow popups to use the print feature.");
+      window.alert(t("alert.printPopup"));
       return;
     }
 
@@ -1015,28 +1019,31 @@ export function App() {
             <h1>
               DrumMark
             </h1>
-            <p>Text-first notation</p>
+            <p>{t("brand.subtitle")}</p>
           </div>
         </div>
         <div className="header-actions">
-          <button className="theme-toggle-button" onClick={toggleTheme} type="button" aria-label="Toggle theme">
+          <button className="export-button" onClick={() => setLocale(locale === "en" ? "zh" : "en")} type="button" aria-label={t("lang.toggle")}>
+            {locale === "en" ? "中文" : "EN"}
+          </button>
+          <button className="theme-toggle-button" onClick={toggleTheme} type="button" aria-label={t("theme.toggle")}>
             <span className="theme-icon theme-icon-light"><SunIcon /></span>
             <span className="theme-icon theme-icon-dark"><MoonIcon /></span>
           </button>
-          <a className="export-button" href="docs.html"><BookIcon /> Docs</a>
+          <a className="export-button" href="docs.html"><BookIcon /> {t("nav.docs")}</a>
         </div>
       </header>
 
       <section className="workspace">
         <section className={`pane editor-pane${settings.activeTab === "editor" ? " active" : ""}`} style={{ width: editorWidth }}>
           <header className="pane-header">
-            <span className="pane-title">Editor</span>
+            <span className="pane-title">{t("tabs.editor")}</span>
             <div className="preview-header-actions mobile-only-actions">
               <Tabs.Root className="editor-pane-tabs" value={settings.activeTab} onValueChange={(v) => updateSetting("activeTab", v as MainTab)}>
                 <Tabs.List className="tabs-list">
-                  <Tabs.Trigger className="tabs-trigger" value="editor">Editor</Tabs.Trigger>
-                  <Tabs.Trigger className="tabs-trigger" value="page">Page</Tabs.Trigger>
-                  <Tabs.Trigger className="tabs-trigger" value="xml">XML</Tabs.Trigger>
+                  <Tabs.Trigger className="tabs-trigger" value="editor">{t("tabs.editor")}</Tabs.Trigger>
+                  <Tabs.Trigger className="tabs-trigger" value="page">{t("tabs.page")}</Tabs.Trigger>
+                  <Tabs.Trigger className="tabs-trigger" value="xml">{t("tabs.xml")}</Tabs.Trigger>
                 </Tabs.List>
               </Tabs.Root>
             </div>
@@ -1046,15 +1053,15 @@ export function App() {
 
         <div className="resizer" onMouseDown={handleMouseDown} />
 
-        <section className={`pane preview-pane${settings.activeTab !== "editor" ? " active" : ""}`} aria-label="Preview">
+        <section className={`pane preview-pane${settings.activeTab !== "editor" ? " active" : ""}`} aria-label={t("panes.preview")}>
           <header className="pane-header">
-            <span className="pane-title">Preview</span>
+            <span className="pane-title">{t("panes.preview")}</span>
             <div className="preview-header-actions">
               <Tabs.Root className="preview-pane-tabs" value={settings.activeTab} onValueChange={(v) => updateSetting("activeTab", v as MainTab)}>
                 <Tabs.List className="tabs-list">
-                  <Tabs.Trigger className="tabs-trigger tab-hide-desktop" value="editor">Editor</Tabs.Trigger>
-                  <Tabs.Trigger className="tabs-trigger" value="page">Page</Tabs.Trigger>
-                  <Tabs.Trigger className="tabs-trigger" value="xml">XML</Tabs.Trigger>
+                  <Tabs.Trigger className="tabs-trigger tab-hide-desktop" value="editor">{t("tabs.editor")}</Tabs.Trigger>
+                  <Tabs.Trigger className="tabs-trigger" value="page">{t("tabs.page")}</Tabs.Trigger>
+                  <Tabs.Trigger className="tabs-trigger" value="xml">{t("tabs.xml")}</Tabs.Trigger>
                 </Tabs.List>
               </Tabs.Root>
             </div>
@@ -1067,26 +1074,26 @@ export function App() {
                   <div className="toolbar-group">
                     <Popover.Root open={pageZoomMenuOpen} onOpenChange={setPageZoomMenuOpen}>
                       <Popover.Trigger asChild>
-                        <button aria-label="Zoom" className="surface-icon-button" type="button" title={`Zoom ${pageZoomPercent}%`}>
+                        <button aria-label={t("toolbar.zoomAria")} className="surface-icon-button" type="button" title={t("toolbar.zoomTitle", { percent: pageZoomPercent })}>
                           {Math.abs(pageScaleRef.current - 1.0) < 0.001 ? <SearchIcon /> : (pageScaleRef.current < 1 ? <SearchMinusIcon /> : <SearchPlusIcon />)}
                         </button>
                       </Popover.Trigger>
                       <Popover.Portal>
                         <Popover.Content className="zoom-popover-content" sideOffset={4}>
-                          <div className="page-zoom-readout">{fitWidth ? "Fit Width" : `${pageZoomPercent}%`}</div>
+                          <div className="page-zoom-readout">{fitWidth ? t("toolbar.fitWidth") : `${pageZoomPercent}%`}</div>
                           <div className="page-zoom-buttons">
                             <button className="page-zoom-action" onClick={() => adjustPageScale(-0.1)} type="button">-</button>
                             <button className="page-zoom-reset" onClick={() => { setFitWidth(false); applyScaleCss(1); setPageZoomMenuOpen(false); }} type="button">100%</button>
                             <button className="page-zoom-action" onClick={() => adjustPageScale(0.1)} type="button">+</button>
-                            <button className="page-zoom-reset fit-width-button" onClick={() => setFitWidth(true)} type="button">Fit Width</button>
+                            <button className="page-zoom-reset fit-width-button" onClick={() => setFitWidth(true)} type="button">{t("toolbar.fitWidth")}</button>
                           </div>
                         </Popover.Content>
                       </Popover.Portal>
                     </Popover.Root>
-                    <button className="surface-icon-button" onClick={handlePrint} type="button" title="Print Score">
+                    <button className="surface-icon-button" onClick={handlePrint} type="button" title={t("toolbar.print")}>
                       <PrinterIcon />
                     </button>
-                    <button className={`surface-icon-button${settingsVisible ? " active" : ""}`} onClick={() => setSettingsVisible(!settingsVisible)} type="button" title="Settings">
+                    <button className={`surface-icon-button${settingsVisible ? " active" : ""}`} onClick={() => setSettingsVisible(!settingsVisible)} type="button" title={t("toolbar.settings")}>
                       <SettingsIcon />
                     </button>
                   </div>
@@ -1120,24 +1127,24 @@ export function App() {
               <div className={`preview-surface${settings.activeTab === "xml" ? " active" : ""}`} aria-hidden={settings.activeTab !== "xml"}>
                 <div className="surface-toolbar xml-surface-toolbar">
                   <div className="toolbar-group">
-                    <button className="surface-icon-button" onClick={xmlToggleAll} type="button" title={xmlIsAllCollapsed ? "Expand All" : "Collapse All"}>
+                    <button className="surface-icon-button" onClick={xmlToggleAll} type="button" title={xmlIsAllCollapsed ? t("toolbar.expandAll") : t("toolbar.collapseAll")}>
                       {xmlIsAllCollapsed ? <ExpandAllIcon /> : <CollapseAllIcon />}
                     </button>
-                    <button className="surface-icon-button" disabled={!canExport || isXmlPending} onClick={handleMusicXmlExport} type="button" title={isXmlPending ? "Generating MusicXML…" : "Export MusicXML"}>
+                    <button className="surface-icon-button" disabled={!canExport || isXmlPending} onClick={handleMusicXmlExport} type="button" title={isXmlPending ? t("generating.musicxml") : t("toolbar.export")}>
                       <SaveIcon />
                     </button>
                   </div>
                 </div>
                 {settings.activeTab === "xml" ? (
                   isXmlPending ? (
-                    <div className="xml-preview xml-pending" aria-label="MusicXML preview">
-                      <span>Generating MusicXML…</span>
+                    <div className="xml-preview xml-pending" aria-label={t("xml.previewAria")}>
+                      <span>{t("generating.musicxml")}</span>
                     </div>
                   ) : staffXml ? (
                     <MusicXmlPreview xml={staffXml} collapsed={xmlCollapsed} toggle={xmlToggle} />
                   ) : (
-                    <div className="xml-preview xml-pending" aria-label="MusicXML preview">
-                      <span>Switch to XML tab to generate</span>
+                    <div className="xml-preview xml-pending" aria-label={t("xml.previewAria")}>
+                      <span>{t("xml.emptyState")}</span>
                     </div>
                   )
                 ) : null}
@@ -1164,20 +1171,20 @@ export function App() {
               onClick={() => setShowErrors(!showErrors)}
               type="button"
             >
-              {score.errors.length} diagnostic issue{score.errors.length === 1 ? "" : "s"} found
+              {t(score.errors.length === 1 ? "status.errors_one" : "status.errors_other", { count: score.errors.length })}
             </button>
           ) : (
-            <span className="status-success">✓ DSL Valid</span>
+            <span className="status-success">{t("status.valid")}</span>
           )}
         </div>
-        <div className="status-right">{score.ast.paragraphs.length} lines • {score.ast.repeatSpans.length} repeats</div>
+        <div className="status-right">{t("status.lines", { count: score.ast.paragraphs.length })} • {t("status.repeats", { count: score.ast.repeatSpans.length })}</div>
       </footer>
 
       {score.errors.length > 0 && showErrors && (
         <div className="error-list">
           <div className="error-list-header">
-            <span>Errors</span>
-            <button onClick={() => setShowErrors(false)}>Close</button>
+            <span>{t("errorPanel.title")}</span>
+            <button onClick={() => setShowErrors(false)}>{t("errorPanel.close")}</button>
           </div>
           <div className="error-list-content">
             {score.errors.map((error, index) => (

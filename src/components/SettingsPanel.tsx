@@ -3,6 +3,7 @@ import * as Accordion from "@radix-ui/react-accordion";
 import { NumericSettingControl } from "./NumericSettingControl";
 import type { AppSettings } from "../hooks/useAppSettings";
 import type { PagePadding } from "../vexflow/types";
+import { useT } from "../i18n/context";
 
 export function SettingsPanel({
   settings,
@@ -15,57 +16,61 @@ export function SettingsPanel({
   updatePagePadding: (key: keyof PagePadding, value: number) => void;
   debugMode: boolean;
 }) {
+  const { t } = useT();
+
+  const Numeric = ({
+    labelKey,
+    value,
+    min,
+    max,
+    step,
+    onChange,
+  }: {
+    labelKey: string;
+    value: number;
+    min: number;
+    max: number;
+    step: number;
+    onChange: (value: number) => void;
+  }) => {
+    const label = t(labelKey as Parameters<typeof t>[0]);
+    return (
+      <NumericSettingControl
+        label={label}
+        value={value}
+        min={min}
+        max={max}
+        step={step}
+        onChange={onChange}
+        ariaLabelDecrease={t("settings.decrease", { label })}
+        ariaLabelIncrease={t("settings.increase", { label })}
+      />
+    );
+  };
+
   return (
     <Accordion.Root type="multiple" className="settings-accordion">
       <Accordion.Item value="page-layout">
         <Accordion.Trigger className="settings-trigger">
-          Page Layout
+          {t("settings.pageLayout")}
           <span className="settings-accordion-chevron" aria-hidden />
         </Accordion.Trigger>
         <Accordion.Content className="settings-content">
-          <NumericSettingControl
-            label="Top Margin"
-            value={settings.pagePadding.top}
-            min={0}
-            max={800}
-            step={1}
-            onChange={(value) => updatePagePadding("top", value)}
-          />
-          <NumericSettingControl
-            label="Bottom Margin"
-            value={settings.pagePadding.bottom}
-            min={0}
-            max={800}
-            step={1}
-            onChange={(value) => updatePagePadding("bottom", value)}
-          />
-          <NumericSettingControl
-            label="Left Margin"
-            value={settings.pagePadding.left}
-            min={0}
-            max={400}
-            step={1}
-            onChange={(value) => updatePagePadding("left", value)}
-          />
-          <NumericSettingControl
-            label="Right Margin"
-            value={settings.pagePadding.right}
-            min={0}
-            max={400}
-            step={1}
-            onChange={(value) => updatePagePadding("right", value)}
-          />
+          <Numeric labelKey="settings.topMargin" value={settings.pagePadding.top} min={0} max={800} step={1} onChange={(value) => updatePagePadding("top", value)} />
+          <Numeric labelKey="settings.bottomMargin" value={settings.pagePadding.bottom} min={0} max={800} step={1} onChange={(value) => updatePagePadding("bottom", value)} />
+          <Numeric labelKey="settings.leftMargin" value={settings.pagePadding.left} min={0} max={400} step={1} onChange={(value) => updatePagePadding("left", value)} />
+          <Numeric labelKey="settings.rightMargin" value={settings.pagePadding.right} min={0} max={400} step={1} onChange={(value) => updatePagePadding("right", value)} />
         </Accordion.Content>
       </Accordion.Item>
 
       <Accordion.Item value="notation">
         <Accordion.Trigger className="settings-trigger">
-          Notes
+          {t("settings.notes")}
           <span className="settings-accordion-chevron" aria-hidden />
         </Accordion.Trigger>
         <Accordion.Content className="settings-content">
           <label className="setting-row toggle">
-            <span>Hide secondary voice rests</span>
+            <span>{t("settings.hideVoice2Rests")}</span>
             <Switch.Root
               className="toggle-root"
               checked={settings.hideVoice2Rests}
@@ -74,71 +79,22 @@ export function SettingsPanel({
               <Switch.Thumb className="toggle-thumb" />
             </Switch.Root>
           </label>
-          <NumericSettingControl
-            label="Note Stem Length"
-            value={settings.stemLength}
-            min={15}
-            max={50}
-            step={1}
-            onChange={(value) => updateSetting("stemLength", value)}
-          />
+          <Numeric labelKey="settings.stemLength" value={settings.stemLength} min={15} max={50} step={1} onChange={(value) => updateSetting("stemLength", value)} />
         </Accordion.Content>
       </Accordion.Item>
 
       <Accordion.Item value="staff-header">
         <Accordion.Trigger className="settings-trigger">
-          Staff & Layout
+          {t("settings.staffLayout")}
           <span className="settings-accordion-chevron" aria-hidden />
         </Accordion.Trigger>
         <Accordion.Content className="settings-content">
-          <NumericSettingControl
-            label="Staff Size"
-            value={settings.staffScale}
-            min={0.3}
-            max={1.5}
-            step={0.05}
-            onChange={(value) => updateSetting("staffScale", value)}
-          />
-          <NumericSettingControl
-            label="System Spacing"
-            value={settings.systemSpacing}
-            min={0}
-            max={100}
-            step={1}
-            onChange={(value) => updateSetting("systemSpacing", value)}
-          />
-          <NumericSettingControl
-            label="Title Area Height"
-            value={settings.headerHeight}
-            min={10}
-            max={300}
-            step={1}
-            onChange={(value) => updateSetting("headerHeight", value)}
-          />
-          <NumericSettingControl
-            label="Title Gap"
-            value={settings.headerStaffSpacing}
-            min={0}
-            max={100}
-            step={1}
-            onChange={(value) => updateSetting("headerStaffSpacing", value)}
-          />
-          <NumericSettingControl
-            label="Volta Offset"
-            value={settings.voltaSpacing}
-            min={-20}
-            max={20}
-            step={1}
-            onChange={(value) => updateSetting("voltaSpacing", value)}
-          />
-          <NumericSettingControl
-            label="Hairpin Vertical Offset"
-            value={settings.hairpinOffsetY}
-            min={-40}
-            max={40}
-            step={1}
-            onChange={(value) => updateSetting("hairpinOffsetY", value)}
-          />
+          <Numeric labelKey="settings.staffSize" value={settings.staffScale} min={0.3} max={1.5} step={0.05} onChange={(value) => updateSetting("staffScale", value)} />
+          <Numeric labelKey="settings.systemSpacing" value={settings.systemSpacing} min={0} max={100} step={1} onChange={(value) => updateSetting("systemSpacing", value)} />
+          <Numeric labelKey="settings.titleHeight" value={settings.headerHeight} min={10} max={300} step={1} onChange={(value) => updateSetting("headerHeight", value)} />
+          <Numeric labelKey="settings.titleGap" value={settings.headerStaffSpacing} min={0} max={100} step={1} onChange={(value) => updateSetting("headerStaffSpacing", value)} />
+          <Numeric labelKey="settings.voltaOffset" value={settings.voltaSpacing} min={-20} max={20} step={1} onChange={(value) => updateSetting("voltaSpacing", value)} />
+          <Numeric labelKey="settings.hairpinOffset" value={settings.hairpinOffsetY} min={-40} max={40} step={1} onChange={(value) => updateSetting("hairpinOffsetY", value)} />
         </Accordion.Content>
       </Accordion.Item>
 

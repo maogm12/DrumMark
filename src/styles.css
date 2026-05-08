@@ -1094,9 +1094,7 @@ input {
   inset: 0;
   overflow: auto;
   background: var(--bg-app);
-  display: flex;
-  flex-direction: column;
-  scroll-behavior: smooth;
+  display: grid;
 }
 
 .staff-printable-frame {

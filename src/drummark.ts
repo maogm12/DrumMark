@@ -513,7 +513,8 @@ const editorThemeSpec = {
     backgroundColor: "transparent",
   },
   ".cm-activeLine": {
-    backgroundColor: "var(--editor-active-line)",
+    position: "relative",
+    backgroundColor: "transparent",
   },
   ".cm-cursor": {
     borderLeftColor: "var(--text-main)",

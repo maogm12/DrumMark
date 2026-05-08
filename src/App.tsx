@@ -914,9 +914,40 @@ export function App() {
     const handleGlobalWheel = (event: WheelEvent) => {
       if (event.ctrlKey || event.metaKey) {
         event.preventDefault();
-        if (activeTabRef.current === "page" && pageSurfaceBodyRef.current?.contains(event.target as Node)) {
-          adjustPageScale(event.deltaY < 0 ? 0.1 : -0.1);
-        }
+        if (activeTabRef.current !== "page") return;
+        const shell = pageSurfaceBodyRef.current?.querySelector(".staff-preview-shell") as HTMLElement | null;
+        if (!shell?.contains(event.target as Node)) return;
+
+        const oldScale = pageScaleRef.current;
+        const delta = event.deltaY < 0 ? 0.1 : -0.1;
+        const newScale = Math.max(0.2, Math.min(3.0, Math.round((oldScale + delta) * 100) / 100));
+        if (newScale === oldScale) return;
+
+        const BASE = 800;
+        const oldWidth = BASE * oldScale;
+        const newWidth = BASE * newScale;
+        const ratio = newScale / oldScale;
+        const shellWidth = shell.clientWidth;
+
+        const oldCenterOffset = Math.max(0, (shellWidth - oldWidth) / 2);
+        const newCenterOffset = Math.max(0, (shellWidth - newWidth) / 2);
+
+        const rect = shell.getBoundingClientRect();
+        const mx = event.clientX - rect.left;
+        const my = event.clientY - rect.top;
+
+        const cursorInContentX = mx - oldCenterOffset + shell.scrollLeft;
+        const cursorInContentY = my + shell.scrollTop;
+
+        const targetScrollX = newCenterOffset + cursorInContentX * ratio - mx;
+        const targetScrollY = cursorInContentY * ratio - my;
+
+        setFitWidth(false);
+        applyScaleCss(newScale);
+
+        void shell.scrollWidth;
+        shell.scrollLeft = targetScrollX;
+        shell.scrollTop = targetScrollY;
       }
     };
 

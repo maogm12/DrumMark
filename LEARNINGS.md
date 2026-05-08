@@ -379,3 +379,23 @@ The regex parser (`parser.ts`) now has zero production references. All 345 tests
 - Popover uses controlled mode (`open`/`onOpenChange`) with `<Popover.Portal modal={false}>` for z-index isolation.
 - A 4-test SettingsPanel smoke test (jsdom, `flushSync`, `ResizeObserver` polyfill) guards against rendering regressions.
 - CSS cleanup removed 200+ lines of obsolete rules (native range slider pseudo-elements, custom toggle switch, `.preview-tabs`/`.preview-tab`, `.page-zoom-popover`, `.settings-section`). Preservation checklist verified: VexFlow dark-mode inversion, Bravura `@font-face`, XML tree viewer, print styles, CodeMirror wrapper, zoom popover inner-content classes.
+
+## 2026-05-07 Addendum: Zoom Decoupled from React State
+
+- Storing `pageScale` in React state causes a full component re-render on every zoom step (Ctrl+Scroll, ResizeObserver, pinch), which makes zoom feel laggy. The zoom should be a pure CSS operation.
+- Solution: move `pageScale` out of `AppSettings` state entirely. Use a `useRef` initialized from `localStorage`, update the `--page-scale` CSS variable directly during gestures (no `setState`), and debounce-localStorage-persist the value. The toolbar readout reads from the ref.
+- Only `fitWidth` (boolean) stays in React state — toggling auto-fit mode is a discrete user action, not a continuous gesture.
+
+## 2026-05-07 Addendum: Zoom-to-Cursor Requires Centering Offset
+
+- The formula `newScroll = (oldScroll + cursorOffset) * ratio - cursorOffset` only works when the content is anchored to the left edge (`scrollLeft = 0` at origin).
+- With `margin: auto` centering via grid, content that *fits* the viewport has a `centerOffset = (shellWidth - contentWidth) / 2` that pushes it away from the left edge.
+- When zooming from a fit state to an overflow state, the center offset collapses to 0, causing a content jump that the basic formula doesn't compensate for.
+- Correct formula:
+  ```
+  oldCenterOffset = max(0, (shellWidth - oldContentWidth) / 2)
+  newCenterOffset = max(0, (shellWidth - newContentWidth) / 2)
+  cursorInContentX = mx - oldCenterOffset + scrollLeft
+  targetScrollX = newCenterOffset + cursorInContentX * ratio - mx
+  ```
+- Force layout recalculation with `void shell.scrollWidth` before assigning `shell.scrollLeft` to ensure the browser has applied the new CSS `width`.

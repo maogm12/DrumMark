@@ -613,10 +613,10 @@ export function App() {
   const [showErrors, setShowErrors] = useState(false);
 
   useEffect(() => {
-    if (pageZoomMenuOpenRef.current && (settings.activeTab !== "page" || Math.abs(settings.pageScale - 1) < 0.001)) {
+    if (pageZoomMenuOpenRef.current) {
       setPageZoomMenuOpen(false);
     }
-  }, [settings.pageScale, settings.activeTab]);
+  }, [settings.activeTab]);
   
   const [editorWidth, setEditorWidth] = useState(() => {
     const saved = localStorage.getItem("drummark-editor-width");
@@ -844,32 +844,35 @@ export function App() {
   }
 
   const [fitWidth, setFitWidth] = useState(true);
-  const pageScaleRef = useRef(settings.pageScale);
-  useEffect(() => { pageScaleRef.current = settings.pageScale; }, [settings.pageScale]);
-  const pageZoomPercent = Math.round(pageScaleRef.current * 100);
 
   const pageSurfaceBodyRef = useRef<HTMLDivElement | null>(null);
-  const scaleSyncTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const savedScale = localStorage.getItem("drummark-pageScale");
+  const pageScaleRef = useRef(savedScale ? Math.max(0.2, Math.min(3.0, parseFloat(savedScale) || 0.8)) : 0.8);
+  const pageZoomPercent = Math.round(pageScaleRef.current * 100);
+
+  const scalePersistTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const applyScaleCss = (scale: number) => {
-    pageSurfaceBodyRef.current?.style.setProperty("--page-scale", scale.toString());
-    pageScaleRef.current = scale;
-  };
-
-  const commitScaleToState = (scale: number) => {
-    updateSetting("pageScale", Math.max(0.2, Math.min(3.0, Math.round(scale * 100) / 100)));
-  };
-
-  const debouncedCommitScale = () => {
-    if (scaleSyncTimerRef.current) clearTimeout(scaleSyncTimerRef.current);
-    scaleSyncTimerRef.current = setTimeout(() => {
-      commitScaleToState(pageScaleRef.current);
-    }, 300);
+    const clamped = Math.max(0.2, Math.min(3.0, Math.round(scale * 100) / 100));
+    pageSurfaceBodyRef.current?.style.setProperty("--page-scale", clamped.toString());
+    pageScaleRef.current = clamped;
+    if (scalePersistTimerRef.current) clearTimeout(scalePersistTimerRef.current);
+    scalePersistTimerRef.current = setTimeout(() => {
+      localStorage.setItem("drummark-pageScale", clamped.toString());
+    }, 500);
   };
 
   useEffect(() => {
     return () => {
-      if (scaleSyncTimerRef.current) clearTimeout(scaleSyncTimerRef.current);
+      if (scalePersistTimerRef.current) clearTimeout(scalePersistTimerRef.current);
+    };
+  }, []);
+
+  useEffect(() => {
+    pageSurfaceBodyRef.current?.style.setProperty("--page-scale", pageScaleRef.current.toString());
+    return () => {
+      if (scalePersistTimerRef.current) clearTimeout(scalePersistTimerRef.current);
     };
   }, []);
 
@@ -884,9 +887,12 @@ export function App() {
         const containerWidth = entry.contentRect.width - padding;
         const baseWidth = 800;
         const newScale = Math.max(0.2, Math.min(3.0, Math.round((containerWidth / baseWidth) * 20) / 20));
-
-        applyScaleCss(newScale);
-        debouncedCommitScale();
+        pageSurfaceBodyRef.current?.style.setProperty("--page-scale", newScale.toString());
+        pageScaleRef.current = newScale;
+        if (scalePersistTimerRef.current) clearTimeout(scalePersistTimerRef.current);
+        scalePersistTimerRef.current = setTimeout(() => {
+          localStorage.setItem("drummark-pageScale", newScale.toString());
+        }, 500);
       }
     });
 
@@ -894,26 +900,21 @@ export function App() {
     return () => observer.disconnect();
   }, [fitWidth]);
 
-  useEffect(() => {
-    pageSurfaceBodyRef.current?.style.setProperty("--page-scale", settings.pageScale.toString());
-  }, [settings.pageScale]);
-
   function adjustPageScale(delta: number) {
     setFitWidth(false);
     const newScale = Math.max(0.2, Math.min(3.0, Math.round((pageScaleRef.current + delta) * 100) / 100));
     applyScaleCss(newScale);
-    debouncedCommitScale();
   }
 
     const touchStateRef = useRef({ distance: 0, initialScale: 1 });
-    const settingsRef = useRef(settings);
-    useEffect(() => { settingsRef.current = settings; }, [settings]);
+    const activeTabRef = useRef(settings.activeTab);
+    useEffect(() => { activeTabRef.current = settings.activeTab; }, [settings.activeTab]);
 
     useEffect(() => {
     const handleGlobalWheel = (event: WheelEvent) => {
       if (event.ctrlKey || event.metaKey) {
         event.preventDefault();
-        if (settingsRef.current.activeTab === "page" && pageSurfaceBodyRef.current?.contains(event.target as Node)) {
+        if (activeTabRef.current === "page" && pageSurfaceBodyRef.current?.contains(event.target as Node)) {
           adjustPageScale(event.deltaY < 0 ? 0.1 : -0.1);
         }
       }
@@ -956,7 +957,7 @@ export function App() {
 
     const handleTouchEnd = () => {
       if (touchStateRef.current.distance > 0) {
-        commitScaleToState(pageScaleRef.current);
+        applyScaleCss(pageScaleRef.current);
         touchStateRef.current.distance = 0;
       }
     };
@@ -1036,7 +1037,7 @@ export function App() {
                     <Popover.Root open={pageZoomMenuOpen} onOpenChange={setPageZoomMenuOpen}>
                       <Popover.Trigger asChild>
                         <button aria-label="Zoom" className="surface-icon-button" type="button" title={`Zoom ${pageZoomPercent}%`}>
-                          {Math.abs(settings.pageScale - 1.0) < 0.001 ? <SearchIcon /> : (settings.pageScale < 1 ? <SearchMinusIcon /> : <SearchPlusIcon />)}
+                          {Math.abs(pageScaleRef.current - 1.0) < 0.001 ? <SearchIcon /> : (pageScaleRef.current < 1 ? <SearchMinusIcon /> : <SearchPlusIcon />)}
                         </button>
                       </Popover.Trigger>
                       <Popover.Portal>
@@ -1044,7 +1045,7 @@ export function App() {
                           <div className="page-zoom-readout">{fitWidth ? "Fit Width" : `${pageZoomPercent}%`}</div>
                           <div className="page-zoom-buttons">
                             <button className="page-zoom-action" onClick={() => adjustPageScale(-0.1)} type="button">-</button>
-                            <button className="page-zoom-reset" onClick={() => { setFitWidth(false); updateSetting("pageScale", 1.0); setPageZoomMenuOpen(false); }} type="button">100%</button>
+                            <button className="page-zoom-reset" onClick={() => { setFitWidth(false); applyScaleCss(1); setPageZoomMenuOpen(false); }} type="button">100%</button>
                             <button className="page-zoom-action" onClick={() => adjustPageScale(0.1)} type="button">+</button>
                             <button className="page-zoom-reset fit-width-button" onClick={() => setFitWidth(true)} type="button">Fit Width</button>
                           </div>

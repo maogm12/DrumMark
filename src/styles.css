@@ -1112,10 +1112,8 @@ input {
 }
 
 .staff-printable {
-  width: 800px;
+  width: calc(800px * var(--page-scale, 1));
   flex-shrink: 0;
-  transform: scale(var(--page-scale, 1));
-  transform-origin: top center;
 }
 
 .staff-preview-page {

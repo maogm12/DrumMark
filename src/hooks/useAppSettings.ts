@@ -6,7 +6,6 @@ export type MainTab = "editor" | "page" | "xml";
 export interface AppSettings {
   hideVoice2Rests: boolean;
   pagePadding: PagePadding;
-  pageScale: number;
   staffScale: number;
   headerStaffSpacing: number;
   systemSpacing: number;
@@ -27,7 +26,6 @@ export interface AppSettings {
 export const defaultSettings: AppSettings = {
   hideVoice2Rests: false,
   pagePadding: { top: 30, right: 50, bottom: 30, left: 50 },
-  pageScale: 0.8,
   staffScale: 0.75,
   headerStaffSpacing: 60,
   headerHeight: 50,
@@ -53,9 +51,6 @@ export function useAppSettings() {
     if (!saved) return defaultSettings;
     try {
       const parsed = JSON.parse(saved);
-      if (parsed.pageScale === undefined || parsed.pageScale < 0.2 || parsed.pageScale > 5) {
-        parsed.pageScale = 1.0;
-      }
       if (parsed.stemLength === undefined || parsed.stemLength < 20 || parsed.stemLength > 40) {
         parsed.stemLength = 31;
       }

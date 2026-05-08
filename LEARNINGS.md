@@ -355,3 +355,7 @@ The regex parser (`parser.ts`) now has zero production references. All 345 tests
 - Playwright was an unused devDependency: no config file, no `@playwright/test`, zero test files. Rather than wiring up a full browser test harness, the project extends its existing jsdom render-probe pattern to cover the audit's required smoke surfaces.
 - A single `smoke.test.ts` file (jsdom environment, 27 tests) covers: preview fixture rendering with headers/navigation, settings interaction via `hideVoice2Rests` toggle, hairpin offset rendering, multi-system layout, edge-case collapse (single-tack rest), and full rendering of all 22 docs examples. This keeps the test suite deterministic and fixture-based while avoiding the maintenance cost of a browser E2E layer.
 - Deterministic SVG string assertions catch regressions at the structural level (missing stavenotes, missing edge navigation, missing content text) without requiring visual snapshots.
+
+## 2026-05-07 Addendum: Renderer Layout Seam Extraction
+
+- The layout planning functions in `renderer.ts` (`buildMeasureSpacingPlan`, `buildMeasureContentWeight`, `normalizeMeasureWeightsToWidths`, `buildMeasureWidthPlan`) are pure data transformations with zero `any` types and zero VexFlow API calls. Extracting them to `src/vexflow/layout.ts` creates a ~230-line module that depends only on `../dsl/logic` (Fraction/VoiceEntry math).

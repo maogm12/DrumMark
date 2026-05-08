@@ -93,11 +93,10 @@ Rules for this ledger:
 - **Dependencies**: None
 
 ### Task 7: Perform Targeted Renderer Seam Extraction
-- [ ] **Status**: Pending
-- **Scope**: `src/vexflow/renderer.ts`, `src/vexflow/types.ts`, extracted helper module(s), `src/vexflow/render-probe.test.ts`, `LEARNINGS.md`
+- [x] **Status**: Done
+- **Scope**: `src/vexflow/renderer.ts`, `src/vexflow/layout.ts`, `src/vexflow/render-probe.test.ts`, `src/vexflow/smoke.test.ts`, `LEARNINGS.md`
 - **Commits**:
-  - `refactor(render): extract renderer seam helpers`
-  - `test(render): keep render probes green across extraction`
+  - `refactor(render): extract renderer layout seam`
 - **Acceptance Criteria**:
   - At least one named seam is extracted from `renderer.ts` without DSL behavior change.
   - Extraction targets a high-risk concern already identified in the audit, such as layout planning, overlays, or typed VexFlow adapters.

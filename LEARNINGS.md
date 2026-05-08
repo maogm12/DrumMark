@@ -334,3 +334,8 @@ The regex parser (`parser.ts`) now has zero production references. All 345 tests
 ## 2026-05-07 Addendum: Parser Ownership Test Contract
 
 - Once Lezer is declared authoritative, spec-facing correctness tests should assert Lezer behavior directly. Any remaining manual-parser comparison tests are drift probes only; they should not keep the deprecated parser in the role of production oracle.
+
+## 2026-05-07 Addendum: Navigation Diagnostic Columns On The Lezer Path
+
+- Parser-path drift can hide in diagnostics even when syntax acceptance matches. For positional navigation errors, the manual parser already reports the offending token column, so the Lezer path should derive columns from the nav node's real source offset instead of defaulting to measure-start column `1`.
+- The three highest-value drift buckets from the audit were enough to close Task 3 without reopening parser architecture work: uncapped duration suffix handling, positional navigation diagnostics, and paragraph-level `note 1/N` overrides.

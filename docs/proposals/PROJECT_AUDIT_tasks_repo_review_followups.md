@@ -41,7 +41,7 @@ Rules for this ledger:
 - **Dependencies**: Task 1
 
 ### Task 3: Audit and Close Remaining Parser-Path Drift
-- [ ] **Status**: Pending
+- [x] **Status**: Done
 - **Scope**: `src/dsl/parser.ts`, `src/dsl/lezer_skeleton.ts`, `src/dsl/ast.ts`, `src/dsl/*.test.ts`, `docs/DRUMMARK_SPEC.md`, `LEARNINGS.md`
 - **Commits**:
   - `test(dsl): add drift fixtures for parser-path parity`
@@ -181,6 +181,14 @@ Task 2 implementation note:
   - The regex/manual parser is deprecated.
   - Its allowed temporary uses are narrowed to migration aid, comparison harness, rollback guard, or explicitly documented transitional support.
   - Any older task-language implying a broader long-term secondary-parser role is overridden by this later narrowing.
+
+Task 3 completion note:
+
+- The covered drift buckets for Task 3 are explicitly:
+  - uncapped duration suffix handling
+  - positional navigation diagnostics, including shorthand fallback cases
+  - paragraph-level `note 1/N` overrides
+- This completion note supersedes any earlier looser wording that named parser drift areas without spelling out the three fixture buckets above.
 
 ### Review Round 3
 

@@ -551,6 +551,7 @@ function collectHeaderDiagnostics(source: string, errors: ParseError[]): void {
 
 const START_NAV_KINDS: StartNavKind[] = ["segno", "coda"];
 const END_NAV_KINDS: EndNavKind[] = ["fine", "dc", "ds", "dc-al-fine", "dc-al-coda", "ds-al-fine", "ds-al-coda", "to-coda"];
+const NAV_TOKEN_PATTERN = /@(segno|coda|fine|dc-al-fine|dc-al-coda|ds-al-fine|ds-al-coda|to-coda|dc|ds)/g;
 
 interface NavNode {
   name: string;
@@ -566,9 +567,11 @@ function extractNavFromMeasureTokens(
   errors: ParseError[],
 ): {
   nonNavNodes: { from: number; to: number; rawText: string }[];
+  navNodes: NavNode[];
   startNav?: ParsedStartNav;
   endNav?: ParsedEndNav;
 } {
+  const columnFromOffset = (offset: number) => offset - source.lastIndexOf("\n", offset - 1);
   const navNodes: NavNode[] = [];
   const nonNavNodes: { from: number; to: number; rawText: string }[] = [];
 
@@ -591,7 +594,7 @@ function extractNavFromMeasureTokens(
   }
 
   const firstNavNode = navNodes[0];
-  if (!firstNavNode) return { nonNavNodes };
+  if (!firstNavNode) return { nonNavNodes, navNodes };
 
   const lineNumber = source.slice(0, firstNavNode.from).split("\n").length;
   const pureNavigationMeasure = nonNavNodes.length === 0;
@@ -609,7 +612,7 @@ function extractNavFromMeasureTokens(
       if (startNav !== undefined) {
         errors.push({
           line: lineNumber,
-          column: 1,
+          column: columnFromOffset(nav.from),
           message: "Measure contains multiple start-side navigation markers",
         });
         continue;
@@ -619,7 +622,7 @@ function extractNavFromMeasureTokens(
         if (!pureNavigationMeasure && anchorSeen !== 0) {
           errors.push({
             line: lineNumber,
-            column: 1,
+            column: columnFromOffset(nav.from),
             message: "`@coda` may appear only at the beginning of a measure",
           });
           continue;
@@ -630,7 +633,7 @@ function extractNavFromMeasureTokens(
         if (!pureNavigationMeasure && nonNavAfter === 0) {
           errors.push({
             line: lineNumber,
-            column: 1,
+            column: columnFromOffset(nav.from),
             message: "`@segno` may not appear at the end of a measure",
           });
           continue;
@@ -645,7 +648,7 @@ function extractNavFromMeasureTokens(
       if (endNav !== undefined) {
         errors.push({
           line: lineNumber,
-          column: 1,
+          column: columnFromOffset(nav.from),
           message: "Measure contains multiple end-side navigation instructions",
         });
         continue;
@@ -655,7 +658,7 @@ function extractNavFromMeasureTokens(
         if (!pureNavigationMeasure && anchorSeen === 0) {
           errors.push({
             line: lineNumber,
-            column: 1,
+            column: columnFromOffset(nav.from),
             message: "`@to-coda` may not appear at the beginning of a measure",
           });
           continue;
@@ -668,7 +671,7 @@ function extractNavFromMeasureTokens(
         if (!pureNavigationMeasure && nonNavAfter !== 0) {
           errors.push({
             line: lineNumber,
-            column: 1,
+            column: columnFromOffset(nav.from),
             message: `\`@${nav.kind}\` may appear only at the end of a measure`,
           });
           continue;
@@ -678,19 +681,96 @@ function extractNavFromMeasureTokens(
     }
   }
 
-  return { nonNavNodes, startNav, endNav };
+  return { nonNavNodes, navNodes, startNav, endNav };
+}
+
+function extractNavAroundShorthandNodes(
+  navNodes: NavNode[],
+  shorthandRange: { from: number; to: number },
+  lineNumber: number,
+  lineStartOffset: number,
+  errors: ParseError[],
+): {
+  startNav?: ParsedStartNav;
+  endNav?: ParsedEndNav;
+} {
+  let startNav: ParsedStartNav | undefined;
+  let endNav: ParsedEndNav | undefined;
+
+  for (const nav of navNodes) {
+    const column = nav.from - lineStartOffset + 1;
+    if (nav.name === "NavMarker") {
+      if (startNav !== undefined) {
+        errors.push({
+          line: lineNumber,
+          column,
+          message: "Measure contains multiple start-side navigation markers",
+        });
+        continue;
+      }
+      if (nav.kind === "coda" && nav.to > shorthandRange.from) {
+        errors.push({
+          line: lineNumber,
+          column,
+          message: "`@coda` may appear only at the beginning of a measure",
+        });
+        continue;
+      }
+      if (nav.kind === "segno" && nav.from >= shorthandRange.to) {
+        errors.push({
+          line: lineNumber,
+          column,
+          message: "`@segno` may not appear at the end of a measure",
+        });
+        continue;
+      }
+      startNav = { kind: nav.kind as StartNavKind, anchor: "left-edge" };
+      continue;
+    }
+
+    if (endNav !== undefined) {
+      errors.push({
+        line: lineNumber,
+        column,
+        message: "Measure contains multiple end-side navigation instructions",
+      });
+      continue;
+    }
+    if (nav.from < shorthandRange.to) {
+      errors.push({
+        line: lineNumber,
+        column,
+        message: nav.kind === "to-coda"
+          ? "`@to-coda` may not appear at the beginning of a measure"
+          : `\`@${nav.kind}\` may appear only at the end of a measure`,
+      });
+      continue;
+    }
+    endNav = { kind: nav.kind as EndNavKind, anchor: "right-edge" };
+  }
+
+  return { startNav, endNav };
 }
 
 function extractNavFromShorthandBodyText(
   bodyText: string,
-  shorthandRange: { from: number; to: number },
+  bodyColumn: number,
   lineNumber: number,
   errors: ParseError[],
 ): {
   startNav?: ParsedStartNav;
   endNav?: ParsedEndNav;
 } {
-  const navMatches = [...bodyText.matchAll(/@(segno|coda|fine|dc|ds|dc-al-fine|dc-al-coda|ds-al-fine|ds-al-coda|to-coda)/g)];
+  const shorthandMatch = bodyText.match(/%+/) ?? bodyText.match(/--+\s*((?:1\d+)|(?:[2-9]\d*))\s*--+/);
+  const shorthandRange = shorthandMatch?.index !== undefined
+    ? {
+      from: shorthandMatch.index,
+      to: shorthandMatch.index + shorthandMatch[0].length,
+    }
+    : undefined;
+  if (!shorthandRange) return {};
+
+  const navMatches = [...bodyText.matchAll(NAV_TOKEN_PATTERN)];
   if (navMatches.length === 0) return {};
 
   let startNav: ParsedStartNav | undefined;
@@ -701,12 +781,13 @@ function extractNavFromShorthandBodyText(
     const from = match.index ?? 0;
     const to = from + raw.length;
     const kind = raw.slice(1);
+    const column = bodyColumn + from;
 
     if (START_NAV_KINDS.includes(kind as StartNavKind)) {
       if (startNav !== undefined) {
         errors.push({
           line: lineNumber,
-          column: 1,
+          column,
           message: "Measure contains multiple start-side navigation markers",
         });
         continue;
@@ -714,7 +795,7 @@ function extractNavFromShorthandBodyText(
       if (to > shorthandRange.from) {
         errors.push({
           line: lineNumber,
-          column: 1,
+          column,
           message: kind === "coda"
             ? "`@coda` may appear only at the beginning of a measure"
             : "`@segno` may not appear at the end of a measure",
@@ -729,7 +810,7 @@ function extractNavFromShorthandBodyText(
       if (endNav !== undefined) {
         errors.push({
           line: lineNumber,
-          column: 1,
+          column,
           message: "Measure contains multiple end-side navigation instructions",
         });
         continue;
@@ -737,7 +818,7 @@ function extractNavFromShorthandBodyText(
       if (from < shorthandRange.to) {
         errors.push({
           line: lineNumber,
-          column: 1,
+          column,
           message: kind === "to-coda"
             ? "`@to-coda` may not appear at the beginning of a measure"
             : `\`@${kind}\` may appear only at the end of a measure`,
@@ -935,10 +1016,15 @@ export function parseDocumentSkeletonFromLezer(source: string): DocumentSkeleton
         (child) => child.name === "⚠",
       );
       const bodyColumn = bodyNode.from - lineNode.from + 1;
+      const sectionColumn = section.from - lineNode.from + 1;
       const nextSectionStart = sectionIndex + 1 < measureSections.length
         ? measureSections[sectionIndex + 1]?.from ?? lineNode.to
         : lineNode.to;
-      const bodyText = source.slice(bodyNode.from, nextSectionStart).trim();
+      const sectionText = source.slice(section.from, nextSectionStart);
+      const rawBodyText = source.slice(bodyNode.from, nextSectionStart);
+      const bodyText = rawBodyText.trim();
+      const shorthandSectionMatch = sectionText.match(/%+/)
+        ?? sectionText.match(/--+\s*((?:1\d+)|(?:[2-9]\d*))\s*--+/);
 
       const measureExprNodes = contentNode ? topLevelNamedChildren(contentNode, allNodes, "MeasureExpr") : [];
       const mtNodes = measureExprNodes.map((expr) => ({
@@ -953,28 +1039,33 @@ export function parseDocumentSkeletonFromLezer(source: string): DocumentSkeleton
         source,
         errors,
       );
-      let { nonNavNodes, startNav, endNav } = extractedNav;
-      if ((repeatNode || multiRestNode) && (startNav === undefined || endNav === undefined)) {
-        const shorthandText = repeatNode
-          ? nodeText(repeatNode, source)
-          : multiRestNode
-            ? nodeText(multiRestNode, source)
-            : "";
-        const shorthandIndex = bodyText.indexOf(shorthandText);
-        if (shorthandIndex >= 0) {
+      let { nonNavNodes, navNodes, startNav, endNav } = extractedNav;
+      if (shorthandSectionMatch) {
+        const shorthandNode = repeatNode ?? multiRestNode;
+        if (shorthandNode && navNodes.length > 0) {
+          const shorthandNav = extractNavAroundShorthandNodes(
+            navNodes,
+            { from: shorthandNode.from, to: shorthandNode.to },
+            lineNumber,
+            lineNode.from,
+            errors,
+          );
+          startNav = shorthandNav.startNav;
+          endNav = shorthandNav.endNav;
+        } else {
           const fallbackNav = extractNavFromShorthandBodyText(
-            bodyText,
-            { from: shorthandIndex, to: shorthandIndex + shorthandText.length },
+            sectionText,
+            sectionColumn,
             lineNumber,
             errors,
           );
-          startNav ??= fallbackNav.startNav;
-          endNav ??= fallbackNav.endNav;
+          startNav = fallbackNav.startNav;
+          endNav = fallbackNav.endNav;
         }
       }
 
       let content = bodyHasRecoveryErrors || repeatNode || multiRestNode
-        ? bodyText
+        ? rawBodyText.trim()
         : contentNode
           ? nodeText(contentNode, source).trim()
           : "";
@@ -986,7 +1077,7 @@ export function parseDocumentSkeletonFromLezer(source: string): DocumentSkeleton
         if (navNode) navTexts.push(nodeText(navNode, source));
       }
       if (bodyHasRecoveryErrors || repeatNode || multiRestNode) {
-        for (const match of bodyText.matchAll(/@(segno|coda|fine|dc|ds|dc-al-fine|dc-al-coda|ds-al-fine|ds-al-coda|to-coda)/g)) {
+        for (const match of sectionText.matchAll(NAV_TOKEN_PATTERN)) {
           navTexts.push(match[0]);
         }
       }

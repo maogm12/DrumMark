@@ -1246,12 +1246,12 @@ export function parseDocumentSkeletonFromLezer(source: string): DocumentSkeleton
         lastMeasure.tokens.length === 0 &&
         !lastMeasure.repeatStart &&
         !lastMeasure.repeatEnd &&
+        lastMeasure.voltaIndices === undefined &&
         lastMeasure.measureRepeatSlashes === undefined &&
         lastMeasure.multiRestCount === undefined &&
         (
           lastMeasure.startNav !== undefined ||
           lastMeasure.endNav !== undefined ||
-          lastMeasure.voltaIndices !== undefined ||
           lastMeasure.voltaTerminator === true ||
           lastMeasure.barline !== undefined
         );

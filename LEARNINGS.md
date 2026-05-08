@@ -359,3 +359,7 @@ The regex parser (`parser.ts`) now has zero production references. All 345 tests
 ## 2026-05-07 Addendum: Renderer Layout Seam Extraction
 
 - The layout planning functions in `renderer.ts` (`buildMeasureSpacingPlan`, `buildMeasureContentWeight`, `normalizeMeasureWeightsToWidths`, `buildMeasureWidthPlan`) are pure data transformations with zero `any` types and zero VexFlow API calls. Extracting them to `src/vexflow/layout.ts` creates a ~230-line module that depends only on `../dsl/logic` (Fraction/VoiceEntry math).
+
+## 2026-05-07 Addendum: App Settings Seam Extraction
+
+- The settings panel in `App.tsx` was the lowest-risk seam to extract. Settings JSX is a contiguous block; the NumericSettingControl component was already self-contained; and the state initialization, validation, and persistence were neatly separable into a `useAppSettings` hook (localStorage-backed, with range-validation on load).

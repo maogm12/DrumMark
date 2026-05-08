@@ -105,10 +105,10 @@ Rules for this ledger:
 - **Dependencies**: Task 3
 
 ### Task 8: Perform Targeted App/Settings Seam Extraction
-- [ ] **Status**: Pending
-- **Scope**: `src/App.tsx`, extracted UI/helper module(s), relevant tests or smoke coverage, `LEARNINGS.md`
+- [x] **Status**: Done
+- **Scope**: `src/App.tsx`, `src/components/NumericSettingControl.tsx`, `src/components/SettingsPanel.tsx`, `src/hooks/useAppSettings.ts`, `LEARNINGS.md`
 - **Commits**:
-  - `refactor(ui): extract app settings seams`
+  - `refactor(ui): extract app settings seam`
 - **Acceptance Criteria**:
   - At least one named seam is extracted from `App.tsx`, such as settings controls, preview orchestration, or theme wiring.
   - User-visible settings behavior remains unchanged.

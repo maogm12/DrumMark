@@ -1,13 +1,15 @@
-import { memo, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type PointerEvent as ReactPointerEvent, type ReactNode, type UIEvent, type WheelEvent as ReactWheelEvent } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode, type UIEvent } from "react";
 import { EditorState, Compartment } from "@codemirror/state";
 import { EditorView, highlightActiveLine, highlightActiveLineGutter, lineNumbers, keymap } from "@codemirror/view";
 import { history, historyKeymap } from "@codemirror/commands";
 import { linter, type Diagnostic } from "@codemirror/lint";
 import { buildNormalizedScore, type ParseError } from "./dsl";
 import { type NormalizedScore } from "./dsl";
-import { renderScorePagesToSvgs, type VexflowRenderOptions } from "./vexflow";
+import { renderScorePagesToSvgs, type VexflowRenderOptions, type PagePadding } from "./vexflow";
 import { getDrumMarkEditorTheme, drumMarkLanguage, drumMarkSyntaxHighlighting } from "./drummark";
 import { resolveDocumentTheme, subscribeToThemeChanges, type AppTheme } from "./theme";
+import { useAppSettings } from "./hooks/useAppSettings";
+import { SettingsPanel } from "./components/SettingsPanel";
 
 const legacySeedDsl = `tempo 96
 time 4/4
@@ -41,13 +43,6 @@ RC | r r r r r r r r | r r r r r r r r |
 C  | - - - - - - - c | - - - - - - - C |
 
 | @segno c2 - cl - *2 | %% | @fine |`;
-
-type PagePadding = {
-  top: number;
-  right: number;
-  bottom: number;
-  left: number;
-};
 
 const pdfPageWidth = 612;
 const pdfPageHeight = 792;
@@ -145,138 +140,6 @@ function SaveIcon() {
       <polyline points="17 21 17 13 7 13 7 21" />
       <polyline points="7 3 7 8 15 8" />
     </svg>
-  );
-}
-
-function clampNumber(value: number, min: number, max: number) {
-  return Math.min(max, Math.max(min, value));
-}
-
-function stepPrecision(step: number) {
-  const stepText = step.toString();
-  const decimal = stepText.indexOf(".");
-  return decimal >= 0 ? stepText.length - decimal - 1 : 0;
-}
-
-function normalizeSteppedValue(value: number, min: number, max: number, step: number) {
-  const precision = stepPrecision(step);
-  const clamped = clampNumber(value, min, max);
-  return Number(clamped.toFixed(precision));
-}
-
-function NumericSettingControl({
-  label,
-  value,
-  min,
-  max,
-  step,
-  onChange,
-}: {
-  label: string;
-  value: number;
-  min: number;
-  max: number;
-  step: number;
-  onChange: (value: number) => void;
-}) {
-  const inputMode = stepPrecision(step) > 0 ? "decimal" : "numeric";
-  const rangeRef = useRef<HTMLInputElement | null>(null);
-  const [isDragging, setIsDragging] = useState(false);
-
-  const applyValue = (next: number) => {
-    onChange(normalizeSteppedValue(next, min, max, step));
-  };
-
-  const handleRangePointerDown = (event: ReactPointerEvent<HTMLInputElement>) => {
-    const input = rangeRef.current;
-    if (!input) return;
-
-    event.preventDefault();
-    const startX = event.clientX;
-    const startValue = value;
-    input.setPointerCapture(event.pointerId);
-
-    const handlePointerMove = (moveEvent: PointerEvent) => {
-      const rect = input.getBoundingClientRect();
-      if (rect.width <= 0) return;
-
-      const deltaRatio = (moveEvent.clientX - startX) / rect.width;
-      const rawValue = startValue + deltaRatio * (max - min);
-      const steppedValue = min + Math.round((rawValue - min) / step) * step;
-      applyValue(steppedValue);
-    };
-
-    const handlePointerUp = () => {
-      setIsDragging(false);
-      input.removeEventListener("pointermove", handlePointerMove);
-      input.removeEventListener("pointerup", handlePointerUp);
-      input.removeEventListener("pointercancel", handlePointerUp);
-    };
-
-    setIsDragging(true);
-    input.addEventListener("pointermove", handlePointerMove);
-    input.addEventListener("pointerup", handlePointerUp);
-    input.addEventListener("pointercancel", handlePointerUp);
-  };
-
-  const handleRangeWheel = (event: ReactWheelEvent<HTMLInputElement>) => {
-    event.preventDefault();
-    const direction = event.deltaY < 0 ? 1 : -1;
-    applyValue(value + direction * step);
-  };
-
-  return (
-    <div className="setting-row numeric-setting-row">
-      <div className="setting-label">
-        <span>{label}</span>
-      </div>
-      <input
-        ref={rangeRef}
-        className={isDragging ? "setting-range is-dragging" : "setting-range"}
-        type="range"
-        min={min}
-        max={max}
-        step={step}
-        value={value}
-        onChange={(e) => applyValue(parseFloat(e.target.value))}
-        onPointerDown={handleRangePointerDown}
-        onWheel={handleRangeWheel}
-      />
-      <div className="setting-stepper">
-        <button
-          className="setting-stepper-button"
-          type="button"
-          aria-label={`Decrease ${label}`}
-          onClick={() => applyValue(value - step)}
-        >
-          -
-        </button>
-        <input
-          className="setting-stepper-input"
-          type="number"
-          inputMode={inputMode}
-          min={min}
-          max={max}
-          step={step}
-          value={value}
-          onFocus={(e) => e.target.select()}
-          onChange={(e) => {
-            const next = parseFloat(e.target.value);
-            if (!Number.isNaN(next)) {
-              applyValue(next);
-            }
-          }}
-        />
-        <button
-          className="setting-stepper-button"
-          type="button"
-          aria-label={`Increase ${label}`}
-          onClick={() => applyValue(value + step)}
-        >
-          +
-        </button>
-      </div>
-    </div>
   );
 }
 
@@ -672,50 +535,6 @@ function renderXmlTreeLines(node: Node, depth: number, path: string, collapsed: 
 }
 
 
-type MainTab = "editor" | "page" | "xml";
-
-interface AppSettings {
-  hideVoice2Rests: boolean;
-  pagePadding: PagePadding;
-  pageScale: number;
-  staffScale: number;
-  headerStaffSpacing: number;
-  systemSpacing: number;
-  stemLength: number;
-  voltaSpacing: number;
-  hairpinOffsetY: number;
-  headerHeight: number;
-  activeTab: MainTab;
-  tempoOffsetX: number;
-  tempoOffsetY: number;
-  measureNumberOffsetX: number;
-  measureNumberOffsetY: number;
-  measureNumberFontSize: number;
-  durationSpacingCompression: number;
-  measureWidthCompression: number;
-}
-
-const defaultSettings: AppSettings = {
-  hideVoice2Rests: false,
-  pagePadding: { top: 30, right: 50, bottom: 30, left: 50 },
-  pageScale: 0.8,
-  staffScale: 0.75,
-  headerStaffSpacing: 60,
-  headerHeight: 50,
-  systemSpacing: 30,
-  stemLength: 31,
-  voltaSpacing: -15,
-  hairpinOffsetY: -15,
-  activeTab: "page",
-  tempoOffsetX: 0,
-  tempoOffsetY: 0,
-  measureNumberOffsetX: 0,
-  measureNumberOffsetY: 8,
-  measureNumberFontSize: 10,
-  durationSpacingCompression: 0.6,
-  measureWidthCompression: 0.75,
-};
-
 export function App() {
   const resolvedTheme: AppTheme = useSyncExternalStore(
     (listener) => subscribeToThemeChanges(listener),
@@ -729,39 +548,13 @@ export function App() {
     }
     return saved;
   });
-  const [settings, setSettings] = useState<AppSettings>(() => {
-    const saved = localStorage.getItem("drummark-settings");
-    if (!saved) return defaultSettings;
-    try {
-      const parsed = JSON.parse(saved);
-      if (parsed.pageScale === undefined || parsed.pageScale < 0.2 || parsed.pageScale > 5) {
-        parsed.pageScale = 1.0;
-      }
-      if (parsed.stemLength === undefined || parsed.stemLength < 20 || parsed.stemLength > 40) {
-        parsed.stemLength = 31;
-      }
-      if (parsed.voltaSpacing === undefined || parsed.voltaSpacing < -16 || parsed.voltaSpacing > 16) {
-        parsed.voltaSpacing = -15;
-      }
-      if (parsed.hairpinOffsetY === undefined || parsed.hairpinOffsetY < -40 || parsed.hairpinOffsetY > 40) {
-        parsed.hairpinOffsetY = -15;
-      }
-      if (parsed.headerHeight === undefined) {
-        parsed.headerHeight = 50;
-      }
-      if (parsed.durationSpacingCompression === undefined || parsed.durationSpacingCompression < 0 || parsed.durationSpacingCompression > 1.5) {
-        parsed.durationSpacingCompression = 0.6;
-      }
-      if (parsed.measureWidthCompression === undefined || parsed.measureWidthCompression < 0 || parsed.measureWidthCompression > 1.5) {
-        parsed.measureWidthCompression = 0.75;
-      }
-      return { ...defaultSettings, ...parsed };
-    } catch {
-      return defaultSettings;
-    }
-  });
-
-  const [settingsVisible, setSettingsVisible] = useState(true);
+  const {
+    settings,
+    updateSetting,
+    updatePagePadding,
+    settingsVisible,
+    setSettingsVisible,
+  } = useAppSettings();
   const [pageZoomMenuOpen, setPageZoomMenuOpen] = useState(false);
   const pageZoomMenuRef = useRef<HTMLDivElement>(null);
   const [xmlCollapsed, setXmlCollapsed] = useState<Set<string>>(new Set());
@@ -783,13 +576,6 @@ export function App() {
       setXmlCollapsed(new Set(["score-partwise", "part-list", "part"]));
     }
   };
-
-  // Close settings panel when switching away from page tab
-  useEffect(() => {
-    if (settings.activeTab !== "page") {
-      setSettingsVisible(false);
-    }
-  }, [settings.activeTab]);
 
   useEffect(() => {
     if (!pageZoomMenuOpen) return;
@@ -921,10 +707,6 @@ export function App() {
   }, [dsl]);
 
   useEffect(() => {
-    localStorage.setItem("drummark-settings", JSON.stringify(settings));
-  }, [settings]);
-
-  useEffect(() => {
     if (settings.activeTab !== "page" || Math.abs(settings.pageScale - 1) < 0.001) {
       setPageZoomMenuOpen(false);
     }
@@ -933,17 +715,6 @@ export function App() {
   useEffect(() => {
     localStorage.setItem("drummark-editor-width", String(editorWidth));
   }, [editorWidth]);
-
-  const updateSetting = <K extends keyof AppSettings>(key: K, value: AppSettings[K]) => {
-    setSettings((prev) => ({ ...prev, [key]: value }));
-  };
-
-  const updatePagePadding = (key: keyof PagePadding, value: number) => {
-    setSettings((prev) => ({
-      ...prev,
-      pagePadding: { ...prev.pagePadding, [key]: value },
-    }));
-  };
 
   const handleMouseDown = useCallback(() => {
     isResizingRef.current = true;
@@ -1070,7 +841,7 @@ export function App() {
 
         // Direct DOM update for instant feedback
         pageSurfaceBodyRef.current?.style.setProperty("--page-scale", newScale.toString());
-        setSettings(prev => ({ ...prev, pageScale: newScale }));
+        updateSetting("pageScale", newScale);
       }
     });
 
@@ -1085,10 +856,7 @@ export function App() {
 
     function adjustPageScale(delta: number) {
     setFitWidth(false);
-    setSettings((prev) => ({
-      ...prev,
-      pageScale: Math.max(0.2, Math.min(3.0, Math.round((prev.pageScale + delta) * 100) / 100)),
-    }));
+    updateSetting("pageScale", Math.max(0.2, Math.min(3.0, Math.round((settings.pageScale + delta) * 100) / 100)));
     }
 
     const touchStateRef = useRef({ distance: 0, initialScale: 1 });
@@ -1147,7 +915,7 @@ export function App() {
         // Sync final scale back to React state once gesture ends
         const currentScale = parseFloat(pageSurfaceBodyRef.current?.style.getPropertyValue("--page-scale") || "1");
         if (!isNaN(currentScale)) {
-          setSettings(prev => ({ ...prev, pageScale: currentScale }));
+          updateSetting("pageScale", currentScale);
         }
         touchStateRef.current.distance = 0;
       }
@@ -1295,194 +1063,13 @@ export function App() {
               </div>
 
             <aside className={`settings-panel${settingsVisible ? " active" : ""}`}>
-              <div className="settings-section">
-                <h3 className="settings-section-title">Notation</h3>
-                <label className="setting-row toggle">
-                  <span>Hide lower-voice rests</span>
-                  <div className="toggle-switch">
-                    <input type="checkbox" checked={settings.hideVoice2Rests} onChange={(e) => updateSetting("hideVoice2Rests", e.target.checked)} />
-                    <span className="toggle-slider"></span>
-                  </div>
-                </label>
-              </div>
-                  <div className="settings-section">
-                    <h3 className="settings-section-title">Page Layout</h3>
-                    <NumericSettingControl
-                      label="Staff Size"
-                      value={settings.staffScale}
-                      min={0.3}
-                      max={1.5}
-                      step={0.05}
-                      onChange={(value) => updateSetting("staffScale", value)}
-                    />
-                  <NumericSettingControl
-                    label="Distance Between Systems"
-                    value={settings.systemSpacing}
-                    min={0}
-                    max={100}
-                    step={1}
-                    onChange={(value) => updateSetting("systemSpacing", value)}
-                  />
-                  <NumericSettingControl
-                    label="Note Stem Length"
-                    value={settings.stemLength}
-                    min={15}
-                    max={50}
-                    step={1}
-                    onChange={(value) => updateSetting("stemLength", value)}
-                  />
-                  <NumericSettingControl
-                    label="Volta Distance from Notes"
-                    value={settings.voltaSpacing}
-                    min={-20}
-                    max={20}
-                    step={1}
-                    onChange={(value) => updateSetting("voltaSpacing", value)}
-                  />
-                  <NumericSettingControl
-                    label="Hairpin Vertical Position"
-                    value={settings.hairpinOffsetY}
-                    min={-40}
-                    max={40}
-                    step={1}
-                    onChange={(value) => updateSetting("hairpinOffsetY", value)}
-                  />
-                  <div className="padding-grid-container">
-                    <span className="setting-label-small">Page Margins</span>
-                    <div className="padding-grid">
-                      <NumericSettingControl
-                        label="Top Margin"
-                        value={settings.pagePadding.top}
-                        min={0}
-                        max={800}
-                        step={1}
-                        onChange={(value) => updatePagePadding("top", value)}
-                      />
-                      <div className="padding-grid-middle">
-                        <NumericSettingControl
-                          label="Left Margin"
-                          value={settings.pagePadding.left}
-                          min={0}
-                          max={400}
-                          step={1}
-                          onChange={(value) => updatePagePadding("left", value)}
-                        />
-                        <NumericSettingControl
-                          label="Right Margin"
-                          value={settings.pagePadding.right}
-                          min={0}
-                          max={400}
-                          step={1}
-                          onChange={(value) => updatePagePadding("right", value)}
-                        />
-                      </div>
-                      <NumericSettingControl
-                        label="Bottom Margin"
-                        value={settings.pagePadding.bottom}
-                        min={0}
-                        max={800}
-                        step={1}
-                        onChange={(value) => updatePagePadding("bottom", value)}
-                      />
-                    </div>
-                  </div>
-                </div>
-                <div className="settings-section">
-                  <h3 className="settings-section-title">Title Area</h3>
-                  <NumericSettingControl
-                    label="Title Area Height"
-                    value={settings.headerHeight}
-                    min={10}
-                    max={300}
-                    step={1}
-                    onChange={(value) => updateSetting("headerHeight", value)}
-                  />
-                  <NumericSettingControl
-                    label="Distance from Title Area to Staff"
-                    value={settings.headerStaffSpacing}
-                    min={0}
-                    max={100}
-                    step={1}
-                    onChange={(value) => updateSetting("headerStaffSpacing", value)}
-                  />
-                </div>
-                {debugMode && (
-                  <div className="settings-section debug">
-                    <h3 className="settings-section-title">Debug: Tempo Marking</h3>
-                    <NumericSettingControl
-                      label="Tempo Marking Left/Right Position"
-                      value={settings.tempoOffsetX}
-                      min={-100}
-                      max={100}
-                      step={1}
-                      onChange={(value) => updateSetting("tempoOffsetX", value)}
-                    />
-                    <NumericSettingControl
-                      label="Tempo Marking Up/Down Position"
-                      value={settings.tempoOffsetY}
-                      min={-100}
-                      max={100}
-                      step={1}
-                      onChange={(value) => updateSetting("tempoOffsetY", value)}
-                    />
-                  </div>
-                )}
-                {debugMode && (
-                  <div className="settings-section debug">
-                    <h3 className="settings-section-title">Debug: Measure Numbers</h3>
-                    <NumericSettingControl
-                      label="Measure Number Left/Right Position"
-                      value={settings.measureNumberOffsetX}
-                      min={-100}
-                      max={100}
-                      step={1}
-                      onChange={(value) => updateSetting("measureNumberOffsetX", value)}
-                    />
-                    <NumericSettingControl
-                      label="Measure Number Up/Down Position"
-                      value={settings.measureNumberOffsetY}
-                      min={-100}
-                      max={100}
-                      step={1}
-                      onChange={(value) => updateSetting("measureNumberOffsetY", value)}
-                    />
-                    <NumericSettingControl
-                      label="Measure Number Size"
-                      value={settings.measureNumberFontSize}
-                      min={4}
-                      max={24}
-                      step={1}
-                      onChange={(value) => updateSetting("measureNumberFontSize", value)}
-                    />
-                  </div>
-                )}
-                {debugMode && (
-                  <div className="settings-section debug">
-                    <h3 className="settings-section-title">Debug: Note Spacing</h3>
-                    <NumericSettingControl
-                      label="Duration Spacing Compression"
-                      value={settings.durationSpacingCompression}
-                      min={0}
-                      max={1.5}
-                      step={0.05}
-                      onChange={(value) => updateSetting("durationSpacingCompression", value)}
-                    />
-                  </div>
-                )}
-                {debugMode && (
-                  <div className="settings-section debug">
-                    <h3 className="settings-section-title">Debug: Measure Widths</h3>
-                    <NumericSettingControl
-                      label="Measure Width Compression"
-                      value={settings.measureWidthCompression}
-                      min={0}
-                      max={1.5}
-                      step={0.05}
-                      onChange={(value) => updateSetting("measureWidthCompression", value)}
-                    />
-                  </div>
-                )}
-              </aside>
+              <SettingsPanel
+                settings={settings}
+                updateSetting={updateSetting}
+                updatePagePadding={updatePagePadding}
+                debugMode={debugMode}
+              />
+            </aside>
           </div>
         </section>
       </section>

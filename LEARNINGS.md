@@ -339,3 +339,8 @@ The regex parser (`parser.ts`) now has zero production references. All 345 tests
 
 - Parser-path drift can hide in diagnostics even when syntax acceptance matches. For positional navigation errors, the manual parser already reports the offending token column, so the Lezer path should derive columns from the nav node's real source offset instead of defaulting to measure-start column `1`.
 - The three highest-value drift buckets from the audit were enough to close Task 3 without reopening parser architecture work: uncapped duration suffix handling, positional navigation diagnostics, and paragraph-level `note 1/N` overrides.
+
+## 2026-05-07 Addendum: CLI Render Bootstrap Ownership
+
+- The Node-side DOM/canvas bootstrap for CLI rendering needs one shared owner. Otherwise `cli.ts` quietly becomes a second renderer entrypoint with its own missing globals and font-registration drift.
+- `XMLSerializer` is easy to miss when hand-copying the JSDOM bootstrap, but VexFlow SVG finalization uses it directly. CLI smoke probes for `--format svg` should stay in the acceptance loop for any future bootstrap refactor.

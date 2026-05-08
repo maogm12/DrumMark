@@ -53,7 +53,7 @@ Rules for this ledger:
 - **Dependencies**: Task 2
 
 ### Task 4: Extract the CLI Node Runtime Bootstrap
-- [ ] **Status**: Pending
+- [x] **Status**: Done
 - **Scope**: `src/cli.ts`, shared Node/bootstrap helper module(s), `src/cli_output.test.ts`, renderer-facing CLI smoke coverage, `LEARNINGS.md`
 - **Commits**:
   - `refactor(cli): extract node render bootstrap`

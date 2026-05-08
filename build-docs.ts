@@ -1,53 +1,16 @@
-
-import { JSDOM } from "jsdom";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import { buildNormalizedScore } from "./src/dsl/index";
 import { renderScoreToSvg } from "./src/vexflow/index";
 import { highlightDslStatic } from "./src/drummark";
-import { registerFont } from "canvas";
 import { DEFAULT_RENDER_OPTIONS } from "./src/vexflow/types";
+import { ensureCliRenderEnvironment } from "./src/cli_render_env";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Isolated DOM for VexFlow measurement
-const mockDom = new JSDOM('<!DOCTYPE html><html><body><div id="vd-container"></div></body></html>', {
-  pretendToBeVisual: true,
-});
-global.window = mockDom.window as any;
-global.document = mockDom.window.document;
-global.HTMLElement = mockDom.window.HTMLElement;
-global.HTMLAnchorElement = mockDom.window.HTMLAnchorElement;
-global.HTMLDivElement = mockDom.window.HTMLDivElement;
-global.SVGElement = mockDom.window.SVGElement;
-global.Image = mockDom.window["Image"] as any;
-global.DOMParser = mockDom.window.DOMParser as any;
-global.XMLSerializer = (mockDom.window as any).XMLSerializer;
-
-if (!global.fetch) {
-    (global as any).fetch = () => Promise.reject("Fetch not available in Node.");
-}
-
-class MockFileReader {
-    onloadend: (() => void) | null = null;
-    result: string | null = null;
-    readAsDataURL() {
-        if (this.onloadend) this.onloadend();
-    }
-}
-(global as any).FileReader = MockFileReader;
-
-const fontsDir = path.resolve(__dirname, "public/fonts");
-const bravuraPath = path.join(fontsDir, "bravura.otf");
-if (fs.existsSync(bravuraPath)) {
-    try {
-        registerFont(bravuraPath, { family: "Bravura" });
-    } catch (e) {
-        console.warn(`Could not register Bravura font: ${e}`);
-    }
-}
+ensureCliRenderEnvironment({ installFileReader: true });
 
 async function buildDocs(templatePath: string, outputPath: string) {
     console.log(`Building ${outputPath} from ${templatePath}...`);
@@ -87,7 +50,7 @@ async function buildDocs(templatePath: string, outputPath: string) {
         // 2. Render Score
         let renderedSvg = "";
         try {
-            mockDom.window.document.body.innerHTML = '<div id="vd-container"></div>';
+            globalThis.document.body.innerHTML = '<div id="vd-container"></div>';
             const score = buildNormalizedScore(dsl);
             renderedSvg = await renderScoreToSvg(score, {
                 ...DEFAULT_RENDER_OPTIONS,

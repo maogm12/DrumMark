@@ -55,9 +55,9 @@ describe("SettingsPanel smoke", () => {
         debugMode={false}
       />,
     );
-    expect(container.innerHTML).toContain("Notation");
+    expect(container.innerHTML).toContain("Notes");
     expect(container.innerHTML).toContain("Page Layout");
-    expect(container.innerHTML).toContain("Title Area");
+    expect(container.innerHTML).toContain("Staff &amp; Layout");
   });
 
   it("renders debug sections when debugMode=true", () => {
@@ -69,10 +69,7 @@ describe("SettingsPanel smoke", () => {
         debugMode={true}
       />,
     );
-    expect(container.innerHTML).toContain("Debug: Tempo Marking");
-    expect(container.innerHTML).toContain("Debug: Measure Numbers");
-    expect(container.innerHTML).toContain("Debug: Note Spacing");
-    expect(container.innerHTML).toContain("Debug: Measure Widths");
+    expect(container.innerHTML).toContain("Advanced Debugging");
   });
 
   it("hideVoice2Rests toggle renders inside Notation accordion", () => {
@@ -84,7 +81,7 @@ describe("SettingsPanel smoke", () => {
         debugMode={false}
       />,
     );
-    openAccordionItem(container, "Notation");
+    openAccordionItem(container, "Notes");
     expect(container.querySelector(".toggle-root")).toBeTruthy();
   });
 
@@ -97,7 +94,7 @@ describe("SettingsPanel smoke", () => {
         debugMode={false}
       />,
     );
-    openAccordionItem(container, "Notation");
+    openAccordionItem(container, "Notes");
     const toggle = container.querySelector(".toggle-root");
     expect(toggle).toBeTruthy();
     expect(toggle!.getAttribute("data-state")).toBe("unchecked");

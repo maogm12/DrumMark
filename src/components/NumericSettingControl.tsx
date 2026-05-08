@@ -1,5 +1,3 @@
-import * as Slider from "@radix-ui/react-slider";
-
 function clampNumber(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
 }
@@ -39,22 +37,7 @@ export function NumericSettingControl({
 
   return (
     <div className="setting-row numeric-setting-row">
-      <div className="setting-label">
-        <span>{label}</span>
-      </div>
-      <Slider.Root
-          className="slider-root"
-          value={[value]}
-          min={min}
-          max={max}
-          step={step}
-          onValueChange={(vals) => applyValue(vals[0]!)}
-        >
-          <Slider.Track className="slider-track">
-            <Slider.Range className="slider-range" />
-          </Slider.Track>
-          <Slider.Thumb className="slider-thumb" aria-label={label} />
-        </Slider.Root>
+      <span className="setting-label-text">{label}</span>
       <div className="setting-stepper">
         <button
           className="setting-stepper-button"

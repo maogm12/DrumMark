@@ -106,3 +106,35 @@ After consolidation is complete, implementation proceeds task-by-task:
       - `npm run drummark -- <input-file> --format svg`
       - `npm run drummark -- <input-file> --format xml`
 - **Verification**: After applying a fix, use the tool to verify the output in the relevant format.
+
+## Content Design (Labels & Copy)
+
+- **Translate variable names to human English.** If a label contains a term that only makes sense by reading the source code (`offsetY`, `compression`, `spacing`), it is implementation leakage. Every label must answer "what does this control do to my score?" in the user's own vocabulary.
+- **Avoid redundant section headers.** If a section title already communicates the domain ("Page Layout"), a subgroup label repeating the same concept ("Margins") adds noise without information.
+- **Use concrete direction words, not coordinate axes.** `X` and `Y` are implementation detail. Prefer "Horizontal" / "Vertical" or "Left/Right" / "Up/Down" for user-facing labels. (Debug-only labels are exempt.)
+- **Avoid orphan prepositions.** A label like "Volta Distance" leaves the user asking "distance from what?". Add the missing object ("Volta Offset") or rephrase entirely.
+- **Shorten verb phrases to nouns where context is clear.** "Distance from Title Area to Staff" is verbose; "Title Gap" says the same thing in half the characters. In a 280px sidebar, label length is a layout constraint, not just a style preference.
+- **Use the user's musical vocabulary, not the renderer's.** "Lower-voice rests" is implementation terminology (VexFlow voice 1/2). The user understands "secondary voice rests."
+- **Group labels should name the domain, not the section.** A debug subsection called "Coordinate Offsets" is cold and redundant (the parent already says "Debug"). Use domain terms the user recognizes, or omit the subgroup label entirely.
+
+## UI Design (Settings Panel)
+
+- **Segmentation beats separators.** Never put `border-top` on every setting row — the resulting "striped" look is visual noise. Proximity alone communicates group membership. Reserve visible dividers for group boundaries, drawn on the group label element.
+- **Segmented stepper controls.** Three separated boxes (`[-] [input] [+]`) read as unrelated controls. Fuse them with `gap: 0`, shared borders, and connected border-radius (square middle, rounded ends). This matches iOS/macOS stepper conventions.
+- **Directional button cues.** Identical `+` and `-` buttons are scannable but not glanceable. Use directional hover tints: red-tone background for decrement, primary-blue background for increment.
+- **Debug visual enclosure.** A debug section in the same visual hierarchy as production controls invites accidental tweaks. Enclose it with: distinct background tint (`--bg-warning-soft`), dashed top separator, left accent bar, and rounded corners.
+- **Focus visibility is non-negotiable.** `outline: none` without a replacement indicator breaks keyboard navigation. Use `:focus-visible` with a `box-shadow` ring in the primary accent color and `z-index: 1` to prevent clipping by adjacent segmented-control borders.
+- **Long labels need a contract.** On a constrained sidebar, labels must use `flex-shrink: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis`, not `flex-shrink: 0; white-space: nowrap`.
+
+## UI Design (Mobile ≤768px)
+
+- Mobile adaptations are additive overrides in a `@media` block, not a separate stylesheet.
+- Only change dimensions (min-height, width, font-size, gap) — never re-declare border, background, or structural properties.
+- Touch targets must meet 44×44pt minimum.
+- Row height scales from 44px (desktop) to 52px (mobile).
+- Apply the same focus-ring, hover-tint, and segmented-control structure across all breakpoints.
+
+## CSS Architecture (Theme Compatibility)
+
+- Directional tints must define a `:root[data-theme="dark"]` variant. Light-mode hardcoded colors (e.g., `#eff6ff`) have no meaning in dark mode — use translucent accent values (`rgba(59, 130, 246, 0.15)`) instead.
+- The system-dark `@media (prefers-color-scheme: dark)` block must mirror explicit dark-theme variants using the established `:root:not([data-theme="light"]):not([data-theme="dark"])` selector pattern.

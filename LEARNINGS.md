@@ -368,3 +368,14 @@ The regex parser (`parser.ts`) now has zero production references. All 345 tests
 
 - All 10 audit tasks are complete. High-severity findings closed: per-token `*` rule contradiction (Task 1), parser ownership settled (Task 2 -- Lezer authoritative, regex/manual deprecated), parser-path drift fixtures covered (Task 3). Architecture decisions recorded: CLI bootstrap centralized (Task 4), bundle report in `dist/bundle-report.json` (Task 5), Playwright intentionally removed in favor of jsdom smoke coverage (Task 6), renderer layout seam extracted to `src/vexflow/layout.ts` (Task 7), app settings seam extracted to `src/components/` + `src/hooks/` (Task 8), future-feature lanes classified in DRUMMARK_SPEC.md addendum (Task 9).
 - No items were deferred. The active rehearsal marks proposal stream (`docs/proposals/DRUMMARK_SPEC_*`) remains independent and was not absorbed by this audit.
+
+## 2026-05-07 Addendum: Radix UI Migration
+
+- Five Radix UI headless components replaced hand-rolled interaction code: Slider (inside `NumericSettingControl`), Switch (toggle), Accordion (settings grouping), Tabs (Editor/Page/XML switching), and Popover (zoom menu). Total estimated gzipped bundle increase ~20 KB across all 5 packages.
+- Radix was chosen over Mantine v7 after a 3-round review. Mantine's 7.6 MB npm package, PostCSS pipeline, theme bridge, and AppShell layout replacement were disproportionate for a project whose hand-rolled CSS (reduced from 1304 to 1163 lines) is tightly integrated with VexFlow rendering and Bravura fonts.
+- The `NumericSettingControl` component was refactored, not deleted — it remains a reusable wrapper with unchanged signature, internally using `<Slider.Root>` while preserving stepper buttons, number input, wheel scrolling, and value normalization.
+- Dual `<Tabs.Root>` instances share `value` and `onValueChange` for the Editor/Preview tab bars. The preview pane renders all 3 triggers with Editor hidden on desktop via CSS.
+- Accordion `type="multiple"` (uncontrolled) avoids stale-index errors when debug sections are conditionally rendered.
+- Popover uses controlled mode (`open`/`onOpenChange`) with `<Popover.Portal modal={false}>` for z-index isolation.
+- A 4-test SettingsPanel smoke test (jsdom, `flushSync`, `ResizeObserver` polyfill) guards against rendering regressions.
+- CSS cleanup removed 200+ lines of obsolete rules (native range slider pseudo-elements, custom toggle switch, `.preview-tabs`/`.preview-tab`, `.page-zoom-popover`, `.settings-section`). Preservation checklist verified: VexFlow dark-mode inversion, Bravura `@font-face`, XML tree viewer, print styles, CodeMirror wrapper, zoom popover inner-content classes.

@@ -349,3 +349,9 @@ The regex parser (`parser.ts`) now has zero production references. All 345 tests
 
 - A bundle-size task is more useful when it writes a deterministic artifact than when it only prints console warnings. Recording the built asset list plus the main entry chunk size in `dist/bundle-report.json` gives later tasks something comparable across runs.
 - Dependency reachability is stronger when it combines source-surface evidence and built-bundle evidence. For `opensheetmusicdisplay`, zero source mentions plus zero mentions in emitted JS is a materially better removal signal than grep on source alone.
+
+## 2026-05-07 Addendum: Browser Smoke Coverage Without Heavy E2E
+
+- Playwright was an unused devDependency: no config file, no `@playwright/test`, zero test files. Rather than wiring up a full browser test harness, the project extends its existing jsdom render-probe pattern to cover the audit's required smoke surfaces.
+- A single `smoke.test.ts` file (jsdom environment, 27 tests) covers: preview fixture rendering with headers/navigation, settings interaction via `hideVoice2Rests` toggle, hairpin offset rendering, multi-system layout, edge-case collapse (single-tack rest), and full rendering of all 22 docs examples. This keeps the test suite deterministic and fixture-based while avoiding the maintenance cost of a browser E2E layer.
+- Deterministic SVG string assertions catch regressions at the structural level (missing stavenotes, missing edge navigation, missing content text) without requiring visual snapshots.

@@ -78,8 +78,8 @@ Rules for this ledger:
 - **Dependencies**: None
 
 ### Task 6: Add Browser-Level Smoke Coverage for Preview and Docs
-- [ ] **Status**: Pending
-- **Scope**: browser test harness files, `package.json` scripts if needed, preview/docs fixtures, theme/interaction smoke cases, `LEARNINGS.md`
+- [x] **Status**: Done
+- **Scope**: `src/vexflow/smoke.test.ts`, `package.json`, `LEARNINGS.md`
 - **Commits**:
   - `test(web): add preview and docs smoke coverage`
 - **Acceptance Criteria**:

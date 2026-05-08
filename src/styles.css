@@ -799,6 +799,57 @@ input {
   box-shadow: var(--thumb-drag-shadow);
 }
 
+.slider-wrapper {
+  touch-action: pan-y;
+}
+
+.slider-root {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: 20px;
+  cursor: pointer;
+  touch-action: none;
+}
+
+.slider-track {
+  position: relative;
+  flex: 1;
+  height: 10px;
+  background: var(--border-subtle);
+  border-radius: 999px;
+}
+
+.slider-range {
+  position: absolute;
+  height: 100%;
+  background: var(--accent-primary);
+  border-radius: 999px;
+}
+
+.slider-thumb {
+  display: block;
+  width: 22px;
+  height: 22px;
+  background: var(--accent-primary);
+  border-radius: 50%;
+  border: 2px solid var(--thumb-border);
+  box-shadow: var(--thumb-shadow);
+  cursor: pointer;
+  transition: transform 120ms ease, box-shadow 120ms ease;
+}
+
+.slider-thumb:hover {
+  transform: scale(1.22);
+  box-shadow: var(--thumb-drag-shadow);
+}
+
+.slider-thumb:focus-visible {
+  outline: 2px solid var(--accent-primary);
+  outline-offset: 2px;
+}
+
 .setting-stepper {
   display: grid;
   grid-template-columns: 44px minmax(0, 1fr) 44px;

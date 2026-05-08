@@ -1,4 +1,5 @@
-import { useRef, useState, type PointerEvent as ReactPointerEvent, type WheelEvent as ReactWheelEvent } from "react";
+import { type WheelEvent as ReactWheelEvent } from "react";
+import * as Slider from "@radix-ui/react-slider";
 
 function clampNumber(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
@@ -32,46 +33,12 @@ export function NumericSettingControl({
   onChange: (value: number) => void;
 }) {
   const inputMode = stepPrecision(step) > 0 ? "decimal" : "numeric";
-  const rangeRef = useRef<HTMLInputElement | null>(null);
-  const [isDragging, setIsDragging] = useState(false);
 
   const applyValue = (next: number) => {
     onChange(normalizeSteppedValue(next, min, max, step));
   };
 
-  const handleRangePointerDown = (event: ReactPointerEvent<HTMLInputElement>) => {
-    const input = rangeRef.current;
-    if (!input) return;
-
-    event.preventDefault();
-    const startX = event.clientX;
-    const startValue = value;
-    input.setPointerCapture(event.pointerId);
-
-    const handlePointerMove = (moveEvent: PointerEvent) => {
-      const rect = input.getBoundingClientRect();
-      if (rect.width <= 0) return;
-
-      const deltaRatio = (moveEvent.clientX - startX) / rect.width;
-      const rawValue = startValue + deltaRatio * (max - min);
-      const steppedValue = min + Math.round((rawValue - min) / step) * step;
-      applyValue(steppedValue);
-    };
-
-    const handlePointerUp = () => {
-      setIsDragging(false);
-      input.removeEventListener("pointermove", handlePointerMove);
-      input.removeEventListener("pointerup", handlePointerUp);
-      input.removeEventListener("pointercancel", handlePointerUp);
-    };
-
-    setIsDragging(true);
-    input.addEventListener("pointermove", handlePointerMove);
-    input.addEventListener("pointerup", handlePointerUp);
-    input.addEventListener("pointercancel", handlePointerUp);
-  };
-
-  const handleRangeWheel = (event: ReactWheelEvent<HTMLInputElement>) => {
+  const handleWheel = (event: ReactWheelEvent<HTMLDivElement>) => {
     event.preventDefault();
     const direction = event.deltaY < 0 ? 1 : -1;
     applyValue(value + direction * step);
@@ -82,18 +49,21 @@ export function NumericSettingControl({
       <div className="setting-label">
         <span>{label}</span>
       </div>
-      <input
-        ref={rangeRef}
-        className={isDragging ? "setting-range is-dragging" : "setting-range"}
-        type="range"
-        min={min}
-        max={max}
-        step={step}
-        value={value}
-        onChange={(e) => applyValue(parseFloat(e.target.value))}
-        onPointerDown={handleRangePointerDown}
-        onWheel={handleRangeWheel}
-      />
+      <div className="slider-wrapper" onWheel={handleWheel}>
+        <Slider.Root
+          className="slider-root"
+          value={[value]}
+          min={min}
+          max={max}
+          step={step}
+          onValueChange={(vals) => applyValue(vals[0]!)}
+        >
+          <Slider.Track className="slider-track">
+            <Slider.Range className="slider-range" />
+          </Slider.Track>
+          <Slider.Thumb className="slider-thumb" aria-label={label} />
+        </Slider.Root>
+      </div>
       <div className="setting-stepper">
         <button
           className="setting-stepper-button"

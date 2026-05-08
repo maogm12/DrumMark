@@ -950,6 +950,134 @@ input:checked + .toggle-slider:before {
   transform: translateX(16px);
 }
 
+.toggle-root {
+  width: 36px;
+  height: 20px;
+  background-color: var(--border-strong);
+  border-radius: 20px;
+  position: relative;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  transition: background-color 200ms ease;
+  flex-shrink: 0;
+}
+
+.toggle-root[data-state="checked"] {
+  background-color: var(--accent-primary);
+}
+
+.toggle-root:focus-visible {
+  outline: 2px solid var(--accent-primary);
+  outline-offset: 2px;
+}
+
+.toggle-thumb {
+  display: block;
+  width: 14px;
+  height: 14px;
+  background-color: var(--bg-elevated);
+  border-radius: 50%;
+  transition: transform 200ms ease;
+  transform: translateX(3px);
+}
+
+.toggle-thumb[data-state="checked"] {
+  transform: translateX(19px);
+}
+
+.settings-accordion {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.settings-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 8px 0;
+  background: none;
+  border: none;
+  border-bottom: 1px solid var(--border-subtle);
+  color: var(--text-main);
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 150ms ease;
+}
+
+.settings-trigger:hover {
+  border-bottom-color: var(--accent-primary);
+}
+
+.settings-trigger[data-state="open"] {
+  border-bottom-color: var(--accent-primary);
+}
+
+.settings-trigger.debug-trigger {
+  color: var(--text-warning);
+}
+
+.settings-accordion-chevron {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(45deg);
+  transition: transform 200ms ease;
+  flex-shrink: 0;
+  margin-left: 8px;
+}
+
+.settings-trigger[data-state="open"] .settings-accordion-chevron {
+  transform: rotate(-135deg);
+}
+
+.settings-content {
+  overflow: hidden;
+  padding: 0;
+}
+
+.settings-content[data-state="open"] {
+  animation: accordionSlideDown 200ms ease;
+  padding: 12px 0 4px;
+}
+
+.settings-content[data-state="closed"] {
+  animation: accordionSlideUp 200ms ease;
+}
+
+@keyframes accordionSlideDown {
+  from {
+    height: 0;
+    opacity: 0;
+    overflow: hidden;
+  }
+  to {
+    height: var(--radix-accordion-content-height);
+    opacity: 1;
+    overflow: hidden;
+  }
+}
+
+@keyframes accordionSlideUp {
+  from {
+    height: var(--radix-accordion-content-height);
+    opacity: 1;
+    overflow: hidden;
+  }
+  to {
+    height: 0;
+    opacity: 0;
+    overflow: hidden;
+  }
+}
+
 .padding-grid-container {
   display: flex;
   flex-direction: column;

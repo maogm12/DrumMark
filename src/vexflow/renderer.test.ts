@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { Glyphs, VoltaType } from "vexflow";
+import VexFlow from "vexflow/bravura";
 import type { NormalizedScore } from "../dsl/types";
+
+const { Glyphs, VoltaType } = VexFlow;
 import { endNavText, measureRepeatGlyph, startNavText, voltaTypeForMeasure } from "./renderer";
 
 function makeScore(): NormalizedScore {
@@ -11,6 +13,7 @@ function makeScore(): NormalizedScore {
       timeSignature: { beats: 4, beatUnit: 4 },
       divisions: 4,
       grouping: [2, 2],
+      noteValue: 16,
     },
     tracks: [],
     ast: {
@@ -32,6 +35,7 @@ function makeScore(): NormalizedScore {
         measureInParagraph: 0,
         sourceLine: 1,
         events: [],
+        noteValue: 16,
         volta: { indices: [1] },
       },
       {
@@ -41,6 +45,7 @@ function makeScore(): NormalizedScore {
         measureInParagraph: 1,
         sourceLine: 1,
         events: [],
+        noteValue: 16,
         volta: { indices: [1] },
       },
       {
@@ -50,6 +55,7 @@ function makeScore(): NormalizedScore {
         measureInParagraph: 2,
         sourceLine: 1,
         events: [],
+        noteValue: 16,
       },
     ],
     errors: [],

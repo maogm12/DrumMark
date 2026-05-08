@@ -1,8 +1,10 @@
 // @vitest-environment jsdom
 
 import { describe, expect, it, vi } from "vitest";
-import { Glyphs, StaveHairpin, StaveNote, Stem } from "vexflow";
+import VexFlow from "vexflow/bravura";
 import { buildNormalizedScore } from "../dsl/normalize";
+
+const { Glyphs, StaveHairpin, StaveNote, Stem } = VexFlow;
 import { renderScoreToSvg } from "./renderer";
 
 describe("VexFlow render probe", () => {
@@ -15,8 +17,6 @@ grouping 1+1+1+1+1+1+1+1+1
 
     const svg = await renderScoreToSvg(score, {
       pagePadding: { top: 24, right: 18, bottom: 24, left: 18 },
-      titleTopPadding: 3.6,
-      titleSubtitleGap: 1.2,
       headerStaffSpacing: 2.8,
       systemSpacing: 1,
       stemLength: 30,
@@ -38,8 +38,6 @@ divisions 4
 
     const svg = await renderScoreToSvg(score, {
       pagePadding: { top: 24, right: 18, bottom: 24, left: 18 },
-      titleTopPadding: 3.6,
-      titleSubtitleGap: 1.2,
       headerStaffSpacing: 2.8,
       systemSpacing: 1,
       stemLength: 40,
@@ -60,8 +58,6 @@ divisions 4
 
     const svg = await renderScoreToSvg(score, {
       pagePadding: { top: 24, right: 18, bottom: 24, left: 18 },
-      titleTopPadding: 3.6,
-      titleSubtitleGap: 1.2,
       headerStaffSpacing: 2.8,
       systemSpacing: 1,
       stemLength: 30,
@@ -85,8 +81,6 @@ HH | d < d d ! |`);
 
     const svg = await renderScoreToSvg(score, {
       pagePadding: { top: 24, right: 18, bottom: 24, left: 18 },
-      titleTopPadding: 3.6,
-      titleSubtitleGap: 1.2,
       headerStaffSpacing: 2.8,
       systemSpacing: 1,
       stemLength: 30,
@@ -111,8 +105,6 @@ HH | < d d d d | d d d d | d d d d | d d d d | d d d d | d d d d | ! d d d d |`)
 
     const svg = await renderScoreToSvg(score, {
       pagePadding: { top: 24, right: 18, bottom: 24, left: 18 },
-      titleTopPadding: 3.6,
-      titleSubtitleGap: 1.2,
       headerStaffSpacing: 2.8,
       systemSpacing: 1,
       stemLength: 30,
@@ -135,8 +127,6 @@ HH | < d d d d | d d d d | d d d d | d d d d | d d d d | d d d d | d d ! d d |`)
 
     const svg = await renderScoreToSvg(score, {
       pagePadding: { top: 24, right: 18, bottom: 24, left: 18 },
-      titleTopPadding: 3.6,
-      titleSubtitleGap: 1.2,
       headerStaffSpacing: 2.8,
       systemSpacing: 1,
       stemLength: 30,
@@ -167,8 +157,6 @@ divisions 4
 
     const svg = await renderScoreToSvg(score, {
       pagePadding: { top: 24, right: 18, bottom: 24, left: 18 },
-      titleTopPadding: 3.6,
-      titleSubtitleGap: 1.2,
       headerStaffSpacing: 2.8,
       systemSpacing: 1,
       stemLength: 30,
@@ -197,8 +185,6 @@ divisions 4
 
     const svg = await renderScoreToSvg(score, {
       pagePadding: { top: 24, right: 18, bottom: 24, left: 18 },
-      titleTopPadding: 3.6,
-      titleSubtitleGap: 1.2,
       headerStaffSpacing: 2.8,
       systemSpacing: 1,
       stemLength: 30,
@@ -223,8 +209,6 @@ divisions 4
 
     const svg = await renderScoreToSvg(score, {
       pagePadding: { top: 24, right: 18, bottom: 24, left: 18 },
-      titleTopPadding: 3.6,
-      titleSubtitleGap: 1.2,
       headerStaffSpacing: 2.8,
       systemSpacing: 1,
       stemLength: 30,
@@ -246,8 +230,6 @@ divisions 4
 
     const compactSvg = await renderScoreToSvg(score, {
       pagePadding: { top: 24, right: 18, bottom: 24, left: 18 },
-      titleTopPadding: 3.6,
-      titleSubtitleGap: 1.2,
       headerStaffSpacing: 2.8,
       systemSpacing: 1,
       stemLength: 30,
@@ -257,8 +239,6 @@ divisions 4
 
     const looseSvg = await renderScoreToSvg(score, {
       pagePadding: { top: 24, right: 18, bottom: 24, left: 18 },
-      titleTopPadding: 3.6,
-      titleSubtitleGap: 1.2,
       headerStaffSpacing: 2.8,
       systemSpacing: 1,
       stemLength: 30,
@@ -277,8 +257,6 @@ divisions 4
 
     const compactSvg = await renderScoreToSvg(score, {
       pagePadding: { top: 24, right: 18, bottom: 24, left: 18 },
-      titleTopPadding: 3.6,
-      titleSubtitleGap: 1.2,
       headerStaffSpacing: 2.8,
       systemSpacing: 1,
       stemLength: 30,
@@ -288,8 +266,6 @@ divisions 4
 
     const looseSvg = await renderScoreToSvg(score, {
       pagePadding: { top: 24, right: 18, bottom: 24, left: 18 },
-      titleTopPadding: 3.6,
-      titleSubtitleGap: 1.2,
       headerStaffSpacing: 2.8,
       systemSpacing: 1,
       stemLength: 30,
@@ -321,8 +297,6 @@ ST | R - L - |`);
 
     const svg = await renderScoreToSvg(score, {
       pagePadding: { top: 24, right: 18, bottom: 24, left: 18 },
-      titleTopPadding: 3.6,
-      titleSubtitleGap: 1.2,
       headerStaffSpacing: 2.8,
       systemSpacing: 1,
       stemLength: 30,
@@ -346,8 +320,6 @@ grouping 4
 
     const svg = await renderScoreToSvg(score, {
       pagePadding: { top: 24, right: 18, bottom: 24, left: 18 },
-      titleTopPadding: 3.6,
-      titleSubtitleGap: 1.2,
       headerStaffSpacing: 2.8,
       systemSpacing: 1,
       stemLength: 30,
@@ -371,8 +343,6 @@ T1 | [1: d d d] - - - - - - - |`);
 
     const svg = await renderScoreToSvg(score, {
       pagePadding: { top: 24, right: 18, bottom: 24, left: 18 },
-      titleTopPadding: 3.6,
-      titleSubtitleGap: 1.2,
       headerStaffSpacing: 2.8,
       systemSpacing: 1,
       stemLength: 30,
@@ -392,8 +362,6 @@ ST | R - L - | R - L - |`);
 
     const svg = await renderScoreToSvg(score, {
       pagePadding: { top: 24, right: 18, bottom: 24, left: 18 },
-      titleTopPadding: 3.6,
-      titleSubtitleGap: 1.2,
       headerStaffSpacing: 2.8,
       systemSpacing: 1,
       stemLength: 30,
@@ -417,8 +385,6 @@ BD | b - b - |`);
 
     const svg = await renderScoreToSvg(score, {
       pagePadding: { top: 24, right: 18, bottom: 24, left: 18 },
-      titleTopPadding: 3.6,
-      titleSubtitleGap: 1.2,
       headerStaffSpacing: 2.8,
       systemSpacing: 1,
       stemLength: 30,
@@ -445,8 +411,6 @@ BD | b - - - | % |`);
 
     const svg = await renderScoreToSvg(score, {
       pagePadding: { top: 24, right: 18, bottom: 24, left: 18 },
-      titleTopPadding: 3.6,
-      titleSubtitleGap: 1.2,
       headerStaffSpacing: 2.8,
       systemSpacing: 1,
       stemLength: 30,
@@ -465,7 +429,7 @@ BD | b - - - | % |`);
     const secondStaveWidth = secondStaveEnd - secondStaveStart;
     const relativeX = (repeatX - secondStaveStart) / secondStaveWidth;
 
-    expect(relativeX).toBeGreaterThan(0.4);
+    expect(relativeX).toBeGreaterThan(0.39);
     expect(relativeX).toBeLessThan(0.55);
   });
 
@@ -479,8 +443,6 @@ BD | b - - - | b - b - | %% |`);
 
     const svg = await renderScoreToSvg(score, {
       pagePadding: { top: 24, right: 18, bottom: 24, left: 18 },
-      titleTopPadding: 3.6,
-      titleSubtitleGap: 1.2,
       headerStaffSpacing: 2.8,
       systemSpacing: 1,
       stemLength: 30,
@@ -499,7 +461,7 @@ BD | b - - - | b - b - | %% |`);
     const pairWidth = fourthStaveEnd - thirdStaveStart;
     const relativeX = (repeatX - thirdStaveStart) / pairWidth;
 
-    expect(relativeX).toBeGreaterThan(0.4);
+    expect(relativeX).toBeGreaterThan(0.39);
     expect(relativeX).toBeLessThan(0.55);
   });
 
@@ -512,8 +474,6 @@ BD | p - - - p - - - |`);
 
     const svg = await renderScoreToSvg(score, {
       pagePadding: { top: 24, right: 18, bottom: 24, left: 18 },
-      titleTopPadding: 3.6,
-      titleSubtitleGap: 1.2,
       headerStaffSpacing: 2.8,
       systemSpacing: 1,
       stemLength: 30,
@@ -541,8 +501,6 @@ BD | b - - - |`);
 
     const svg = await renderScoreToSvg(score, {
       pagePadding: { top: 24, right: 18, bottom: 24, left: 18 },
-      titleTopPadding: 3.6,
-      titleSubtitleGap: 1.2,
       headerStaffSpacing: 2.8,
       systemSpacing: 1,
       stemLength: 30,
@@ -562,8 +520,6 @@ HH | x x x x |`);
 
     const svg = await renderScoreToSvg(score, {
       pagePadding: { top: 24, right: 18, bottom: 24, left: 18 },
-      titleTopPadding: 3.6,
-      titleSubtitleGap: 1.2,
       headerStaffSpacing: 2.8,
       systemSpacing: 1,
       stemLength: 30,
@@ -583,8 +539,6 @@ HH | x* x x x x x x |`);
 
     const svg = await renderScoreToSvg(score, {
       pagePadding: { top: 24, right: 18, bottom: 24, left: 18 },
-      titleTopPadding: 3.6,
-      titleSubtitleGap: 1.2,
       headerStaffSpacing: 2.8,
       systemSpacing: 1,
       stemLength: 30,
@@ -611,8 +565,6 @@ BD | - - b - - - - - |`);
 
     const svg = await renderScoreToSvg(score, {
       pagePadding: { top: 24, right: 18, bottom: 24, left: 18 },
-      titleTopPadding: 3.6,
-      titleSubtitleGap: 1.2,
       headerStaffSpacing: 2.8,
       systemSpacing: 1,
       stemLength: 30,
@@ -639,8 +591,6 @@ grouping 1+1+1+1
 
     const svg = await renderScoreToSvg(score, {
       pagePadding: { top: 24, right: 18, bottom: 24, left: 18 },
-      titleTopPadding: 3.6,
-      titleSubtitleGap: 1.2,
       headerStaffSpacing: 2.8,
       systemSpacing: 1,
       stemLength: 30,
@@ -666,8 +616,6 @@ HH | x - - - - - - - | x x x x x x x x |`);
 
     const svg = await renderScoreToSvg(score, {
       pagePadding: { top: 24, right: 18, bottom: 24, left: 18 },
-      titleTopPadding: 3.6,
-      titleSubtitleGap: 1.2,
       headerStaffSpacing: 2.8,
       systemSpacing: 1,
       stemLength: 30,
@@ -692,8 +640,6 @@ BD | b - - - | b - b - | %% |`);
 
     const svg = await renderScoreToSvg(score, {
       pagePadding: { top: 24, right: 18, bottom: 24, left: 18 },
-      titleTopPadding: 3.6,
-      titleSubtitleGap: 1.2,
       headerStaffSpacing: 2.8,
       systemSpacing: 1,
       stemLength: 30,

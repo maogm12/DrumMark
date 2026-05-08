@@ -1,5 +1,5 @@
 /// <reference types="vite/client" />
-import VexFlow from "vexflow";
+import VexFlow from "vexflow/bravura";
 import type { NormalizedEvent, NormalizedScore } from "../dsl/types";
 import { DEFAULT_RENDER_OPTIONS, type VexflowRenderOptions } from "./types";
 import {
@@ -683,7 +683,7 @@ function renderSystemsBatch(
   return yOffset;
 }
 
-export async function renderScoreToSvg(score: NormalizedScore, inputOptions: VexflowRenderOptions): Promise<string> {
+export async function renderScoreToSvg(score: NormalizedScore, inputOptions: Partial<VexflowRenderOptions>): Promise<string> {
   const options = { ...DEFAULT_RENDER_OPTIONS, ...inputOptions } as VexflowRenderOptions;
   await ensureVexFlowFonts();
 
@@ -728,7 +728,7 @@ export async function renderScoreToSvg(score: NormalizedScore, inputOptions: Vex
   return finalizeSvg(container);
 }
 
-export async function renderScorePagesToSvgs(score: NormalizedScore, inputOptions: VexflowRenderOptions): Promise<string[]> {
+export async function renderScorePagesToSvgs(score: NormalizedScore, inputOptions: Partial<VexflowRenderOptions>): Promise<string[]> {
   const options = { ...DEFAULT_RENDER_OPTIONS, ...inputOptions } as VexflowRenderOptions;
   await ensureVexFlowFonts();
   

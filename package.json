@@ -11,6 +11,7 @@
     "bundle:report": "node scripts/report_bundle.mjs",
     "preview": "vite preview",
     "test": "vitest run",
+    "typecheck:test": "tsc -p tsconfig.test.json --noEmit",
     "test:watch": "vitest",
     "drummark": "tsx src/cli.ts"
   },

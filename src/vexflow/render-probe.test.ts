@@ -36,7 +36,7 @@ divisions 4
     const stemSpy = vi.spyOn(StaveNote.prototype, "setStemLength");
     const extensionSpy = vi.spyOn(Stem.prototype, "setExtension");
 
-    const svg = await renderScoreToSvg(score, {
+    await renderScoreToSvg(score, {
       pagePadding: { top: 24, right: 18, bottom: 24, left: 18 },
       headerStaffSpacing: 2.8,
       systemSpacing: 1,
@@ -103,7 +103,7 @@ HH | < d d d d | d d d d | d d d d | d d d d | d d d d | d d d d | ! d d d d |`)
 
     const hairpinSpy = vi.spyOn(StaveHairpin.prototype, "draw");
 
-    const svg = await renderScoreToSvg(score, {
+    await renderScoreToSvg(score, {
       pagePadding: { top: 24, right: 18, bottom: 24, left: 18 },
       headerStaffSpacing: 2.8,
       systemSpacing: 1,

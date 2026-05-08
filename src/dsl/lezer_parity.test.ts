@@ -39,7 +39,7 @@ function compareHeaders(regex: DocumentSkeleton, lezer: DocumentSkeleton) {
   }
 }
 
-function compareParagraphs(regex: DocumentSkeleton, lezer: DocumentSkeleton) {
+function _compareParagraphs(regex: DocumentSkeleton, lezer: DocumentSkeleton) {
   expect(lezer.paragraphs.length).toBe(regex.paragraphs.length);
   for (let pi = 0; pi < regex.paragraphs.length; pi++) {
     const rp = regex.paragraphs[pi];
@@ -185,7 +185,7 @@ note 1/16
 |: x x x x :| x x x x |
 | x || s |`;
 
-const VOLTAS = `title "Voltas"
+const _VOLTAS = `title "Voltas"
 time 4/4
 note 1/16
 
@@ -220,7 +220,7 @@ note 1/16
 
 HH | x x x x | % | %% | x x x x |`;
 
-const MEASURE_REPEAT_MIXED = `title "Mixed Repeat"
+const _MEASURE_REPEAT_MIXED = `title "Mixed Repeat"
 time 4/4
 note 1/16
 

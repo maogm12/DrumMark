@@ -75,7 +75,7 @@ note 1/16
 | @segno c2 - cl - | %% | @fine |`,
 ];
 
-function normalizeForCompare(skeleton: ReturnType<typeof parseDocumentSkeleton>) {
+function _normalizeForCompare(skeleton: ReturnType<typeof parseDocumentSkeleton>) {
   // Strip line numbers and source references that may differ between parsers
   return JSON.stringify(skeleton, (key, value) => {
     if (key === "line" || key === "lineNumber" || key === "startLine" || key === "source" || key === "raw" || key === "startOffset") {
@@ -224,7 +224,7 @@ divisions 4
       (token) => token.kind === "braced" && token.track === "RC",
     )).toBe(false);
     expect(lezer.paragraphs[0]?.lines[0]?.measures[0]?.tokens.some(
-      (token) => token.kind === "basic" && token.value === "RC",
+      (token: any) => token.value === "RC",
     )).toBe(false);
   });
 

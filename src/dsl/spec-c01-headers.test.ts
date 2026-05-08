@@ -19,7 +19,7 @@ HH | x - x - |`);
     expect(doc.headers.composer?.value).toBe("G. Mao");
     expect(doc.headers.tempo.value).toBe(96);
     expect(doc.headers.time).toMatchObject({ beats: 4, beatUnit: 4 });
-    expect(doc.headers.divisions.value).toBe(16);
+    expect(doc.headers.divisions!.value).toBe(16);
     expect(doc.headers.grouping.values).toEqual([2, 2]);
   });
 

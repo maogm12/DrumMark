@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it } from "vitest";
 import { parseDocumentSkeleton } from "./parser";
 import { parser as DrumMarkParser } from "./drum_mark.parser";
 
@@ -63,7 +63,7 @@ BD | ${"b - b - b - b - ".repeat(25)}|`,
 
 const ITERATIONS = 1000;
 
-function runBenchmark(name: string, fn: () => void): number {
+function runBenchmark(_name: string, fn: () => void): number {
   // Warmup
   for (let i = 0; i < 10; i++) fn();
 

@@ -12,6 +12,6 @@ HH | x - x - |
 `;
     const tree = parser.parse(source);
     expect(tree).toBeDefined();
-    expect(tree.length).toBe(source.length);
+    expect((tree as any).length).toBe(source.length);
   });
 });

@@ -69,7 +69,7 @@ class MockStringStream {
 
 function tokenizeLine(line: string) {
   const stream = new MockStringStream(line);
-  const state = drumMarkStreamParser.startState();
+  const state = drumMarkStreamParser.startState!(0);
   const tokens: Array<{ text: string; style: string | null }> = [];
 
   while (stream.pos < stream.string.length) {

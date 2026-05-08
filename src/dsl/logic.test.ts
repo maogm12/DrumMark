@@ -18,6 +18,7 @@ function makeScore(grouping: number[]): NormalizedScore {
       timeSignature: { beats: 7, beatUnit: 8 },
       divisions: 14,
       grouping,
+      noteValue: 16,
     },
     tracks: [],
     ast: {

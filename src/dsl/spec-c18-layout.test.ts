@@ -51,7 +51,7 @@ SD | - d - d |`);
     expect(doc.errors).toEqual([]);
     expect(doc.headers.tempo.value).toBe(96);
     expect(doc.headers.time).toMatchObject({ beats: 4, beatUnit: 4 });
-    expect(doc.headers.divisions.value).toBe(4);
+    expect(doc.headers.divisions!.value).toBe(4);
     expect(doc.paragraphs).toHaveLength(1);
     expect(doc.paragraphs[0].lines.map((line) => line.track)).toEqual(["HH", "SD"]);
   });

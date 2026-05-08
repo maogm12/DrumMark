@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { buildNormalizedScore } from "./normalize";
 import { parseDocumentSkeleton } from "./parser";
-import type { Modifier, TrackName } from "./types";
 
 function parseMeasureTokens(source: string) {
   const doc = parseDocumentSkeleton(source);

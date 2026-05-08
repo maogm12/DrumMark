@@ -2283,3 +2283,73 @@ Classifies each Appendix C item and the rehearsal marks proposal into one of fou
 | **F-spec** | Dashed barline (`dashed`) | `Appendix C`; previously in legacy `BarlineType` but intentionally removed from current `src/dsl/types.ts` |
 | **F-spec-rejected** | Inline divisions change (`@divisions:<N>`) | `Appendix C`; explicitly marked "Rejected" |
 | **F-discovery** | (none) | No feature ideas currently in the discovery lane |
+
+## Addendum 2026-05-08: Volta-Terminator + Repeat-Start Coalescing (`|:.`)
+
+### Status
+
+Proposed
+
+### Motivation
+
+When a repeat section contains voltas, a common scenario is "volta ends, new repeat starts":
+
+```
+|: d d d d |1. d d d d :|2. d d d d |. |: d d d d :|
+```
+
+Currently `|.` (volta terminator) and `|:` (repeat start) are two separate `MeasureSection` nodes, creating a spurious empty measure between the volta ending and the new repeat. No syntax exists to express both at the same barline boundary.
+
+### Syntax
+
+```
+|:.
+```
+
+The compound barline follows the existing `|:X.` pattern:
+
+| Token | Meaning |
+|-------|---------|
+| `|:` | repeat-start |
+| `|:1.` | repeat-start + open volta 1 |
+| `|:2.` | repeat-start + open volta 2 |
+| **`|:.`** | **repeat-start + terminate volta** |
+| `|.` | terminate volta (without repeat-start) |
+
+**Example:**
+
+```
+|: d d d d |1. d d d d :|2. d d d d |:. d d d d :|
+```
+
+### Semantics
+
+`|:.` carries both semantics simultaneously:
+
+| Property | Value |
+|----------|-------|
+| `openRepeatStart` | `true` |
+| `closeVoltaTerminator` | `true` |
+| `closeBarlineType` | `"repeatStart"` |
+| `closeRepeatEnd` | `false` |
+
+**Sharp Edge**: `|:.` does **NOT** close any open repeat. The prior repeat MUST be explicitly closed with `:|` before `|:.` appears, or a "nested repeat start" error will fire. Example:
+
+```drummark
+|: A |1. B |:. C :|              // ERROR: nested repeat start
+|: A |1. B :|2. C |:. D :|       // OK: first repeat closed by :| after bar 1
+```
+
+### Implicit Repeat-End Exclusion
+
+`|:.` inherits the existing rule from Addendum 2026-04-30H: `|.` does NOT trigger implicit repeat-end inference. The compound's `closeBarlineType` is `"repeatStart"` (not `"single"`), so it automatically fails the inference guard in the skeleton builder.
+
+### Local Barline Mapping Extension
+
+Extends the Local Barline Mapping from Addendum 2026-05-06 with:
+
+- `|:.` -> `VoltaTerminatorRepeatStartBarline`
+
+### Grammar Rule
+
+`VoltaTerminatorRepeatStartBarline { "|:." }` placed before `VoltaBarline` and `RepeatStartBarline` in `BarlineNode` alternatives.

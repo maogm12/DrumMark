@@ -90,6 +90,14 @@ function parseBarlineBoundaryInfo(node: NodeInfo, allNodes: NodeInfo[], source: 
       closeVoltaTerminator: false,
     };
   }
+  if (childNames.has("VoltaTerminatorRepeatStartBarline")) {
+    return {
+      openRepeatStart: true,
+      closeBarlineType: "repeatStart",
+      closeRepeatEnd: false,
+      closeVoltaTerminator: true,
+    };
+  }
   if (childNames.has("VoltaTerminatorBarline")) {
     return {
       openRepeatStart: false,

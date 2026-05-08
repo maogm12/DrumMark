@@ -195,6 +195,7 @@ TrackName {
 BarlineNode {
   DoubleVoltaTerminatorBarline |
   DoubleBarline |
+  VoltaTerminatorRepeatStartBarline |
   VoltaBarline |
   RepeatStartBarline |
   RepeatEndBarline |
@@ -208,6 +209,7 @@ RepeatStartBarline { "|:" }
 RepeatEndBarline { ":|" }
 VoltaTerminatorBarline { "|." }
 DoubleVoltaTerminatorBarline { "||." }
+VoltaTerminatorRepeatStartBarline { "|:." }
 VoltaBarline { ("|:" | ":|" | "|") Integer ("," Integer)* "." }
 
 InlineBracedBlock { "{" MeasureContent "}" }

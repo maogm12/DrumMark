@@ -6,8 +6,9 @@
   "scripts": {
     "predev": "npm run build-docs",
     "dev": "vite --host",
-    "build": "tsc -b && npm run build-docs && vite build",
+    "build": "tsc -b && npm run build-docs && vite build && npm run bundle:report",
     "build-docs": "tsx build-docs.ts",
+    "bundle:report": "node scripts/report_bundle.mjs",
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",

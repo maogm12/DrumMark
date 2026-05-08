@@ -344,3 +344,8 @@ The regex parser (`parser.ts`) now has zero production references. All 345 tests
 
 - The Node-side DOM/canvas bootstrap for CLI rendering needs one shared owner. Otherwise `cli.ts` quietly becomes a second renderer entrypoint with its own missing globals and font-registration drift.
 - `XMLSerializer` is easy to miss when hand-copying the JSDOM bootstrap, but VexFlow SVG finalization uses it directly. CLI smoke probes for `--format svg` should stay in the acceptance loop for any future bootstrap refactor.
+
+## 2026-05-07 Addendum: Bundle Reports Need Evidence, Not Hunches
+
+- A bundle-size task is more useful when it writes a deterministic artifact than when it only prints console warnings. Recording the built asset list plus the main entry chunk size in `dist/bundle-report.json` gives later tasks something comparable across runs.
+- Dependency reachability is stronger when it combines source-surface evidence and built-bundle evidence. For `opensheetmusicdisplay`, zero source mentions plus zero mentions in emitted JS is a materially better removal signal than grep on source alone.

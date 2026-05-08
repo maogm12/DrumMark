@@ -65,7 +65,7 @@ Rules for this ledger:
 - **Dependencies**: None
 
 ### Task 5: Add Bundle Measurement and Dependency Reachability Checks
-- [ ] **Status**: Pending
+- [x] **Status**: Done
 - **Scope**: `package.json`, build tooling/config if needed, dependency audit notes, optional scripts/docs, `LEARNINGS.md`
 - **Commits**:
   - `build(web): add bundle budget reporting`

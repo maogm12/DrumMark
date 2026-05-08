@@ -1022,7 +1022,6 @@ export function parseDocumentSkeletonFromLezer(source: string): DocumentSkeleton
         : lineNode.to;
       const sectionText = source.slice(section.from, nextSectionStart);
       const rawBodyText = source.slice(bodyNode.from, nextSectionStart);
-      const bodyText = rawBodyText.trim();
       const shorthandSectionMatch = sectionText.match(/%+/)
         ?? sectionText.match(/--+\s*((?:1\d+)|(?:[2-9]\d*))\s*--+/);
 

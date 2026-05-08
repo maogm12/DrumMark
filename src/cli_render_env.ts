@@ -12,6 +12,10 @@ type CliRenderEnvironmentOptions = {
 };
 
 class MockFileReader {
+  static readonly EMPTY = 0;
+  static readonly LOADING = 1;
+  static readonly DONE = 2;
+
   onloadend: (() => void) | null = null;
   result: string | null = null;
 
@@ -23,11 +27,11 @@ class MockFileReader {
 export function ensureCliRenderEnvironment(
   options: CliRenderEnvironmentOptions = {},
 ): void {
-  const globals = globalThis as typeof globalThis & Record<string, unknown>;
+  const globals = globalThis as any;
 
   if (renderEnvironmentReady) {
     if (options.installFileReader && !fileReaderInstalled) {
-      globals.FileReader = MockFileReader;
+      globals["FileReader"] = MockFileReader;
       fileReaderInstalled = true;
     }
     return;
@@ -38,15 +42,15 @@ export function ensureCliRenderEnvironment(
     { pretendToBeVisual: true },
   );
 
-  globals.window = dom.window;
-  globals.document = dom.window.document;
-  globals.HTMLElement = dom.window.HTMLElement;
-  globals.HTMLAnchorElement = dom.window.HTMLAnchorElement;
-  globals.HTMLDivElement = dom.window.HTMLDivElement;
-  globals.SVGElement = dom.window.SVGElement;
-  globals.Image = dom.window.Image;
-  globals.DOMParser = dom.window.DOMParser;
-  globals.XMLSerializer = dom.window.XMLSerializer;
+  globals["window"] = dom.window;
+  globals["document"] = dom.window.document;
+  globals["HTMLElement"] = dom.window.HTMLElement;
+  globals["HTMLAnchorElement"] = dom.window.HTMLAnchorElement;
+  globals["HTMLDivElement"] = dom.window.HTMLDivElement;
+  globals["SVGElement"] = dom.window.SVGElement;
+  globals["Image"] = dom.window["Image"];
+  globals["DOMParser"] = dom.window.DOMParser;
+  globals["XMLSerializer"] = dom.window.XMLSerializer;
 
   const __filename = fileURLToPath(import.meta.url);
   const __dirname = path.dirname(__filename);
@@ -61,11 +65,11 @@ export function ensureCliRenderEnvironment(
   }
 
   if (!globalThis.fetch) {
-    globals.fetch = () => Promise.reject(new Error("Fetch not available in Node."));
+    globals["fetch"] = () => Promise.reject(new Error("Fetch not available in Node."));
   }
 
   if (options.installFileReader) {
-    globals.FileReader = MockFileReader;
+    globals["FileReader"] = MockFileReader;
     fileReaderInstalled = true;
   }
 

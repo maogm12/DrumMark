@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it } from "vitest";
+import React from "react";
 import { createRoot } from "react-dom/client";
 import { flushSync } from "react-dom";
 import { SettingsPanel } from "./SettingsPanel";
@@ -21,7 +22,7 @@ beforeAll(() => {
   }
 });
 
-function renderSync(jsx: JSX.Element): HTMLElement {
+function renderSync(jsx: React.ReactElement): HTMLElement {
   const container = document.createElement("div");
   const root = createRoot(container);
   flushSync(() => {

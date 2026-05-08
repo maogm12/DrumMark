@@ -11,6 +11,7 @@ import { resolveDocumentTheme, subscribeToThemeChanges, type AppTheme } from "./
 import { useAppSettings } from "./hooks/useAppSettings";
 import { SettingsPanel } from "./components/SettingsPanel";
 import * as Tabs from "@radix-ui/react-tabs";
+import * as Popover from "@radix-ui/react-popover";
 import type { MainTab } from "./hooks/useAppSettings";
 
 const legacySeedDsl = `tempo 96
@@ -558,7 +559,6 @@ export function App() {
     setSettingsVisible,
   } = useAppSettings();
   const [pageZoomMenuOpen, setPageZoomMenuOpen] = useState(false);
-  const pageZoomMenuRef = useRef<HTMLDivElement>(null);
   const [xmlCollapsed, setXmlCollapsed] = useState<Set<string>>(new Set());
   const debugMode = new URLSearchParams(window.location.search).has("debug");
 
@@ -579,18 +579,13 @@ export function App() {
     }
   };
 
-  useEffect(() => {
-    if (!pageZoomMenuOpen) return;
-    const handler = (e: MouseEvent) => {
-      if (pageZoomMenuRef.current && !pageZoomMenuRef.current.contains(e.target as Node)) {
-        setPageZoomMenuOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, [pageZoomMenuOpen]);
-  
   const [showErrors, setShowErrors] = useState(false);
+
+  useEffect(() => {
+    if (settings.activeTab !== "page" || Math.abs(settings.pageScale - 1) < 0.001) {
+      setPageZoomMenuOpen(false);
+    }
+  }, [settings.pageScale, settings.activeTab]);
   
   const [editorWidth, setEditorWidth] = useState(() => {
     const saved = localStorage.getItem("drummark-editor-width");
@@ -991,12 +986,14 @@ export function App() {
               <div className={`preview-surface${settings.activeTab === "page" ? " active" : ""}`} aria-hidden={settings.activeTab !== "page"}>
                 <div className="surface-toolbar page-surface-toolbar">
                   <div className="toolbar-group">
-                    <div className="page-zoom-menu" ref={pageZoomMenuRef}>
-                      <button aria-label="Zoom" className="surface-icon-button" onClick={() => setPageZoomMenuOpen((current) => !current)} type="button" title={`Zoom ${pageZoomPercent}%`}>
-                        {Math.abs(settings.pageScale - 1.0) < 0.001 ? <SearchIcon /> : (settings.pageScale < 1 ? <SearchMinusIcon /> : <SearchPlusIcon />)}
-                      </button>
-                      {pageZoomMenuOpen ? (
-                        <div className="page-zoom-popover">
+                    <Popover.Root open={pageZoomMenuOpen} onOpenChange={setPageZoomMenuOpen}>
+                      <Popover.Trigger asChild>
+                        <button aria-label="Zoom" className="surface-icon-button" type="button" title={`Zoom ${pageZoomPercent}%`}>
+                          {Math.abs(settings.pageScale - 1.0) < 0.001 ? <SearchIcon /> : (settings.pageScale < 1 ? <SearchMinusIcon /> : <SearchPlusIcon />)}
+                        </button>
+                      </Popover.Trigger>
+                      <Popover.Portal>
+                        <Popover.Content className="zoom-popover-content" sideOffset={4}>
                           <div className="page-zoom-readout">{fitWidth ? "Fit Width" : `${pageZoomPercent}%`}</div>
                           <div className="page-zoom-buttons">
                             <button className="page-zoom-action" onClick={() => adjustPageScale(-0.1)} type="button">-</button>
@@ -1004,9 +1001,9 @@ export function App() {
                             <button className="page-zoom-action" onClick={() => adjustPageScale(0.1)} type="button">+</button>
                             <button className="page-zoom-reset fit-width-button" onClick={() => setFitWidth(true)} type="button">Fit Width</button>
                           </div>
-                        </div>
-                      ) : null}
-                    </div>
+                        </Popover.Content>
+                      </Popover.Portal>
+                    </Popover.Root>
                     <button className="surface-icon-button" onClick={handlePrint} type="button" title="Print Score">
                       <PrinterIcon />
                     </button>

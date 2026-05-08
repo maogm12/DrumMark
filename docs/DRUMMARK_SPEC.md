@@ -2252,3 +2252,34 @@ MusicXML:
 - `<` maps to `type="crescendo"`, `>` maps to `type="diminuendo"`.
 - Explicit or implicit termination maps to `type="stop"`.
 - Multi-measure spans use `crescendo` / `diminuendo` in the first measure, `continue` in intermediate measures, and `stop` in the terminating measure.
+
+## Addendum 2026-05-07: Future Feature Lane Classification
+
+### Status
+
+Applied — documents the classification of Appendix C features by implementation readiness.
+
+### Scope
+
+Classifies each Appendix C item and the rehearsal marks proposal into one of four lanes. This addendum does not change any feature specification; it only records implementation-readiness metadata.
+
+### Classification
+
+| Lane | Definition |
+|------|-----------|
+| **F-active** | An approved proposal stream exists; implementation tasks are pending in a separate tasks file. |
+| **F-spec** | Defined in `Appendix C` but no IR/render design beyond the spec table text. Requires a separate design proposal before tasking. |
+| **F-spec-rejected** | Explicitly ruled out in the spec. Documented here to prevent re-proposal without addressing the underlying constraint. |
+| **F-discovery** | Feature idea not yet reaching `Appendix C`. May exist only as verbal discussion or editorial note. Empty as of this addendum. |
+
+### Lane Assignments
+
+| Lane | Feature | Evidence |
+|------|---------|----------|
+| **F-active** | Rehearsal marks (`[label]`) | Approved proposal: `docs/proposals/DRUMMARK_SPEC_proposal_rehearsal_marks.md`; tasks: `docs/proposals/DRUMMARK_SPEC_tasks_rehearsal_marks.md` |
+| **F-spec** | Inline tempo change (`@tempo:<N>`) | `Appendix C`; no grammar, no IR, no source mentions |
+| **F-spec** | Inline time-signature change (`@time:<N/M>`) | `Appendix C`; no grammar, no IR, no source mentions |
+| **F-spec** | Pickup/anacrusis measure (`@partial:<N>`) | `Appendix C`; no grammar, no IR, no source mentions |
+| **F-spec** | Dashed barline (`dashed`) | `Appendix C`; previously in legacy `BarlineType` but intentionally removed from current `src/dsl/types.ts` |
+| **F-spec-rejected** | Inline divisions change (`@divisions:<N>`) | `Appendix C`; explicitly marked "Rejected" |
+| **F-discovery** | (none) | No feature ideas currently in the discovery lane |

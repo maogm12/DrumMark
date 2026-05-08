@@ -116,8 +116,8 @@ Rules for this ledger:
 - **Dependencies**: Task 6
 
 ### Task 9: Classify the Future-Feature Lane
-- [ ] **Status**: Pending
-- **Scope**: `docs/DRUMMARK_SPEC.md`, audit follow-up docs if needed, `docs/proposals/`, `LEARNINGS.md`
+- [x] **Status**: Done
+- **Scope**: `docs/DRUMMARK_SPEC.md`, `LEARNINGS.md`
 - **Commits**:
   - `docs(roadmap): classify future feature lanes`
 - **Acceptance Criteria**:

@@ -128,6 +128,55 @@
 .docs-header-right {
   display: flex;
   align-items: center;
+  gap: 10px;
+}
+
+.theme-toggle-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border-radius: 10px;
+  border: 1px solid var(--docs-border);
+  background: var(--docs-surface);
+  color: var(--docs-muted);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.theme-toggle-button:hover {
+  color: var(--docs-text);
+  background: var(--docs-hover-bg);
+}
+
+.theme-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 0;
+}
+
+.theme-icon-light {
+  display: none;
+}
+
+:root[data-theme="dark"] .theme-icon-light {
+  display: inline-flex;
+}
+
+:root[data-theme="dark"] .theme-icon-dark {
+  display: none;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]):not([data-theme="dark"]) .theme-icon-light {
+    display: inline-flex;
+  }
+  :root:not([data-theme="light"]):not([data-theme="dark"]) .theme-icon-dark {
+    display: none;
+  }
 }
 
 .docs-container {

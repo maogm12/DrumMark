@@ -1,4 +1,3 @@
-import { type WheelEvent as ReactWheelEvent } from "react";
 import * as Slider from "@radix-ui/react-slider";
 
 function clampNumber(value: number, min: number, max: number): number {
@@ -38,19 +37,12 @@ export function NumericSettingControl({
     onChange(normalizeSteppedValue(next, min, max, step));
   };
 
-  const handleWheel = (event: ReactWheelEvent<HTMLDivElement>) => {
-    event.preventDefault();
-    const direction = event.deltaY < 0 ? 1 : -1;
-    applyValue(value + direction * step);
-  };
-
   return (
     <div className="setting-row numeric-setting-row">
       <div className="setting-label">
         <span>{label}</span>
       </div>
-      <div className="slider-wrapper" onWheel={handleWheel}>
-        <Slider.Root
+      <Slider.Root
           className="slider-root"
           value={[value]}
           min={min}
@@ -63,7 +55,6 @@ export function NumericSettingControl({
           </Slider.Track>
           <Slider.Thumb className="slider-thumb" aria-label={label} />
         </Slider.Root>
-      </div>
       <div className="setting-stepper">
         <button
           className="setting-stepper-button"

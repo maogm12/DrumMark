@@ -3,6 +3,7 @@ function initDocs() {
   const sidebar = document.getElementById("sidebar");
   const overlay = document.getElementById("mobile-overlay");
   const navLinks = document.querySelectorAll<HTMLElement>(".docs-nav-link[href^='#']");
+  const themeToggle = document.getElementById("theme-toggle");
   const isZh = document.documentElement.lang === "zh";
   const defaultCopyLabel = isZh ? "复制" : "Copy";
 
@@ -116,6 +117,15 @@ function initDocs() {
 
   navLinks.forEach((link) => {
     link.addEventListener("click", () => toggleMenu(false));
+  });
+
+  themeToggle?.addEventListener("click", () => {
+    const current = document.documentElement.getAttribute("data-theme");
+    if (current === "dark") {
+      document.documentElement.setAttribute("data-theme", "light");
+    } else {
+      document.documentElement.setAttribute("data-theme", "dark");
+    }
   });
 }
 

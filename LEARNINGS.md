@@ -363,3 +363,8 @@ The regex parser (`parser.ts`) now has zero production references. All 345 tests
 ## 2026-05-07 Addendum: App Settings Seam Extraction
 
 - The settings panel in `App.tsx` was the lowest-risk seam to extract. Settings JSX is a contiguous block; the NumericSettingControl component was already self-contained; and the state initialization, validation, and persistence were neatly separable into a `useAppSettings` hook (localStorage-backed, with range-validation on load).
+
+## 2026-05-07 Addendum: Audit Stream Closure
+
+- All 10 audit tasks are complete. High-severity findings closed: per-token `*` rule contradiction (Task 1), parser ownership settled (Task 2 -- Lezer authoritative, regex/manual deprecated), parser-path drift fixtures covered (Task 3). Architecture decisions recorded: CLI bootstrap centralized (Task 4), bundle report in `dist/bundle-report.json` (Task 5), Playwright intentionally removed in favor of jsdom smoke coverage (Task 6), renderer layout seam extracted to `src/vexflow/layout.ts` (Task 7), app settings seam extracted to `src/components/` + `src/hooks/` (Task 8), future-feature lanes classified in DRUMMARK_SPEC.md addendum (Task 9).
+- No items were deferred. The active rehearsal marks proposal stream (`docs/proposals/DRUMMARK_SPEC_*`) remains independent and was not absorbed by this audit.

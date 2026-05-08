@@ -588,6 +588,8 @@ export function App() {
     setSettingsVisible,
   } = useAppSettings();
   const [pageZoomMenuOpen, setPageZoomMenuOpen] = useState(false);
+  const pageZoomMenuOpenRef = useRef(pageZoomMenuOpen);
+  useEffect(() => { pageZoomMenuOpenRef.current = pageZoomMenuOpen; }, [pageZoomMenuOpen]);
   const [xmlCollapsed, setXmlCollapsed] = useState<Set<string>>(new Set());
   const debugMode = new URLSearchParams(window.location.search).has("debug");
 
@@ -611,7 +613,7 @@ export function App() {
   const [showErrors, setShowErrors] = useState(false);
 
   useEffect(() => {
-    if (settings.activeTab !== "page" || Math.abs(settings.pageScale - 1) < 0.001) {
+    if (pageZoomMenuOpenRef.current && (settings.activeTab !== "page" || Math.abs(settings.pageScale - 1) < 0.001)) {
       setPageZoomMenuOpen(false);
     }
   }, [settings.pageScale, settings.activeTab]);
@@ -733,12 +735,6 @@ export function App() {
   }, [dsl]);
 
   useEffect(() => {
-    if (settings.activeTab !== "page" || Math.abs(settings.pageScale - 1) < 0.001) {
-      setPageZoomMenuOpen(false);
-    }
-  }, [settings.pageScale, settings.activeTab]);
-
-  useEffect(() => {
     localStorage.setItem("drummark-editor-width", String(editorWidth));
   }, [editorWidth]);
 
@@ -848,9 +844,34 @@ export function App() {
   }
 
   const [fitWidth, setFitWidth] = useState(true);
-  const pageZoomPercent = Math.round(settings.pageScale * 100);
+  const pageScaleRef = useRef(settings.pageScale);
+  useEffect(() => { pageScaleRef.current = settings.pageScale; }, [settings.pageScale]);
+  const pageZoomPercent = Math.round(pageScaleRef.current * 100);
 
   const pageSurfaceBodyRef = useRef<HTMLDivElement | null>(null);
+  const scaleSyncTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const applyScaleCss = (scale: number) => {
+    pageSurfaceBodyRef.current?.style.setProperty("--page-scale", scale.toString());
+    pageScaleRef.current = scale;
+  };
+
+  const commitScaleToState = (scale: number) => {
+    updateSetting("pageScale", Math.max(0.2, Math.min(3.0, Math.round(scale * 100) / 100)));
+  };
+
+  const debouncedCommitScale = () => {
+    if (scaleSyncTimerRef.current) clearTimeout(scaleSyncTimerRef.current);
+    scaleSyncTimerRef.current = setTimeout(() => {
+      commitScaleToState(pageScaleRef.current);
+    }, 300);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (scaleSyncTimerRef.current) clearTimeout(scaleSyncTimerRef.current);
+    };
+  }, []);
 
   useEffect(() => {
     if (!fitWidth || !pageSurfaceBodyRef.current) return;
@@ -858,32 +879,31 @@ export function App() {
     const observer = new ResizeObserver((entries) => {
       const entry = entries[0];
       if (entry) {
-        // Dynamic padding based on mobile vs desktop
         const isMobile = window.innerWidth <= 768;
         const padding = isMobile ? 0 : 80;
         const containerWidth = entry.contentRect.width - padding;
         const baseWidth = 800;
         const newScale = Math.max(0.2, Math.min(3.0, Math.round((containerWidth / baseWidth) * 20) / 20));
 
-        // Direct DOM update for instant feedback
-        pageSurfaceBodyRef.current?.style.setProperty("--page-scale", newScale.toString());
-        updateSetting("pageScale", newScale);
+        applyScaleCss(newScale);
+        debouncedCommitScale();
       }
     });
 
     observer.observe(pageSurfaceBodyRef.current);
     return () => observer.disconnect();
-    }, [fitWidth]);
+  }, [fitWidth]);
 
-    // Keep DOM variable in sync with state for non-gesture updates
-    useEffect(() => {
+  useEffect(() => {
     pageSurfaceBodyRef.current?.style.setProperty("--page-scale", settings.pageScale.toString());
-    }, [settings.pageScale]);
+  }, [settings.pageScale]);
 
-    function adjustPageScale(delta: number) {
+  function adjustPageScale(delta: number) {
     setFitWidth(false);
-    updateSetting("pageScale", Math.max(0.2, Math.min(3.0, Math.round((settings.pageScale + delta) * 100) / 100)));
-    }
+    const newScale = Math.max(0.2, Math.min(3.0, Math.round((pageScaleRef.current + delta) * 100) / 100));
+    applyScaleCss(newScale);
+    debouncedCommitScale();
+  }
 
     const touchStateRef = useRef({ distance: 0, initialScale: 1 });
     const settingsRef = useRef(settings);
@@ -906,9 +926,9 @@ export function App() {
         if (!t1 || !t2) return;
         const dx = t1.pageX - t2.pageX;
         const dy = t1.pageY - t2.pageY;
-        touchStateRef.current = {
+          touchStateRef.current = {
           distance: Math.sqrt(dx * dx + dy * dy),
-          initialScale: settingsRef.current.pageScale
+          initialScale: pageScaleRef.current
         };
       }
     };
@@ -929,20 +949,14 @@ export function App() {
         if (touchStateRef.current.distance > 0) {
           const ratio = distance / touchStateRef.current.distance;
           const newScale = Math.max(0.2, Math.min(3.0, touchStateRef.current.initialScale * ratio));
-
-          // Direct DOM update - fast!
-          pageSurfaceBodyRef.current?.style.setProperty("--page-scale", newScale.toString());
+          applyScaleCss(newScale);
         }
       }
     };
 
     const handleTouchEnd = () => {
       if (touchStateRef.current.distance > 0) {
-        // Sync final scale back to React state once gesture ends
-        const currentScale = parseFloat(pageSurfaceBodyRef.current?.style.getPropertyValue("--page-scale") || "1");
-        if (!isNaN(currentScale)) {
-          updateSetting("pageScale", currentScale);
-        }
+        commitScaleToState(pageScaleRef.current);
         touchStateRef.current.distance = 0;
       }
     };

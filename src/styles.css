@@ -1075,6 +1075,18 @@ input {
   min-height: 0;
 }
 
+.cm-activeLine::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: -2000px;
+  bottom: 0;
+  left: 0;
+  background: var(--editor-active-line);
+  pointer-events: none;
+  z-index: -1;
+}
+
 /* --- Staff Preview & Printable Styles --- */
 
 .staff-preview-shell {
@@ -1100,8 +1112,10 @@ input {
 }
 
 .staff-printable {
-  width: calc(800px * var(--page-scale, 1));
+  width: 800px;
   flex-shrink: 0;
+  transform: scale(var(--page-scale, 1));
+  transform-origin: top center;
 }
 
 .staff-preview-page {

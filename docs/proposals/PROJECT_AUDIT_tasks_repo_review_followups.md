@@ -26,8 +26,8 @@ Rules for this ledger:
 - **Dependencies**: None
 
 ### Task 2: Record the Parser Ownership Decision
-- [ ] **Status**: Pending
-- **Scope**: `docs/proposals/` follow-up design note or repo doc, `src/dsl/parser.ts`, `src/dsl/lezer_skeleton.ts`, `src/dsl/ast.ts`, `src/dsl/lezer_parity.test.ts`, `LEARNINGS.md`
+- [x] **Status**: Done
+- **Scope**: repo parser-ownership doc, `src/dsl/parser.ts`, `src/dsl/lezer_skeleton.ts`, `src/dsl/ast.ts`, `src/dsl/lezer_parity.test.ts`, `LEARNINGS.md`
 - **Commits**:
   - `docs(parser): record parser ownership model`
   - `test(parser): align parity coverage with ownership contract`
@@ -35,7 +35,9 @@ Rules for this ledger:
   - The repo documents that the Lezer-based parser is authoritative for normalized semantics.
   - The document states that the regex/manual parser is deprecated and records its temporary allowed uses.
   - The document states what the secondary deprecated path may and may not do.
-  - Parity tests or equivalent checks match the documented ownership model.
+  - The document states that no new syntax or semantic capability may land only on the deprecated parser path.
+  - The document describes the intended retirement or removal path for the deprecated parser.
+  - Parity tests or equivalent checks treat the deprecated parser as a transitional comparison harness rather than a production oracle.
 - **Dependencies**: Task 1
 
 ### Task 3: Audit and Close Remaining Parser-Path Drift
@@ -60,7 +62,7 @@ Rules for this ledger:
   - JSDOM/canvas/global bootstrap logic has a single shared ownership point.
   - `src/cli.ts` is reduced to argument parsing and orchestration.
   - `ast`, `ir`, `xml`, and `svg` outputs remain available and validated by automated coverage or deterministic command probes.
-- **Dependencies**: Task 2
+- **Dependencies**: None
 
 ### Task 5: Add Bundle Measurement and Dependency Reachability Checks
 - [ ] **Status**: Pending
@@ -88,7 +90,7 @@ Rules for this ledger:
     - one settings interaction that changes preview output
     - generated docs example render smoke
   - The tests are deterministic and fixture-based rather than open-ended manual visual checks.
-- **Dependencies**: Task 5
+- **Dependencies**: None
 
 ### Task 7: Perform Targeted Renderer Seam Extraction
 - [ ] **Status**: Pending
@@ -168,6 +170,17 @@ Validation:
 - The final archive task is appropriate once closure semantics are tightened.
 
 STATUS: CHANGES_REQUESTED
+
+### Author Response
+
+Task 2 implementation note:
+
+- The later parser-ownership decision override in this ledger supersedes the earlier broader "secondary parser responsibilities" wording for Task 2.
+- The operative Task 2 end state is:
+  - Lezer is the only authoritative parser for normalized semantics.
+  - The regex/manual parser is deprecated.
+  - Its allowed temporary uses are narrowed to migration aid, comparison harness, rollback guard, or explicitly documented transitional support.
+  - Any older task-language implying a broader long-term secondary-parser role is overridden by this later narrowing.
 
 ### Review Round 3
 

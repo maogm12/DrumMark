@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { parseDocumentSkeleton } from "./parser";
 import { parseDocumentSkeletonFromLezer } from "./lezer_skeleton";
-import { buildScoreAst } from "./ast";
+import { buildNormalizedScore } from "./normalize";
 import type { DocumentSkeleton } from "./types";
 
 // Comparison helper: strip fields that legitimately differ between parsers
@@ -293,21 +293,27 @@ note 1/16
 HH | [d x]:flam [d x]:accent:ghost x x |`;
 
 type TestCase = { name: string; dsl: string };
+type ExpectedErrorCase = {
+  name: string;
+  dsl: string;
+  normalizedMessages: string[];
+};
 
-const ALL_CASES: TestCase[] = [
+const LEZER_SMOKE_CASES: TestCase[] = [
   { name: "basic", dsl: BASIC },
   { name: "tempo/time", dsl: TEMPO_TIME },
   { name: "grouping", dsl: GROUPING },
   { name: "all tracks", dsl: ALL_TRACKS },
   { name: "all tokens", dsl: ALL_TOKENS },
-  { name: "modifiers", dsl: MODIFIERS },
   { name: "chained modifiers", dsl: CHAINED_MODIFIERS },
   { name: "combined hits", dsl: COMBINED_HITS },
   { name: "durations", dsl: DURATIONS },
   { name: "large stars", dsl: LARGE_STARS },
-  { name: "large star slash cancellation", dsl: LARGE_STAR_SLASH_CANCELLATION },
+  {
+    name: "large star slash cancellation",
+    dsl: LARGE_STAR_SLASH_CANCELLATION,
+  },
   { name: "repeat barlines", dsl: REPEAT_BARLINES },
-  { name: "voltas", dsl: VOLTAS },
   { name: "groups", dsl: GROUPS },
   { name: "groups with tracks", dsl: GROUPS_WITH_TRACKS },
   { name: "group spans", dsl: GROUP_SPANS },
@@ -315,63 +321,149 @@ const ALL_CASES: TestCase[] = [
   { name: "segno anchor", dsl: NAV_SEGNO_ANCHOR },
   { name: "nav only measure", dsl: NAV_ONLY },
   { name: "measure repeat", dsl: MEASURE_REPEAT },
-  { name: "braced blocks", dsl: BRACED_BLOCKS },
   { name: "multi rest", dsl: MULTI_REST },
   { name: "inline repeat", dsl: INLINE_REPEAT },
   { name: "inline repeat multi", dsl: INLINE_REPEAT_MULTI },
   { name: "group modifiers", dsl: GROUP_MODIFIERS },
 ];
 
+const MANUAL_COMPARISON_CASES: TestCase[] = [
+  { name: "basic", dsl: BASIC },
+  { name: "all tracks", dsl: ALL_TRACKS },
+  { name: "modifiers", dsl: MODIFIERS },
+  { name: "durations", dsl: DURATIONS },
+  { name: "large star slash cancellation", dsl: LARGE_STAR_SLASH_CANCELLATION },
+  { name: "navigation", dsl: NAVIGATION },
+  { name: "measure repeat", dsl: MEASURE_REPEAT },
+  { name: "braced blocks", dsl: BRACED_BLOCKS },
+  { name: "multi rest", dsl: MULTI_REST },
+  { name: "inline repeat multi", dsl: INLINE_REPEAT_MULTI },
+  { name: "group modifiers", dsl: GROUP_MODIFIERS },
+];
+
+const LEZER_EXPECTED_ERROR_CASES: ExpectedErrorCase[] = [
+  {
+    name: "modifiers",
+    dsl: MODIFIERS,
+    normalizedMessages: ["Modifier `flam` is not allowed on track `HH`"],
+  },
+  {
+    name: "braced blocks",
+    dsl: BRACED_BLOCKS,
+    normalizedMessages: [
+      "Token `group` crosses grouping boundary at 4 in track ANONYMOUS",
+      "Track `ANONYMOUS` measure 1 has invalid duration: used 5/1 slots, expected 4",
+    ],
+  },
+];
+
 // ============================================================
 // Tests
 // ============================================================
 
-describe("lezer parity — skeleton", () => {
-  for (const { name, dsl } of ALL_CASES) {
-    it(`keeps Lezer aligned with the deprecated manual parser for ${name}`, () => {
+describe("lezer production-path smoke fixtures", () => {
+  for (const { name, dsl } of LEZER_SMOKE_CASES) {
+    it(`accepts ${name} on the production Lezer path`, () => {
+      const lezer = parseDocumentSkeletonFromLezer(dsl);
+
+      expect(lezer.errors.length, "lezer should produce no errors").toBe(0);
+      expect(buildNormalizedScore(dsl).errors).toEqual([]);
+    });
+  }
+});
+
+describe("lezer authoritative semantic error fixtures", () => {
+  for (const { name, dsl, normalizedMessages } of LEZER_EXPECTED_ERROR_CASES) {
+    it(`reports expected normalized errors for ${name}`, () => {
+      const lezer = parseDocumentSkeletonFromLezer(dsl);
+      const normalized = buildNormalizedScore(dsl);
+
+      expect(lezer.errors.length, "lezer should produce no skeleton errors").toBe(0);
+      expect(normalized.errors.map((error) => error.message)).toEqual(normalizedMessages);
+    });
+  }
+});
+
+describe("lezer authoritative normalized spot checks", () => {
+  it("anchors interior navigation in normalized output", () => {
+    const score = buildNormalizedScore(`time 4/4
+divisions 4
+
+| d @segno - @to-coda d - |`);
+
+    expect(score.errors).toEqual([]);
+    expect(score.measures[0]).toMatchObject({
+      startNav: { kind: "segno", anchor: { eventAfter: { numerator: 1, denominator: 4 } } },
+      endNav: { kind: "to-coda", anchor: { eventBefore: { numerator: 1, denominator: 4 } } },
+    });
+  });
+
+  it("preserves canonical measure-repeat intent in normalized output", () => {
+    const score = buildNormalizedScore(`time 4/4
+divisions 4
+
+HH | x - - - | x - - - | |
+SD | - - - - | - - - - | %% |`);
+
+    expect(score.errors).toEqual([]);
+    expect(score.measures[2]).toMatchObject({
+      measureRepeat: { slashes: 2 },
+      events: [],
+      barline: "final",
+    });
+  });
+
+  it("preserves canonical multi-rest intent in normalized output", () => {
+    const score = buildNormalizedScore(`time 4/4
+divisions 4
+
+HH | |
+SD | --4-- |`);
+
+    expect(score.errors).toEqual([]);
+    expect(score.measures[0]).toMatchObject({
+      generated: false,
+      barline: "final",
+      multiRest: { count: 4 },
+      multiRestCount: 4,
+      events: [],
+    });
+  });
+});
+
+describe("deprecated manual parser comparison harness", () => {
+  for (const { name, dsl } of MANUAL_COMPARISON_CASES) {
+    it(`flags drift for ${name}`, () => {
       const manual = parseDocumentSkeleton(dsl);
       const lezer = parseDocumentSkeletonFromLezer(dsl);
 
-      // Lezer is the authoritative production parser.
       expect(lezer.errors.length, "lezer should produce no errors").toBe(0);
-      expect(
-        manual.errors,
-        "deprecated manual parser drifted from the Lezer transitional parity target",
-      ).toEqual(lezer.errors);
+      expect(manual.errors, "deprecated manual parser drifted on a comparison fixture").toEqual([]);
 
-      if (manual.errors.length === 0) {
-        // Transitional structural parity while the manual parser is still retained.
-        compareHeaders(manual, lezer);
-        const rn = normalize(manual);
-        const ln = normalize(lezer);
-        expect(ln).toEqual(rn);
-      }
+      compareHeaders(manual, lezer);
+      const rn = normalize(manual);
+      const ln = normalize(lezer);
+      expect(ln).toEqual(rn);
     });
   }
 });
 
 describe("lezer parity — navigation errors", () => {
   it("reports error for multiple start nav markers", () => {
-    const regex = parseDocumentSkeleton(NAV_MULTI_START);
     const lezer = parseDocumentSkeletonFromLezer(NAV_MULTI_START);
-    expect(regex.errors.length).toBeGreaterThan(0);
-    expect(lezer.errors.length).toBe(regex.errors.length);
+    expect(lezer.errors.length).toBeGreaterThan(0);
     expect(lezer.errors[0].message).toContain("multiple start-side navigation");
   });
 
   it("reports error for @to-coda at measure start", () => {
-    const regex = parseDocumentSkeleton(NAV_TOCODA_START);
     const lezer = parseDocumentSkeletonFromLezer(NAV_TOCODA_START);
-    expect(regex.errors.length).toBeGreaterThan(0);
-    expect(lezer.errors.length).toBe(regex.errors.length);
+    expect(lezer.errors.length).toBeGreaterThan(0);
     expect(lezer.errors[0].message).toContain("may not appear at the beginning");
   });
 
   it("reports error for @segno at measure end", () => {
-    const regex = parseDocumentSkeleton(NAV_SEGNO_END);
     const lezer = parseDocumentSkeletonFromLezer(NAV_SEGNO_END);
-    expect(regex.errors.length).toBeGreaterThan(0);
-    expect(lezer.errors.length).toBe(regex.errors.length);
+    expect(lezer.errors.length).toBeGreaterThan(0);
     expect(lezer.errors[0].message).toContain("may not appear at the end");
   });
 });

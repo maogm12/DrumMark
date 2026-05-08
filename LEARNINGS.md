@@ -330,3 +330,7 @@ The regex parser (`parser.ts`) now has zero production references. All 345 tests
 
 - The exact-range overflow story is broader than star counts alone. Large dot runs can also exceed exact numeric representation even when parsing succeeds, so overflow detection should be framed in terms of the full duration modifier combination, not just `stars - halves`.
 - Once a measure contains an overflowed token, normalization should avoid emitting partial IR for later tokens in that same track-measure from a stale slot offset. Reporting the diagnostic and dropping that track-measure contribution is safer than fabricating misaligned events.
+
+## 2026-05-07 Addendum: Parser Ownership Test Contract
+
+- Once Lezer is declared authoritative, spec-facing correctness tests should assert Lezer behavior directly. Any remaining manual-parser comparison tests are drift probes only; they should not keep the deprecated parser in the role of production oracle.

@@ -746,6 +746,15 @@ export function App() {
     isResizingRef.current = true;
     document.body.style.cursor = "col-resize";
     document.body.style.userSelect = "none";
+    document.body.style.webkitUserSelect = "none";
+    document.body.style.webkitTouchCallout = "none";
+  }, []);
+
+  const handleTouchStart = useCallback(() => {
+    isResizingRef.current = true;
+    document.body.style.userSelect = "none";
+    document.body.style.webkitUserSelect = "none";
+    document.body.style.webkitTouchCallout = "none";
   }, []);
 
   useEffect(() => {
@@ -754,17 +763,35 @@ export function App() {
       setEditorWidth(Math.max(320, Math.min(window.innerWidth - 320, e.clientX)));
     };
 
+    const handleTouchMove = (e: TouchEvent) => {
+      if (!isResizingRef.current) return;
+      setEditorWidth(Math.max(320, Math.min(window.innerWidth - 320, e.touches[0]!.clientX)));
+    };
+
     const handleMouseUp = () => {
       isResizingRef.current = false;
       document.body.style.cursor = "";
       document.body.style.userSelect = "";
+      document.body.style.webkitUserSelect = "";
+      document.body.style.webkitTouchCallout = "";
+    };
+
+    const handleTouchEnd = () => {
+      isResizingRef.current = false;
+      document.body.style.userSelect = "";
+      document.body.style.webkitUserSelect = "";
+      document.body.style.webkitTouchCallout = "";
     };
 
     window.addEventListener("mousemove", handleMouseMove);
     window.addEventListener("mouseup", handleMouseUp);
+    window.addEventListener("touchmove", handleTouchMove, { passive: true });
+    window.addEventListener("touchend", handleTouchEnd);
     return () => {
       window.removeEventListener("mousemove", handleMouseMove);
       window.removeEventListener("mouseup", handleMouseUp);
+      window.removeEventListener("touchmove", handleTouchMove);
+      window.removeEventListener("touchend", handleTouchEnd);
     };
   }, []);
 
@@ -910,7 +937,7 @@ export function App() {
     applyScaleCss(newScale);
   }
 
-    const touchStateRef = useRef({ distance: 0, initialScale: 1 });
+    const touchStateRef = useRef({ distance: 0, initialScale: 1, centerX: 0, centerY: 0 });
     const activeTabRef = useRef(settings.activeTab);
     useEffect(() => { activeTabRef.current = settings.activeTab; }, [settings.activeTab]);
 
@@ -964,7 +991,9 @@ export function App() {
         const dy = t1.pageY - t2.pageY;
           touchStateRef.current = {
           distance: Math.sqrt(dx * dx + dy * dy),
-          initialScale: pageScaleRef.current
+          initialScale: pageScaleRef.current,
+          centerX: (t1.pageX + t2.pageX) / 2,
+          centerY: (t1.pageY + t2.pageY) / 2,
         };
       }
     };
@@ -984,8 +1013,36 @@ export function App() {
 
         if (touchStateRef.current.distance > 0) {
           const ratio = distance / touchStateRef.current.distance;
+          const oldScale = pageScaleRef.current;
           const newScale = Math.max(0.2, Math.min(3.0, touchStateRef.current.initialScale * ratio));
+          
+          const scaleRatio = newScale / oldScale;
           applyScaleCss(newScale);
+
+          const shell = pageSurfaceBodyRef.current?.querySelector(".staff-preview-shell") as HTMLElement | null;
+          if (shell) {
+            const BASE = 800;
+            const oldWidth = BASE * oldScale;
+            const newWidth = BASE * newScale;
+            const shellWidth = shell.clientWidth;
+
+            const oldCenterOffset = Math.max(0, (shellWidth - oldWidth) / 2);
+            const newCenterOffset = Math.max(0, (shellWidth - newWidth) / 2);
+
+            const rect = shell.getBoundingClientRect();
+            const mx = touchStateRef.current.centerX - rect.left;
+            const my = touchStateRef.current.centerY - rect.top;
+
+            const cursorInContentX = mx - oldCenterOffset + shell.scrollLeft;
+            const cursorInContentY = my + shell.scrollTop;
+
+            const targetScrollX = newCenterOffset + cursorInContentX * scaleRatio - mx;
+            const targetScrollY = cursorInContentY * scaleRatio - my;
+
+            void shell.scrollWidth;
+            shell.scrollLeft = targetScrollX;
+            shell.scrollTop = targetScrollY;
+          }
         }
       }
     };
@@ -1051,7 +1108,7 @@ export function App() {
           <DslEditor value={dsl} onChange={setDsl} errors={score.errors} theme={resolvedTheme} />
         </section>
 
-        <div className="resizer" onMouseDown={handleMouseDown} />
+        <div className="resizer" onMouseDown={handleMouseDown} onTouchStart={handleTouchStart} style={{ touchAction: "none" }} />
 
         <section className={`pane preview-pane${settings.activeTab !== "editor" ? " active" : ""}`} aria-label={t("panes.preview")}>
           <header className="pane-header">

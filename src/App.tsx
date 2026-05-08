@@ -10,6 +10,8 @@ import { getDrumMarkEditorTheme, drumMarkLanguage, drumMarkSyntaxHighlighting } 
 import { resolveDocumentTheme, subscribeToThemeChanges, type AppTheme } from "./theme";
 import { useAppSettings } from "./hooks/useAppSettings";
 import { SettingsPanel } from "./components/SettingsPanel";
+import * as Tabs from "@radix-ui/react-tabs";
+import type { MainTab } from "./hooks/useAppSettings";
 
 const legacySeedDsl = `tempo 96
 time 4/4
@@ -956,11 +958,13 @@ export function App() {
           <header className="pane-header">
             <span className="pane-title">Editor</span>
             <div className="preview-header-actions mobile-only-actions">
-              <div className="preview-tabs" role="tablist">
-                <button className={`preview-tab tab-editor${settings.activeTab === "editor" ? " active" : ""}`} onClick={() => updateSetting("activeTab", "editor")} type="button">Editor</button>
-                <button className={`preview-tab${settings.activeTab === "page" ? " active" : ""}`} onClick={() => updateSetting("activeTab", "page")} type="button">Page</button>
-                <button className={`preview-tab${settings.activeTab === "xml" ? " active" : ""}`} onClick={() => updateSetting("activeTab", "xml")} type="button">XML</button>
-              </div>
+              <Tabs.Root className="editor-pane-tabs" value={settings.activeTab} onValueChange={(v) => updateSetting("activeTab", v as MainTab)}>
+                <Tabs.List className="tabs-list">
+                  <Tabs.Trigger className="tabs-trigger" value="editor">Editor</Tabs.Trigger>
+                  <Tabs.Trigger className="tabs-trigger" value="page">Page</Tabs.Trigger>
+                  <Tabs.Trigger className="tabs-trigger" value="xml">XML</Tabs.Trigger>
+                </Tabs.List>
+              </Tabs.Root>
             </div>
           </header>
           <DslEditor value={dsl} onChange={setDsl} errors={score.errors} theme={resolvedTheme} />
@@ -972,11 +976,13 @@ export function App() {
           <header className="pane-header">
             <span className="pane-title">Preview</span>
             <div className="preview-header-actions">
-              <div className="preview-tabs" role="tablist">
-                <button className={`preview-tab tab-editor${settings.activeTab === "editor" ? " active" : ""}`} onClick={() => updateSetting("activeTab", "editor")} type="button">Editor</button>
-                <button className={`preview-tab${settings.activeTab === "page" ? " active" : ""}`} onClick={() => updateSetting("activeTab", "page")} type="button">Page</button>
-                <button className={`preview-tab${settings.activeTab === "xml" ? " active" : ""}`} onClick={() => updateSetting("activeTab", "xml")} type="button">XML</button>
-              </div>
+              <Tabs.Root className="preview-pane-tabs" value={settings.activeTab} onValueChange={(v) => updateSetting("activeTab", v as MainTab)}>
+                <Tabs.List className="tabs-list">
+                  <Tabs.Trigger className="tabs-trigger tab-hide-desktop" value="editor">Editor</Tabs.Trigger>
+                  <Tabs.Trigger className="tabs-trigger" value="page">Page</Tabs.Trigger>
+                  <Tabs.Trigger className="tabs-trigger" value="xml">XML</Tabs.Trigger>
+                </Tabs.List>
+              </Tabs.Root>
             </div>
           </header>
           

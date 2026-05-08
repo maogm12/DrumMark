@@ -432,6 +432,56 @@ input {
   box-shadow: var(--shadow-sm);
 }
 
+.tabs-list {
+  display: flex;
+  background: var(--border-subtle);
+  padding: 2px;
+  border-radius: 6px;
+}
+
+.tabs-trigger {
+  border: 0;
+  background: transparent;
+  padding: 4px 12px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  border-radius: 4px;
+  cursor: pointer;
+  color: var(--text-muted);
+  transition: all 0.2s;
+  font-family: inherit;
+}
+
+.tabs-trigger:hover {
+  color: var(--text-main);
+}
+
+.tabs-trigger[data-state="active"] {
+  background: var(--bg-elevated);
+  color: var(--text-main);
+  box-shadow: var(--shadow-sm);
+}
+
+.tabs-trigger:focus-visible {
+  outline: 2px solid var(--accent-primary);
+  outline-offset: 1px;
+}
+
+.tab-hide-desktop,
+.tab-editor {
+  /* visible on mobile, hidden on desktop */
+}
+
+@media (min-width: 769px) {
+  .tab-hide-desktop {
+    display: none;
+  }
+
+  .editor-pane-tabs {
+    display: none;
+  }
+}
+
 .settings-toggle {
   width: 32px;
   height: 32px;

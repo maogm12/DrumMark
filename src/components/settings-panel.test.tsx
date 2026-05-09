@@ -82,7 +82,6 @@ describe("SettingsPanel smoke", () => {
         debugMode={false}
       />,
     );
-    openAccordionItem(container, "Notes");
     expect(container.querySelector(".toggle-root")).toBeTruthy();
   });
 
@@ -95,7 +94,6 @@ describe("SettingsPanel smoke", () => {
         debugMode={false}
       />,
     );
-    openAccordionItem(container, "Notes");
     const toggle = container.querySelector(".toggle-root");
     expect(toggle).toBeTruthy();
     expect(toggle!.getAttribute("data-state")).toBe("unchecked");

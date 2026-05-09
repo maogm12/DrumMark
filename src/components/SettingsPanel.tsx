@@ -3,6 +3,7 @@ import * as Accordion from "@radix-ui/react-accordion";
 import { NumericSettingControl } from "./NumericSettingControl";
 import type { AppSettings } from "../hooks/useAppSettings";
 import type { PagePadding } from "../vexflow/types";
+import { SETTINGS_RANGES } from "../vexflow/config";
 import { useT } from "../i18n/context";
 
 function Numeric({
@@ -52,7 +53,7 @@ export function SettingsPanel({
 }) {
   const { t } = useT();
   return (
-    <Accordion.Root type="multiple" className="settings-accordion">
+    <Accordion.Root type="multiple" className="settings-accordion" defaultValue={["page-layout", "notation", "staff-header"]}>
       <Accordion.Item value="page-layout">
         <Accordion.Trigger className="settings-trigger">
           {t("settings.pageLayout")}
@@ -93,11 +94,11 @@ export function SettingsPanel({
         </Accordion.Trigger>
         <Accordion.Content className="settings-content">
           <Numeric labelKey="settings.staffScale" value={Math.round(settings.staffScale * 100)} min={30} max={150} step={5} unit="%" onChange={(value) => updateSetting("staffScale", value / 100)} />
-          <Numeric labelKey="settings.systemSpacing" value={settings.systemSpacing} min={0} max={100} step={1} onChange={(value) => updateSetting("systemSpacing", value)} />
-          <Numeric labelKey="settings.titleHeight" value={settings.headerHeight} min={10} max={300} step={1} onChange={(value) => updateSetting("headerHeight", value)} />
-          <Numeric labelKey="settings.titleGap" value={settings.headerStaffSpacing} min={0} max={100} step={1} onChange={(value) => updateSetting("headerStaffSpacing", value)} />
-          <Numeric labelKey="settings.voltaOffset" value={settings.voltaSpacing} min={-20} max={20} step={1} onChange={(value) => updateSetting("voltaSpacing", value)} />
-          <Numeric labelKey="settings.hairpinOffset" value={settings.hairpinOffsetY} min={-40} max={40} step={1} onChange={(value) => updateSetting("hairpinOffsetY", value)} />
+          <Numeric labelKey="settings.systemSpacing" value={settings.systemSpacing} min={SETTINGS_RANGES.systemSpacing.min} max={SETTINGS_RANGES.systemSpacing.max} step={1} onChange={(value) => updateSetting("systemSpacing", value)} />
+          <Numeric labelKey="settings.titleHeight" value={settings.headerHeight} min={SETTINGS_RANGES.headerHeight.min} max={SETTINGS_RANGES.headerHeight.max} step={1} onChange={(value) => updateSetting("headerHeight", value)} />
+          <Numeric labelKey="settings.titleGap" value={settings.headerStaffSpacing} min={SETTINGS_RANGES.headerStaffSpacing.min} max={SETTINGS_RANGES.headerStaffSpacing.max} step={1} onChange={(value) => updateSetting("headerStaffSpacing", value)} />
+          <Numeric labelKey="settings.voltaOffset" value={settings.voltaSpacing} min={SETTINGS_RANGES.voltaSpacing.min} max={SETTINGS_RANGES.voltaSpacing.max} step={1} onChange={(value) => updateSetting("voltaSpacing", value)} />
+          <Numeric labelKey="settings.hairpinOffset" value={settings.hairpinOffsetY} min={SETTINGS_RANGES.hairpinOffsetY.min} max={SETTINGS_RANGES.hairpinOffsetY.max} step={1} onChange={(value) => updateSetting("hairpinOffsetY", value)} />
         </Accordion.Content>
       </Accordion.Item>
 

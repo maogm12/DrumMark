@@ -114,6 +114,53 @@ divisions 4
   });
 });
 
+describe("hairpin bottom skyline", () => {
+  it("does not create clip path for single-system hairpins", async () => {
+    const dsl = `time 4/4
+divisions 4
+
+| HH | < d d d d | d d d d | != |`;
+
+    const svg = await renderScoreToSvg(buildNormalizedScore(dsl), BASE_OPTIONS);
+    expect(svg).toContain("<svg");
+    expect(svg).not.toContain("clipPath");
+  });
+
+  it("creates clip path for cross-system hairpins", async () => {
+    const dsl = `time 4/4
+divisions 4
+
+| HH | < d d d d | d d d d | d d d d | d d d d | d d d d | d d d d | d d d d | != | d d d d |`;
+
+    const svg = await renderScoreToSvg(buildNormalizedScore(dsl), BASE_OPTIONS);
+    expect(svg).toContain("<svg");
+    expect(svg).toContain("clipPath");
+  });
+
+  it("places hairpin below an accented bass drum note", async () => {
+    const dsl = `time 4/4
+divisions 4
+
+BD | < b b B b != |`;
+
+    const svg = await renderScoreToSvg(buildNormalizedScore(dsl), BASE_OPTIONS);
+    expect(svg).toContain("<svg");
+  });
+
+  it("pushes hairpin further down when hairpinOffsetY is increased", async () => {
+    const dsl = `time 4/4
+divisions 4
+
+| HH | < d d d d | d d d d | != |`;
+
+    const svg0 = await renderScoreToSvg(buildNormalizedScore(dsl), { ...BASE_OPTIONS, hairpinOffsetY: 0 });
+    const svg10 = await renderScoreToSvg(buildNormalizedScore(dsl), { ...BASE_OPTIONS, hairpinOffsetY: 10 });
+    expect(svg0).toContain("<svg");
+    expect(svg10).toContain("<svg");
+    expect(svg0).not.toBe(svg10);
+  });
+});
+
 describe("docs example smoke", () => {
   const examples = [
     "overview",

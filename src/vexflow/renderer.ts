@@ -56,13 +56,7 @@ const {
   Stem,
 } = VexFlow;
 
-const NAV_TEXT_FONT = "Academico";
-const NAV_GLYPH_FONT = "Bravura";
-const SKYLINE_BUCKET_WIDTH = 4;
-const SKYLINE_GAP = 6;
-const NAV_TEXT_SIZE = 12;
-const NAV_GLYPH_SIZE = 20;
-const VOLTA_TEXT_SIZE = 12;
+// Font, layout and spacing constants imported from ./config
 import {
   buildMeasureSpacingPlan,
   buildMeasureWidthPlan,
@@ -70,6 +64,21 @@ import {
   type MeasureSpacingPlan,
   type RenderMeasure,
 } from "./layout";
+import {
+  NAV_TEXT_FONT,
+  NAV_GLYPH_FONT,
+  SKYLINE_BUCKET_WIDTH,
+  SKYLINE_GAP,
+  SKYLINE_GAP_BELOW,
+  BEAM_THICKNESS,
+  NOTEHEAD_PADDING,
+  HAIRPIN_FULL_HEIGHT,
+  HAIRPIN_CLIP_Y_PADDING_ABOVE,
+  HAIRPIN_CLIP_HEIGHT,
+  NAV_TEXT_SIZE,
+  NAV_GLYPH_SIZE,
+  VOLTA_TEXT_SIZE,
+} from "./config";
 
 type NavSegment = {
   text: string;
@@ -87,6 +96,7 @@ type SkylineRef = {
 type LayoutNote = {
   note: any;
   aboveRefs: SkylineRef[];
+  belowRefs: SkylineRef[];
   start: Fraction;
 };
 
@@ -110,6 +120,7 @@ type PendingVoltaSpan = {
 
 type SystemLayoutState = {
   skyline: TopSkyline;
+  bottomSkyline: BottomSkyline;
   edgeNavs: PendingEdgeNav[];
   voltaSpans: PendingVoltaSpan[];
 };
@@ -153,6 +164,45 @@ class TopSkyline {
     const [start, end] = this.bucketRange(x1, x2);
     for (let i = start; i <= end; i++) {
       this.buckets[i] = Math.min(this.buckets[i] ?? Number.POSITIVE_INFINITY, topY);
+    }
+  }
+
+  private bucketRange(x1: number, x2: number): [number, number] {
+    const left = Math.min(x1, x2);
+    const right = Math.max(x1, x2);
+    const start = Math.max(0, Math.floor((left - this.startX) / this.bucketWidth));
+    const end = Math.min(this.buckets.length - 1, Math.floor((right - this.startX) / this.bucketWidth));
+    return [start, end];
+  }
+}
+
+class BottomSkyline {
+  private readonly startX: number;
+  private readonly bucketWidth: number;
+  private readonly buckets: number[];
+  private readonly fallbackBottom: number;
+
+  constructor(startX: number, endX: number, fallbackBottom: number, bucketWidth = SKYLINE_BUCKET_WIDTH) {
+    this.startX = startX;
+    this.bucketWidth = bucketWidth;
+    this.fallbackBottom = fallbackBottom;
+    const bucketCount = Math.max(1, Math.ceil((endX - startX) / bucketWidth));
+    this.buckets = Array.from({ length: bucketCount }, () => fallbackBottom);
+  }
+
+  sample(x1: number, x2: number): number {
+    const [start, end] = this.bucketRange(x1, x2);
+    let bottom = Number.NEGATIVE_INFINITY;
+    for (let i = start; i <= end; i++) {
+      bottom = Math.max(bottom, this.buckets[i] ?? this.fallbackBottom);
+    }
+    return Number.isFinite(bottom) ? bottom : this.fallbackBottom;
+  }
+
+  occupy(x1: number, x2: number, bottomY: number): void {
+    const [start, end] = this.bucketRange(x1, x2);
+    for (let i = start; i <= end; i++) {
+      this.buckets[i] = Math.max(this.buckets[i] ?? this.fallbackBottom, bottomY);
     }
   }
 
@@ -430,6 +480,10 @@ function segmentsForEndNav(endNav: NonNullable<NormalizedScore["measures"][numbe
 
 function addSkylineRef(layoutNote: LayoutNote, modifier: any, width: number, height: number): void {
   layoutNote.aboveRefs.push({ modifier, width, height });
+}
+
+function addBelowSkylineRef(layoutNote: LayoutNote, modifier: any, width: number, height: number): void {
+  layoutNote.belowRefs.push({ modifier, width, height });
 }
 
 function addNoteNavigationModifier(layoutNote: LayoutNote, segments: NavSegment[], className: string, xShift = 0): void {
@@ -968,14 +1022,16 @@ function renderSystem(context: any, score: NormalizedScore, measures: RenderMeas
 
   const systemLayout = buildSystemLayoutState(score, measures, staves, layoutNotesByMeasure, options.voltaSpacing);
   staves.forEach((stave) => stave.setContext(context).draw());
+  const bottomSkyline = systemLayout.bottomSkyline;
   buildHairpinSpans(score, measures, layoutNotesByMeasure).forEach((span, index) => {
-    const clipY = Math.min(span.startStave.getY(), span.endStave.getY());
-    const clipH = Math.max(
-      span.startStave.getY() + span.startStave.getHeight(),
-      span.endStave.getY() + span.endStave.getHeight(),
-    ) - clipY + 60;
+    const criticalBottom = bottomSkyline.sample(span.clipLeftX, span.clipRightX);
+    const targetHairpinTopY = criticalBottom + SKYLINE_GAP_BELOW;
+    const startAnchorY = span.firstNote.checkStave().getY() + span.firstNote.checkStave().getHeight();
+    const yShift = (targetHairpinTopY - startAnchorY - 20) + (options.hairpinOffsetY ?? 0);
 
-    if (context.openGroup && context.closeGroup && context.svg) {
+    const needsClip = span.leftShiftPx !== 0 || span.rightShiftPx !== 0;
+    if (needsClip && context.openGroup && context.closeGroup && context.svg) {
+      const clipY = span.startStave.getY() - HAIRPIN_CLIP_Y_PADDING_ABOVE;
       const clipId = `hairpin-clip-${measures[0]?.measure.globalIndex ?? 0}-${index}`;
       let defs = context.svg.querySelector('defs');
       if (!defs) {
@@ -989,7 +1045,7 @@ function renderSystem(context: any, score: NormalizedScore, measures: RenderMeas
       clipRect.setAttribute('x', String(span.clipLeftX));
       clipRect.setAttribute('y', String(clipY));
       clipRect.setAttribute('width', String(span.clipRightX - span.clipLeftX));
-      clipRect.setAttribute('height', String(clipH));
+      clipRect.setAttribute('height', String(HAIRPIN_CLIP_HEIGHT));
       clipPath.appendChild(clipRect);
       defs.appendChild(clipPath);
 
@@ -1005,7 +1061,7 @@ function renderSystem(context: any, score: NormalizedScore, measures: RenderMeas
       .setPosition(Modifier.Position.BELOW)
       .setRenderOptions({
         height: 12,
-        yShift: options.hairpinOffsetY ?? 0,
+        yShift,
         leftShiftPx: span.leftShiftPx,
         rightShiftPx: span.rightShiftPx,
         leftShiftTicks: 0,
@@ -1013,7 +1069,9 @@ function renderSystem(context: any, score: NormalizedScore, measures: RenderMeas
       })
       .drawWithStyle();
 
-    if (context.openGroup && context.closeGroup && context.svg) {
+    bottomSkyline.occupy(span.clipLeftX, span.clipRightX, targetHairpinTopY + HAIRPIN_FULL_HEIGHT);
+
+    if (needsClip && context.openGroup && context.closeGroup && context.svg) {
       context.closeGroup();
     }
   });
@@ -1133,16 +1191,20 @@ function buildSystemLayoutState(
   const fallbackTop = Math.min(...staves.map((stave) => stave.getYForTopText(1)));
   const skyline = new TopSkyline(staves[0]?.getX() ?? 0, (staves.at(-1)?.getX() ?? 0) + (staves.at(-1)?.getWidth() ?? 0), fallbackTop);
 
+  const fallbackBottom = Math.max(...staves.map((stave) => stave.getBottomLineY()));
+  const bottomSkyline = new BottomSkyline(staves[0]?.getX() ?? 0, (staves.at(-1)?.getX() ?? 0) + (staves.at(-1)?.getWidth() ?? 0), fallbackBottom);
+
   for (let i = 0; i < layoutNotesByMeasure.length; i++) {
     const layoutNotes = layoutNotesByMeasure[i] ?? [];
     for (const layoutNote of layoutNotes) {
       occupyNoteInSkyline(layoutNote, skyline);
+      occupyNoteInBottomSkyline(layoutNote, bottomSkyline);
     }
   }
 
   const edgeNavs = buildEdgeNavs(measures, staves, skyline);
   const voltaSpans = buildVoltaSpans(score, measures, staves, skyline, voltaSpacing);
-  return { skyline, edgeNavs, voltaSpans };
+  return { skyline, bottomSkyline, edgeNavs, voltaSpans };
 }
 
 function occupyNoteInSkyline(layoutNote: LayoutNote, skyline: TopSkyline): void {
@@ -1161,6 +1223,26 @@ function occupyNoteInSkyline(layoutNote: LayoutNote, skyline: TopSkyline): void 
     if (typeof modifier.x !== "number" || typeof modifier.y !== "number") continue;
     const modifierTop = modifier.y - ref.height;
     skyline.occupy(modifier.x, modifier.x + ref.width, modifierTop);
+  }
+}
+
+function occupyNoteInBottomSkyline(layoutNote: LayoutNote, skyline: BottomSkyline): void {
+  const note = layoutNote.note;
+  const absoluteX = note.getAbsoluteX();
+  const glyphWidth = note.getGlyphWidth?.() ?? 12;
+  const x1 = absoluteX - glyphWidth / 2 - 2;
+  const x2 = absoluteX + glyphWidth / 2 + 2;
+  const beamed = !!(note.beam);
+  const noteBottom = note.hasStem() && note.getStemDirection() === Stem.DOWN
+    ? note.getStemExtents().topY + (beamed ? BEAM_THICKNESS : 0)
+    : Math.max(...note.getYs()) + NOTEHEAD_PADDING;
+  skyline.occupy(x1, x2, noteBottom);
+
+  for (const ref of layoutNote.belowRefs) {
+    const modifier = ref.modifier;
+    if (typeof modifier.x !== "number" || typeof modifier.y !== "number") continue;
+    const modifierBottom = modifier.y + ref.height;
+    skyline.occupy(modifier.x, modifier.x + ref.width, modifierBottom);
   }
 }
 
@@ -1367,7 +1449,7 @@ function createVexNotes(
 
     const relativeStart = subtractFractions(entries[0]!.start, measureStart);
     (note as any).__drummarkStartKey = fractionKey(relativeStart);
-    navAnchors.set(`${relativeStart.numerator}/${relativeStart.denominator}`, { note, layoutNote: { note, aboveRefs: [], start: relativeStart } });
+    navAnchors.set(`${relativeStart.numerator}/${relativeStart.denominator}`, { note, layoutNote: { note, aboveRefs: [], belowRefs: [], start: relativeStart } });
     return { notes: [note], layoutNotes: [] };
   }
 
@@ -1400,7 +1482,7 @@ function createVexNotes(
 
       const relativeStart = subtractFractions(entry.start, measureStart);
       (note as any).__drummarkStartKey = fractionKey(relativeStart);
-      navAnchors.set(`${relativeStart.numerator}/${relativeStart.denominator}`, { note, layoutNote: { note, aboveRefs: [], start: relativeStart } });
+      navAnchors.set(`${relativeStart.numerator}/${relativeStart.denominator}`, { note, layoutNote: { note, aboveRefs: [], belowRefs: [], start: relativeStart } });
       if (currentBeamNotes.length > 1) allBeams.push(new Beam(currentBeamNotes));
       currentBeamNotes = [];
       currentBeamSegment = -1;
@@ -1440,7 +1522,7 @@ function createVexNotes(
         flag.fontInfo = { ...flag.fontInfo, size: 22 };
       }
 
-      layoutNote = { note, aboveRefs: [], start: subtractFractions(entry.start, measureStart) };
+      layoutNote = { note, aboveRefs: [], belowRefs: [], start: subtractFractions(entry.start, measureStart) };
       (note as any).__drummarkStartKey = fractionKey(layoutNote.start);
       layoutNotes.push(layoutNote);
 
@@ -1460,14 +1542,17 @@ function createVexNotes(
         const modifier = new Articulation("a>").setPosition(voiceId === 1 ? 3 : 4);
         note.addModifier(modifier, 0);
         if (voiceId === 1 && layoutNote) addSkylineRef(layoutNote, modifier, modifier.getWidth(), 14);
+        if (voiceId === 2 && layoutNote) addBelowSkylineRef(layoutNote, modifier, modifier.getWidth(), 14);
       } else if (entry.events.some((event) => event.modifiers.includes("close"))) {
         const modifier = new Articulation("a-").setPosition(voiceId === 1 ? 3 : 4);
         note.addModifier(modifier, 0);
         if (voiceId === 1 && layoutNote) addSkylineRef(layoutNote, modifier, modifier.getWidth(), 14);
+        if (voiceId === 2 && layoutNote) addBelowSkylineRef(layoutNote, modifier, modifier.getWidth(), 14);
       } else if (entry.events.some((event) => event.modifiers.includes("choke"))) {
         const modifier = new Articulation("a.").setPosition(voiceId === 1 ? 3 : 4);
         note.addModifier(modifier, 0);
         if (voiceId === 1 && layoutNote) addSkylineRef(layoutNote, modifier, modifier.getWidth(), 14);
+        if (voiceId === 2 && layoutNote) addBelowSkylineRef(layoutNote, modifier, modifier.getWidth(), 14);
       }
 
       const annotationText = entry.events.map(annotationTextForEvent).find((value) => value !== null);

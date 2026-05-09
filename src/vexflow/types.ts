@@ -36,7 +36,7 @@ export const DEFAULT_RENDER_OPTIONS: VexflowRenderOptions = {
   systemSpacing: 30,
   stemLength: 31,
   voltaSpacing: -15,
-  hairpinOffsetY: -15,
+  hairpinOffsetY: 0,
   hideVoice2Rests: false,
   tempoOffsetX: 0,
   tempoOffsetY: 0,

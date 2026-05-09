@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import type { PagePadding } from "../vexflow/types";
+import { SETTINGS_RANGES } from "../vexflow/config";
 
 export type MainTab = "editor" | "page" | "xml";
 
@@ -32,7 +33,7 @@ export const defaultSettings: AppSettings = {
   systemSpacing: 30,
   stemLength: 31,
   voltaSpacing: -15,
-  hairpinOffsetY: -15,
+  hairpinOffsetY: 0,
   activeTab: "page",
   tempoOffsetX: 0,
   tempoOffsetY: 0,
@@ -51,23 +52,24 @@ export function useAppSettings() {
     if (!saved) return defaultSettings;
     try {
       const parsed = JSON.parse(saved);
-      if (parsed.stemLength === undefined || parsed.stemLength < 20 || parsed.stemLength > 40) {
-        parsed.stemLength = 31;
+      const r = SETTINGS_RANGES;
+      if (parsed.stemLength === undefined || parsed.stemLength < r.stemLength.min || parsed.stemLength > r.stemLength.max) {
+        parsed.stemLength = r.stemLength.default;
       }
-      if (parsed.voltaSpacing === undefined || parsed.voltaSpacing < -16 || parsed.voltaSpacing > 16) {
-        parsed.voltaSpacing = -15;
+      if (parsed.voltaSpacing === undefined || parsed.voltaSpacing < r.voltaSpacing.min || parsed.voltaSpacing > r.voltaSpacing.max) {
+        parsed.voltaSpacing = r.voltaSpacing.default;
       }
-      if (parsed.hairpinOffsetY === undefined || parsed.hairpinOffsetY < -40 || parsed.hairpinOffsetY > 40) {
-        parsed.hairpinOffsetY = -15;
+      if (parsed.hairpinOffsetY === undefined || parsed.hairpinOffsetY < r.hairpinOffsetY.min || parsed.hairpinOffsetY > r.hairpinOffsetY.max) {
+        parsed.hairpinOffsetY = r.hairpinOffsetY.default;
       }
-      if (parsed.headerHeight === undefined) {
-        parsed.headerHeight = 50;
+      if (parsed.headerHeight === undefined || parsed.headerHeight < r.headerHeight.min || parsed.headerHeight > r.headerHeight.max) {
+        parsed.headerHeight = r.headerHeight.default;
       }
-      if (parsed.durationSpacingCompression === undefined || parsed.durationSpacingCompression < 0 || parsed.durationSpacingCompression > 1.5) {
-        parsed.durationSpacingCompression = 0.6;
+      if (parsed.durationSpacingCompression === undefined || parsed.durationSpacingCompression < r.durationSpacingCompression.min || parsed.durationSpacingCompression > r.durationSpacingCompression.max) {
+        parsed.durationSpacingCompression = r.durationSpacingCompression.default;
       }
-      if (parsed.measureWidthCompression === undefined || parsed.measureWidthCompression < 0 || parsed.measureWidthCompression > 1.5) {
-        parsed.measureWidthCompression = 0.75;
+      if (parsed.measureWidthCompression === undefined || parsed.measureWidthCompression < r.measureWidthCompression.min || parsed.measureWidthCompression > r.measureWidthCompression.max) {
+        parsed.measureWidthCompression = r.measureWidthCompression.default;
       }
       return { ...defaultSettings, ...parsed };
     } catch {

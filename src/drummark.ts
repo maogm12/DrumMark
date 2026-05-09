@@ -300,7 +300,7 @@ function readTrackToken(stream: StringStream, state: DslState): string | null {
     return "punctuation";
   }
 
-  if (stream.match(/^[./]+/)) {
+  if (stream.match(/^[*./]+/)) {
     return "duration-modifier";
   }
 

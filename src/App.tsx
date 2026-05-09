@@ -1,12 +1,7 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode, type UIEvent } from "preact/compat";
-import { EditorState, Compartment } from "@codemirror/state";
-import { EditorView, highlightActiveLine, highlightActiveLineGutter, lineNumbers, keymap } from "@codemirror/view";
-import { history, historyKeymap } from "@codemirror/commands";
-import { linter, type Diagnostic } from "@codemirror/lint";
 import { buildNormalizedScore, type ParseError } from "./dsl";
 import { type NormalizedScore } from "./dsl";
-import { renderScorePagesToSvgs, type VexflowRenderOptions, type PagePadding } from "./vexflow";
-import { getDrumMarkEditorTheme, drumMarkLanguage, drumMarkSyntaxHighlighting } from "./drummark";
+import type { VexflowRenderOptions, PagePadding } from "./vexflow";
 import { resolveDocumentTheme, subscribeToThemeChanges, type AppTheme } from "./theme";
 import { useAppSettings } from "./hooks/useAppSettings";
 import { SettingsPanel } from "./components/SettingsPanel";
@@ -224,12 +219,14 @@ function MoonIcon() {
   );
 }
 
-const linterCompartment = new Compartment();
-const editorThemeCompartment = new Compartment();
 
 function DslEditor({ value, onChange, errors, theme }: { value: string; onChange: (value: string) => void; errors: ParseError[]; theme: AppTheme }) {
   const hostRef = useRef<HTMLDivElement | null>(null);
-  const viewRef = useRef<EditorView | null>(null);
+  const viewRef = useRef<any>(null);
+  const linterCompartmentRef = useRef<any>(null);
+  const themeCompartmentRef = useRef<any>(null);
+  const cmModulesRef = useRef<any>(null);
+  const [ready, setReady] = useState(false);
   const onChangeRef = useRef(onChange);
 
   useEffect(() => {
@@ -237,31 +234,51 @@ function DslEditor({ value, onChange, errors, theme }: { value: string; onChange
   }, [onChange]);
 
   useEffect(() => {
-    if (!hostRef.current) {
-      return;
-    }
+    let cancelled = false;
+    Promise.all([
+      import("./drummark"),
+      import("@codemirror/state"),
+      import("@codemirror/view"),
+      import("@codemirror/commands"),
+      import("@codemirror/lint"),
+    ]).then(([drummark, cmState, cmView, cmCommands, cmLint]) => {
+      if (cancelled) return;
+      cmModulesRef.current = { drummark, cmState, cmView, cmCommands, cmLint };
+      setReady(true);
+    });
+    return () => { cancelled = true; };
+  }, []);
 
-    const view = new EditorView({
-      state: EditorState.create({
+  useEffect(() => {
+    if (!ready || !hostRef.current) return;
+    const { drummark, cmState, cmView, cmCommands, cmLint } = cmModulesRef.current;
+
+    linterCompartmentRef.current = new cmState.Compartment();
+    themeCompartmentRef.current = new cmState.Compartment();
+
+    const contentAttrs: Record<string, string> = {
+      spellcheck: "false",
+      autocorrect: "off",
+      autocapitalize: "off",
+      "data-gramm": "false",
+    };
+
+    const view = new cmView.EditorView({
+      state: cmState.EditorState.create({
         doc: value,
         extensions: [
-          lineNumbers(),
-          highlightActiveLine(),
-          highlightActiveLineGutter(),
-          history(),
-          keymap.of(historyKeymap),
-          EditorState.tabSize.of(2),
-          EditorView.contentAttributes.of({
-            spellcheck: "false",
-            autocorrect: "off",
-            autocapitalize: "off",
-            "data-gramm": "false",
-          }),
-          drumMarkLanguage,
-          drumMarkSyntaxHighlighting,
-          editorThemeCompartment.of(getDrumMarkEditorTheme(theme)),
-          linterCompartment.of(
-            linter((v) => {
+          cmView.lineNumbers(),
+          cmView.highlightActiveLine(),
+          cmView.highlightActiveLineGutter(),
+          cmCommands.history(),
+          cmView.keymap.of(cmCommands.historyKeymap),
+          cmState.EditorState.tabSize.of(2),
+          cmView.EditorView.contentAttributes.of(contentAttrs),
+          drummark.drumMarkLanguage,
+          drummark.drumMarkSyntaxHighlighting,
+          themeCompartmentRef.current.of(drummark.getDrumMarkEditorTheme(theme)),
+          linterCompartmentRef.current.of(
+            cmLint.linter((v: any) => {
               return errors.map((err) => {
                 const lineNum = Math.min(Math.max(1, err.line), v.state.doc.lines);
                 const line = v.state.doc.line(lineNum);
@@ -269,13 +286,13 @@ function DslEditor({ value, onChange, errors, theme }: { value: string; onChange
                 return {
                   from: pos,
                   to: Math.min(pos + 1, line.to),
-                  severity: "error",
+                  severity: "error" as const,
                   message: err.message,
-                } as Diagnostic;
+                };
               });
             }),
           ),
-          EditorView.updateListener.of((update) => {
+          cmView.EditorView.updateListener.of((update: any) => {
             if (update.docChanged) {
               onChangeRef.current(update.state.doc.toString());
             }
@@ -288,27 +305,31 @@ function DslEditor({ value, onChange, errors, theme }: { value: string; onChange
     viewRef.current = view;
 
     return () => {
-      viewRef.current = null;
       view.destroy();
+      viewRef.current = null;
     };
-  }, []);
+  }, [ready]);
 
   useEffect(() => {
     const view = viewRef.current;
-    if (!view) return;
+    const compartment = themeCompartmentRef.current;
+    const modules = cmModulesRef.current;
+    if (!view || !compartment || !modules) return;
 
     view.dispatch({
-      effects: editorThemeCompartment.reconfigure(getDrumMarkEditorTheme(theme)),
+      effects: compartment.reconfigure(modules.drummark.getDrumMarkEditorTheme(theme)),
     });
   }, [theme]);
 
   useEffect(() => {
     const view = viewRef.current;
-    if (!view) return;
+    const compartment = linterCompartmentRef.current;
+    const modules = cmModulesRef.current;
+    if (!view || !compartment || !modules) return;
 
     view.dispatch({
-      effects: linterCompartment.reconfigure(
-        linter((v) => {
+      effects: compartment.reconfigure(
+        modules.cmLint.linter((v: any) => {
           return errors.map((err) => {
             const lineNum = Math.min(Math.max(1, err.line), v.state.doc.lines);
             const line = v.state.doc.line(lineNum);
@@ -316,14 +337,22 @@ function DslEditor({ value, onChange, errors, theme }: { value: string; onChange
             return {
               from: pos,
               to: Math.min(pos + 1, line.to),
-              severity: "error",
+              severity: "error" as const,
               message: err.message,
-            } as Diagnostic;
+            };
           });
         }),
       ),
     });
   }, [errors]);
+
+  if (!ready) {
+    return (
+      <div className="editor-shell">
+        <div className="editor-container editor-loading" />
+      </div>
+    );
+  }
 
   return (
     <div className="editor-shell">
@@ -415,7 +444,8 @@ const PagePreview = memo(function PagePreview({
       measureWidthCompression,
     };
 
-    renderScorePagesToSvgs(score, opts)
+    import("./vexflow")
+      .then(({ renderScorePagesToSvgs }) => renderScorePagesToSvgs(score, opts))
       .then((pages) => {
         const markup = pages.map((svg, i) => `<section class="staff-preview-page" data-page="${i+1}">${svg}</section>`).join("");
         setRenderedMarkup(markup);

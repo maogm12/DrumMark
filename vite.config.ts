@@ -35,7 +35,6 @@ export default defineConfig({
       output: {
         manualChunks: {
           vexflow: ["vexflow/bravura"],
-          codemirror: ["@codemirror/state", "@codemirror/view", "@codemirror/commands", "@codemirror/lint"],
         },
       },
     },

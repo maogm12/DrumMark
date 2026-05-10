@@ -2,11 +2,11 @@
 
 use wasm_bindgen::prelude::*;
 
-mod lexer;
-mod ast;
-mod parser;
-mod error;
-mod to_js;
+pub mod lexer;
+pub mod ast;
+pub mod parser;
+pub mod error;
+pub mod to_js;
 
 /// Parse a DrumMark source string and return the AST as a JS object.
 ///

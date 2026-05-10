@@ -60,12 +60,7 @@ impl<'a> Parser<'a> {
                 Some(Ok(t)) => self.peek_buf.push(t),
                 Some(Err(())) => {
                     let span = self.lexer.span();
-                    let start = span.start;
-                    let mut end = span.end;
-                    while let Some(Err(())) = self.lexer.next() {
-                        end = self.lexer.span().end;
-                    }
-                    let text = &self.source[start..end];
+                    let text = &self.source[span.start..span.end];
                     self.peek_buf.push(Token::FreeText(text.to_string()));
                 }
                 None => return None,
@@ -84,12 +79,7 @@ impl<'a> Parser<'a> {
                     Some(Ok(t)) => break t,
                     Some(Err(())) => {
                         let span = self.lexer.span();
-                        let start = span.start;
-                        let mut end = span.end;
-                        while let Some(Err(())) = self.lexer.next() {
-                            end = self.lexer.span().end;
-                        }
-                        let text = &self.source[start..end];
+                        let text = &self.source[span.start..span.end];
                         break Token::FreeText(text.to_string());
                     }
                     None => return Err(self.error_at(self.last_end, "unexpected end of input")),
@@ -257,13 +247,21 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_header_value(&mut self) -> String {
-        let mut parts = Vec::new();
-        while let Some(t) = self.peek() {
-            if t.is_newline_like() { break; }
-            let t = self.next().unwrap();
-            parts.push(self.token_text(&t));
+        let mut result = String::new();
+        loop {
+            match self.peek_raw() {
+                Some(Token::Newline) | None => break,
+                Some(Token::Space) => {
+                    self.next_raw().ok();
+                    result.push(' ');
+                }
+                Some(_) => {
+                    let t = self.next().unwrap(); // use next() which skips trivia
+                    result.push_str(&self.token_text(&t));
+                }
+            }
         }
-        parts.join(" ")
+        result.trim().to_string()
     }
 
     fn consume_newline(&mut self) {

@@ -13,7 +13,8 @@
     "test": "vitest run",
     "typecheck:test": "tsc -p tsconfig.test.json --noEmit",
     "test:watch": "vitest",
-    "drummark": "tsx src/cli.ts"
+    "drummark": "tsx src/cli.ts",
+    "drummark:native": "cargo run --manifest-path crates/drummark-core/Cargo.toml --"
   },
   "dependencies": {
     "@codemirror/commands": "^6.10.3",

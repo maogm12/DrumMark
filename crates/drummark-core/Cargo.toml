@@ -8,6 +8,10 @@ description = "DrumMark notation parser — source text to AST"
 [lib]
 crate-type = ["cdylib", "rlib"]
 
+[[bin]]
+name = "drummark"
+path = "src/main.rs"
+
 [dependencies]
 logos = "0.15"
 wasm-bindgen = "0.2"

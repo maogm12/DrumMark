@@ -14,6 +14,7 @@ pub mod hairpin;
 pub mod nav;
 pub mod volta;
 pub mod event;
+pub mod normalize;
 
 /// Parse a DrumMark source string and return the AST as a JS object.
 ///

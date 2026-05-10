@@ -215,6 +215,25 @@ impl<'a> Parser<'a> {
             Token::CrescendoStart => "<".to_string(),
             Token::DecrescendoStart => ">".to_string(),
             Token::HairpinEnd => "!".to_string(),
+            Token::LBrace => "{".to_string(),
+            Token::RBrace => "}".to_string(),
+            Token::LBracket => "[".to_string(),
+            Token::RBracket => "]".to_string(),
+            Token::Integer(n) => n.to_string(),
+            // Modifier keywords
+            Token::ModHalfOpen => "half-open".to_string(),
+            Token::ModAccent => "accent".to_string(),
+            Token::ModChoke => "choke".to_string(),
+            Token::ModClose => "close".to_string(),
+            Token::ModCross => "cross".to_string(),
+            Token::ModGhost => "ghost".to_string(),
+            Token::ModFlam => "flam".to_string(),
+            Token::ModDrag => "drag".to_string(),
+            Token::ModRoll => "roll".to_string(),
+            Token::ModDead => "dead".to_string(),
+            Token::ModOpen => "open".to_string(),
+            Token::ModBell => "bell".to_string(),
+            Token::ModRim => "rim".to_string(),
             // Glyph tokens: return the glyph name
             _ => {
                 if let Some(g) = t.glyph_name() {
@@ -312,21 +331,21 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_header_value(&mut self) -> String {
-        let mut result = String::new();
+        let start = self.lexer.span().end;
         loop {
             match self.peek_raw() {
                 Some(Token::Newline) | None => break,
-                Some(Token::Space) => {
-                    self.next_raw().ok();
-                    result.push(' ');
-                }
                 Some(_) => {
-                    let t = self.next().unwrap();
-                    result.push_str(&self.token_text(&t));
+                    let _ = self.next_raw();
                 }
             }
         }
-        result.trim().to_string()
+        let end = self.lexer.span().end;
+        if end > start && end <= self.source.len() {
+            self.source[start..end].trim().to_string()
+        } else {
+            String::new()
+        }
     }
 
     fn consume_newline(&mut self) {
@@ -856,6 +875,49 @@ mod tests {
             }
             _ => panic!("expected BasicNote"),
         }
+    }
+
+    #[test]
+    fn test_title_raw_text() {
+        // Unquoted simple text
+        let doc = parse_ok("title My Score\n");
+        assert_eq!(doc.headers.title.as_deref(), Some("My Score"));
+
+        // With quotes — quotes preserved as-is
+        let doc = parse_ok("title \"Quoted Title\"\n");
+        assert_eq!(doc.headers.title.as_deref(), Some("\"Quoted Title\""));
+
+        // Single word
+        let doc = parse_ok("title Hello\n");
+        assert_eq!(doc.headers.title.as_deref(), Some("Hello"));
+
+        // With dots, stas, slashes — all raw
+        let doc = parse_ok("title v1.0 / beta * test\n");
+        assert_eq!(doc.headers.title.as_deref(), Some("v1.0 / beta * test"));
+
+        // With modifier-like words (should NOT be parsed as modifiers)
+        let doc = parse_ok("title accent ghost flam\n");
+        assert_eq!(doc.headers.title.as_deref(), Some("accent ghost flam"));
+
+        // With glyph-like characters
+        let doc = parse_ok("title x d b s c\n");
+        assert_eq!(doc.headers.title.as_deref(), Some("x d b s c"));
+
+        // With mixed special chars
+        let doc = parse_ok("title Song No. 5 (Remix) [2024]\n");
+        assert_eq!(doc.headers.title.as_deref(), Some("Song No. 5 (Remix) [2024]"));
+
+        // Chinese characters
+        let doc = parse_ok("title 李白 李荣浩\n");
+        assert_eq!(doc.headers.title.as_deref(), Some("李白 李荣浩"));
+
+        // Subtitle also works the same way
+        let doc = parse_ok("subtitle feat. Artist / prod. by G\n");
+        assert_eq!(doc.headers.subtitle.as_deref(), Some("feat. Artist / prod. by G"));
+
+        // Composer with dots
+        let doc = parse_ok("composer G. Mao\n");
+        assert_eq!(doc.headers.composer.as_deref(), Some("G. Mao"));
     }
 
     #[test]

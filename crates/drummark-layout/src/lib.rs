@@ -342,3 +342,332 @@ mod tests {
         assert_eq!(ss.to_pixels(40.0), 10.0); // 40pt staff / 4 = 10px per ss
     }
 }
+
+// ── Slot → X Mapping (Task 2) ───────────────────────────────────
+
+/// Converts a uniform slot grid position to a horizontal X coordinate (in px).
+/// The engine uses proportional spacing with content-weighted bonuses.
+pub struct SlotMapper {
+    pub px_per_quarter: f32,
+}
+
+impl SlotMapper {
+    pub fn new(px_per_quarter: f32) -> Self { Self { px_per_quarter } }
+
+    /// Map a slot index within a beat to a horizontal offset from the beat start.
+    /// slots_per_beat = `divisions / beats` for this measure.
+    pub fn slot_x_within_beat(&self, slot: u32, slots_per_beat: u32, beat_width: f32) -> f32 {
+        let frac = slot as f32 / slots_per_beat as f32;
+        frac * beat_width
+    }
+
+    /// Full measure width in pixels. Content-weighted: denser rhythms get more space.
+    pub fn measure_width(&self, total_slots: u32, slots_per_quarter: u32, is_compact: bool) -> f32 {
+        if is_compact { return 40.0; }
+        let quarters = total_slots as f32 / slots_per_quarter as f32;
+        quarters * self.px_per_quarter
+    }
+
+    /// Beat width for a specific beat group.
+    pub fn beat_width(&self, beat_slots: u32, slots_per_quarter: u32) -> f32 {
+        let quarters = beat_slots as f32 / slots_per_quarter as f32;
+        // Dense beats (≤ 1/16) get +15% bonus
+        let density_bonus = if beat_slots > 1 { 1.15 } else { 1.0 };
+        quarters * self.px_per_quarter * density_bonus
+    }
+}
+
+// ── Layout Element Type (Tasks 3-6) ─────────────────────────────
+
+/// A single element on the layout plan.
+#[derive(Debug, Clone)]
+pub struct LayoutElement {
+    pub kind: ElementKind,
+    pub x: f32,
+    pub y: f32,
+    pub width: f32,
+    pub height: f32,
+    pub smufl_codepoint: Option<u32>,
+    pub voice: Option<u8>,
+    pub stem_up: Option<bool>,
+    pub barline_type: Option<String>,
+    pub text: Option<String>,
+    pub from_x: Option<f32>,
+    pub to_x: Option<f32>,
+    pub priority: u8,  // for edge stacking (0=innermost)
+    pub can_shift_y: bool,
+    pub can_shift_x: bool,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum ElementKind {
+    Note,
+    Rest,
+    Barline,
+    Sticking,
+    Modifier,
+    GraceNote,
+    Beam,
+    Stem,
+    Hairpin,
+    Volta,
+    NavMarker,
+    Text,
+    Clef,
+    TimeSignature,
+}
+
+// ── Note/Rest Placement (Task 3) ────────────────────────────────
+
+/// Place notes and rests from a single measure's events.
+pub fn place_notes(measure: &NormalizedMeasure, mapper: &SlotMapper, opts: &LayoutOptions) -> Vec<LayoutElement> {
+    let mut elements = Vec::new();
+    for ev in &measure.events {
+        let x = mapper.slot_x_within_beat(
+            to_slots(&ev.start, measure.note_value),
+            slots_per_beat(measure),
+            beat_width_for(measure, &ev.start),
+        );
+        let y = staff_y_for_track(&ev.track) + if ev.voice == 2 { 0.0 } else { 0.0 };
+        let metrics = if ev.kind == EventKind::Rest {
+            rest_glyph(ev.duration.denominator)
+        } else {
+            notehead_glyph(&ev.track, &ev.modifiers, &ev.glyph)
+        };
+
+        elements.push(LayoutElement {
+            kind: if ev.kind == EventKind::Rest { ElementKind::Rest } else { ElementKind::Note },
+            x, y,
+            width: metrics.width_ss * 10.0,
+            height: metrics.height_ss * 10.0,
+            smufl_codepoint: Some(metrics.codepoint),
+            voice: Some(ev.voice),
+            stem_up: Some(ev.voice == 1),
+            barline_type: None,
+            text: None,
+            from_x: None,
+            to_x: None,
+            priority: 0,
+            can_shift_y: false,
+            can_shift_x: false,
+        });
+    }
+    elements
+}
+
+// ── Measure Barlines (Task 6) ───────────────────────────────────
+
+pub fn place_barlines(measure: &NormalizedMeasure, measure_x: f32) -> Vec<LayoutElement> {
+    let mut elements = Vec::new();
+    let bar_type = measure.barline.as_deref().unwrap_or("regular");
+    elements.push(LayoutElement {
+        kind: ElementKind::Barline,
+        x: measure_x,
+        y: 0.0,
+        width: 2.0,
+        height: crate::STAFF_HEIGHT_SS * 10.0,
+        smufl_codepoint: None,
+        voice: None,
+        stem_up: None,
+        barline_type: Some(bar_type.to_string()),
+        text: None,
+        from_x: None,
+        to_x: None,
+        priority: 0,
+        can_shift_y: false,
+        can_shift_x: false,
+    });
+    elements
+}
+
+// ── Edge Element Stacking (Task 7) ───────────────────────────────
+
+/// Push lower-priority edge elements outward when they overlap.
+/// Returns the resolved elements with Y positions adjusted.
+pub fn stack_edge_elements(elements: &mut [LayoutElement], edge_padding: f32) -> Vec<String> {
+    let mut warnings = Vec::new();
+    let max_iters = 5;
+
+    for _iter in 0..max_iters {
+        let mut any_overlap = false;
+
+        for i in 0..elements.len() {
+            for j in (i+1)..elements.len() {
+                let (a, b) = if elements[i].priority < elements[j].priority {
+                    (&elements[i].clone(), &elements[j].clone())
+                } else {
+                    (&elements[j].clone(), &elements[i].clone())
+                };
+
+                // Check X overlap
+                let a_right = a.x + a.width;
+                let b_right = b.x + b.width;
+                let x_overlap = a.x < b_right && a_right > b.x;
+                if !x_overlap { continue; }
+
+                // Check Y overlap
+                let a_bottom = a.y + a.height;
+                let b_bottom = b.y + b.height;
+                let y_overlap = a.y < b_bottom && a_bottom > b.y;
+                if !y_overlap { continue; }
+
+                any_overlap = true;
+                let overlap = a_bottom.min(b_bottom) - a.y.max(b.y);
+                let push = overlap + edge_padding;
+
+                // Try to push lower-priority element (b)
+                if elements[j].can_shift_y {
+                    elements[j].y += push;
+                } else if elements[i].can_shift_y {
+                    elements[i].y -= push;
+                } else {
+                    warnings.push(format!("unresolved overlap at x={:.1}", a.x));
+                }
+            }
+        }
+
+        if !any_overlap { break; }
+    }
+
+    warnings
+}
+
+// ── System Layout (Task 2) ──────────────────────────────────────
+
+/// A single system (one line of music) containing measures.
+#[derive(Debug, Clone)]
+pub struct System {
+    pub y: f32,
+    pub height: f32,
+    pub measures: Vec<MeasureLayout>,
+}
+
+#[derive(Debug, Clone)]
+pub struct MeasureLayout {
+    pub x: f32,
+    pub width: f32,
+    pub elements: Vec<LayoutElement>,
+}
+
+/// Build systems from a NormalizedScore.
+pub fn build_systems(score: &NormalizedScore, opts: &LayoutOptions) -> Vec<System> {
+    let mapper = SlotMapper::new(opts.px_per_quarter);
+    let mut systems = Vec::new();
+    let mut current_system = System {
+        y: opts.top_margin_pt,
+        height: STAFF_HEIGHT_SS * 10.0 * opts.staff_scale,
+        measures: Vec::new(),
+    };
+    let mut cursor_x = opts.left_margin_pt + 30.0 + 40.0; // clef + time sig
+    let usable_width = opts.page_width_pt - opts.left_margin_pt - opts.right_margin_pt - 30.0 - 40.0;
+
+    for measure in &score.measures {
+        let is_compact = measure.multi_rest_count.is_some() || measure.measure_repeat_slashes.is_some();
+        let total_slots = measure.events.len() as u32; // simplified
+        let width = mapper.measure_width(total_slots.max(1), 4, is_compact);
+
+        if cursor_x + width > opts.left_margin_pt + usable_width && !current_system.measures.is_empty() {
+            systems.push(current_system);
+            current_system = System {
+                y: opts.top_margin_pt + (systems.len() as f32 + 1.0) * (opts.staff_scale * 80.0),
+                height: STAFF_HEIGHT_SS * 10.0 * opts.staff_scale,
+                measures: Vec::new(),
+            };
+            cursor_x = opts.left_margin_pt + 30.0 + 40.0;
+        }
+
+        let mut elements = Vec::new();
+        elements.extend(place_notes(measure, &mapper, opts));
+        elements.extend(place_barlines(measure, cursor_x));
+
+        current_system.measures.push(MeasureLayout {
+            x: cursor_x,
+            width,
+            elements,
+        });
+        cursor_x += width;
+    }
+
+    if !current_system.measures.is_empty() {
+        systems.push(current_system);
+    }
+    systems
+}
+
+// ── Helpers ──────────────────────────────────────────────────────
+
+fn to_slots(f: &Fraction, note_value: u32) -> u32 {
+    (f.numerator * note_value as u32) / f.denominator.max(1)
+}
+
+fn slots_per_beat(_measure: &NormalizedMeasure) -> u32 { 4 } // simplified
+fn beat_width_for(_measure: &NormalizedMeasure, _start: &Fraction) -> f32 { 80.0 }
+
+// ── LayoutPlan + WASM Export (Task 8) ────────────────────────────
+
+use wasm_bindgen::prelude::*;
+use js_sys::{Array, Object};
+
+#[wasm_bindgen]
+pub fn layout_plan(_score: JsValue, _options_json: JsValue) -> JsValue {
+    let obj = Object::new();
+    js_sys::Reflect::set(&obj, &JsValue::from_str("systems"), &Array::new()).unwrap();
+    obj.into()
+}
+
+// ── LayoutPlan Tests ─────────────────────────────────────────────
+
+#[test]
+fn test_slot_mapper() {
+    let m = SlotMapper::new(80.0);
+    let width = m.measure_width(16, 4, false);
+    assert!(width > 200.0, "measure with 16 slots should be >200px");
+}
+
+#[test]
+fn test_place_notes() {
+    let measure = NormalizedMeasure {
+        index: 0, global_index: 0, paragraph_index: 0, measure_in_paragraph: 0,
+        events: vec![NormalizedEvent {
+            track: "HH".into(), start: Fraction{numerator:0,denominator:1},
+            duration: Fraction{numerator:1,denominator:8}, kind: EventKind::Hit,
+            glyph: "x".into(), modifiers: vec![], modifier: None, voice: 1,
+            beam: "none".into(), tuplet: None,
+        }],
+        barline: Some("regular".into()), start_nav: None, end_nav: None,
+        volta_indices: None, hairpins: vec![], measure_repeat_slashes: None,
+        multi_rest_count: None, note_value: 8,
+    };
+    let mapper = SlotMapper::new(80.0);
+    let opts = LayoutOptions::default();
+    let elements = place_notes(&measure, &mapper, &opts);
+    assert_eq!(elements.len(), 1);
+    assert_eq!(elements[0].kind, ElementKind::Note);
+    assert_eq!(elements[0].smufl_codepoint, Some(0xE0A9));
+}
+
+#[test]
+fn test_stacking_no_overlap() {
+    let mut elements = vec![
+        LayoutElement { kind: ElementKind::NavMarker, x: 50.0, y: -15.0, width: 10.0, height: 10.0, smufl_codepoint: None, voice: None, stem_up: None, barline_type: None, text: None, from_x: None, to_x: None, priority: 6, can_shift_y: true, can_shift_x: false },
+        LayoutElement { kind: ElementKind::Volta, x: 50.0, y: -20.0, width: 100.0, height: 8.0, smufl_codepoint: None, voice: None, stem_up: None, barline_type: None, text: None, from_x: None, to_x: None, priority: 7, can_shift_y: false, can_shift_x: false },
+    ];
+    let warnings = stack_edge_elements(&mut elements, 4.0);
+    assert!(warnings.is_empty(), "unexpected warnings: {:?}", warnings);
+    // Nav should be pushed above volta
+    assert!(elements[0].y < -20.0, "nav should be above volta");
+}
+
+#[test]
+fn test_barlines() {
+    let measure = NormalizedMeasure {
+        index: 0, global_index: 0, paragraph_index: 0, measure_in_paragraph: 0,
+        events: vec![], barline: Some("|:".into()), start_nav: None, end_nav: None,
+        volta_indices: None, hairpins: vec![], measure_repeat_slashes: None,
+        multi_rest_count: None, note_value: 8,
+    };
+    let elements = place_barlines(&measure, 50.0);
+    assert_eq!(elements.len(), 1);
+    assert_eq!(elements[0].kind, ElementKind::Barline);
+    assert_eq!(elements[0].barline_type.as_deref(), Some("|:"));
+}

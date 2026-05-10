@@ -152,10 +152,29 @@ function adaptToSkeleton(
       const measures: ParsedMeasure[] = [];
 
       for (const wm of wl.measures) {
-        const tokens: TokenGlyph[] = wm.tokens.map(adaptToken);
+        // Extract measure-level metadata and filter non-display tokens
+        let measureRepeatSlashes: number | undefined;
+        let multiRestCount: number | undefined;
+        let startNav: { kind: "segno" | "coda"; anchor: "left-edge" } | undefined;
+        let endNav: { kind: "fine" | "dc" | "ds" | "dc-al-fine" | "dc-al-coda" | "ds-al-fine" | "ds-al-coda" | "to-coda"; anchor: "right-edge" } | undefined;
+        const displayTokens: WasmToken[] = [];
 
-        // Build content string for measure
-        const content = wm.tokens.map(t => tokenToString(t)).join(" ") || "";
+        for (const t of wm.tokens) {
+          if (t.kind === "measureRepeat") {
+            measureRepeatSlashes = t.count;
+          } else if (t.kind === "multiRest") {
+            multiRestCount = t.count;
+          } else if (t.kind === "navMarker") {
+            startNav = { kind: t.name as "segno" | "coda", anchor: "left-edge" };
+          } else if (t.kind === "navJump") {
+            endNav = { kind: t.name as any, anchor: "right-edge" };
+          } else {
+            displayTokens.push(t);
+          }
+        }
+
+        const tokens: TokenGlyph[] = displayTokens.map(adaptToken);
+        const content = displayTokens.map(t => tokenToString(t)).join(" ") || "";
 
         // Barline metadata
         let barline: BarlineType | undefined;
@@ -163,8 +182,6 @@ function adaptToSkeleton(
         let repeatEnd = false;
         let voltaIndices: number[] | undefined;
         let voltaTerminator = false;
-        let measureRepeatSlashes: number | undefined;
-        let multiRestCount: number | undefined;
 
         const bl = wm.barline;
         switch (bl.type) {
@@ -202,16 +219,6 @@ function adaptToSkeleton(
             break;
         }
 
-        // Extract measure-repeat and multi-rest from tokens
-        for (const t of wm.tokens) {
-          if (t.kind === "measureRepeat") {
-            measureRepeatSlashes = t.count;
-          }
-          if (t.kind === "multiRest") {
-            multiRestCount = t.count;
-          }
-        }
-
         measures.push({
           content,
           tokens,
@@ -222,6 +229,8 @@ function adaptToSkeleton(
           voltaTerminator,
           measureRepeatSlashes,
           multiRestCount,
+          startNav,
+          endNav,
         });
       }
 
@@ -270,13 +279,24 @@ function adaptToken(token: WasmToken): TokenGlyph {
       return { kind: "basic", value: glyph, dots, halves, stars, modifiers, trackOverride };
     }
     case "combinedHit": {
-      return { kind: "combined", items: token.hits.map(adaptToken) };
+      // Hits may lack a `kind` field (they're raw NoteExpr objects)
+      return {
+        kind: "combined",
+        items: token.hits.map((h: any) => ({
+          kind: "basic",
+          value: (h.glyph ?? "-") as BasicGlyph,
+          dots: h.dots ?? 0,
+          halves: h.halves ?? 0,
+          stars: h.stars ?? 0,
+          modifiers: (h.modifiers ?? []) as Modifier[],
+        })),
+      };
     }
     case "group": {
       return {
         kind: "group",
-        count: token.n ?? 0,
-        span: token.items.length,
+        count: token.n || token.items.length,
+        span: token.n ? token.items.length : 1,
         items: token.items.map(adaptToken),
         modifiers: (token.modifiers ?? []) as Modifier[],
       };

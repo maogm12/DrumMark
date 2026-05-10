@@ -154,6 +154,17 @@ impl<'a> Parser<'a> {
     fn token_text(&self, t: &Token) -> String {
         match t {
             Token::FreeText(s) => s.clone(),
+            // Navigation tokens: return canonical names
+            Token::NavSegno => "segno".to_string(),
+            Token::NavCoda => "coda".to_string(),
+            Token::NavFine => "fine".to_string(),
+            Token::NavDC => "dc".to_string(),
+            Token::NavDS => "ds".to_string(),
+            Token::NavDCalFine => "dc-al-fine".to_string(),
+            Token::NavDCalCoda => "dc-al-coda".to_string(),
+            Token::NavDSalFine => "ds-al-fine".to_string(),
+            Token::NavDSalCoda => "ds-al-coda".to_string(),
+            Token::NavToCoda => "to-coda".to_string(),
             // Return actual source character for single-char tokens
             Token::Dot => ".".to_string(),
             Token::Star => "*".to_string(),
@@ -170,7 +181,6 @@ impl<'a> Parser<'a> {
                 if let Some(g) = t.glyph_name() {
                     g.to_string()
                 } else {
-                    // Fallback for any other token in header context
                     format!("{:?}", t)
                 }
             }

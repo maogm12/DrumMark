@@ -1,4 +1,4 @@
-import { buildScoreAst } from "./ast";
+import { buildScoreAst, type ParseMode } from "./ast";
 import {
   addFractions,
   basicTokenExceedsExactDurationRange,
@@ -934,6 +934,6 @@ export function normalizeScoreAst(ast: ScoreAst): NormalizedScore {
   };
 }
 
-export function buildNormalizedScore(source: string): NormalizedScore {
-  return normalizeScoreAst(buildScoreAst(source));
+export function buildNormalizedScore(source: string, parseMode: ParseMode = "lezer"): NormalizedScore {
+  return normalizeScoreAst(buildScoreAst(source, parseMode));
 }

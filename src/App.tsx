@@ -1,5 +1,5 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode, type UIEvent } from "preact/compat";
-import { buildNormalizedScore, type ParseError } from "./dsl";
+import { buildNormalizedScore, type ParseError, type ParseMode } from "./dsl";
 import { type NormalizedScore } from "./dsl";
 import type { VexflowRenderOptions, PagePadding } from "./vexflow";
 import { resolveDocumentTheme, subscribeToThemeChanges, type AppTheme } from "./theme";
@@ -661,8 +661,16 @@ export function App() {
   const latestHandledRequestIdRef = useRef(0);
   const [isScorePending, setIsScorePending] = useState(false);
   const [analysis, setAnalysis] = useState(() => {
-    const initialScore = buildNormalizedScore(dsl);
-    return { score: initialScore };
+    const urlParams = new URLSearchParams(window.location.search);
+    const parseMode: ParseMode = urlParams.get("wasm") === "1" ? "wasm" : "lezer";
+    let initialScore;
+    try {
+      initialScore = buildNormalizedScore(dsl, parseMode);
+    } catch {
+      // WASM may not be ready yet — fall back to lezer
+      initialScore = buildNormalizedScore(dsl, "lezer");
+    }
+    return { score: initialScore, parseMode };
   });
   const [staffXml, setStaffXml] = useState<string | null>(null);
   const [isXmlPending, setIsXmlPending] = useState(false);
@@ -699,7 +707,7 @@ export function App() {
       if (type === "parse" && nextScore) {
         if (id < latestHandledRequestIdRef.current) return;
         latestHandledRequestIdRef.current = id;
-        setAnalysis({ score: nextScore });
+        setAnalysis((prev) => ({ ...prev, score: nextScore }));
         setIsScorePending(id !== requestIdRef.current);
       } else if (type === "xml" && nextXml !== undefined) {
         if (id < latestXmlIdRef.current) return;

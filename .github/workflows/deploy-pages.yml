@@ -21,6 +21,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+
+      - name: Install wasm-pack
+        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
       
       - name: Setup Node.js
         uses: actions/setup-node@v5
@@ -30,7 +38,14 @@ jobs:
           
       - name: Install dependencies
         run: npm ci
-        
+
+      - name: Build WASM parser
+        run: wasm-pack build --target web crates/drummark-core
+
+      - name: Test Rust crate
+        run: cargo test
+        working-directory: crates/drummark-core
+         
       - name: Type-check tests
         run: npm run typecheck:test
 

@@ -1,0 +1,17 @@
+{
+  "name": "drummark-core",
+  "type": "module",
+  "description": "DrumMark notation parser — source text to AST",
+  "version": "0.1.0",
+  "license": "MIT",
+  "files": [
+    "drummark_core_bg.wasm",
+    "drummark_core.js",
+    "drummark_core.d.ts"
+  ],
+  "main": "drummark_core.js",
+  "types": "drummark_core.d.ts",
+  "sideEffects": [
+    "./snippets/*"
+  ]
+}

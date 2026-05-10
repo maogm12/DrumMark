@@ -154,7 +154,14 @@ impl<'a> Parser<'a> {
     fn token_text(&self, t: &Token) -> String {
         match t {
             Token::FreeText(s) => s.clone(),
-            _ => format!("{:?}", t),
+            // For glyph tokens in header values, extract the actual source text
+            _ => {
+                if let Some(g) = t.glyph_name() {
+                    g.to_string()
+                } else {
+                    format!("{:?}", t)
+                }
+            }
         }
     }
 
@@ -265,7 +272,16 @@ impl<'a> Parser<'a> {
     }
 
     fn consume_newline(&mut self) {
-        if self.peek_raw() == Some(Token::Newline) { self.next_raw().ok(); }
+        // Check buffer first, then lexer
+        if self.peek_buf.first() == Some(&Token::Newline) {
+            self.peek_buf.remove(0);
+            return;
+        }
+        // Use a clone to peek without advancing the real lexer
+        let mut iter = self.lexer.clone();
+        if iter.next() == Some(Ok(Token::Newline)) {
+            self.lexer.next(); // advance past the newline
+        }
     }
 
     // ── Track Body ────────────────────────────────────────────────
@@ -378,13 +394,14 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_optional_track_name(&mut self) -> Option<String> {
-        match self.peek() {
-            Some(ref t) if t.is_track_name_glyph() => {
+        let next = self.peek();
+        if let Some(ref t) = next {
+            if t.is_track_name_glyph() {
                 let t = self.next().unwrap();
-                t.glyph_name().map(|s| s.to_string())
+                return t.glyph_name().map(|s| s.to_string());
             }
-            _ => None,
         }
+        None
     }
 
     fn parse_measure_expr(&mut self) -> Result<MeasureExpr, ParseError> {

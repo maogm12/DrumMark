@@ -52,8 +52,11 @@ fn track_lines_to_js(lines: &[TrackLine]) -> JsValue {
     let arr = Array::new();
     for line in lines {
         let obj = Object::new();
+        // Always include track, even if None (set to JsValue::NULL)
         if let Some(ref t) = line.track {
             set(&obj, "track", &JsValue::from_str(t));
+        } else {
+            set(&obj, "track", &JsValue::NULL);
         }
         set(&obj, "measures", &measures_to_js(&line.measures));
         arr.push(&obj);

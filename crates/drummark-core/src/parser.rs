@@ -326,13 +326,7 @@ impl<'a> Parser<'a> {
                 }
             }
         }
-        let s = result.trim().to_string();
-        // Strip surrounding quotes from title/subtitle/composer values
-        if s.len() >= 2 && s.starts_with('"') && s.ends_with('"') {
-            s[1..s.len()-1].to_string()
-        } else {
-            s
-        }
+        result.trim().to_string()
     }
 
     fn consume_newline(&mut self) {

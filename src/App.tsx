@@ -27,9 +27,9 @@ HF |  - - - - p - - - | - - - - p:close - -                |
 RC |  - - x:bell - - - - - | - - - - x - - - |
 ST |  [2: R L R] - - -     | R - L - R - L - |`;
 
-const seedDsl = `title "Advanced Funk"
-subtitle "Performance Study"
-composer "G. Mao"
+const seedDsl = `title Advanced Funk
+subtitle Performance Study
+composer G. Mao
 tempo 120
 time 4/4
 note 1/16

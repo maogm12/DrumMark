@@ -120,19 +120,95 @@ function renderMeasureContent(
 ): string {
   let s = "";
   let px = measureX + 10;
-  for (const ev of m.events) {
+
+  // Measure-repeat (percent sign)
+  if ((m as any).measureRepeat) {
+    const slashes = (m as any).measureRepeat.slashes ?? 1;
+    const label = slashes === 2 ? "%%" : "%";
+    s += `<text x="${measureX + _w / 2}" y="${staffY + ss * 3}" text-anchor="middle" font-size="${ss * 3.5}px" fill="#666">${label}</text>`;
+    return s;
+  }
+
+  // Multi-rest (H-bar + count)
+  if ((m as any).multiRest) {
+    const count = (m as any).multiRest.count ?? 2;
+    const midX = measureX + _w / 2;
+    s += `<line x1="${measureX + 12}" y1="${staffY + ss * 4}" x2="${measureX + _w - 12}" y2="${staffY + ss * 4}" stroke="#333" stroke-width="${ss * 0.8}"/>`;
+    s += `<text x="${midX + 4}" y="${staffY + ss * 3}" text-anchor="start" font-size="${ss * 2}px" fill="#666">${count}</text>`;
+    return s;
+  }
+
+  // Group events by voice for beam detection
+  const events = m.events || [];
+
+  for (let i = 0; i < events.length; i++) {
+    const ev = events[i]!;
     px += 14;
     const y = noteY(ev.track, staffY, ss);
+    const isRest = ev.kind !== "hit" && ev.kind !== "sticking";
+
+    if (isRest) continue;
+
+    // Combined hit (TODO: stacked noteheads)
+
     const glyph = noteGlyph(ev);
-    s += `<text x="${px}" y="${y + ss * 0.7}" class="notehead" font-size="${ss * 2.5}px" text-anchor="middle">${glyph}</text>`;
     const up = ev.voice !== 2;
+
+    // Notehead
+    s += `<text x="${px}" y="${y + ss * 0.7}" class="notehead" font-size="${ss * 2.5}px" text-anchor="middle">${glyph}</text>`;
+
+    // Grace notes (flam/drag)
+    if (ev.modifiers) {
+      const hasFlam = ev.modifiers.some((m: string) => m === "flam");
+      const hasDrag = ev.modifiers.some((m: string) => m === "drag");
+      if (hasFlam) {
+        s += `<text x="${px - ss * 1.2}" y="${y + ss * 0.4}" font-size="${ss * 1.8}px" fill="#333">\u{E0A4}</text>`;
+        s += `<line x1="${px - ss * 0.4}" y1="${y - ss * 1.5}" x2="${px - ss * 0.4}" y2="${y + ss * 1}" stroke="#333" stroke-width="0.5"/>`;
+      }
+      if (hasDrag) {
+        s += `<text x="${px - ss * 1.5}" y="${y + ss * 0.4}" font-size="${ss * 1.8}px" fill="#333">\u{E0A4}</text>`;
+        s += `<line x1="${px - ss * 0.7}" y1="${y - ss * 1.5}" x2="${px - ss * 0.7}" y2="${y + ss * 1}" stroke="#333" stroke-width="0.5"/>`;
+        s += `<line x1="${px - ss * 0.2}" y1="${y - ss * 1.3}" x2="${px - ss * 0.2}" y2="${y + ss * 0.8}" stroke="#333" stroke-width="0.5"/>`;
+      }
+      // Roll (tremolo)
+      if (ev.modifiers.some((m: string) => m === "roll")) {
+        s += `<line x1="${px + ss * 0.3}" y1="${y - ss * 2}" x2="${px + ss * 0.3}" y2="${y - ss * 0.5}" stroke="#333" stroke-width="0.5"/>`;
+        s += `<line x1="${px + ss * 0.7}" y1="${y - ss * 2.2}" x2="${px + ss * 0.7}" y2="${y - ss * 0.5}" stroke="#333" stroke-width="0.5"/>`;
+        s += `<line x1="${px + ss * 1.1}" y1="${y - ss * 2.4}" x2="${px + ss * 1.1}" y2="${y - ss * 0.5}" stroke="#333" stroke-width="0.5"/>`;
+      }
+    }
+
+    // Stem
     s += `<line x1="${px + ss * 0.8}" y1="${y - (up ? ss * 2.5 : 0)}" x2="${px + ss * 0.8}" y2="${y + (up ? 0 : ss * 2.5)}" class="stem"/>`;
+
     // Modifier annotations
     if (ev.modifiers) {
       for (const mod of ev.modifiers) {
         if (mod === "accent") s += `<text x="${px}" y="${y - ss * 1.5}" text-anchor="middle" font-size="${ss * 2}px" fill="#333">></text>`;
         if (mod === "ghost") s += `<text x="${px - ss * 0.6}" y="${y + ss * 0.5}" font-size="${ss * 1.5}px" fill="#999">(</text><text x="${px + ss * 0.6}" y="${y + ss * 0.5}" font-size="${ss * 1.5}px" fill="#999">)</text>`;
       }
+    }
+
+    // Tuplet bracket
+    if ((ev as any).tuplet) {
+      const t = (ev as any).tuplet;
+      const label = t.actual || t.normal || "3";
+      s += `<text x="${px - 2}" y="${y - ss * 3}" text-anchor="middle" font-size="${ss * 1.5}px" fill="#666">${label}</text>`;
+      s += `<line x1="${px - ss * 1.5}" y1="${y - ss * 2.5}" x2="${px + ss * 1.5}" y2="${y - ss * 2.5}" stroke="#666" stroke-width="0.5"/>`;
+    }
+
+    // Beam detection: consecutive beamable notes in same voice
+    let beamEnd = i;
+    while (beamEnd + 1 < events.length
+      && events[beamEnd + 1]!.voice === ev.voice
+      && events[beamEnd + 1]!.kind === "hit") {
+      beamEnd++;
+    }
+    if (beamEnd > i) {
+      const bx1 = px + ss * 0.8;
+      const bx2 = px + (beamEnd - i) * 14 + ss * 0.8;
+      const by = y - (up ? ss * 2.5 : -ss * 0.5);
+      s += `<line x1="${bx1}" y1="${by}" x2="${bx2}" y2="${by}" class="stem" stroke-width="${ss * 0.5}"/>`;
     }
   }
   return s;

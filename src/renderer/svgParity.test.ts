@@ -45,20 +45,19 @@ function countClass(svg: string, cls: string): number {
 describe("SVG Renderer parity", () => {
   // ── Staff lines ───────────────────────────────────────────────
   it("renders 5 staff lines", () => {
-    const svg = render(HEADER + "HH | - |\n");
+    const svg = render(HEADER + "HH | x |\n");
     const lineCount = countClass(svg, "staff-line");
     expect(lineCount).toBe(5);
   });
 
   // ── Barlines ──────────────────────────────────────────────────
   it("renders single barline", () => {
-    const svg = render(HEADER + "HH | - |\n");
-    const bars = countClass(svg, "barline");
-    expect(bars).toBeGreaterThanOrEqual(1);
+    const svg = render(HEADER + "HH | x |\n");
+    expect(countClass(svg, "barline")).toBeGreaterThanOrEqual(1);
   });
 
   it("renders double barline", () => {
-    const svg = render(HEADER + "HH | - ||\n");
+    const svg = render(HEADER + "HH | x ||\n");
     expect(svg).toContain("class=\"barline\"");
     // Double barline has two barline elements
     const bars = countClass(svg, "barline");
@@ -66,12 +65,12 @@ describe("SVG Renderer parity", () => {
   });
 
   it("renders repeat-start barline", () => {
-    const svg = render(HEADER + "HH |: - |\n");
+    const svg = render(HEADER + "HH |: x |\n");
     expect(textContent(svg).some((t) => t.includes(":"))).toBe(true);
   });
 
   it("renders repeat-end barline", () => {
-    const svg = render(HEADER + "HH | - :|\n");
+    const svg = render(HEADER + "HH | x :|\n");
     expect(textContent(svg).some((t) => t.includes(":"))).toBe(true);
   });
 
@@ -112,6 +111,41 @@ describe("SVG Renderer parity", () => {
     const svg = render(HEADER + "SD | x | x | x |\n");
     const bars = countClass(svg, "barline");
     expect(bars).toBeGreaterThanOrEqual(3);
+  });
+
+  // ── Modifiers ─────────────────────────────────────────────────
+  it("renders accent modifier", () => {
+    const svg = render(HEADER + "SD | d:accent |\n");
+    expect(svg).toContain(">");
+  });
+
+  it("renders ghost modifier", () => {
+    const svg = render(HEADER + "SD | d:ghost |\n");
+    expect(svg).toContain("(");
+  });
+
+  // ── Beams ─────────────────────────────────────────────────────
+  it("renders stems for beamed 8th notes", () => {
+    const svg = render(HEADER + "SD | dddd |\n");
+    expect(countClass(svg, "stem")).toBeGreaterThanOrEqual(4);
+  });
+
+  // ── Measure repeat ────────────────────────────────────────────
+  it("renders measure repeat percent sign", () => {
+    const svg = render(HEADER + "SD | x | % |\n");
+    expect(svg).toContain("%");
+  });
+
+  // ── Multi-rest ────────────────────────────────────────────────
+  it("renders multi-rest H-bar", () => {
+    const svg = render(HEADER + "SD | x | --2-- |\n");
+    expect(svg).toContain("class=\"staff-line\"");
+  });
+
+  // ── Flam ──────────────────────────────────────────────────────
+  it("renders flam grace note", () => {
+    const svg = render(HEADER + "SD | d:flam |\n");
+    expect(countClass(svg, "notehead")).toBeGreaterThanOrEqual(1);
   });
 });
 

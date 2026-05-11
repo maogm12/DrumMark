@@ -688,7 +688,7 @@ export function App() {
 
   const score = analysis.score;
   const hasRenderableScore = useMemo(
-    () => score.ast.paragraphs.some((paragraph) => paragraph.measureCount > 0 && paragraph.tracks.length > 0),
+    () => score.ast?.paragraphs?.some((paragraph) => paragraph.measureCount > 0 && paragraph.tracks.length > 0) ?? false,
     [score],
   );
   const analysisInput = useMemo(
@@ -777,7 +777,7 @@ export function App() {
   }, [settings.activeTab, score, isScorePending, requestXml]);
 
   useEffect(() => {
-    exportBasenameRef.current = safeExportBasename(score.ast.headers.title?.value);
+    exportBasenameRef.current = safeExportBasename(score.ast?.headers?.title?.value);
   }, [score]);
 
   useEffect(() => {
@@ -843,7 +843,7 @@ export function App() {
 
   function handleMusicXmlExport() {
     if (staffXml) {
-      downloadTextFile(`${safeExportBasename(score.ast.headers.title?.value)}.musicxml`, staffXml, "application/vnd.recordare.musicxml+xml");
+      downloadTextFile(`${safeExportBasename(score.ast?.headers?.title?.value)}.musicxml`, staffXml, "application/vnd.recordare.musicxml+xml");
     } else if (!isXmlPending) {
       pendingExportRef.current = true;
       requestXml();
@@ -857,7 +857,7 @@ export function App() {
       return;
     }
 
-    const title = score.ast.headers.title?.value ?? "DrumMark Score";
+    const title = score.ast?.headers?.title?.value ?? "DrumMark Score";
     const styles = Array.from(document.querySelectorAll("style, link[rel='stylesheet']"))
       .map(el => el.outerHTML)
       .join("\n");
@@ -1281,7 +1281,7 @@ export function App() {
             <span className="status-success">{t("status.valid")}</span>
           )}
         </div>
-        <div className="status-right">{t("status.lines", { count: score.ast.paragraphs.length })} • {t("status.repeats", { count: score.ast.repeatSpans.length })}</div>
+        <div className="status-right">{t("status.lines", { count: score.ast?.paragraphs?.length ?? 0 })} • {t("status.repeats", { count: score.ast?.repeatSpans?.length ?? 0 })}</div>
       </footer>
 
       {score.errors.length > 0 && showErrors && (

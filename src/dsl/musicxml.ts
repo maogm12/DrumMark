@@ -221,9 +221,13 @@ function creditXml(type: "title" | "subtitle" | "composer", words: string): stri
 }
 
 function scoreMetadataXml(score: NormalizedScore): string {
-  const title = score.ast.headers.title?.value ?? "DrumMark";
-  const subtitle = score.ast.headers.subtitle?.value;
-  const composer = score.ast.headers.composer?.value;
+  const h = score.ast?.headers ?? (score as any).header;
+  const _title = h?.title;
+  const _subtitle = h?.subtitle;
+  const _composer = h?.composer;
+  const title = typeof _title === 'string' ? _title : _title?.value ?? "DrumMark";
+  const subtitle = typeof _subtitle === 'string' ? _subtitle : _subtitle?.value;
+  const composer = typeof _composer === 'string' ? _composer : _composer?.value;
   const identification = composer
     ? `  <identification>\n    <creator type="composer">${xmlEscape(composer)}</creator>\n  </identification>`
     : "";

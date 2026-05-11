@@ -59,11 +59,9 @@ export function renderScoreToSvg(
     sysY += STAFF_HEIGHT + STAFF_SPACE * 5;
   }
 
-  const totalHeight = sysY + STAFF_SPACE * 2;
-  const scaledW = pageWidth;
-  const scaledH = totalHeight;
+  const svgHeight = Math.max(sysY + STAFF_SPACE * 2, 500);
 
-  let svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${scaledW}" height="${scaledH}" viewBox="0 0 ${scaledW} ${scaledH}" font-family="Bravura,Academico" font-size="10pt">`;
+  let svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${pageWidth}" height="${svgHeight}" viewBox="0 0 ${pageWidth} ${svgHeight}" font-family="Bravura,Academico" font-size="10pt">`;
   svg += `<defs><style>
     .vf-staff { stroke: #333; stroke-width: 1; fill: none; }
     .vf-notehead { fill: #333; font-size: ${NOTEHEAD_FONT}pt; }

@@ -444,9 +444,24 @@ impl<'a> Parser<'a> {
                     if let Some(last) = measures.last_mut() {
                         last.closing_barline = Some(Barline::RepeatEnd);
                     }
-                    // After :|, there may be a volta number without | prefix
+                    // After :|, there may be a Dot (.→volta terminator) or volta number
                     match self.peek() {
                         Some(Token::Newline) | None => break,
+                        Some(Token::Dot) => {
+                            self.next().ok(); // consume .
+                            if let Some(last) = measures.last_mut() {
+                                // Mark as volta-terminator: store in closing info
+                                last.closing_barline = Some(Barline::DoubleVoltaTerminator);
+                            }
+                            match self.peek() {
+                                Some(Token::Newline) | None => break,
+                                _ => {
+                                    if let Some(ms) = self.parse_measure_section()? {
+                                        measures.push(ms);
+                                    }
+                                }
+                            }
+                        }
                         _ => {
                             if let Some(ms) = self.parse_measure_section()? {
                                 measures.push(ms);
@@ -479,10 +494,16 @@ impl<'a> Parser<'a> {
                 Some(_) => { tokens.push(self.parse_measure_expr()?); }
             }
         }
-        // Capture closing :| if present (consumed by parse_track_line's loop)
+        // Capture closing :| or :|. if present
         let closing_barline = if let Some(Token::RepeatEnd) = self.peek() {
-            self.next().ok();
-            Some(Barline::RepeatEnd)
+            self.next().ok(); // consume :|
+            // Check for . (volta panel terminator) after :|
+            if let Some(Token::Dot) = self.peek() {
+                self.next().ok();
+                Some(Barline::DoubleVoltaTerminator)
+            } else {
+                Some(Barline::RepeatEnd)
+            }
         } else {
             None
         };

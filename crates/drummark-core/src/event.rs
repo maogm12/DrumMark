@@ -152,14 +152,9 @@ pub fn token_to_events(
             let count = *count;
             let span = *span;
             let effective_count = if count == 0 { items.len() as u32 } else { count };
-            let effective_span = if effective_count == span { 1 } else { span };
-
-            let g = crate::fraction::gcd(effective_count as u64, effective_span as u64);
-            let reduced_actual = effective_count / (g as u32);
-            let reduced_normal = effective_span / (g as u32);
-
-            let group_tuplet = if effective_count > effective_span
-                && !(reduced_normal == 1 && (reduced_actual == 2 || reduced_actual == 4))
+            let effective_span = if effective_count == span { span } else { span };
+            // Only mark as tuplet if there's actual compression/expansion
+            let group_tuplet = if effective_count != span && effective_count > effective_span
             {
                 Some((effective_count, effective_span))
             } else {
@@ -206,13 +201,9 @@ fn item_weight(token: &TokenGlyph) -> Fraction {
         TokenGlyph::Basic { dots, halves, stars, .. } => {
             calculate_token_weight_as_fraction(*dots, *stars, *halves, None)
         }
-        TokenGlyph::Group { span, items, .. } => {
-            let w = group_total_weight(items);
-            if w.is_zero() {
-                Fraction::new(*span as u64, 1)
-            } else {
-                w
-            }
+        TokenGlyph::Group { span, .. } => {
+            // Group weight = span (normal duration)
+            Fraction::new(*span as u64, 1)
         }
         TokenGlyph::Combined { items } => {
             // max weight of items

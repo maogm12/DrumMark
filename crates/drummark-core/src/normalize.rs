@@ -34,7 +34,7 @@ fn split_inline_repeat(tokens: &[MeasureExpr]) -> (Vec<MeasureExpr>, Option<u32>
 /// Expand a TrackLine's measure sections, resolving inline repeats.
 fn expand_line_sections(line: &TrackLine) -> Vec<ExpandedSection> {
     let mut result = Vec::new();
-    let mut prev_tokens: Option<Vec<MeasureExpr>> = None;
+    let mut _prev_tokens: Option<Vec<MeasureExpr>> = None;
 
     for section in &line.measures {
         let (content, repeat) = split_inline_repeat(&section.tokens);
@@ -51,7 +51,7 @@ fn expand_line_sections(line: &TrackLine) -> Vec<ExpandedSection> {
                 });
             }
             if !content.is_empty() {
-                prev_tokens = Some(content);
+                _prev_tokens = Some(content);
             }
         } else {
             // No inline repeat: use section as-is
@@ -61,7 +61,7 @@ fn expand_line_sections(line: &TrackLine) -> Vec<ExpandedSection> {
                 closing_barline: section.closing_barline.clone(),
             });
             if !section.tokens.is_empty() {
-                prev_tokens = Some(section.tokens.clone());
+                _prev_tokens = Some(section.tokens.clone());
             }
         }
     }
@@ -115,6 +115,7 @@ pub struct NormalizedMeasure {
     pub measure_repeat_slashes: Option<u32>,
     pub multi_rest_count: Option<u32>,
     pub note_value: u32,
+    pub volta_terminator: bool,
 }
 
 #[derive(Debug, Clone)]
@@ -155,8 +156,11 @@ fn to_token_glyph(expr: &MeasureExpr) -> TokenGlyph {
             }).collect(),
         },
         MeasureExpr::Group(g) => TokenGlyph::Group {
-            count: g.n.unwrap_or(0),
-            span: g.items.len() as u32,
+            // In drummark [N: ...] notation, N is the SPAN (normal duration),
+            // not the tuplet numerator. Items count is the actual note count.
+            // Without N (no ratio): span defaults to 1.
+            count: g.items.len() as u32,
+            span: g.n.unwrap_or(1),
             items: g.items.iter().map(to_token_glyph).collect(),
             modifiers: g.modifiers.clone(),
         },
@@ -276,6 +280,52 @@ pub fn normalize_document(doc: &Document) -> NormalizedScore {
     let mut global_index: u32 = 0;
     let mut repeat_spans: Vec<RepeatSpan> = Vec::new();
 
+    // Per-track hairpin state
+    let mut hairpin_states: HashMap<String, HairpinState> = HashMap::new();
+
+    for (para_idx, para) in doc.paragraphs.iter().enumerate() {
+        let para_note_value = para.note.map(|(_, d)| d).unwrap_or(note_value);
+
+        // ── Inline-repeat expansion ──
+        let expanded_lines: Vec<Vec<ExpandedSection>> = para.lines.iter()
+            .map(|line| expand_line_sections(line))
+            .collect();
+        let measure_count = expanded_lines.iter()
+            .map(|l| l.len())
+            .max()
+            .unwrap_or(0);
+
+        for m_idx in 0..measure_count {
+            let mut measure_events: Vec<NormalizedEvent> = Vec::new();
+            let mut measure_hairpins: Vec<HairpinIntent> = Vec::new();
+            let mut barline: Option<String> = None;
+            let mut repeat_start = false;
+            let mut repeat_end = false;
+            let mut volta_indices: Option<Vec<u32>> = None;
+            let mut volta_terminator = false;
+            let mut measure_repeat_slashes: Option<u32> = None;
+            let mut multi_rest_count: Option<u32> = None;
+            let mut start_nav: Option<StartNav> = None;
+            let mut end_nav: Option<EndNav> = None;
+
+            for (li, line) in para.lines.iter().enumerate() {
+                let expanded = &expanded_lines[li];
+                // Pad shorter tracks by repeating the last section
+                let (es, is_padded) = if m_idx < expanded.len() {
+                    (&expanded[m_idx], false)
+                } else if let Some(last) = expanded.last() {
+                    (last, true)
+                } else {
+                    continue;
+                };
+                let context_track = line.track.as_deref();
+                let use_track = context_track.unwrap_or("ANONYMOUS");
+
+                // Barline metadata from first line
+                if barline.is_none() {
+                    barline = barline_type(&es.barline);
+                }
+
                 // Check for repeat/volta metadata
                 match &es.barline {
                     Barline::RepeatStart | Barline::VoltaRepeatStart => repeat_start = true,
@@ -289,9 +339,16 @@ pub fn normalize_document(doc: &Document) -> NormalizedScore {
                     _ => {}
                 }
 
-                // Check closing barline for repeat-end
-                if let Some(Barline::RepeatEnd) = &es.closing_barline {
-                    repeat_end = true;
+                // Check closing barline for repeat-end and volta terminator
+                if let Some(ref cb) = es.closing_barline {
+                    match cb {
+                        Barline::RepeatEnd => repeat_end = true,
+                        Barline::DoubleVoltaTerminator => {
+                            repeat_end = true;
+                            volta_terminator = true;
+                        }
+                        _ => {}
+                    }
                 }
 
                 // Scan tokens
@@ -308,7 +365,9 @@ pub fn normalize_document(doc: &Document) -> NormalizedScore {
                 });
 
                 // Scan for measure-repeat, multi-rest, nav markers
-                for tok in &es.tokens {
+                // Skip metadata on padded sections to avoid repeating non-note data
+                if !is_padded {
+                    for tok in &es.tokens {
                     match tok {
                         MeasureExpr::MeasureRepeat(count) => {
                             measure_repeat_slashes = Some(*count);
@@ -339,6 +398,7 @@ pub fn normalize_document(doc: &Document) -> NormalizedScore {
                         _ => {}
                     }
                 }
+                } // !is_padded
 
                 // Convert tokens to events
                 let duration_per_quarter = Fraction::new(1, para_note_value as u64);
@@ -432,6 +492,7 @@ pub fn normalize_document(doc: &Document) -> NormalizedScore {
                 measure_repeat_slashes,
                 multi_rest_count,
                 note_value: para_note_value,
+                volta_terminator,
             });
 
             global_index += 1;
@@ -445,7 +506,8 @@ pub fn normalize_document(doc: &Document) -> NormalizedScore {
         volta: None,
         repeat_end: m.barline.as_deref() == Some("repeat-end"),
         repeat_both: m.barline.as_deref() == Some("repeat-both"),
-        volta_terminator: m.barline.is_none() && m.volta.is_some(),
+        volta_terminator: m.volta_terminator,
+        paragraph_index: m.paragraph_index,
     }).collect();
 
     propagate_voltas(&mut volta_measures);
@@ -488,9 +550,9 @@ fn token_weight(token: &TokenGlyph) -> Fraction {
         TokenGlyph::Basic { dots, halves, stars, .. } => {
             calculate_token_weight_as_fraction(*dots, *stars, *halves, None)
         }
-        TokenGlyph::Group { span, items, .. } => {
-            let w: Fraction = items.iter().map(token_weight).fold(Fraction::zero(), |a, b| a.add(b));
-            if w.is_zero() { Fraction::new(*span as u64, 1) } else { w }
+        TokenGlyph::Group { span, .. } => {
+            // Group total weight = span (normal duration the group occupies)
+            Fraction::new(*span as u64, 1)
         }
         TokenGlyph::Combined { items } => {
             items.iter().map(token_weight)

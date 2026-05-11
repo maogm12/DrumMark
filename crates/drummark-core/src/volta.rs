@@ -10,8 +10,17 @@ pub fn propagate_voltas(
     measures: &mut [VoltaMeasure],
 ) {
     let mut active: Option<Vec<u32>> = None;
+    let mut prev_para: Option<u32> = None;
 
     for m in measures.iter_mut() {
+        // Clear active volta at paragraph boundaries
+        if let Some(p) = prev_para {
+            if m.paragraph_index != p {
+                active = None;
+            }
+        }
+        prev_para = Some(m.paragraph_index);
+
         // Seed: this measure has its own volta indices
         if let Some(ref indices) = m.seed_volta {
             active = Some(indices.clone());
@@ -34,4 +43,5 @@ pub struct VoltaMeasure {
     pub repeat_end: bool,
     pub repeat_both: bool,
     pub volta_terminator: bool,
+    pub paragraph_index: u32,
 }

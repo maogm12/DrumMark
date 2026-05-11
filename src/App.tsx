@@ -420,7 +420,6 @@ const PagePreview = memo(function PagePreview({
 
   useEffect(() => {
     if (!active || !score) return;
-    if (useLayoutEngine) return; // VexFlow skipped when layout engine is on
 
     const targetTop = scrollPosRef.current.top;
     const targetLeft = scrollPosRef.current.left;

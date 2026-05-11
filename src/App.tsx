@@ -688,7 +688,11 @@ export function App() {
 
   const score = analysis.score;
   const hasRenderableScore = useMemo(
-    () => score.ast?.paragraphs?.some((paragraph) => paragraph.measureCount > 0 && paragraph.tracks.length > 0) ?? false,
+    () => {
+      const fromAst = score.ast?.paragraphs?.some((p: any) => p.measureCount > 0 && p.tracks?.length > 0) ?? false;
+      const fromMeasures = (score as any).measures?.length > 0;
+      return fromAst || fromMeasures;
+    },
     [score],
   );
   const analysisInput = useMemo(
@@ -777,7 +781,8 @@ export function App() {
   }, [settings.activeTab, score, isScorePending, requestXml]);
 
   useEffect(() => {
-    exportBasenameRef.current = safeExportBasename(score.ast?.headers?.title?.value);
+    const title = score.ast?.headers?.title?.value ?? (score as any).header?.title;
+    exportBasenameRef.current = safeExportBasename(title);
   }, [score]);
 
   useEffect(() => {
@@ -843,7 +848,7 @@ export function App() {
 
   function handleMusicXmlExport() {
     if (staffXml) {
-      downloadTextFile(`${safeExportBasename(score.ast?.headers?.title?.value)}.musicxml`, staffXml, "application/vnd.recordare.musicxml+xml");
+      downloadTextFile(`${safeExportBasename(exportBasenameRef.current)}.musicxml`, staffXml, "application/vnd.recordare.musicxml+xml");
     } else if (!isXmlPending) {
       pendingExportRef.current = true;
       requestXml();
@@ -857,7 +862,7 @@ export function App() {
       return;
     }
 
-    const title = score.ast?.headers?.title?.value ?? "DrumMark Score";
+    const title = score.ast?.headers?.title?.value ?? (score as any).header?.title ?? "DrumMark Score";
     const styles = Array.from(document.querySelectorAll("style, link[rel='stylesheet']"))
       .map(el => el.outerHTML)
       .join("\n");
@@ -1281,7 +1286,7 @@ export function App() {
             <span className="status-success">{t("status.valid")}</span>
           )}
         </div>
-        <div className="status-right">{t("status.lines", { count: score.ast?.paragraphs?.length ?? 0 })} • {t("status.repeats", { count: score.ast?.repeatSpans?.length ?? 0 })}</div>
+        <div className="status-right">{t("status.lines", { count: score.ast?.paragraphs?.length ?? (score as any).measures?.length ?? 0 })} • {t("status.repeats", { count: score.ast?.repeatSpans?.length ?? 0 })}</div>
       </footer>
 
       {score.errors.length > 0 && showErrors && (

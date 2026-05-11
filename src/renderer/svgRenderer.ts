@@ -38,7 +38,7 @@ export function renderScoreToSvg(
         svg += `<line x1="${cmd.x1}" y1="${cmd.y1}" x2="${cmd.x2}" y2="${cmd.y2}" stroke="${cmd.stroke || '#333'}" stroke-width="${cmd.strokeWidth || 1}"/>`;
         break;
       case "text":
-        svg += `<text x="${cmd.x}" y="${cmd.y}" font-family="${cmd.fontFamily || 'Bravura'}" font-size="${cmd.fontSize || 30}pt" fill="${cmd.fill || '#333'}">${esc(cmd.text || '')}</text>`;
+        svg += `<text x="${cmd.x}" y="${cmd.y}" font-family="${cmd.fontFamily || 'Bravura'}" font-size="${cmd.fontSize || 30}pt" fill="${cmd.fill || '#333'}"${(cmd as any).textAnchor ? ` text-anchor="${(cmd as any).textAnchor}"` : ""}>${esc(cmd.text || '')}</text>`;
         break;
     }
   }

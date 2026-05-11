@@ -197,13 +197,28 @@ pub fn build_layout_plan(source: &str) -> JsValue {
     let systems = drummark_layout::build_systems(&layout_score, &opts);
 
     // 5. Serialize as pages → systems → drawing instructions
-    let page_obj = Object::new();
-    // One page for now — all systems
     let sys_arr = Array::new();
     let page_w = 612.0_f64;
     let page_h = 792.0_f64;
     let margin = 30.0_f64;
     let staff_ss = 10.0_f64; // staff space: 10pt
+    let center_x = page_w / 2.0;
+
+    // ── Title / Subtitle / Composer / Tempo ────────────────────
+
+    if let Some(ref t) = layout_score.header.title {
+        append_text(&sys_arr, center_x, 25.0, t, "Academico,serif", 18.0, "#333");
+    }
+    if let Some(ref t) = layout_score.header.subtitle {
+        append_text(&sys_arr, center_x, 42.0, t, "Academico,serif", 12.0, "#333");
+    }
+    if let Some(ref t) = layout_score.header.composer {
+        append_text_anchor(&sys_arr, page_w - margin, 25.0, t, "Academico,serif", 10.0, "#333", "end");
+    }
+    if layout_score.header.tempo > 0 {
+        let tempo_text = format!("♩ = {}", layout_score.header.tempo);
+        append_text(&sys_arr, margin, 25.0, &tempo_text, "Academico,serif", 12.0, "#333");
+    }
 
     for sys in &systems {
         let sy = sys.y as f64;
@@ -311,6 +326,19 @@ fn append_text(arr: &Array, x: f64, y: f64, text: &str, font: &str, size: f64, f
     set(&obj, "fontFamily", &JsValue::from_str(font));
     set(&obj, "fontSize", &JsValue::from_f64(size));
     set(&obj, "fill", &JsValue::from_str(fill));
+    arr.push(&obj);
+}
+
+fn append_text_anchor(arr: &Array, x: f64, y: f64, text: &str, font: &str, size: f64, fill: &str, anchor: &str) {
+    let obj = Object::new();
+    set(&obj, "tag", &JsValue::from_str("text"));
+    set(&obj, "x", &JsValue::from_f64(x));
+    set(&obj, "y", &JsValue::from_f64(y));
+    set(&obj, "text", &JsValue::from_str(text));
+    set(&obj, "fontFamily", &JsValue::from_str(font));
+    set(&obj, "fontSize", &JsValue::from_f64(size));
+    set(&obj, "fill", &JsValue::from_str(fill));
+    set(&obj, "textAnchor", &JsValue::from_str(anchor));
     arr.push(&obj);
 }
 

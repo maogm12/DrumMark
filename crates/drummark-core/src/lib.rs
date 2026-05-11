@@ -261,7 +261,10 @@ pub fn build_layout_plan(source: &str, options: JsValue) -> JsValue {
         append_text_anchor(&sys_arr, margin, sys_y - 10.0, &tempo_text, "Academico,serif", 12.0, "#333", "start");
     }
 
+    let mut sys_idx = 0;
     for measures in &para_systems {
+        let is_first_system = sys_idx == 0;
+        sys_idx += 1;
         let sy = sys_y;
         sys_y += staff_ss * 8.0; // staff height + gap
         let s_top = sy + staff_ss;
@@ -277,16 +280,17 @@ pub fn build_layout_plan(source: &str, options: JsValue) -> JsValue {
         // Opening barline
         append_line(&sys_arr, margin, s_top, margin, s_bot, "#333", 1.0);
 
-        // Percussion clef
+        // Percussion clef — centered on middle line (3rd line, between spaces 2-3)
         append_text(&sys_arr, margin + 5.0, s_mid + 6.0, "\u{E069}", "Bravura,Academico", 30.0, "#333");
 
-        // Time signature (first system only)
-        if para_systems.first().map(|p| p.as_ptr()) == Some(measures.as_ptr()) {
+        // Time signature — fills spaces 1-4 (full staff height)
+        if is_first_system {
             let tsx = margin + 35.0;
             let beats = layout_score.header.time_beats;
             let unit = layout_score.header.time_beat_unit;
-            append_text(&sys_arr, tsx, sy + staff_ss * 1.6, &num_to_glyph(beats), "Bravura,Academico", 30.0, "#333");
-            append_text(&sys_arr, tsx, sy + staff_ss * 3.6, &num_to_glyph(unit), "Bravura,Academico", 30.0, "#333");
+            // Upper number at 2nd line, lower number at 4th line
+            append_text(&sys_arr, tsx, sy + staff_ss * 2.0, &num_to_glyph(beats), "Bravura,Academico", 30.0, "#333");
+            append_text(&sys_arr, tsx, sy + staff_ss * 4.0, &num_to_glyph(unit), "Bravura,Academico", 30.0, "#333");
         }
 
         // Measures in this system — lay out horizontally

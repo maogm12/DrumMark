@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>Clef Glyph Test</title>
+<style>
+  body { background: #fff; font: 12px monospace; margin: 20px; }
+  .grid { position: relative; width: 300px; height: 120px; border: 1px solid #ccc; }
+  .line { position: absolute; left: 0; width: 100%; border-top: 1px solid #999; }
+  .center { border-top: 2px solid #f00; }
+  text { font-family: Bravura, Academico; }
+</style></head><body>
+<h3>Percussion Clef Glyph Bounding Box Test</h3>
+<p>Red line = middle line (y=110). Glyph baseline at y=113 (s_mid + 3).</p>
+<p>If the glyph center aligns with the red line, the clef is correctly positioned.</p>
+
+<svg width="300" height="120" viewBox="0 0 300 120" style="background:#fafafa">
+  <!-- Five lines -->
+  <line x1="10" y1="20" x2="290" y2="20" stroke="#999" stroke-width="0.6"/>
+  <line x1="10" y1="30" x2="290" y2="30" stroke="#999" stroke-width="0.6"/>
+  <line x1="10" y1="40" x2="290" y2="40" stroke="#f00" stroke-width="2"/>
+  <line x1="10" y1="50" x2="290" y2="50" stroke="#999" stroke-width="0.6"/>
+  <line x1="10" y1="60" x2="290" y2="60" stroke="#999" stroke-width="0.6"/>
+
+  <!-- Percussion clef at s_mid + 3 = 40 + 3 = 43 -->
+  <text x="40" y="43" font-family="Bravura,Academico" font-size="30" fill="#333">&#xE069;</text>
+
+  <!-- Percussion clef at s_mid (center) = 40 -->
+  <text x="120" y="40" font-family="Bravura,Academico" font-size="30" fill="#333">&#xE069;</text>
+
+  <!-- Percussion clef at s_mid + 8 -->
+  <text x="200" y="48" font-family="Bravura,Academico" font-size="30" fill="#333">&#xE069;</text>
+
+  <!-- Labels -->
+  <text x="40" y="80" font-family="monospace" font-size="10" fill="#666">y=s_mid+3=43</text>
+  <text x="120" y="80" font-family="monospace" font-size="10" fill="#666">y=s_mid=40</text>
+  <text x="200" y="80" font-family="monospace" font-size="10" fill="#666">y=s_mid+8=48</text>
+</svg>
+
+<p>
+  <b>Key observation</b>: The percussion clef glyph U+E069 has a visual center that is approximately
+  7-8pt ABOVE its text baseline at 30pt font size. The glyph's two vertical bars extend above and below
+  the center, but the thicker central part sits higher than the baseline.
+</p>
+<p>If the glyph looks best centered when y=43 (s_mid+3), it means:
+  baseline + visual_offset_to_center ≈ middle_line
+  <br>43 + visual_offset ≈ 40
+  <br>visual_offset ≈ -3pt
+  <br>Glyph center is ~3pt above the text baseline.
+</p>
+<p>Compare the three positions above and pick the one where the glyph's thick central bar aligns with the red line.</p>
+</body></html>

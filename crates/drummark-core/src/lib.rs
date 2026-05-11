@@ -280,15 +280,15 @@ pub fn build_layout_plan(source: &str, options: JsValue) -> JsValue {
         // Opening barline
         append_line(&sys_arr, margin, s_top, margin, s_bot, "#333", 1.0);
 
-        // Percussion clef — centered on middle line
-        append_text(&sys_arr, margin + 5.0, s_mid + 3.0, "\u{E069}", "Bravura,Academico", 30.0, "#333");
+        // Percussion clef — dominant-baseline="central" centers on y
+        append_text(&sys_arr, margin + 5.0, s_mid, "\u{E069}", "Bravura,Academico", 30.0, "#333");
 
         // Time signature — fills spaces 1-4 (full staff height)
         if is_first_system {
             let tsx = margin + 35.0;
             let beats = layout_score.header.time_beats;
             let unit = layout_score.header.time_beat_unit;
-            // Upper number at 2nd line, lower number at 4th line
+            // Upper at 2nd line, lower at 4th line (dominant-baseline="central")
             append_text(&sys_arr, tsx, sy + staff_ss * 2.0, &num_to_glyph(beats), "Bravura,Academico", 30.0, "#333");
             append_text(&sys_arr, tsx, sy + staff_ss * 4.0, &num_to_glyph(unit), "Bravura,Academico", 30.0, "#333");
         }
@@ -306,7 +306,8 @@ pub fn build_layout_plan(source: &str, options: JsValue) -> JsValue {
             let mut nx = mx + 12.0;
             for ev in &m.events {
                 if ev.kind == drummark_layout::EventKind::Hit {
-                    let ny = s_top + staff_ss * 2.0; // simplified Y
+                    // Simplified Y — use dominant-baseline="central" in renderer
+                    let ny = s_top + staff_ss * 2.0; // SD-like position
                     let cp = 0xE0A4u32; // default notehead
                     append_text(&sys_arr, nx - 7.0, ny, &char::from_u32(cp).unwrap_or('?').to_string(), "Bravura,Academico", 30.0, "#333");
                     append_line(&sys_arr, nx + 9.0, ny - staff_ss * 3.5, nx + 9.0, ny, "#333", 1.2);

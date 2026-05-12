@@ -19,14 +19,18 @@ export function renderScoreToSvg(
   let plan: any = { pages: [] };
   try {
     if (_cachedSource) {
+      const ss = _options?.staffScale ?? 0.75;
+      // Use VexFlow-compatible logical coordinates (divided by staffScale)
+      const logicalW = (_options?.pageWidth ?? 612) / ss;
+      const logicalH = 792 / ss;
       const opts = {
-        pageWidth: _options?.pageWidth ?? 612,
-        pageHeight: 792,
-        topMargin: _options?.topMargin ?? 30,
-        bottomMargin: _options?.bottomMargin ?? 30,
-        leftMargin: _options?.leftMargin ?? 30,
-        rightMargin: _options?.rightMargin ?? 30,
-        staffScale: _options?.staffScale ?? 0.75,
+        pageWidth: logicalW,
+        pageHeight: logicalH,
+        topMargin: (_options?.topMargin ?? 30) / ss,
+        bottomMargin: (_options?.bottomMargin ?? 30) / ss,
+        leftMargin: (_options?.leftMargin ?? 30) / ss,
+        rightMargin: (_options?.rightMargin ?? 30) / ss,
+        staffScale: 1.0,  // layout engine now receives pre-scaled dimensions
         pxPerQuarter: 80,
       };
       plan = build_layout_plan(_cachedSource, opts as any) as any;
@@ -38,11 +42,12 @@ export function renderScoreToSvg(
   if (!pages.length) return `<svg xmlns="http://www.w3.org/2000/svg" width="612" height="792"><text x="20" y="40">No layout data</text></svg>`;
 
   const page = pages[0];
+  const ss = _options?.staffScale ?? 0.75;
   const pw = page.width || 612;
   const ph = page.height || 792;
+  // ViewBox uses logical coordinates; physical width/height scales back
   const cmds: DrawCmd[] = page.systems || [];
-
-  let svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${pw}" height="${ph}" viewBox="0 0 ${pw} ${ph}">`;
+  let svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${(pw * ss).toFixed(0)}" height="${(ph * ss).toFixed(0)}" viewBox="0 0 ${pw} ${ph}">`;
 
   for (const cmd of cmds) {
     switch (cmd.tag) {

@@ -281,8 +281,10 @@ pub fn build_layout_plan(source: &str, options: JsValue) -> JsValue {
     let margin = opts.left_margin_pt as f64;
     let staff_ss = 10.0_f64;
     let center_x = page_w / 2.0;
-    let content_start = margin + 35.0 + 35.0; // clef + time sig area
-    let mut sys_y = opts.top_margin_pt as f64 + 50.0; // after title area
+    let content_start = margin + 114.0; // clef + time sig + gap
+    // VexFlow-compatible Y offset: accounts for title area + stave internal margin  
+    let header_area_h = 170.0;
+    let mut sys_y = opts.top_margin_pt as f64 + header_area_h;
 
     // ── Title / Subtitle / Composer / Tempo ────────────────────
 
@@ -317,11 +319,11 @@ pub fn build_layout_plan(source: &str, options: JsValue) -> JsValue {
         }
 
         // Percussion clef — dominant-baseline="central" centers on y
-        append_text(&sys_arr, margin + 5.0, s_mid, "\u{E069}", "Bravura,Academico", 30.0, "#333");
+        append_text(&sys_arr, margin + 30.0, s_mid, "\u{E069}", "Bravura,Academico", 30.0, "#333");
 
         // Time signature — fills spaces 1-4 (full staff height)
         if is_first_system {
-            let tsx = margin + 35.0;
+            let tsx = margin + 70.0;
             let beats = layout_score.header.time_beats;
             let unit = layout_score.header.time_beat_unit;
             append_text(&sys_arr, tsx, sy + staff_ss * 2.0, &num_to_glyph(beats), "Bravura,Academico", 30.0, "#333");

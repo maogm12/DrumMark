@@ -19,7 +19,7 @@ struct ExpandedSection {
 }
 
 /// Split tokens into content and optional trailing InlineRepeat(n).
-fn split_inline_repeat(tokens: &[MeasureExpr]) -> (Vec<MeasureExpr>, Option<u32>) {
+fn split_inline_repeat(tokens: &[MeasureExpr]) -> (Vec<MeasureExpr>, Option<i32>) {
     let mut content = Vec::new();
     let mut inline_repeat = None;
     for tok in tokens {
@@ -32,7 +32,7 @@ fn split_inline_repeat(tokens: &[MeasureExpr]) -> (Vec<MeasureExpr>, Option<u32>
 }
 
 /// Expand a TrackLine's measure sections, resolving inline repeats.
-fn expand_line_sections(line: &TrackLine) -> Vec<ExpandedSection> {
+fn expand_line_sections(line: &TrackLine, errors: &mut Vec<String>) -> Vec<ExpandedSection> {
     let mut result = Vec::new();
     let mut _prev_tokens: Option<Vec<MeasureExpr>> = None;
 
@@ -40,15 +40,24 @@ fn expand_line_sections(line: &TrackLine) -> Vec<ExpandedSection> {
         let (content, repeat) = split_inline_repeat(&section.tokens);
 
         if let Some(n) = repeat {
-            // Expand content into n total copies
-            for i in 0..n as usize {
-                let is_first = i == 0;
-                let is_last = i + 1 == n as usize;
+            if n <= 0 {
+                errors.push("Repeat count must be at least 1".to_string());
                 result.push(ExpandedSection {
                     tokens: content.clone(),
-                    barline: if is_first { section.barline.clone() } else { Barline::Regular },
-                    closing_barline: if is_last { section.closing_barline.clone() } else { None },
+                    barline: section.barline.clone(),
+                    closing_barline: section.closing_barline.clone(),
                 });
+            } else {
+                // Expand content into n total copies
+                for i in 0..n as usize {
+                    let is_first = i == 0;
+                    let is_last = i + 1 == n as usize;
+                    result.push(ExpandedSection {
+                        tokens: content.clone(),
+                        barline: if is_first { section.barline.clone() } else { Barline::Regular },
+                        closing_barline: if is_last { section.closing_barline.clone() } else { None },
+                    });
+                }
             }
             if !content.is_empty() {
                 _prev_tokens = Some(content);
@@ -307,7 +316,7 @@ pub fn normalize_document(doc: &Document) -> NormalizedScore {
 
         // ── Inline-repeat expansion ──
         let expanded_lines: Vec<Vec<ExpandedSection>> = para.lines.iter()
-            .map(|line| expand_line_sections(line))
+            .map(|line| expand_line_sections(line, &mut errors))
             .collect();
         let measure_count = expanded_lines.iter()
             .map(|l| l.len())

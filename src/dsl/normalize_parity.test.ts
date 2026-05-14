@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll } from "vitest";
 import { initWasm } from "../wasm/drummark_wasm";
 import { buildNormalizedScoreWasm } from "./normalize";
-import { buildNormalizedScore } from "./normalize";
+import { buildNormalizedScoreFromRegex } from "./normalize";
 import type { NormalizedScore, NormalizedMeasure, NormalizedEvent } from "./types";
 
 beforeAll(async () => {
@@ -80,11 +80,11 @@ function stripPosition(s: any): any {
 
 // ── Tests ────────────────────────────────────────────────────────
 
-describe("WASM vs TS normalizer parity", () => {
+describe("WASM vs regex normalizer parity", () => {
   for (const [name, source] of Object.entries(FIXTURES)) {
     it(name, () => {
       const wasm = buildNormalizedScoreWasm(source);
-      const ts = buildNormalizedScore(source, "lezer");
+      const ts = buildNormalizedScoreFromRegex(source);
 
       const w = stripPosition(normalizeScore(wasm));
       const t = stripPosition(normalizeScore(ts));

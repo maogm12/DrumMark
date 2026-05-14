@@ -1,4 +1,3 @@
-import { parseDocumentSkeletonFromLezer } from "./lezer_skeleton";
 import { parseDocumentSkeleton } from "./parser";
 import { parseDocumentSkeletonFromWasmSync } from "../wasm/skeleton";
 import {
@@ -400,29 +399,24 @@ function validateMeasureMetadata(paragraphs: ScoreParagraph[], errors: ParseErro
   }
 }
 
-export type ParseMode = "lezer" | "regex" | "wasm";
-
 export function buildScoreAst(
   sourceOrSkeleton: string | DocumentSkeleton,
-  parseMode: ParseMode = "lezer",
 ): ScoreAst {
   let skeleton: DocumentSkeleton;
   if (typeof sourceOrSkeleton === "string") {
-    switch (parseMode) {
-      case "regex":
-        skeleton = parseDocumentSkeleton(sourceOrSkeleton);
-        break;
-      case "wasm":
-        // WASM must be pre-initialized via initWasm() before calling
-        skeleton = parseDocumentSkeletonFromWasmSync(sourceOrSkeleton);
-        break;
-      default:
-        skeleton = parseDocumentSkeletonFromLezer(sourceOrSkeleton);
-    }
+    skeleton = parseDocumentSkeletonFromWasmSync(sourceOrSkeleton);
   } else {
     skeleton = sourceOrSkeleton;
   }
   const errors = [...skeleton.errors];
+  if (skeleton.paragraphs.length === 0 && errors.length > 0) {
+    return {
+      headers: skeleton.headers,
+      paragraphs: [],
+      repeatSpans: [],
+      errors,
+    };
+  }
   validateGrouping(skeleton.headers as ScoreAst["headers"], errors);
   const paragraphs: ScoreParagraph[] = [];
   const globalTracks: TrackName[] = [];
@@ -535,4 +529,12 @@ export function buildScoreAst(
     repeatSpans: validateAndBuildRepeats(paragraphs, errors),
     errors,
   };
+}
+
+export function buildScoreAstFromRegex(source: string): ScoreAst {
+  return buildScoreAst(parseDocumentSkeleton(source));
+}
+
+export function buildScoreAstFromWasm(source: string): ScoreAst {
+  return buildScoreAst(parseDocumentSkeletonFromWasmSync(source));
 }

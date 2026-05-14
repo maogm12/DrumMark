@@ -69,6 +69,9 @@ fn measures_to_js(measures: &[MeasureSection]) -> JsValue {
     for m in measures {
         let obj = Object::new();
         set(&obj, "barline", &barline_to_js(&m.barline));
+        if let Some(ref closing) = m.closing_barline {
+            set(&obj, "closingBarline", &barline_to_js(closing));
+        }
         set(&obj, "tokens", &exprs_to_js(&m.tokens));
         arr.push(&obj);
     }

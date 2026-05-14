@@ -1,5 +1,4 @@
-import { buildScoreAst, type ParseMode } from "./ast";
-import { build_normalized_score as wasmNormalize } from "../wasm/pkg/drummark_core";
+import { buildScoreAst, buildScoreAstFromRegex } from "./ast";
 import {
   addFractions,
   basicTokenExceedsExactDurationRange,
@@ -935,93 +934,14 @@ export function normalizeScoreAst(ast: ScoreAst): NormalizedScore {
   };
 }
 
-export function buildNormalizedScore(source: string, parseMode: ParseMode = "lezer"): NormalizedScore {
-  if (parseMode === "wasm") {
-    return buildNormalizedScoreWasm(source);
-  }
-  return normalizeScoreAst(buildScoreAst(source, parseMode));
+export function buildNormalizedScore(source: string): NormalizedScore {
+  return normalizeScoreAst(buildScoreAst(source));
 }
 
 export function buildNormalizedScoreWasm(source: string): NormalizedScore {
-  const raw = wasmNormalize(source) as any;
-  // If raw is an errors array (parse failed), wrap it
-  if (Array.isArray(raw)) {
-    return {
-      version: "1.0",
-      header: {
-        tempo: 120,
-        timeSignature: { beats: 4, beatUnit: 4 },
-        divisions: 16,
-        noteValue: 8,
-        grouping: [1],
-      },
-      tracks: [],
-      ast: {} as any,
-      measures: [],
-      errors: raw.map((e: any) => ({ line: e.line ?? 1, column: e.column ?? 1, message: e.message ?? String(e) })),
-    };
-  }
+  return buildNormalizedScore(source);
+}
 
-  // Adapt WASM NormalizedScore to JS NormalizedScore
-  const header = raw.header || {};
-  return {
-    version: raw.version || "1.0",
-    header: {
-      title: header.title,
-      subtitle: header.subtitle,
-      composer: header.composer,
-      tempo: header.tempo || 120,
-      timeSignature: header.timeSignature || { beats: 4, beatUnit: 4 },
-      divisions: header.divisions || 16,
-      noteValue: header.noteValue || 8,
-      grouping: header.grouping || [1],
-    },
-    tracks: (raw.tracks || []).map((t: any) => ({
-      id: t.id,
-      family: t.family,
-    })),
-    ast: {} as any,
-    measures: (raw.measures || []).map((m: any, i: number) => ({
-      index: m.index ?? i,
-      globalIndex: m.globalIndex ?? i,
-      paragraphIndex: m.paragraphIndex ?? 0,
-      measureInParagraph: m.measureInParagraph ?? 0,
-      sourceLine: m.sourceLine ?? 0,
-      events: (m.events || []).map((ev: any) => ({
-        track: ev.track || "HH",
-        paragraphIndex: ev.paragraphIndex ?? 0,
-        measureIndex: ev.measureIndex ?? 0,
-        measureInParagraph: ev.measureInParagraph ?? 0,
-        start: ev.start || { numerator: 0, denominator: 1 },
-        duration: ev.duration || { numerator: 0, denominator: 1 },
-        kind: ev.kind || "hit",
-        glyph: ev.glyph || "x",
-        modifiers: ev.modifiers || [],
-        modifier: ev.modifier,
-        voice: (ev.voice || 1) as 1 | 2,
-        beam: ev.beam || "none",
-        tuplet: ev.tuplet,
-      })),
-      generated: m.generated ?? false,
-      barline: m.barline,
-      startNav: m.startNav ? { kind: m.startNav, anchor: "left-edge" as const } : undefined,
-      endNav: m.endNav ? { kind: m.endNav, anchor: "right-edge" as const } : undefined,
-      volta: m.volta ? { indices: m.volta } : undefined,
-      hairpins: (m.hairpins || []).map((h: any) => ({
-        type: h.kind === "crescendo" ? "crescendo" : "decrescendo",
-        start: h.start || { numerator: 0, denominator: 1 },
-        startMeasureIndex: h.startMeasureIndex ?? 0,
-        end: h.end || { numerator: 0, denominator: 1 },
-        endMeasureIndex: h.endMeasureIndex ?? 0,
-      })),
-      measureRepeat: m.measureRepeatSlashes ? { slashes: m.measureRepeatSlashes } : undefined,
-      multiRest: m.multiRestCount ? { count: m.multiRestCount } : undefined,
-      noteValue: m.noteValue ?? 8,
-    })),
-    errors: (raw.errors || []).map((e: any) => ({
-      line: e.line ?? 1,
-      column: e.column ?? 1,
-      message: typeof e === "string" ? e : (e.message || "unknown error"),
-    })),
-  };
+export function buildNormalizedScoreFromRegex(source: string): NormalizedScore {
+  return normalizeScoreAst(buildScoreAstFromRegex(source));
 }

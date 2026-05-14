@@ -1,15 +1,21 @@
-import { describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it } from "vitest";
 import { buildNormalizedScore } from "./dsl/normalize";
 import { formatScoreJson } from "./cli_output";
+import { initWasm } from "./wasm/drummark_wasm";
 
 describe("formatScoreJson", () => {
-  const score = buildNormalizedScore(`title CLI Output
+  let score: ReturnType<typeof buildNormalizedScore>;
+
+  beforeAll(async () => {
+    await initWasm();
+    score = buildNormalizedScore(`title CLI Output
 time 4/4
 note 1/8
 grouping 2+2
 
 HH | x - x - x - x - |
 SD | - - d - - - d - |`);
+  });
 
   it("returns the raw AST for ast output", () => {
     const parsed = JSON.parse(formatScoreJson(score, "ast"));

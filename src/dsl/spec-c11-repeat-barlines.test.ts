@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { buildScoreAst } from "./ast";
 import { buildNormalizedScore } from "./normalize";
 import { parseDocumentSkeleton } from "./parser";
-import { parseDocumentSkeletonFromLezer } from "./lezer_skeleton";
+import { parseDocumentSkeletonFromWasmSync } from "../wasm/skeleton";
 
 describe("spec C11: repeat barlines", () => {
   it("distinguishes regular, repeat-start, repeat-end, and final barlines in parser output", () => {
@@ -146,7 +146,7 @@ divisions 4
 
 describe("spec C11: |:. volta-terminator + repeat-start compound barline", () => {
   it("parses |:. as a barline with repeatStart: true and sets voltaTerminator on the preceding measure", () => {
-    const doc = parseDocumentSkeletonFromLezer(`time 4/4
+    const doc = parseDocumentSkeletonFromWasmSync(`time 4/4
 divisions 4
 
 |: x - - - |1. x - - - |:. x - - - :|`);

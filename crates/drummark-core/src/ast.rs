@@ -58,7 +58,7 @@ pub enum MeasureExpr {
     CombinedHit(Vec<MeasureExpr>),
     MeasureRepeat(u32),
     MultiRest(u32),
-    InlineRepeat(u32),
+    InlineRepeat(i32),
     Crescendo,
     Decrescendo,
     HairpinEnd,

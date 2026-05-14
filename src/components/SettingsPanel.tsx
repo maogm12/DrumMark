@@ -120,11 +120,11 @@ export function SettingsPanel({
               </Switch.Root>
             </label>
             <label className="setting-row toggle">
-              <span>{t("settings.useWasmParser")}</span>
+              <span>{t("settings.showDebugBbox")}</span>
               <Switch.Root
                 className="toggle-root"
-                checked={settings.useWasmParser}
-                onCheckedChange={(checked) => updateSetting("useWasmParser", checked)}
+                checked={settings.showDebugBbox}
+                onCheckedChange={(checked) => updateSetting("showDebugBbox", checked)}
               >
                 <Switch.Thumb className="toggle-thumb" />
               </Switch.Root>

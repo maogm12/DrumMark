@@ -1,6 +1,5 @@
 import { describe, it } from "vitest";
 import { parseDocumentSkeleton } from "./parser";
-import { parser as DrumMarkParser } from "./drum_mark.parser";
 
 const SAMPLE_DOCS = [
   // Simple
@@ -98,43 +97,6 @@ describe("benchmark: parseDocumentSkeleton (regex parser)", () => {
 
   it("long measure (100 measures)", () => {
     const elapsed = runBenchmark("long", () => parseDocumentSkeleton(SAMPLE_DOCS[4]));
-    console.log(`  ${ITERATIONS}x long: ${elapsed.toFixed(2)}ms (${(elapsed / ITERATIONS).toFixed(4)}ms/op)`);
-  });
-});
-
-describe("benchmark: lezer parser", () => {
-  const parsers = SAMPLE_DOCS.map((source) => ({
-    source,
-    parser: DrumMarkParser.configure({ strict: false }),
-  }));
-
-  it("simple document", () => {
-    const { source, parser } = parsers[0];
-    const elapsed = runBenchmark("simple", () => parser.parse(source));
-    console.log(`  ${ITERATIONS}x simple: ${elapsed.toFixed(2)}ms (${(elapsed / ITERATIONS).toFixed(4)}ms/op)`);
-  });
-
-  it("medium document with modifiers", () => {
-    const { source, parser } = parsers[1];
-    const elapsed = runBenchmark("medium", () => parser.parse(source));
-    console.log(`  ${ITERATIONS}x medium: ${elapsed.toFixed(2)}ms (${(elapsed / ITERATIONS).toFixed(4)}ms/op)`);
-  });
-
-  it("complex document with groups", () => {
-    const { source, parser } = parsers[2];
-    const elapsed = runBenchmark("complex", () => parser.parse(source));
-    console.log(`  ${ITERATIONS}x complex: ${elapsed.toFixed(2)}ms (${(elapsed / ITERATIONS).toFixed(4)}ms/op)`);
-  });
-
-  it("full featured document", () => {
-    const { source, parser } = parsers[3];
-    const elapsed = runBenchmark("full", () => parser.parse(source));
-    console.log(`  ${ITERATIONS}x full: ${elapsed.toFixed(2)}ms (${(elapsed / ITERATIONS).toFixed(4)}ms/op)`);
-  });
-
-  it("long measure (100 measures)", () => {
-    const { source, parser } = parsers[4];
-    const elapsed = runBenchmark("long", () => parser.parse(source));
     console.log(`  ${ITERATIONS}x long: ${elapsed.toFixed(2)}ms (${(elapsed / ITERATIONS).toFixed(4)}ms/op)`);
   });
 });

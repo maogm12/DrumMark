@@ -1,21 +1,20 @@
 import { buildMusicXml } from "./dsl/musicxml";
 import { buildNormalizedScore } from "./dsl/normalize";
-import type { ParseMode } from "./dsl";
 import type { NormalizedScore } from "./dsl/types";
 import { renderScoreToSvg } from "./vexflow/renderer";
 import { DEFAULT_RENDER_OPTIONS, type VexflowRenderOptions } from "./vexflow/types";
 import { formatScoreJson, type CliOutputFormat } from "./cli_output";
 import { ensureCliRenderEnvironment } from "./cli_render_env";
+import { initWasm } from "./wasm/drummark_wasm";
 
 export type CliParams = {
   input: string;
   format: CliOutputFormat;
   output: string | null;
-  parser: ParseMode;
 };
 
 export const CLI_USAGE =
-  "Usage: npm run drummark -- <input-file> [--format ast|ir|svg|xml] [--output path] [--parser wasm|lezer|regex]";
+  "Usage: npm run drummark -- <input-file> [--format ast|ir|svg|xml] [--output path]";
 
 export const CLI_RENDER_OPTIONS: VexflowRenderOptions = {
   ...DEFAULT_RENDER_OPTIONS,
@@ -27,7 +26,6 @@ export function parseCliArgs(args: string[]): CliParams | null {
     input: "",
     format: "ir",
     output: null,
-    parser: "lezer",
   };
 
   for (let i = 0; i < args.length; i++) {
@@ -37,9 +35,6 @@ export function parseCliArgs(args: string[]): CliParams | null {
       i++;
     } else if (arg === "--output" && args[i + 1]) {
       params.output = args[i + 1] ?? null;
-      i++;
-    } else if (arg === "--parser" && args[i + 1]) {
-      params.parser = args[i + 1] as ParseMode;
       i++;
     } else if (arg && !arg.startsWith("-")) {
       params.input = arg;
@@ -66,12 +61,12 @@ export function formatCliWarnings(score: NormalizedScore): string[] {
 export async function buildCliOutput(
   source: string,
   format: CliOutputFormat,
-  parser: ParseMode = "lezer",
 ): Promise<{
   score: NormalizedScore;
   result: string;
 }> {
-  const score = buildNormalizedScore(source, parser);
+  await initWasm();
+  const score = buildNormalizedScore(source);
 
   if (format === "ast" || format === "ir") {
     return { score, result: formatScoreJson(score, format) };

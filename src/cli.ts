@@ -17,12 +17,10 @@ async function main() {
     process.exit(1);
   }
 
-  if (params.parser === "wasm") {
-    await initWasm();
-  }
+  await initWasm();
 
   const source = fs.readFileSync(path.resolve(params.input), "utf-8");
-  const { score, result } = await buildCliOutput(source, params.format, params.parser);
+  const { score, result } = await buildCliOutput(source, params.format);
   const warnings = formatCliWarnings(score);
   for (const warning of warnings) {
     console.warn(warning);

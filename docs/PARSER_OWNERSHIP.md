@@ -55,3 +55,35 @@ The intended end state is:
 
 - Lezer remains the only authoritative production parser.
 - The deprecated manual parser is eventually removed or reduced to non-production historical tooling only.
+
+## Addendum 2026-05-13: Rust/WASM Cutover Target
+
+- This document is superseded by the approved Rust/WASM cutover plan for production parser ownership.
+- The intended repository end state is:
+  - Rust/WASM is the only authoritative production parser
+  - there is no production parser toggle or hidden fallback parser path
+  - Lezer is removed from the active source tree as a production parser implementation
+- The cutover gate is the supported checked-in example corpus:
+  - Rust/WASM must parse the corpus successfully
+  - normalized IR must match the current Lezer path except for divergences explicitly recorded as Lezer bugs in the divergence ledger
+- Parser diagnostics remain part of parser ownership:
+  - malformed syntax must still surface parser errors
+  - invalid-but-parseable input must still surface validation/normalization errors
+  - parser diagnostics must preserve user-visible line/column fidelity
+- If Rust/WASM initialization fails in production parse flows, parsing fails closed with an explicit initialization error. No silent fallback parser is permitted.
+
+This addendum defines the target state for the active implementation tasks. The earlier Lezer-authoritative status above remains historical record only.
+
+## Addendum 2026-05-13: Rust/WASM Ownership Activated
+
+- The active production parser path is now Rust/WASM:
+  - `buildScoreAst(source)` uses `parseDocumentSkeletonFromWasmSync(...)`
+  - `buildNormalizedScore(source)` uses the WASM-backed AST path only
+  - worker/browser/CLI entry points initialize WASM before production parsing
+- The parser-selection product surface has been removed:
+  - no production `parseMode: "lezer"` branch remains
+  - no `useWasmParser` setting or UI toggle remains
+- The example-corpus cutover gate is now checked in under `docs/parser-cutover/`:
+  - `example_corpus_report.json` records the supported corpus and current WASM summaries
+  - `divergence_ledger.md` records the accepted Lezer-bug exceptions
+- Lezer no longer participates in production parsing or correctness-test ownership. Any remaining Lezer references in the repository are historical proposal/archive material or editor-highlighting dependencies, not parser-runtime ownership.

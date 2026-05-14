@@ -432,3 +432,44 @@ Nav markers (`@segno`, `@fine`, `@to-coda`, etc.) were converted to `TokenGlyph:
 ### CombinedHit Supports Summoned Notes
 
 `CombinedHit` changed from `Vec<NoteExpr>` to `Vec<MeasureExpr>` to allow summoned notes inside combined hits (e.g., `d+BD:d`). A new `parse_single_hit` method handles summon prefixes within combined hits without causing infinite recursion (which would happen if `parse_measure_expr` → `parse_basic_or_combined` → `parse_measure_expr`).
+
+
+## 2026-05-13 Addendum: Rust Parser Cutover Blockers for Lezer Deprecation
+
+- The repository is not yet in a real post-Lezer state. Parser ownership still lives on the Lezer path in both code and docs:
+  - `src/dsl/ast.ts` defaults `parseMode` to `"lezer"` and branches to `parseDocumentSkeletonFromLezer(...)`.
+  - `src/normalize.ts` defaults `buildNormalizedScore(...)` to `"lezer"`.
+  - `src/scoreWorker.ts` accepts runtime `parseMode` switching.
+  - `src/App.tsx` and `src/hooks/useAppSettings.ts` expose a persisted `useWasmParser` product toggle.
+  - `docs/PARSER_OWNERSHIP.md` still names Lezer as the authoritative parser.
+
+- Three concrete Rust parser issues block full cutover:
+  1. Paragraph-level `note` override detection is too loose. A bare `note` line is accepted and can fabricate a `4/4` override instead of producing a parse error.
+  2. Header parsing silently drops malformed values (`time 4`, `tempo fast`, `grouping 3+`) rather than emitting explicit parser errors.
+  3. Signed inline-repeat tokens lose their sign during parse (`*-1` becomes `1`), which prevents downstream validation from rejecting the original invalid value correctly.
+
+- The correct cutover criterion is not `WASM equals Lezer`. The correct criterion is `WASM matches the spec and owns production semantics`. Existing Lezer behavior must not remain the oracle once a mismatch is proven to be a Lezer bug.
+
+- A complete Lezer deprecation plan must cover five layers together: Rust parser correctness, JS/WASM integration helpers, runtime API ownership, UI/settings removal, and test/doc/dependency cleanup. Fixing `parser.rs` alone is insufficient.
+
+## 2026-05-13 Addendum: Rust/WASM Cutover Execution Notes
+
+- `src/wasm/skeleton.ts` must treat the Rust token stream as a left-boundary measure representation, not a ready-made JS `ParsedMeasure` shape. In particular:
+  - left-boundary `||`, `|.`, `||.`, and `|:.` need to be shifted onto the previous parsed measure's closing metadata
+  - `closingBarline` remains the source of truth for repeat-end on the current measure
+  - final-line heuristics still need explicit handling for trailing `||`
+
+- The WASM adapter cannot count measure-level metadata tokens (`inlineRepeat`, `measureRepeat`, `multiRest`) as rhythmic content when validating navigation anchors. If it does, valid forms like `@ds-al-coda *1` are misclassified as "not at end of measure."
+
+- Rust group tokens carry all child items, but JS group validation expects `count` to mean duration-consuming items only. Hairpin markers inside a group (`<`, `>`, `!`) must stay in `items` while being excluded from the compressed/stretched ratio count.
+
+- The old regex parser's remaining corpus mismatches reduced to five accepted Lezer/legacy bugs:
+  - nested groups in `docs/examples/groups.drum`
+  - third-ending retention in `docs/examples/repeats.drum`
+  - the same third-ending bug in `examples/李白-李荣浩.drum`
+  - dropped hairpin intent plus fabricated errors in `docs/examples/hairpins.drum`
+  - paragraph measure-count mismatch anchored to the preceding comment line instead of the first offending track line in `docs/examples/full-example.drum`
+
+- Renderer parity tests that previously looked for VexFlow-specific class names (`vf-notehead`, `vf-bar`, `vf-staff`) were stale against the current layout-engine SVG emitter. The stable contract for `src/renderer/svgRenderer.ts` is primitive SVG output (`<text>`, `<line>`, `<rect>`) after `setLayoutSource(dsl)`, not VexFlow DOM class parity.
+
+- `buildNormalizedScore(...)` is now WASM-owned, so any test constructing a score at module top level can race WASM initialization. `src/cli_output.test.ts` had to move score construction behind `beforeAll(async () => await initWasm())`.

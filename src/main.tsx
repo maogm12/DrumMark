@@ -4,11 +4,13 @@ import { I18nProvider } from "./i18n/context";
 import { initWasm } from "./wasm/drummark_wasm";
 import "./styles.css";
 
-// Pre-initialize WASM parser in background
-initWasm().catch(console.warn);
+async function bootstrap() {
+  await initWasm();
+  createRoot(document.getElementById("root")!).render(
+    <I18nProvider>
+      <App />
+    </I18nProvider>,
+  );
+}
 
-createRoot(document.getElementById("root")!).render(
-  <I18nProvider>
-    <App />
-  </I18nProvider>,
-);
+bootstrap().catch(console.error);

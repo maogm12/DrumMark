@@ -382,6 +382,7 @@ const PagePreview = memo(function PagePreview({
   active,
   theme,
   useLayoutEngine,
+  showDebugBbox,
 }: {
   score: NormalizedScore | null;
   pagePadding: PagePadding;
@@ -403,6 +404,7 @@ const PagePreview = memo(function PagePreview({
   active: boolean;
   theme: AppTheme;
   useLayoutEngine: boolean;
+  showDebugBbox: boolean;
 }) {
   const { t } = useT();
   const shellRef = useRef<HTMLDivElement | null>(null);
@@ -449,7 +451,7 @@ const PagePreview = memo(function PagePreview({
     if (useLayoutEngine) {
       import("./renderer/svgRenderer")
         .then(({ renderScoreToSvg }) => {
-          const svg = renderScoreToSvg(score, { staffScale, pageWidth: pdfPageWidth, showTitle: true, topMargin: pagePadding.top, bottomMargin: pagePadding.bottom, leftMargin: pagePadding.left, rightMargin: pagePadding.right });
+          const svg = renderScoreToSvg(score, { staffScale, pageWidth: pdfPageWidth, showTitle: true, topMargin: pagePadding.top, bottomMargin: pagePadding.bottom, leftMargin: pagePadding.left, rightMargin: pagePadding.right, debug: showDebugBbox });
           setRenderedMarkup(`<section class="staff-preview-page" data-page="1">${svg}</section>`);
           setIsRendering(false);
           if (shellRef.current) { shellRef.current.scrollTop = targetTop; shellRef.current.scrollLeft = targetLeft; }
@@ -479,7 +481,7 @@ const PagePreview = memo(function PagePreview({
         console.error("VexFlow render error:", renderError);
         setError(msg || t("preview.error"));
       });
-  }, [score, systemSpacing, stemLength, voltaSpacing, hairpinOffsetY, headerStaffSpacing, headerHeight, active, hideVoice2Rests, pagePadding, staffScale, tempoOffsetX, tempoOffsetY, measureNumberOffsetX, measureNumberOffsetY, measureNumberFontSize, durationSpacingCompression, measureWidthCompression, useLayoutEngine]);
+  }, [score, systemSpacing, stemLength, voltaSpacing, hairpinOffsetY, headerStaffSpacing, headerHeight, active, hideVoice2Rests, pagePadding, staffScale, tempoOffsetX, tempoOffsetY, measureNumberOffsetX, measureNumberOffsetY, measureNumberFontSize, durationSpacingCompression, measureWidthCompression, useLayoutEngine, showDebugBbox]);
 
   if (!score) {
     return (
@@ -699,9 +701,8 @@ export function App() {
     () => ({
       dsl,
       hideVoice2Rests: settings.hideVoice2Rests,
-      useWasmParser: settings.useWasmParser,
     }),
-    [dsl, settings.hideVoice2Rests, settings.useWasmParser],
+    [dsl, settings.hideVoice2Rests],
   );
   const debouncedAnalysisInput = useDebouncedValue(
     analysisInput,
@@ -757,7 +758,6 @@ export function App() {
       id: nextId,
       dsl: debouncedAnalysisInput.dsl,
       hideVoice2Rests: debouncedAnalysisInput.hideVoice2Rests,
-      parseMode: settings.useWasmParser ? "wasm" : "lezer",
     });
   }, [debouncedAnalysisInput]);
 
@@ -1230,6 +1230,7 @@ export function App() {
                        active={true}
                        theme={resolvedTheme}
                        useLayoutEngine={settings.useLayoutEngine}
+                       showDebugBbox={settings.showDebugBbox}
                      />
                   ) : null}
                 </div>

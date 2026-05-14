@@ -31,9 +31,6 @@
     "vexflow": "^5.0.0"
   },
   "devDependencies": {
-    "@lezer/generator": "^1.8.0",
-    "@lezer/lr": "^1.4.10",
-    "@lezer/markdown": "^1.6.3",
     "@types/jsdom": "^28.0.1",
     "@preact/preset-vite": "^2.10.0",
     "canvas": "^3.2.3",

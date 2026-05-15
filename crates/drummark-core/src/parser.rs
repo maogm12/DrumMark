@@ -554,7 +554,7 @@ impl<'a> Parser<'a> {
                             self.next().ok(); // consume .
                             if let Some(last) = measures.last_mut() {
                                 // Mark as volta-terminator: store in closing info
-                                last.closing_barline = Some(Barline::DoubleVoltaTerminator);
+                                last.closing_barline = Some(Barline::RepeatEndVoltaTerminator);
                             }
                             match self.peek() {
                                 Some(Token::Newline) | None => break,
@@ -597,18 +597,30 @@ impl<'a> Parser<'a> {
                 Some(_) => { tokens.push(self.parse_measure_expr()?); }
             }
         }
-        // Capture closing :| or :|. if present
-        let closing_barline = if let Some(Token::RepeatEnd) = self.peek() {
-            self.next().ok(); // consume :|
-            // Check for . (volta panel terminator) after :|
-            if let Some(Token::Dot) = self.peek() {
+        // Capture distinct closing barlines after the measure payload.
+        let closing_barline = match self.peek() {
+            Some(Token::RepeatEnd) => {
+                self.next().ok(); // consume :|
+                if let Some(Token::Dot) = self.peek() {
+                    self.next().ok();
+                    Some(Barline::RepeatEndVoltaTerminator)
+                } else {
+                    Some(Barline::RepeatEnd)
+                }
+            }
+            Some(Token::DoubleBarline) => {
+                self.next().ok();
+                Some(Barline::Double)
+            }
+            Some(Token::VoltaTerminator) => {
+                self.next().ok();
+                Some(Barline::VoltaTerminator)
+            }
+            Some(Token::DoubleVoltaTerminator) => {
                 self.next().ok();
                 Some(Barline::DoubleVoltaTerminator)
-            } else {
-                Some(Barline::RepeatEnd)
             }
-        } else {
-            None
+            _ => None,
         };
         if tokens.is_empty() && closing_barline.is_none() && matches!(self.peek(), Some(Token::Newline) | None) {
             return Ok(None);
@@ -1046,6 +1058,23 @@ mod tests {
         eprintln!("m2 tokens: {:?}", m2_tokens);
         assert_eq!(m2_tokens.len(), 1, "expected 1 multi-rest token");
         assert!(matches!(m2_tokens[0], MeasureExpr::MultiRest(2)));
+    }
+
+    #[test]
+    fn test_closing_double_barline_is_preserved() {
+        let doc = parse_ok("time 4/4\nnote 1/8\ngrouping 2+2\nSD | d ||\n");
+        let measures = &doc.paragraphs[0].lines[0].measures;
+        assert_eq!(measures.len(), 1);
+        assert!(matches!(measures[0].barline, Barline::Regular));
+        assert!(matches!(measures[0].closing_barline, Some(Barline::Double)));
+    }
+
+    #[test]
+    fn test_repeat_end_volta_terminator_is_distinct_from_double_volta_terminator() {
+        let doc = parse_ok("time 4/4\nnote 1/8\ngrouping 2+2\nSD | d :|.\n");
+        let measures = &doc.paragraphs[0].lines[0].measures;
+        assert_eq!(measures.len(), 1);
+        assert!(matches!(measures[0].closing_barline, Some(Barline::RepeatEndVoltaTerminator)));
     }
 
     #[test]

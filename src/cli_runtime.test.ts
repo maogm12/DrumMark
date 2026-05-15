@@ -75,6 +75,59 @@ HH | %% |`, "ast");
     const { result } = await buildCliOutput(SIMPLE_SOURCE, "svg");
 
     expect(result).toContain("<svg");
-    expect(result).toContain("vf-stavenote");
+    expect(result).toContain('data-role="notehead"');
+    expect(result).toContain('data-role="staff-line"');
+  });
+
+  it("keeps one paragraph on one system and renders SMuFL flag glyphs on the active CLI path", async () => {
+    const singleParagraph = `time 4/4
+note 1/8
+grouping 2+2
+
+SD | d | d |`;
+    const splitParagraphs = `time 4/4
+note 1/8
+grouping 2+2
+
+SD | d |
+
+SD | d |`;
+
+    const { result: singleSvg } = await buildCliOutput(singleParagraph, "svg");
+    const { result: splitSvg } = await buildCliOutput(splitParagraphs, "svg");
+
+    expect((singleSvg.match(/data-role="opening-barline"/g) || []).length).toBe(1);
+    expect((singleSvg.match(/data-role="measure-number"/g) || []).length).toBe(0);
+    expect((singleSvg.match(/data-role="flag"/g) || []).length).toBeGreaterThanOrEqual(2);
+    expect(singleSvg).toContain("\u{E240}");
+    expect(singleSvg).not.toContain("<polyline");
+
+    expect((splitSvg.match(/data-role="opening-barline"/g) || []).length).toBe(2);
+    expect((splitSvg.match(/data-role="measure-number"/g) || []).length).toBe(1);
+  });
+
+  it("renders downward unbeamed flags with the down-flag glyph on the active CLI path", async () => {
+    const downwardFlagSource = `time 4/4
+note 1/8
+grouping 2+2
+
+BD | b |`;
+
+    const { result } = await buildCliOutput(downwardFlagSource, "svg");
+
+    expect(result).toContain("\u{E241}");
+    expect(result).not.toContain("<polyline");
+  });
+
+  it("renders ledger lines for notes above the staff on the active CLI path", async () => {
+    const crashSource = `time 4/4
+note 1/4
+
+C | x |`;
+
+    const { result } = await buildCliOutput(crashSource, "svg");
+
+    expect(result).toContain('data-role="ledger-line"');
+    expect(result).toContain('data-role="notehead"');
   });
 });

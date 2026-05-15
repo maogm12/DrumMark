@@ -8,7 +8,7 @@
 - **Technical Rigor:** Ensure every change is idiomatically correct and does not introduce regressions or syntax errors (like omission placeholders) into the codebase.
 - **Knowledge Retention:** After researching source code or documentation to solve a problem, document the findings (API details, internal logic, discovered constraints) in `LEARNINGS.md`. **All updates to `LEARNINGS.md` MUST follow the Append-Only Protocol** to prevent accidental data loss and maintain a chronological record of technical discoveries.
 - **Design First**: For any significant DSL or architectural changes, the agent MUST present a design proposal (documented in the relevant specification file or a dedicated design document) and obtain explicit user approval before writing or modifying any implementation code. **All design proposals and their subsequent reviews MUST follow the Linear Ledger Protocol defined below.**
-- **Mandatory Post-Change Review**: After every code modification (feature implementation or bug fix), the agent MUST invoke a sub-agent to review the change. The reviewer must verify technical correctness, check for potential side effects, and ensure compliance with existing patterns.
+- **Proposal-Scoped Review**: Do not stop for a sub-agent review after every individual code change. Instead, each approved proposal is implemented on its own branch, and the branch receives one concentrated review pass before it is merged back to `main`.
 
 ## Specification & Design Review Protocol
 
@@ -84,18 +84,27 @@ The reviewer MUST check for task independence and reject designs where multiple 
     2. **Append a clean Addendum** to the actual spec file (`DRUMMARK_SPEC.md` etc.) following the Linear Ledger Protocol — no review noise, just the final approved content.
 - The spec file itself remains append-only: Addendums are added to its end, never inserted above existing content.
 
-### 6. Implementation
+### 6. Implementation Branch Workflow
 
 After consolidation is complete, implementation proceeds task-by-task:
 
-- For each task, the agent invokes a sub-agent with the spec, the approved proposal, and the tasks file as context.
-- Small, related changes may be batched within a single task; the sub-agent may commit multiple times within a task as needed.
+- The agent MUST create or use a dedicated branch for the proposal, preferably named from the proposal topic (for example `proposal/platform-neutral-drum-layout`).
+- All implementation for that proposal lands on the proposal branch first, not directly on `main`.
+- Small, related changes may be batched within a single task; the agent may commit multiple times within a task as needed.
 - After committing, the agent marks the task complete in the tasks file (e.g., `STATUS: DONE`) and moves to the next task.
-- After each code change, the sub-agent MUST verify acceptance criteria and run `npm run drummark` to confirm no regressions.
+- During implementation, the agent still verifies acceptance criteria and runs `npm run drummark` to confirm no regressions, but does not need to pause for a formal sub-agent review after every code edit.
 
-### 7. Completion & Archival
+### 7. Pre-Merge Review and Mainline Integration
+
+- When all tasks for the proposal branch are complete, the agent invokes a sub-agent to review the branch as a whole.
+- That review focuses on technical correctness, regressions, task coverage, and consistency with the approved proposal/tasks files.
+- The agent addresses review findings on the proposal branch until the branch is ready to merge.
+- Once the branch passes review, it is merged into `main` with a squash merge so `main` receives one consolidated commit (or one intentionally small set of commits if the user explicitly asks otherwise).
+
+### 8. Completion & Archival
 
 - After all tasks are complete, verify the proposal's content is present in the spec file. If not, append it.
+- After the reviewed proposal branch is squash-merged into `main`, archive the proposal artifacts.
 - **Move the proposal file and tasks file** to `docs/archived/` as a permanent historical record.
 - `docs/proposals/` holds active proposals; `docs/archived/` holds completed ones.
 

@@ -3,11 +3,15 @@
 
 export function build_layout_plan(source: string, options: any): any;
 
+export function build_layout_scene(source: string, options: any): any;
+
 /**
  * Parse and normalize a DrumMark source string in one call.
  * Returns the NormalizedScore as a JS object tree.
  */
 export function build_normalized_score(source: string): any;
+
+export function build_render_score(source: string): any;
 
 export function layout_plan(_score: any, _options_json: any): any;
 
@@ -21,7 +25,9 @@ export type InitInput = RequestInfo | URL | Response | BufferSource | WebAssembl
 export interface InitOutput {
     readonly memory: WebAssembly.Memory;
     readonly build_layout_plan: (a: number, b: number, c: number) => number;
+    readonly build_layout_scene: (a: number, b: number, c: number) => number;
     readonly build_normalized_score: (a: number, b: number) => number;
+    readonly build_render_score: (a: number, b: number) => number;
     readonly parse: (a: number, b: number) => number;
     readonly layout_plan: (a: number, b: number) => number;
     readonly __wbindgen_export: (a: number, b: number) => number;
@@ -49,4 +55,4 @@ export function initSync(module: { module: SyncInitInput } | SyncInitInput): Ini
  *
  * @returns {Promise<InitOutput>}
  */
-export default function __wbg_init (module_or_path?: { module_or_path: InitInput | Promise<InitInput> } | InitInput | Promise<InitInput>): Promise<InitOutput>;
+export default function __wbg_init (module_or_path: { module_or_path: InitInput | Promise<InitInput> } | InitInput | Promise<InitInput>): Promise<InitOutput>;

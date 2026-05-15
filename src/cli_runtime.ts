@@ -1,7 +1,7 @@
 import { buildMusicXml } from "./dsl/musicxml";
 import { buildNormalizedScore } from "./dsl/normalize";
 import type { NormalizedScore } from "./dsl/types";
-import { renderScoreToSvg } from "./vexflow/renderer";
+import { renderSourceToSvg } from "./renderer/svgRenderer";
 import { DEFAULT_RENDER_OPTIONS, type VexflowRenderOptions } from "./vexflow/types";
 import { formatScoreJson, type CliOutputFormat } from "./cli_output";
 import { ensureCliRenderEnvironment } from "./cli_render_env";
@@ -77,6 +77,13 @@ export async function buildCliOutput(
   }
 
   ensureCliRenderEnvironment();
-  const result = await renderScoreToSvg(score, CLI_RENDER_OPTIONS);
+  const result = renderSourceToSvg(source, {
+    staffScale: CLI_RENDER_OPTIONS.staffScale,
+    pageWidth: CLI_RENDER_OPTIONS.pageWidth,
+    topMargin: CLI_RENDER_OPTIONS.pagePadding.top,
+    bottomMargin: CLI_RENDER_OPTIONS.pagePadding.bottom,
+    leftMargin: CLI_RENDER_OPTIONS.pagePadding.left,
+    rightMargin: CLI_RENDER_OPTIONS.pagePadding.right,
+  });
   return { score, result };
 }

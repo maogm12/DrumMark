@@ -1,0 +1,1492 @@
+{
+  "version": "1",
+  "metricsVersion": "2026-05-13",
+  "pages": [
+    {
+      "index": 0,
+      "widthPt": 816,
+      "heightPt": 1056,
+      "systems": [
+        {
+          "id": "system-0",
+          "index": 0,
+          "pageIndex": 0,
+          "xPt": 53.33333206176758,
+          "yPt": 183.3333282470703,
+          "widthPt": 709.3333740234375,
+          "heightPt": 50,
+          "measureIds": [
+            "measure-0",
+            "measure-1"
+          ]
+        }
+      ],
+      "measures": [
+        {
+          "id": "measure-0",
+          "index": 0,
+          "globalIndex": 0,
+          "systemId": "system-0",
+          "xPt": 53.33333206176758,
+          "yPt": 183.3333282470703,
+          "widthPt": 390.66668701171875,
+          "heightPt": 50
+        },
+        {
+          "id": "measure-1",
+          "index": 1,
+          "globalIndex": 1,
+          "systemId": "system-0",
+          "xPt": 444.0000305175781,
+          "yPt": 183.3333282470703,
+          "widthPt": 318.66668701171875,
+          "heightPt": 50
+        }
+      ],
+      "items": [
+        {
+          "id": "item-0",
+          "role": "title",
+          "kind": "textRun",
+          "zIndex": 0,
+          "primitive": {
+            "xPt": 408,
+            "yPt": 89.33332824707031,
+            "textRole": "title",
+            "text": "Hairpin Demo",
+            "fontFamily": "Bravura Text",
+            "fontSizePt": 24,
+            "fill": "#333",
+            "textAnchor": "middle",
+            "fontWeight": "bold"
+          }
+        },
+        {
+          "id": "item-1",
+          "role": "tempo-glyph",
+          "kind": "textRun",
+          "zIndex": 0,
+          "primitive": {
+            "xPt": 85.33332824707031,
+            "yPt": 158.3333282470703,
+            "textRole": "tempo",
+            "text": "",
+            "fontFamily": "Bravura,Academico",
+            "fontSizePt": 25,
+            "fill": "#333"
+          }
+        },
+        {
+          "id": "item-2",
+          "role": "tempo-equals",
+          "kind": "textRun",
+          "zIndex": 0,
+          "primitive": {
+            "xPt": 110.9333267211914,
+            "yPt": 158.3333282470703,
+            "textRole": "tempo",
+            "text": "=",
+            "fontFamily": "Bravura Text",
+            "fontSizePt": 14,
+            "fill": "#333"
+          }
+        },
+        {
+          "id": "item-3",
+          "role": "tempo",
+          "kind": "textRun",
+          "zIndex": 0,
+          "primitive": {
+            "xPt": 123.9333267211914,
+            "yPt": 158.3333282470703,
+            "textRole": "tempo",
+            "text": "120",
+            "fontFamily": "Bravura Text",
+            "fontSizePt": 14,
+            "fill": "#333"
+          }
+        },
+        {
+          "id": "item-4",
+          "role": "staff-line",
+          "kind": "lineSegment",
+          "zIndex": 0,
+          "primitive": {
+            "x1Pt": 53.33333206176758,
+            "y1Pt": 193.3333282470703,
+            "x2Pt": 762.6666870117188,
+            "y2Pt": 193.3333282470703,
+            "stroke": "#333",
+            "strokeWidth": 1
+          }
+        },
+        {
+          "id": "item-5",
+          "role": "staff-line",
+          "kind": "lineSegment",
+          "zIndex": 0,
+          "primitive": {
+            "x1Pt": 53.33333206176758,
+            "y1Pt": 203.3333282470703,
+            "x2Pt": 762.6666870117188,
+            "y2Pt": 203.3333282470703,
+            "stroke": "#333",
+            "strokeWidth": 1
+          }
+        },
+        {
+          "id": "item-6",
+          "role": "staff-line",
+          "kind": "lineSegment",
+          "zIndex": 0,
+          "primitive": {
+            "x1Pt": 53.33333206176758,
+            "y1Pt": 213.3333282470703,
+            "x2Pt": 762.6666870117188,
+            "y2Pt": 213.3333282470703,
+            "stroke": "#333",
+            "strokeWidth": 1
+          }
+        },
+        {
+          "id": "item-7",
+          "role": "staff-line",
+          "kind": "lineSegment",
+          "zIndex": 0,
+          "primitive": {
+            "x1Pt": 53.33333206176758,
+            "y1Pt": 223.3333282470703,
+            "x2Pt": 762.6666870117188,
+            "y2Pt": 223.3333282470703,
+            "stroke": "#333",
+            "strokeWidth": 1
+          }
+        },
+        {
+          "id": "item-8",
+          "role": "staff-line",
+          "kind": "lineSegment",
+          "zIndex": 0,
+          "primitive": {
+            "x1Pt": 53.33333206176758,
+            "y1Pt": 233.3333282470703,
+            "x2Pt": 762.6666870117188,
+            "y2Pt": 233.3333282470703,
+            "stroke": "#333",
+            "strokeWidth": 1
+          }
+        },
+        {
+          "id": "item-9",
+          "role": "percussion-clef",
+          "kind": "textRun",
+          "zIndex": 0,
+          "primitive": {
+            "xPt": 71.33332824707031,
+            "yPt": 213.3333282470703,
+            "textRole": "percussionClef",
+            "text": "",
+            "fontFamily": "Bravura,Academico",
+            "fontSizePt": 30,
+            "fill": "#333"
+          }
+        },
+        {
+          "id": "item-10",
+          "role": "time-signature-digit",
+          "kind": "textRun",
+          "zIndex": 0,
+          "primitive": {
+            "xPt": 115.33332824707031,
+            "yPt": 203.3333282470703,
+            "textRole": "timeSignatureDigit",
+            "text": "",
+            "fontFamily": "Bravura,Academico",
+            "fontSizePt": 30,
+            "fill": "#333"
+          }
+        },
+        {
+          "id": "item-11",
+          "role": "time-signature-digit",
+          "kind": "textRun",
+          "zIndex": 0,
+          "primitive": {
+            "xPt": 115.33332824707031,
+            "yPt": 223.3333282470703,
+            "textRole": "timeSignatureDigit",
+            "text": "",
+            "fontFamily": "Bravura,Academico",
+            "fontSizePt": 30,
+            "fill": "#333"
+          }
+        },
+        {
+          "id": "item-12",
+          "measureId": "measure-0",
+          "role": "opening-barline",
+          "kind": "rect",
+          "zIndex": 0,
+          "primitive": {
+            "xPt": 53.33333206176758,
+            "yPt": 193.3333282470703,
+            "widthPt": 1,
+            "heightPt": 41,
+            "fill": "#333"
+          }
+        },
+        {
+          "id": "item-13",
+          "measureId": "measure-0",
+          "role": "notehead",
+          "kind": "textRun",
+          "zIndex": 0,
+          "primitive": {
+            "xPt": 128.3333282470703,
+            "yPt": 188.3333282470703,
+            "textRole": "tempo",
+            "text": "",
+            "fontFamily": "Bravura,Academico",
+            "fontSizePt": 30,
+            "fill": "#333"
+          }
+        },
+        {
+          "id": "item-14",
+          "measureId": "measure-0",
+          "anchorItemId": "item-13",
+          "role": "stem",
+          "kind": "lineSegment",
+          "zIndex": 0,
+          "primitive": {
+            "x1Pt": 137.18333435058594,
+            "y1Pt": 153.3333282470703,
+            "x2Pt": 137.18333435058594,
+            "y2Pt": 188.3333282470703,
+            "stroke": "#333",
+            "strokeWidth": 1.5
+          }
+        },
+        {
+          "id": "item-15",
+          "measureId": "measure-0",
+          "role": "notehead",
+          "kind": "textRun",
+          "zIndex": 0,
+          "primitive": {
+            "xPt": 136.3333282470703,
+            "yPt": 228.3333282470703,
+            "textRole": "tempo",
+            "text": "",
+            "fontFamily": "Bravura,Academico",
+            "fontSizePt": 30,
+            "fill": "#333"
+          }
+        },
+        {
+          "id": "item-16",
+          "measureId": "measure-0",
+          "anchorItemId": "item-15",
+          "role": "stem",
+          "kind": "lineSegment",
+          "zIndex": 0,
+          "primitive": {
+            "x1Pt": 137.2333221435547,
+            "y1Pt": 228.3333282470703,
+            "x2Pt": 137.2333221435547,
+            "y2Pt": 263.33331298828125,
+            "stroke": "#333",
+            "strokeWidth": 1.5
+          }
+        },
+        {
+          "id": "item-17",
+          "measureId": "measure-0",
+          "role": "notehead",
+          "kind": "textRun",
+          "zIndex": 0,
+          "primitive": {
+            "xPt": 168.66665649414062,
+            "yPt": 188.3333282470703,
+            "textRole": "tempo",
+            "text": "",
+            "fontFamily": "Bravura,Academico",
+            "fontSizePt": 30,
+            "fill": "#333"
+          }
+        },
+        {
+          "id": "item-18",
+          "measureId": "measure-0",
+          "anchorItemId": "item-17",
+          "role": "stem",
+          "kind": "lineSegment",
+          "zIndex": 0,
+          "primitive": {
+            "x1Pt": 177.51666259765625,
+            "y1Pt": 153.3333282470703,
+            "x2Pt": 177.51666259765625,
+            "y2Pt": 188.3333282470703,
+            "stroke": "#333",
+            "strokeWidth": 1.5
+          }
+        },
+        {
+          "id": "item-19",
+          "measureId": "measure-0",
+          "role": "rest",
+          "kind": "textRun",
+          "zIndex": 0,
+          "primitive": {
+            "xPt": 175.66665649414062,
+            "yPt": 223.3333282470703,
+            "textRole": "countLabel",
+            "text": "",
+            "fontFamily": "Bravura,Academico",
+            "fontSizePt": 28,
+            "fill": "#333",
+            "textAnchor": "middle"
+          }
+        },
+        {
+          "id": "item-20",
+          "measureId": "measure-0",
+          "role": "notehead",
+          "kind": "textRun",
+          "zIndex": 0,
+          "primitive": {
+            "xPt": 205,
+            "yPt": 188.3333282470703,
+            "textRole": "tempo",
+            "text": "",
+            "fontFamily": "Bravura,Academico",
+            "fontSizePt": 30,
+            "fill": "#333"
+          }
+        },
+        {
+          "id": "item-21",
+          "measureId": "measure-0",
+          "role": "notehead",
+          "kind": "textRun",
+          "zIndex": 0,
+          "primitive": {
+            "xPt": 205,
+            "yPt": 208.3333282470703,
+            "textRole": "tempo",
+            "text": "",
+            "fontFamily": "Bravura,Academico",
+            "fontSizePt": 30,
+            "fill": "#333"
+          }
+        },
+        {
+          "id": "item-22",
+          "measureId": "measure-0",
+          "anchorItemId": "item-20",
+          "role": "stem",
+          "kind": "lineSegment",
+          "zIndex": 0,
+          "primitive": {
+            "x1Pt": 213.85000610351562,
+            "y1Pt": 153.3333282470703,
+            "x2Pt": 213.85000610351562,
+            "y2Pt": 188.3333282470703,
+            "stroke": "#333",
+            "strokeWidth": 1.5
+          }
+        },
+        {
+          "id": "item-23",
+          "measureId": "measure-0",
+          "role": "notehead",
+          "kind": "textRun",
+          "zIndex": 0,
+          "primitive": {
+            "xPt": 241.33334350585938,
+            "yPt": 188.3333282470703,
+            "textRole": "tempo",
+            "text": "",
+            "fontFamily": "Bravura,Academico",
+            "fontSizePt": 30,
+            "fill": "#333"
+          }
+        },
+        {
+          "id": "item-24",
+          "measureId": "measure-0",
+          "anchorItemId": "item-23",
+          "role": "stem",
+          "kind": "lineSegment",
+          "zIndex": 0,
+          "primitive": {
+            "x1Pt": 250.183349609375,
+            "y1Pt": 153.3333282470703,
+            "x2Pt": 250.183349609375,
+            "y2Pt": 188.3333282470703,
+            "stroke": "#333",
+            "strokeWidth": 1.5
+          }
+        },
+        {
+          "id": "item-25",
+          "measureId": "measure-0",
+          "role": "rest",
+          "kind": "textRun",
+          "zIndex": 0,
+          "primitive": {
+            "xPt": 248.33334350585938,
+            "yPt": 223.3333282470703,
+            "textRole": "countLabel",
+            "text": "",
+            "fontFamily": "Bravura,Academico",
+            "fontSizePt": 28,
+            "fill": "#333",
+            "textAnchor": "middle"
+          }
+        },
+        {
+          "id": "item-26",
+          "measureId": "measure-0",
+          "role": "rest",
+          "kind": "textRun",
+          "zIndex": 0,
+          "primitive": {
+            "xPt": 284.66668701171875,
+            "yPt": 213.3333282470703,
+            "textRole": "countLabel",
+            "text": "",
+            "fontFamily": "Bravura,Academico",
+            "fontSizePt": 28,
+            "fill": "#333",
+            "textAnchor": "middle"
+          }
+        },
+        {
+          "id": "item-27",
+          "measureId": "measure-0",
+          "role": "notehead",
+          "kind": "textRun",
+          "zIndex": 0,
+          "primitive": {
+            "xPt": 277.66668701171875,
+            "yPt": 228.3333282470703,
+            "textRole": "tempo",
+            "text": "",
+            "fontFamily": "Bravura,Academico",
+            "fontSizePt": 30,
+            "fill": "#333"
+          }
+        },
+        {
+          "id": "item-28",
+          "measureId": "measure-0",
+          "anchorItemId": "item-27",
+          "role": "stem",
+          "kind": "lineSegment",
+          "zIndex": 0,
+          "primitive": {
+            "x1Pt": 278.5666809082031,
+            "y1Pt": 228.3333282470703,
+            "x2Pt": 278.5666809082031,
+            "y2Pt": 263.33331298828125,
+            "stroke": "#333",
+            "strokeWidth": 1.5
+          }
+        },
+        {
+          "id": "item-29",
+          "measureId": "measure-0",
+          "role": "rest",
+          "kind": "textRun",
+          "zIndex": 0,
+          "primitive": {
+            "xPt": 321.0000305175781,
+            "yPt": 223.3333282470703,
+            "textRole": "countLabel",
+            "text": "",
+            "fontFamily": "Bravura,Academico",
+            "fontSizePt": 28,
+            "fill": "#333",
+            "textAnchor": "middle"
+          }
+        },
+        {
+          "id": "item-30",
+          "measureId": "measure-0",
+          "role": "notehead",
+          "kind": "textRun",
+          "zIndex": 0,
+          "primitive": {
+            "xPt": 350.3333740234375,
+            "yPt": 208.3333282470703,
+            "textRole": "tempo",
+            "text": "",
+            "fontFamily": "Bravura,Academico",
+            "fontSizePt": 30,
+            "fill": "#333"
+          }
+        },
+        {
+          "id": "item-31",
+          "measureId": "measure-0",
+          "anchorItemId": "item-30",
+          "role": "stem",
+          "kind": "lineSegment",
+          "zIndex": 0,
+          "primitive": {
+            "x1Pt": 359.1833801269531,
+            "y1Pt": 173.3333282470703,
+            "x2Pt": 359.1833801269531,
+            "y2Pt": 208.3333282470703,
+            "stroke": "#333",
+            "strokeWidth": 1.5
+          }
+        },
+        {
+          "id": "item-32",
+          "measureId": "measure-0",
+          "role": "rest",
+          "kind": "textRun",
+          "zIndex": 0,
+          "primitive": {
+            "xPt": 393.66668701171875,
+            "yPt": 213.3333282470703,
+            "textRole": "countLabel",
+            "text": "",
+            "fontFamily": "Bravura,Academico",
+            "fontSizePt": 28,
+            "fill": "#333",
+            "textAnchor": "middle"
+          }
+        },
+        {
+          "id": "item-33",
+          "measureId": "measure-0",
+          "role": "rest",
+          "kind": "textRun",
+          "zIndex": 0,
+          "primitive": {
+            "xPt": 393.66668701171875,
+            "yPt": 223.3333282470703,
+            "textRole": "countLabel",
+            "text": "",
+            "fontFamily": "Bravura,Academico",
+            "fontSizePt": 28,
+            "fill": "#333",
+            "textAnchor": "middle"
+          }
+        },
+        {
+          "id": "item-34",
+          "measureId": "measure-0",
+          "anchorItemId": "item-14",
+          "role": "flag",
+          "kind": "glyphRun",
+          "zIndex": 0,
+          "primitive": {
+            "xPt": 137.18333435058594,
+            "yPt": 153.3333282470703,
+            "glyphRole": "flag8thUp",
+            "glyphCount": 1,
+            "codepoint": 57920,
+            "fontFamily": "Bravura,Academico",
+            "fontSizePt": 16,
+            "fill": "#333"
+          }
+        },
+        {
+          "id": "item-35",
+          "measureId": "measure-0",
+          "anchorItemId": "item-18",
+          "role": "flag",
+          "kind": "glyphRun",
+          "zIndex": 0,
+          "primitive": {
+            "xPt": 177.51666259765625,
+            "yPt": 153.3333282470703,
+            "glyphRole": "flag8thUp",
+            "glyphCount": 1,
+            "codepoint": 57920,
+            "fontFamily": "Bravura,Academico",
+            "fontSizePt": 16,
+            "fill": "#333"
+          }
+        },
+        {
+          "id": "item-36",
+          "measureId": "measure-0",
+          "anchorItemId": "item-22",
+          "role": "flag",
+          "kind": "glyphRun",
+          "zIndex": 0,
+          "primitive": {
+            "xPt": 213.85000610351562,
+            "yPt": 153.3333282470703,
+            "glyphRole": "flag8thUp",
+            "glyphCount": 1,
+            "codepoint": 57920,
+            "fontFamily": "Bravura,Academico",
+            "fontSizePt": 16,
+            "fill": "#333"
+          }
+        },
+        {
+          "id": "item-37",
+          "measureId": "measure-0",
+          "anchorItemId": "item-24",
+          "role": "flag",
+          "kind": "glyphRun",
+          "zIndex": 0,
+          "primitive": {
+            "xPt": 250.183349609375,
+            "yPt": 153.3333282470703,
+            "glyphRole": "flag8thUp",
+            "glyphCount": 1,
+            "codepoint": 57920,
+            "fontFamily": "Bravura,Academico",
+            "fontSizePt": 16,
+            "fill": "#333"
+          }
+        },
+        {
+          "id": "item-38",
+          "measureId": "measure-0",
+          "anchorItemId": "item-31",
+          "role": "flag",
+          "kind": "glyphRun",
+          "zIndex": 0,
+          "primitive": {
+            "xPt": 359.1833801269531,
+            "yPt": 173.3333282470703,
+            "glyphRole": "flag8thUp",
+            "glyphCount": 1,
+            "codepoint": 57920,
+            "fontFamily": "Bravura,Academico",
+            "fontSizePt": 16,
+            "fill": "#333"
+          }
+        },
+        {
+          "id": "item-39",
+          "measureId": "measure-0",
+          "anchorItemId": "item-16",
+          "role": "flag",
+          "kind": "glyphRun",
+          "zIndex": 0,
+          "primitive": {
+            "xPt": 127.23332214355469,
+            "yPt": 263.33331298828125,
+            "glyphRole": "flag8thDown",
+            "glyphCount": 1,
+            "codepoint": 57921,
+            "fontFamily": "Bravura,Academico",
+            "fontSizePt": 16,
+            "fill": "#333"
+          }
+        },
+        {
+          "id": "item-40",
+          "measureId": "measure-0",
+          "anchorItemId": "item-28",
+          "role": "flag",
+          "kind": "glyphRun",
+          "zIndex": 0,
+          "primitive": {
+            "xPt": 268.5666809082031,
+            "yPt": 263.33331298828125,
+            "glyphRole": "flag8thDown",
+            "glyphCount": 1,
+            "codepoint": 57921,
+            "fontFamily": "Bravura,Academico",
+            "fontSizePt": 16,
+            "fill": "#333"
+          }
+        },
+        {
+          "id": "item-41",
+          "measureId": "measure-0",
+          "role": "barline",
+          "kind": "rect",
+          "zIndex": 0,
+          "primitive": {
+            "xPt": 443.0000305175781,
+            "yPt": 193.3333282470703,
+            "widthPt": 1,
+            "heightPt": 41,
+            "fill": "#333"
+          }
+        },
+        {
+          "id": "item-42",
+          "measureId": "measure-1",
+          "role": "notehead",
+          "kind": "textRun",
+          "zIndex": 0,
+          "primitive": {
+            "xPt": 447.0000305175781,
+            "yPt": 188.3333282470703,
+            "textRole": "tempo",
+            "text": "",
+            "fontFamily": "Bravura,Academico",
+            "fontSizePt": 30,
+            "fill": "#333"
+          }
+        },
+        {
+          "id": "item-43",
+          "measureId": "measure-1",
+          "anchorItemId": "item-42",
+          "role": "stem",
+          "kind": "lineSegment",
+          "zIndex": 0,
+          "primitive": {
+            "x1Pt": 455.85003662109375,
+            "y1Pt": 153.3333282470703,
+            "x2Pt": 455.85003662109375,
+            "y2Pt": 188.3333282470703,
+            "stroke": "#333",
+            "strokeWidth": 1.5
+          }
+        },
+        {
+          "id": "item-44",
+          "measureId": "measure-1",
+          "role": "notehead",
+          "kind": "textRun",
+          "zIndex": 0,
+          "primitive": {
+            "xPt": 455.0000305175781,
+            "yPt": 228.3333282470703,
+            "textRole": "tempo",
+            "text": "",
+            "fontFamily": "Bravura,Academico",
+            "fontSizePt": 30,
+            "fill": "#333"
+          }
+        },
+        {
+          "id": "item-45",
+          "measureId": "measure-1",
+          "anchorItemId": "item-44",
+          "role": "stem",
+          "kind": "lineSegment",
+          "zIndex": 0,
+          "primitive": {
+            "x1Pt": 455.9000244140625,
+            "y1Pt": 228.3333282470703,
+            "x2Pt": 455.9000244140625,
+            "y2Pt": 263.33331298828125,
+            "stroke": "#333",
+            "strokeWidth": 1.5
+          }
+        },
+        {
+          "id": "item-46",
+          "measureId": "measure-1",
+          "role": "notehead",
+          "kind": "textRun",
+          "zIndex": 0,
+          "primitive": {
+            "xPt": 487.3333740234375,
+            "yPt": 188.3333282470703,
+            "textRole": "tempo",
+            "text": "",
+            "fontFamily": "Bravura,Academico",
+            "fontSizePt": 30,
+            "fill": "#333"
+          }
+        },
+        {
+          "id": "item-47",
+          "measureId": "measure-1",
+          "anchorItemId": "item-46",
+          "role": "stem",
+          "kind": "lineSegment",
+          "zIndex": 0,
+          "primitive": {
+            "x1Pt": 496.1833801269531,
+            "y1Pt": 153.3333282470703,
+            "x2Pt": 496.1833801269531,
+            "y2Pt": 188.3333282470703,
+            "stroke": "#333",
+            "strokeWidth": 1.5
+          }
+        },
+        {
+          "id": "item-48",
+          "measureId": "measure-1",
+          "role": "rest",
+          "kind": "textRun",
+          "zIndex": 0,
+          "primitive": {
+            "xPt": 494.3333740234375,
+            "yPt": 223.3333282470703,
+            "textRole": "countLabel",
+            "text": "",
+            "fontFamily": "Bravura,Academico",
+            "fontSizePt": 28,
+            "fill": "#333",
+            "textAnchor": "middle"
+          }
+        },
+        {
+          "id": "item-49",
+          "measureId": "measure-1",
+          "role": "notehead",
+          "kind": "textRun",
+          "zIndex": 0,
+          "primitive": {
+            "xPt": 523.6666870117188,
+            "yPt": 188.3333282470703,
+            "textRole": "tempo",
+            "text": "",
+            "fontFamily": "Bravura,Academico",
+            "fontSizePt": 30,
+            "fill": "#333"
+          }
+        },
+        {
+          "id": "item-50",
+          "measureId": "measure-1",
+          "role": "notehead",
+          "kind": "textRun",
+          "zIndex": 0,
+          "primitive": {
+            "xPt": 523.6666870117188,
+            "yPt": 208.3333282470703,
+            "textRole": "tempo",
+            "text": "",
+            "fontFamily": "Bravura,Academico",
+            "fontSizePt": 30,
+            "fill": "#333"
+          }
+        },
+        {
+          "id": "item-51",
+          "measureId": "measure-1",
+          "anchorItemId": "item-49",
+          "role": "stem",
+          "kind": "lineSegment",
+          "zIndex": 0,
+          "primitive": {
+            "x1Pt": 532.5166625976562,
+            "y1Pt": 153.3333282470703,
+            "x2Pt": 532.5166625976562,
+            "y2Pt": 188.3333282470703,
+            "stroke": "#333",
+            "strokeWidth": 1.5
+          }
+        },
+        {
+          "id": "item-52",
+          "measureId": "measure-1",
+          "role": "notehead",
+          "kind": "textRun",
+          "zIndex": 0,
+          "primitive": {
+            "xPt": 556.0000610351562,
+            "yPt": 188.3333282470703,
+            "textRole": "tempo",
+            "text": "",
+            "fontFamily": "Bravura,Academico",
+            "fontSizePt": 30,
+            "fill": "#333"
+          }
+        },
+        {
+          "id": "item-53",
+          "measureId": "measure-1",
+          "anchorItemId": "item-52",
+          "role": "stem",
+          "kind": "lineSegment",
+          "zIndex": 0,
+          "primitive": {
+            "x1Pt": 564.8500366210938,
+            "y1Pt": 153.3333282470703,
+            "x2Pt": 564.8500366210938,
+            "y2Pt": 188.3333282470703,
+            "stroke": "#333",
+            "strokeWidth": 1.5
+          }
+        },
+        {
+          "id": "item-54",
+          "measureId": "measure-1",
+          "role": "notehead",
+          "kind": "textRun",
+          "zIndex": 0,
+          "primitive": {
+            "xPt": 564.0000610351562,
+            "yPt": 228.3333282470703,
+            "textRole": "tempo",
+            "text": "",
+            "fontFamily": "Bravura,Academico",
+            "fontSizePt": 30,
+            "fill": "#333"
+          }
+        },
+        {
+          "id": "item-55",
+          "measureId": "measure-1",
+          "anchorItemId": "item-54",
+          "role": "stem",
+          "kind": "lineSegment",
+          "zIndex": 0,
+          "primitive": {
+            "x1Pt": 564.9000854492188,
+            "y1Pt": 228.3333282470703,
+            "x2Pt": 564.9000854492188,
+            "y2Pt": 263.33331298828125,
+            "stroke": "#333",
+            "strokeWidth": 1.5
+          }
+        },
+        {
+          "id": "item-56",
+          "measureId": "measure-1",
+          "role": "notehead",
+          "kind": "textRun",
+          "zIndex": 0,
+          "primitive": {
+            "xPt": 596.3333740234375,
+            "yPt": 188.3333282470703,
+            "textRole": "tempo",
+            "text": "",
+            "fontFamily": "Bravura,Academico",
+            "fontSizePt": 30,
+            "fill": "#333"
+          }
+        },
+        {
+          "id": "item-57",
+          "measureId": "measure-1",
+          "anchorItemId": "item-56",
+          "role": "stem",
+          "kind": "lineSegment",
+          "zIndex": 0,
+          "primitive": {
+            "x1Pt": 605.183349609375,
+            "y1Pt": 153.3333282470703,
+            "x2Pt": 605.183349609375,
+            "y2Pt": 188.3333282470703,
+            "stroke": "#333",
+            "strokeWidth": 1.5
+          }
+        },
+        {
+          "id": "item-58",
+          "measureId": "measure-1",
+          "role": "rest",
+          "kind": "textRun",
+          "zIndex": 0,
+          "primitive": {
+            "xPt": 603.3333740234375,
+            "yPt": 223.3333282470703,
+            "textRole": "countLabel",
+            "text": "",
+            "fontFamily": "Bravura,Academico",
+            "fontSizePt": 28,
+            "fill": "#333",
+            "textAnchor": "middle"
+          }
+        },
+        {
+          "id": "item-59",
+          "measureId": "measure-1",
+          "role": "notehead",
+          "kind": "textRun",
+          "zIndex": 0,
+          "primitive": {
+            "xPt": 632.6666870117188,
+            "yPt": 188.3333282470703,
+            "textRole": "tempo",
+            "text": "",
+            "fontFamily": "Bravura,Academico",
+            "fontSizePt": 30,
+            "fill": "#333"
+          }
+        },
+        {
+          "id": "item-60",
+          "measureId": "measure-1",
+          "anchorItemId": "item-59",
+          "role": "stem",
+          "kind": "lineSegment",
+          "zIndex": 0,
+          "primitive": {
+            "x1Pt": 641.5166625976562,
+            "y1Pt": 153.3333282470703,
+            "x2Pt": 641.5166625976562,
+            "y2Pt": 188.3333282470703,
+            "stroke": "#333",
+            "strokeWidth": 1.5
+          }
+        },
+        {
+          "id": "item-61",
+          "measureId": "measure-1",
+          "role": "notehead",
+          "kind": "textRun",
+          "zIndex": 0,
+          "primitive": {
+            "xPt": 665.0000610351562,
+            "yPt": 188.3333282470703,
+            "textRole": "tempo",
+            "text": "",
+            "fontFamily": "Bravura,Academico",
+            "fontSizePt": 30,
+            "fill": "#333"
+          }
+        },
+        {
+          "id": "item-62",
+          "measureId": "measure-1",
+          "role": "notehead",
+          "kind": "textRun",
+          "zIndex": 0,
+          "primitive": {
+            "xPt": 665.0000610351562,
+            "yPt": 208.3333282470703,
+            "textRole": "tempo",
+            "text": "",
+            "fontFamily": "Bravura,Academico",
+            "fontSizePt": 30,
+            "fill": "#333"
+          }
+        },
+        {
+          "id": "item-63",
+          "measureId": "measure-1",
+          "anchorItemId": "item-61",
+          "role": "stem",
+          "kind": "lineSegment",
+          "zIndex": 0,
+          "primitive": {
+            "x1Pt": 673.8500366210938,
+            "y1Pt": 153.3333282470703,
+            "x2Pt": 673.8500366210938,
+            "y2Pt": 188.3333282470703,
+            "stroke": "#333",
+            "strokeWidth": 1.5
+          }
+        },
+        {
+          "id": "item-64",
+          "measureId": "measure-1",
+          "role": "notehead",
+          "kind": "textRun",
+          "zIndex": 0,
+          "primitive": {
+            "xPt": 673.0000610351562,
+            "yPt": 228.3333282470703,
+            "textRole": "tempo",
+            "text": "",
+            "fontFamily": "Bravura,Academico",
+            "fontSizePt": 30,
+            "fill": "#333"
+          }
+        },
+        {
+          "id": "item-65",
+          "measureId": "measure-1",
+          "anchorItemId": "item-64",
+          "role": "stem",
+          "kind": "lineSegment",
+          "zIndex": 0,
+          "primitive": {
+            "x1Pt": 673.9000854492188,
+            "y1Pt": 228.3333282470703,
+            "x2Pt": 673.9000854492188,
+            "y2Pt": 263.33331298828125,
+            "stroke": "#333",
+            "strokeWidth": 1.5
+          }
+        },
+        {
+          "id": "item-66",
+          "measureId": "measure-1",
+          "role": "notehead",
+          "kind": "textRun",
+          "zIndex": 0,
+          "primitive": {
+            "xPt": 705.3333740234375,
+            "yPt": 188.3333282470703,
+            "textRole": "tempo",
+            "text": "",
+            "fontFamily": "Bravura,Academico",
+            "fontSizePt": 30,
+            "fill": "#333"
+          }
+        },
+        {
+          "id": "item-67",
+          "measureId": "measure-1",
+          "anchorItemId": "item-66",
+          "role": "stem",
+          "kind": "lineSegment",
+          "zIndex": 0,
+          "primitive": {
+            "x1Pt": 714.183349609375,
+            "y1Pt": 153.3333282470703,
+            "x2Pt": 714.183349609375,
+            "y2Pt": 188.3333282470703,
+            "stroke": "#333",
+            "strokeWidth": 1.5
+          }
+        },
+        {
+          "id": "item-68",
+          "measureId": "measure-1",
+          "role": "rest",
+          "kind": "textRun",
+          "zIndex": 0,
+          "primitive": {
+            "xPt": 712.3333740234375,
+            "yPt": 223.3333282470703,
+            "textRole": "countLabel",
+            "text": "",
+            "fontFamily": "Bravura,Academico",
+            "fontSizePt": 28,
+            "fill": "#333",
+            "textAnchor": "middle"
+          }
+        },
+        {
+          "id": "item-69",
+          "measureId": "measure-1",
+          "anchorItemId": "item-43",
+          "role": "flag",
+          "kind": "glyphRun",
+          "zIndex": 0,
+          "primitive": {
+            "xPt": 455.85003662109375,
+            "yPt": 153.3333282470703,
+            "glyphRole": "flag8thUp",
+            "glyphCount": 1,
+            "codepoint": 57920,
+            "fontFamily": "Bravura,Academico",
+            "fontSizePt": 16,
+            "fill": "#333"
+          }
+        },
+        {
+          "id": "item-70",
+          "measureId": "measure-1",
+          "anchorItemId": "item-47",
+          "role": "flag",
+          "kind": "glyphRun",
+          "zIndex": 0,
+          "primitive": {
+            "xPt": 496.1833801269531,
+            "yPt": 153.3333282470703,
+            "glyphRole": "flag8thUp",
+            "glyphCount": 1,
+            "codepoint": 57920,
+            "fontFamily": "Bravura,Academico",
+            "fontSizePt": 16,
+            "fill": "#333"
+          }
+        },
+        {
+          "id": "item-71",
+          "measureId": "measure-1",
+          "anchorItemId": "item-51",
+          "role": "flag",
+          "kind": "glyphRun",
+          "zIndex": 0,
+          "primitive": {
+            "xPt": 532.5166625976562,
+            "yPt": 153.3333282470703,
+            "glyphRole": "flag8thUp",
+            "glyphCount": 1,
+            "codepoint": 57920,
+            "fontFamily": "Bravura,Academico",
+            "fontSizePt": 16,
+            "fill": "#333"
+          }
+        },
+        {
+          "id": "item-72",
+          "measureId": "measure-1",
+          "anchorItemId": "item-53",
+          "role": "flag",
+          "kind": "glyphRun",
+          "zIndex": 0,
+          "primitive": {
+            "xPt": 564.8500366210938,
+            "yPt": 153.3333282470703,
+            "glyphRole": "flag8thUp",
+            "glyphCount": 1,
+            "codepoint": 57920,
+            "fontFamily": "Bravura,Academico",
+            "fontSizePt": 16,
+            "fill": "#333"
+          }
+        },
+        {
+          "id": "item-73",
+          "measureId": "measure-1",
+          "anchorItemId": "item-57",
+          "role": "flag",
+          "kind": "glyphRun",
+          "zIndex": 0,
+          "primitive": {
+            "xPt": 605.183349609375,
+            "yPt": 153.3333282470703,
+            "glyphRole": "flag8thUp",
+            "glyphCount": 1,
+            "codepoint": 57920,
+            "fontFamily": "Bravura,Academico",
+            "fontSizePt": 16,
+            "fill": "#333"
+          }
+        },
+        {
+          "id": "item-74",
+          "measureId": "measure-1",
+          "anchorItemId": "item-60",
+          "role": "flag",
+          "kind": "glyphRun",
+          "zIndex": 0,
+          "primitive": {
+            "xPt": 641.5166625976562,
+            "yPt": 153.3333282470703,
+            "glyphRole": "flag8thUp",
+            "glyphCount": 1,
+            "codepoint": 57920,
+            "fontFamily": "Bravura,Academico",
+            "fontSizePt": 16,
+            "fill": "#333"
+          }
+        },
+        {
+          "id": "item-75",
+          "measureId": "measure-1",
+          "anchorItemId": "item-63",
+          "role": "flag",
+          "kind": "glyphRun",
+          "zIndex": 0,
+          "primitive": {
+            "xPt": 673.8500366210938,
+            "yPt": 153.3333282470703,
+            "glyphRole": "flag8thUp",
+            "glyphCount": 1,
+            "codepoint": 57920,
+            "fontFamily": "Bravura,Academico",
+            "fontSizePt": 16,
+            "fill": "#333"
+          }
+        },
+        {
+          "id": "item-76",
+          "measureId": "measure-1",
+          "anchorItemId": "item-67",
+          "role": "flag",
+          "kind": "glyphRun",
+          "zIndex": 0,
+          "primitive": {
+            "xPt": 714.183349609375,
+            "yPt": 153.3333282470703,
+            "glyphRole": "flag8thUp",
+            "glyphCount": 1,
+            "codepoint": 57920,
+            "fontFamily": "Bravura,Academico",
+            "fontSizePt": 16,
+            "fill": "#333"
+          }
+        },
+        {
+          "id": "item-77",
+          "measureId": "measure-1",
+          "anchorItemId": "item-45",
+          "role": "flag",
+          "kind": "glyphRun",
+          "zIndex": 0,
+          "primitive": {
+            "xPt": 445.9000244140625,
+            "yPt": 263.33331298828125,
+            "glyphRole": "flag8thDown",
+            "glyphCount": 1,
+            "codepoint": 57921,
+            "fontFamily": "Bravura,Academico",
+            "fontSizePt": 16,
+            "fill": "#333"
+          }
+        },
+        {
+          "id": "item-78",
+          "measureId": "measure-1",
+          "anchorItemId": "item-55",
+          "role": "flag",
+          "kind": "glyphRun",
+          "zIndex": 0,
+          "primitive": {
+            "xPt": 554.9000854492188,
+            "yPt": 263.33331298828125,
+            "glyphRole": "flag8thDown",
+            "glyphCount": 1,
+            "codepoint": 57921,
+            "fontFamily": "Bravura,Academico",
+            "fontSizePt": 16,
+            "fill": "#333"
+          }
+        },
+        {
+          "id": "item-79",
+          "measureId": "measure-1",
+          "anchorItemId": "item-65",
+          "role": "flag",
+          "kind": "glyphRun",
+          "zIndex": 0,
+          "primitive": {
+            "xPt": 663.9000854492188,
+            "yPt": 263.33331298828125,
+            "glyphRole": "flag8thDown",
+            "glyphCount": 1,
+            "codepoint": 57921,
+            "fontFamily": "Bravura,Academico",
+            "fontSizePt": 16,
+            "fill": "#333"
+          }
+        },
+        {
+          "id": "item-80",
+          "measureId": "measure-1",
+          "role": "final-barline-thin",
+          "kind": "rect",
+          "zIndex": 0,
+          "primitive": {
+            "xPt": 758.666748046875,
+            "yPt": 193.3333282470703,
+            "widthPt": 1,
+            "heightPt": 41,
+            "fill": "#333"
+          }
+        },
+        {
+          "id": "item-81",
+          "measureId": "measure-1",
+          "role": "final-barline-thick",
+          "kind": "rect",
+          "zIndex": 0,
+          "primitive": {
+            "xPt": 759.666748046875,
+            "yPt": 193.3333282470703,
+            "widthPt": 3,
+            "heightPt": 41,
+            "fill": "#333"
+          }
+        },
+        {
+          "id": "item-82",
+          "measureId": "measure-0",
+          "role": "hairpin-top",
+          "kind": "lineSegment",
+          "zIndex": 0,
+          "primitive": {
+            "x1Pt": 67.33332824707031,
+            "y1Pt": 251.3333282470703,
+            "x2Pt": 248.6666717529297,
+            "y2Pt": 251.3333282470703,
+            "stroke": "#333",
+            "strokeWidth": 1.2000000476837158
+          }
+        },
+        {
+          "id": "item-83",
+          "measureId": "measure-0",
+          "role": "hairpin-bottom",
+          "kind": "lineSegment",
+          "zIndex": 0,
+          "primitive": {
+            "x1Pt": 67.33332824707031,
+            "y1Pt": 261.33331298828125,
+            "x2Pt": 248.6666717529297,
+            "y2Pt": 261.33331298828125,
+            "stroke": "#333",
+            "strokeWidth": 1.2000000476837158
+          }
+        },
+        {
+          "id": "item-84",
+          "measureId": "measure-1",
+          "role": "hairpin-top",
+          "kind": "lineSegment",
+          "zIndex": 0,
+          "primitive": {
+            "x1Pt": 458.0000305175781,
+            "y1Pt": 251.3333282470703,
+            "x2Pt": 748.666748046875,
+            "y2Pt": 261.33331298828125,
+            "stroke": "#333",
+            "strokeWidth": 1.2000000476837158
+          }
+        },
+        {
+          "id": "item-85",
+          "measureId": "measure-1",
+          "role": "hairpin-bottom",
+          "kind": "lineSegment",
+          "zIndex": 0,
+          "primitive": {
+            "x1Pt": 458.0000305175781,
+            "y1Pt": 261.33331298828125,
+            "x2Pt": 748.666748046875,
+            "y2Pt": 251.3333282470703,
+            "stroke": "#333",
+            "strokeWidth": 1.2000000476837158
+          }
+        }
+      ],
+      "composites": [
+        {
+          "id": "text-block-title",
+          "kind": "textBlock",
+          "fragment": "singleSegment",
+          "childItemIds": [
+            "item-0"
+          ],
+          "label": "title"
+        },
+        {
+          "id": "text-block-tempo",
+          "kind": "textBlock",
+          "fragment": "singleSegment",
+          "childItemIds": [
+            "item-1",
+            "item-2",
+            "item-3"
+          ],
+          "label": "tempo",
+          "count": 120
+        },
+        {
+          "id": "hairpin-0-0-0",
+          "kind": "hairpin",
+          "fragment": "singleSegment",
+          "childItemIds": [
+            "item-82",
+            "item-83"
+          ],
+          "label": "crescendo",
+          "startAnchorId": "measure-0",
+          "endAnchorId": "measure-0"
+        },
+        {
+          "id": "hairpin-1-1-0",
+          "kind": "hairpin",
+          "fragment": "singleSegment",
+          "childItemIds": [
+            "item-84",
+            "item-85"
+          ],
+          "label": "decrescendo",
+          "startAnchorId": "measure-1",
+          "endAnchorId": "measure-1"
+        }
+      ]
+    }
+  ],
+  "issues": []
+}

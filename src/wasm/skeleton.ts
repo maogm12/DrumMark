@@ -344,6 +344,9 @@ function adaptToSkeleton(
         const closing = wm.closingBarline;
         if (closing) {
           switch (closing.type) {
+            case "||":
+              barline = "double";
+              break;
             case ":|":
               repeatEnd = true;
               break;

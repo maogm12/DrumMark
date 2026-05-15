@@ -43,6 +43,7 @@ pub enum Barline {
     RepeatStart,
     RepeatEnd,
     VoltaTerminator,
+    RepeatEndVoltaTerminator,
     DoubleVoltaTerminator,
     VoltaRepeatStart,
     Volta { prefix: String, numbers: Vec<u32> },

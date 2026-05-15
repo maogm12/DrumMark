@@ -1,0 +1,172 @@
+import { describe, expect, it } from "vitest";
+import { buildLayoutSceneFromSource, renderSceneToSvg, renderSourceToSvg } from "./svgRenderer";
+
+const SRC = `title Smoke
+tempo 120
+time 4/4
+note 1/8
+
+HH | x x x x |
+`;
+
+describe("SVG scene adapter", () => {
+  it("renders a precomputed scene without source cache", () => {
+    const scene = {
+      version: "1",
+      metricsVersion: "test",
+      pages: [
+        {
+          index: 0,
+          widthPt: 100,
+          heightPt: 80,
+          measures: [
+            { id: "measure-0", globalIndex: 0, systemId: "system-0", xPt: 10, yPt: 20, widthPt: 40, heightPt: 20 },
+            { id: "measure-1", globalIndex: 1, systemId: "system-0", xPt: 50, yPt: 20, widthPt: 40, heightPt: 20 },
+          ],
+          items: [
+            {
+              id: "item-1",
+              role: "staff-line",
+              kind: "lineSegment",
+              zIndex: 0,
+              primitive: { x1Pt: 10, y1Pt: 20, x2Pt: 90, y2Pt: 20, stroke: "#333", strokeWidth: 1 },
+            },
+            {
+              id: "item-2",
+              role: "title",
+              kind: "textRun",
+              zIndex: 0,
+              primitive: { xPt: 50, yPt: 12, text: "Smoke", fontFamily: "Academico", fontSizePt: 24, fill: "#333", textAnchor: "middle" },
+            },
+            {
+              id: "item-3",
+              role: "accent",
+              kind: "textRun",
+              zIndex: 1,
+              anchorItemId: "item-2",
+              primitive: { xPt: 50, yPt: 20, text: ">", fontFamily: "Academico", fontSizePt: 12, fill: "#333", textAnchor: "middle" },
+            },
+          ],
+          composites: [
+            {
+              id: "repeat-0",
+              kind: "repeatSpan",
+              fragment: "singleSegment",
+              count: 3,
+              startAnchorId: "measure-0",
+              endAnchorId: "measure-1",
+            },
+            {
+              id: "volta-0",
+              kind: "volta",
+              fragment: "singleSegment",
+              label: "1.",
+              startAnchorId: "measure-0",
+              endAnchorId: "measure-1",
+            },
+          ],
+        },
+      ],
+    } as any;
+
+    const svg = renderSceneToSvg(scene, { staffScale: 1 });
+    expect(svg).toContain('<line data-role="staff-line"');
+    expect(svg).toContain("Smoke");
+    expect(svg).toContain('data-role="repeat-span-line"');
+    expect(svg).toContain('data-role="volta-line"');
+    expect(svg).toContain('data-anchor-item-id="item-2"');
+  });
+
+  it("builds scene from source and renders svg", () => {
+    const scene = buildLayoutSceneFromSource(SRC, { pageWidth: 612, staffScale: 0.75 });
+    expect(scene.pages.length).toBeGreaterThan(0);
+    expect(scene.pages[0]?.items.length).toBeGreaterThan(0);
+    expect(scene.pages[0]?.systems.length).toBeGreaterThan(0);
+    expect(scene.pages[0]?.systems[0]?.measureIds.length).toBeGreaterThan(0);
+    expect(scene.pages[0]?.composites.some((composite) => composite.kind === "textBlock" && composite.label === "tempo")).toBe(true);
+
+    const svg = renderSourceToSvg(SRC, { pageWidth: 612, staffScale: 0.75 });
+    expect(svg).toContain("<svg");
+    expect(svg).toContain("Smoke");
+    expect(svg).toContain('data-role="notehead"');
+  });
+
+  it("fails closed on parse errors", () => {
+    expect(() => buildLayoutSceneFromSource("time 4\nHH | x |\n")).toThrow(/Line/);
+    expect(() => renderSourceToSvg("time 4\nHH | x |\n")).toThrow(/Line/);
+  });
+
+  it("throws on unknown scene item kinds", () => {
+    const badScene = {
+      version: "1",
+      metricsVersion: "test",
+      pages: [{ index: 0, widthPt: 10, heightPt: 10, measures: [], items: [{ id: "x", role: "bad", kind: "mystery", zIndex: 0, primitive: {} }], composites: [] }],
+    } as any;
+    expect(() => renderSceneToSvg(badScene, { staffScale: 1 })).toThrow(/Unsupported scene item kind/);
+  });
+
+  it("renders repeat-span fragments without duplicating hooks and labels", () => {
+    const scene = {
+      version: "1",
+      metricsVersion: "test",
+      pages: [
+        {
+          index: 0,
+          widthPt: 200,
+          heightPt: 100,
+          measures: [
+            { id: "measure-0", globalIndex: 0, systemId: "system-0", xPt: 10, yPt: 30, widthPt: 40, heightPt: 20 },
+            { id: "measure-1", globalIndex: 1, systemId: "system-1", xPt: 10, yPt: 60, widthPt: 40, heightPt: 20 },
+          ],
+          items: [],
+          composites: [
+            { id: "repeat-0", kind: "repeatSpan", fragment: "start", count: 2, startAnchorId: "measure-0", endAnchorId: "measure-0" },
+            { id: "repeat-1", kind: "repeatSpan", fragment: "end", count: 2, startAnchorId: "measure-1", endAnchorId: "measure-1" },
+          ],
+        },
+      ],
+    } as any;
+
+    const svg = renderSceneToSvg(scene, { staffScale: 1 });
+    expect((svg.match(/data-role="repeat-span-count"/g) || []).length).toBe(1);
+    expect((svg.match(/data-role="repeat-span-start"/g) || []).length).toBe(1);
+    expect((svg.match(/data-role="repeat-span-end"/g) || []).length).toBe(1);
+  });
+
+  it("renders glyphRun and polyline items", () => {
+    const scene = {
+      version: "1",
+      metricsVersion: "test",
+      pages: [
+        {
+          index: 0,
+          widthPt: 120,
+          heightPt: 80,
+          measures: [],
+          items: [
+            {
+              id: "glyph-1",
+              role: "glyph-note",
+              kind: "glyphRun",
+              zIndex: 0,
+              primitive: { xPt: 20, yPt: 20, codepoint: 0xe0a4, fontFamily: "Bravura", fontSizePt: 18, fill: "#333" },
+            },
+            {
+              id: "poly-1",
+              role: "shape",
+              kind: "polyline",
+              zIndex: 0,
+              primitive: { pointsPt: [[10, 10], [20, 20], [30, 10]] },
+            },
+          ],
+          composites: [],
+        },
+      ],
+    } as any;
+
+    const svg = renderSceneToSvg(scene, { staffScale: 1 });
+    expect(svg).toContain('data-role="glyph-note"');
+    expect(svg).toContain('data-role="shape"');
+    expect(svg).toContain("<polyline");
+  });
+});

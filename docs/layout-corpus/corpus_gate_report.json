@@ -1,0 +1,2158 @@
+{
+  "sceneReport": [
+    {
+      "file": "docs/examples/architecture.drum",
+      "summary": {
+        "pages": 1,
+        "systems": 1,
+        "measures": 1,
+        "items": 51,
+        "composites": 2,
+        "itemRoles": {
+          "title": 1,
+          "tempo-glyph": 1,
+          "tempo-equals": 1,
+          "tempo": 1,
+          "staff-line": 5,
+          "percussion-clef": 1,
+          "time-signature-digit": 2,
+          "opening-barline": 1,
+          "notehead": 12,
+          "stem": 10,
+          "rest": 4,
+          "flag": 10,
+          "final-barline-thin": 1,
+          "final-barline-thick": 1
+        },
+        "compositeKinds": {
+          "textBlock": 2
+        },
+        "fragmentKinds": {
+          "textBlock:singleSegment": 2
+        }
+      }
+    },
+    {
+      "file": "docs/examples/combined-hits.drum",
+      "summary": {
+        "pages": 1,
+        "systems": 1,
+        "measures": 1,
+        "items": 41,
+        "composites": 2,
+        "itemRoles": {
+          "title": 1,
+          "tempo-glyph": 1,
+          "tempo-equals": 1,
+          "tempo": 1,
+          "staff-line": 5,
+          "percussion-clef": 1,
+          "time-signature-digit": 2,
+          "opening-barline": 1,
+          "notehead": 10,
+          "stem": 6,
+          "rest": 4,
+          "flag": 6,
+          "final-barline-thin": 1,
+          "final-barline-thick": 1
+        },
+        "compositeKinds": {
+          "textBlock": 2
+        },
+        "fragmentKinds": {
+          "textBlock:singleSegment": 2
+        }
+      }
+    },
+    {
+      "file": "docs/examples/common-16th.drum",
+      "summary": {
+        "pages": 1,
+        "systems": 1,
+        "measures": 1,
+        "items": 86,
+        "composites": 2,
+        "itemRoles": {
+          "title": 1,
+          "tempo-glyph": 1,
+          "tempo-equals": 1,
+          "tempo": 1,
+          "staff-line": 5,
+          "percussion-clef": 1,
+          "time-signature-digit": 2,
+          "opening-barline": 1,
+          "notehead": 23,
+          "stem": 20,
+          "rest": 8,
+          "flag": 20,
+          "final-barline-thin": 1,
+          "final-barline-thick": 1
+        },
+        "compositeKinds": {
+          "textBlock": 2
+        },
+        "fragmentKinds": {
+          "textBlock:singleSegment": 2
+        }
+      }
+    },
+    {
+      "file": "docs/examples/common-cross-stick.drum",
+      "summary": {
+        "pages": 1,
+        "systems": 1,
+        "measures": 1,
+        "items": 51,
+        "composites": 2,
+        "itemRoles": {
+          "title": 1,
+          "tempo-glyph": 1,
+          "tempo-equals": 1,
+          "tempo": 1,
+          "staff-line": 5,
+          "percussion-clef": 1,
+          "time-signature-digit": 2,
+          "opening-barline": 1,
+          "notehead": 12,
+          "stem": 10,
+          "rest": 4,
+          "flag": 10,
+          "final-barline-thin": 1,
+          "final-barline-thick": 1
+        },
+        "compositeKinds": {
+          "textBlock": 2
+        },
+        "fragmentKinds": {
+          "textBlock:singleSegment": 2
+        }
+      }
+    },
+    {
+      "file": "docs/examples/common-ghost.drum",
+      "summary": {
+        "pages": 1,
+        "systems": 1,
+        "measures": 1,
+        "items": 84,
+        "composites": 2,
+        "itemRoles": {
+          "title": 1,
+          "tempo-glyph": 1,
+          "tempo-equals": 1,
+          "tempo": 1,
+          "staff-line": 5,
+          "percussion-clef": 1,
+          "time-signature-digit": 2,
+          "opening-barline": 1,
+          "notehead": 25,
+          "stem": 19,
+          "rest": 6,
+          "flag": 19,
+          "final-barline-thin": 1,
+          "final-barline-thick": 1
+        },
+        "compositeKinds": {
+          "textBlock": 2
+        },
+        "fragmentKinds": {
+          "textBlock:singleSegment": 2
+        }
+      }
+    },
+    {
+      "file": "docs/examples/common-half-time.drum",
+      "summary": {
+        "pages": 1,
+        "systems": 1,
+        "measures": 1,
+        "items": 46,
+        "composites": 2,
+        "itemRoles": {
+          "title": 1,
+          "tempo-glyph": 1,
+          "tempo-equals": 1,
+          "tempo": 1,
+          "staff-line": 5,
+          "percussion-clef": 1,
+          "time-signature-digit": 2,
+          "opening-barline": 1,
+          "notehead": 10,
+          "stem": 9,
+          "rest": 3,
+          "flag": 9,
+          "final-barline-thin": 1,
+          "final-barline-thick": 1
+        },
+        "compositeKinds": {
+          "textBlock": 2
+        },
+        "fragmentKinds": {
+          "textBlock:singleSegment": 2
+        }
+      }
+    },
+    {
+      "file": "docs/examples/common-open-hh.drum",
+      "summary": {
+        "pages": 1,
+        "systems": 1,
+        "measures": 1,
+        "items": 77,
+        "composites": 2,
+        "itemRoles": {
+          "title": 1,
+          "tempo-glyph": 1,
+          "tempo-equals": 1,
+          "tempo": 1,
+          "staff-line": 5,
+          "percussion-clef": 1,
+          "time-signature-digit": 2,
+          "opening-barline": 1,
+          "notehead": 20,
+          "stem": 18,
+          "rest": 6,
+          "flag": 18,
+          "final-barline-thin": 1,
+          "final-barline-thick": 1
+        },
+        "compositeKinds": {
+          "textBlock": 2
+        },
+        "fragmentKinds": {
+          "textBlock:singleSegment": 2
+        }
+      }
+    },
+    {
+      "file": "docs/examples/common-rock.drum",
+      "summary": {
+        "pages": 1,
+        "systems": 1,
+        "measures": 1,
+        "items": 51,
+        "composites": 2,
+        "itemRoles": {
+          "title": 1,
+          "tempo-glyph": 1,
+          "tempo-equals": 1,
+          "tempo": 1,
+          "staff-line": 5,
+          "percussion-clef": 1,
+          "time-signature-digit": 2,
+          "opening-barline": 1,
+          "notehead": 12,
+          "stem": 10,
+          "rest": 4,
+          "flag": 10,
+          "final-barline-thin": 1,
+          "final-barline-thick": 1
+        },
+        "compositeKinds": {
+          "textBlock": 2
+        },
+        "fragmentKinds": {
+          "textBlock:singleSegment": 2
+        }
+      }
+    },
+    {
+      "file": "docs/examples/common-shuffle.drum",
+      "summary": {
+        "pages": 1,
+        "systems": 1,
+        "measures": 1,
+        "items": 66,
+        "composites": 2,
+        "itemRoles": {
+          "title": 1,
+          "tempo-glyph": 1,
+          "tempo-equals": 1,
+          "tempo": 1,
+          "staff-line": 5,
+          "percussion-clef": 1,
+          "time-signature-digit": 2,
+          "opening-barline": 1,
+          "notehead": 17,
+          "stem": 15,
+          "rest": 4,
+          "flag": 15,
+          "final-barline-thin": 1,
+          "final-barline-thick": 1
+        },
+        "compositeKinds": {
+          "textBlock": 2
+        },
+        "fragmentKinds": {
+          "textBlock:singleSegment": 2
+        }
+      }
+    },
+    {
+      "file": "docs/examples/common-triplet-fill.drum",
+      "summary": {
+        "pages": 1,
+        "systems": 1,
+        "measures": 1,
+        "items": 46,
+        "composites": 2,
+        "itemRoles": {
+          "title": 1,
+          "tempo-glyph": 1,
+          "tempo-equals": 1,
+          "tempo": 1,
+          "staff-line": 5,
+          "percussion-clef": 1,
+          "time-signature-digit": 2,
+          "opening-barline": 1,
+          "rest": 8,
+          "notehead": 13,
+          "stem": 5,
+          "flag": 5,
+          "final-barline-thin": 1,
+          "final-barline-thick": 1
+        },
+        "compositeKinds": {
+          "textBlock": 2
+        },
+        "fragmentKinds": {
+          "textBlock:singleSegment": 2
+        }
+      }
+    },
+    {
+      "file": "docs/examples/full-example.drum",
+      "summary": {
+        "pages": 1,
+        "systems": 7,
+        "measures": 10,
+        "items": 385,
+        "composites": 10,
+        "itemRoles": {
+          "title": 1,
+          "subtitle": 1,
+          "composer": 1,
+          "tempo-glyph": 1,
+          "tempo-equals": 1,
+          "tempo": 1,
+          "staff-line": 35,
+          "percussion-clef": 7,
+          "time-signature-digit": 2,
+          "opening-barline": 6,
+          "notehead": 92,
+          "stem": 70,
+          "rest": 51,
+          "flag": 70,
+          "nav-start": 2,
+          "barline": 7,
+          "measure-number": 6,
+          "accent": 6,
+          "sticking": 8,
+          "repeat-start-thick": 1,
+          "repeat-start-thin": 1,
+          "repeat-dot": 2,
+          "repeat-end-thin": 1,
+          "repeat-end-thick": 1,
+          "nav-end": 2,
+          "double-barline-left": 1,
+          "double-barline-right": 1,
+          "final-barline-thin": 1,
+          "final-barline-thick": 1,
+          "repeat-span-line": 2,
+          "repeat-span-start": 1,
+          "repeat-span-count": 1,
+          "repeat-span-end": 1
+        },
+        "compositeKinds": {
+          "textBlock": 4,
+          "navigation": 4,
+          "repeatSpan": 2
+        },
+        "fragmentKinds": {
+          "textBlock:singleSegment": 4,
+          "navigation:singleSegment": 4,
+          "repeatSpan:start": 1,
+          "repeatSpan:end": 1
+        }
+      }
+    },
+    {
+      "file": "docs/examples/groups.drum",
+      "summary": {
+        "pages": 1,
+        "systems": 7,
+        "measures": 7,
+        "items": 346,
+        "composites": 2,
+        "itemRoles": {
+          "title": 1,
+          "tempo-glyph": 1,
+          "tempo-equals": 1,
+          "tempo": 1,
+          "staff-line": 35,
+          "percussion-clef": 7,
+          "time-signature-digit": 2,
+          "opening-barline": 7,
+          "notehead": 91,
+          "stem": 79,
+          "rest": 28,
+          "flag": 79,
+          "barline": 6,
+          "measure-number": 6,
+          "final-barline-thin": 1,
+          "final-barline-thick": 1
+        },
+        "compositeKinds": {
+          "textBlock": 2
+        },
+        "fragmentKinds": {
+          "textBlock:singleSegment": 2
+        }
+      }
+    },
+    {
+      "file": "docs/examples/hairpins.drum",
+      "summary": {
+        "pages": 1,
+        "systems": 1,
+        "measures": 2,
+        "items": 86,
+        "composites": 4,
+        "itemRoles": {
+          "title": 1,
+          "tempo-glyph": 1,
+          "tempo-equals": 1,
+          "tempo": 1,
+          "staff-line": 5,
+          "percussion-clef": 1,
+          "time-signature-digit": 2,
+          "opening-barline": 1,
+          "notehead": 21,
+          "stem": 18,
+          "rest": 9,
+          "flag": 18,
+          "barline": 1,
+          "final-barline-thin": 1,
+          "final-barline-thick": 1,
+          "hairpin-top": 2,
+          "hairpin-bottom": 2
+        },
+        "compositeKinds": {
+          "textBlock": 2,
+          "hairpin": 2
+        },
+        "fragmentKinds": {
+          "textBlock:singleSegment": 2,
+          "hairpin:singleSegment": 2
+        }
+      }
+    },
+    {
+      "file": "docs/examples/headers.drum",
+      "summary": {
+        "pages": 1,
+        "systems": 1,
+        "measures": 1,
+        "items": 52,
+        "composites": 4,
+        "itemRoles": {
+          "title": 1,
+          "subtitle": 1,
+          "composer": 1,
+          "tempo-glyph": 1,
+          "tempo-equals": 1,
+          "tempo": 1,
+          "staff-line": 5,
+          "percussion-clef": 1,
+          "time-signature-digit": 2,
+          "opening-barline": 1,
+          "notehead": 13,
+          "stem": 11,
+          "rest": 2,
+          "flag": 9,
+          "final-barline-thin": 1,
+          "final-barline-thick": 1
+        },
+        "compositeKinds": {
+          "textBlock": 4
+        },
+        "fragmentKinds": {
+          "textBlock:singleSegment": 4
+        }
+      }
+    },
+    {
+      "file": "docs/examples/inline-repeat.drum",
+      "summary": {
+        "pages": 1,
+        "systems": 1,
+        "measures": 4,
+        "items": 114,
+        "composites": 2,
+        "itemRoles": {
+          "title": 1,
+          "tempo-glyph": 1,
+          "tempo-equals": 1,
+          "tempo": 1,
+          "staff-line": 5,
+          "percussion-clef": 1,
+          "time-signature-digit": 2,
+          "opening-barline": 1,
+          "notehead": 32,
+          "stem": 32,
+          "flag": 32,
+          "barline": 3,
+          "final-barline-thin": 1,
+          "final-barline-thick": 1
+        },
+        "compositeKinds": {
+          "textBlock": 2
+        },
+        "fragmentKinds": {
+          "textBlock:singleSegment": 2
+        }
+      }
+    },
+    {
+      "file": "docs/examples/modifiers.drum",
+      "summary": {
+        "pages": 1,
+        "systems": 6,
+        "measures": 6,
+        "items": 151,
+        "composites": 2,
+        "itemRoles": {
+          "title": 1,
+          "tempo-glyph": 1,
+          "tempo-equals": 1,
+          "tempo": 1,
+          "staff-line": 30,
+          "percussion-clef": 6,
+          "time-signature-digit": 2,
+          "opening-barline": 6,
+          "notehead": 20,
+          "stem": 20,
+          "rest": 29,
+          "flag": 20,
+          "barline": 5,
+          "measure-number": 5,
+          "accent": 2,
+          "final-barline-thin": 1,
+          "final-barline-thick": 1
+        },
+        "compositeKinds": {
+          "textBlock": 2
+        },
+        "fragmentKinds": {
+          "textBlock:singleSegment": 2
+        }
+      }
+    },
+    {
+      "file": "docs/examples/multi-rest.drum",
+      "summary": {
+        "pages": 1,
+        "systems": 1,
+        "measures": 1,
+        "items": 17,
+        "composites": 3,
+        "itemRoles": {
+          "title": 1,
+          "tempo-glyph": 1,
+          "tempo-equals": 1,
+          "tempo": 1,
+          "staff-line": 5,
+          "percussion-clef": 1,
+          "time-signature-digit": 2,
+          "opening-barline": 1,
+          "multi-rest-bar": 1,
+          "multi-rest-count": 1,
+          "final-barline-thin": 1,
+          "final-barline-thick": 1
+        },
+        "compositeKinds": {
+          "textBlock": 2,
+          "multiRest": 1
+        },
+        "fragmentKinds": {
+          "textBlock:singleSegment": 2,
+          "multiRest:singleSegment": 1
+        }
+      }
+    },
+    {
+      "file": "docs/examples/musicxml.drum",
+      "summary": {
+        "pages": 1,
+        "systems": 1,
+        "measures": 1,
+        "items": 51,
+        "composites": 2,
+        "itemRoles": {
+          "title": 1,
+          "tempo-glyph": 1,
+          "tempo-equals": 1,
+          "tempo": 1,
+          "staff-line": 5,
+          "percussion-clef": 1,
+          "time-signature-digit": 2,
+          "opening-barline": 1,
+          "notehead": 12,
+          "stem": 10,
+          "rest": 4,
+          "flag": 10,
+          "final-barline-thin": 1,
+          "final-barline-thick": 1
+        },
+        "compositeKinds": {
+          "textBlock": 2
+        },
+        "fragmentKinds": {
+          "textBlock:singleSegment": 2
+        }
+      }
+    },
+    {
+      "file": "docs/examples/overview.drum",
+      "summary": {
+        "pages": 1,
+        "systems": 1,
+        "measures": 1,
+        "items": 51,
+        "composites": 2,
+        "itemRoles": {
+          "title": 1,
+          "tempo-glyph": 1,
+          "tempo-equals": 1,
+          "tempo": 1,
+          "staff-line": 5,
+          "percussion-clef": 1,
+          "time-signature-digit": 2,
+          "opening-barline": 1,
+          "notehead": 12,
+          "stem": 10,
+          "rest": 4,
+          "flag": 10,
+          "final-barline-thin": 1,
+          "final-barline-thick": 1
+        },
+        "compositeKinds": {
+          "textBlock": 2
+        },
+        "fragmentKinds": {
+          "textBlock:singleSegment": 2
+        }
+      }
+    },
+    {
+      "file": "docs/examples/repeats.drum",
+      "summary": {
+        "pages": 1,
+        "systems": 6,
+        "measures": 17,
+        "items": 461,
+        "composites": 20,
+        "itemRoles": {
+          "title": 1,
+          "tempo-glyph": 1,
+          "tempo-equals": 1,
+          "tempo": 1,
+          "staff-line": 30,
+          "percussion-clef": 6,
+          "time-signature-digit": 2,
+          "repeat-start-thick": 1,
+          "repeat-start-thin": 1,
+          "repeat-dot": 2,
+          "notehead": 132,
+          "stem": 116,
+          "rest": 26,
+          "barline": 11,
+          "flag": 78,
+          "repeat-end-thin": 1,
+          "repeat-end-thick": 1,
+          "measure-number": 5,
+          "opening-barline": 5,
+          "measure-repeat": 2,
+          "nav-start": 2,
+          "nav-end": 5,
+          "double-barline-left": 4,
+          "double-barline-right": 4,
+          "final-barline-thin": 1,
+          "final-barline-thick": 1,
+          "repeat-span-line": 1,
+          "repeat-span-start": 1,
+          "repeat-span-end": 1,
+          "repeat-span-count": 1,
+          "volta-line": 8,
+          "volta-start-hook": 3,
+          "volta-label": 3,
+          "volta-end-hook": 3
+        },
+        "compositeKinds": {
+          "textBlock": 2,
+          "measureRepeat": 2,
+          "navigation": 7,
+          "repeatSpan": 1,
+          "volta": 8
+        },
+        "fragmentKinds": {
+          "textBlock:singleSegment": 2,
+          "measureRepeat:singleSegment": 2,
+          "navigation:singleSegment": 7,
+          "repeatSpan:singleSegment": 1,
+          "volta:singleSegment": 1,
+          "volta:start": 2,
+          "volta:end": 2,
+          "volta:continuation": 3
+        }
+      }
+    },
+    {
+      "file": "docs/examples/sticking.drum",
+      "summary": {
+        "pages": 1,
+        "systems": 1,
+        "measures": 1,
+        "items": 47,
+        "composites": 2,
+        "itemRoles": {
+          "title": 1,
+          "tempo-glyph": 1,
+          "tempo-equals": 1,
+          "tempo": 1,
+          "staff-line": 5,
+          "percussion-clef": 1,
+          "time-signature-digit": 2,
+          "opening-barline": 1,
+          "notehead": 8,
+          "stem": 8,
+          "sticking": 8,
+          "flag": 8,
+          "final-barline-thin": 1,
+          "final-barline-thick": 1
+        },
+        "compositeKinds": {
+          "textBlock": 2
+        },
+        "fragmentKinds": {
+          "textBlock:singleSegment": 2
+        }
+      }
+    },
+    {
+      "file": "docs/examples/tokens.drum",
+      "summary": {
+        "pages": 1,
+        "systems": 1,
+        "measures": 1,
+        "items": 51,
+        "composites": 2,
+        "itemRoles": {
+          "title": 1,
+          "tempo-glyph": 1,
+          "tempo-equals": 1,
+          "tempo": 1,
+          "staff-line": 5,
+          "percussion-clef": 1,
+          "time-signature-digit": 2,
+          "opening-barline": 1,
+          "notehead": 12,
+          "stem": 8,
+          "rest": 8,
+          "flag": 8,
+          "final-barline-thin": 1,
+          "final-barline-thick": 1
+        },
+        "compositeKinds": {
+          "textBlock": 2
+        },
+        "fragmentKinds": {
+          "textBlock:singleSegment": 2
+        }
+      }
+    },
+    {
+      "file": "docs/examples/tracks.drum",
+      "summary": {
+        "pages": 1,
+        "systems": 3,
+        "measures": 5,
+        "items": 231,
+        "composites": 2,
+        "itemRoles": {
+          "title": 1,
+          "tempo-glyph": 1,
+          "tempo-equals": 1,
+          "tempo": 1,
+          "staff-line": 15,
+          "percussion-clef": 3,
+          "time-signature-digit": 2,
+          "opening-barline": 3,
+          "notehead": 59,
+          "stem": 57,
+          "rest": 13,
+          "flag": 56,
+          "barline": 4,
+          "measure-number": 2,
+          "sticking": 11,
+          "final-barline-thin": 1,
+          "final-barline-thick": 1
+        },
+        "compositeKinds": {
+          "textBlock": 2
+        },
+        "fragmentKinds": {
+          "textBlock:singleSegment": 2
+        }
+      }
+    },
+    {
+      "file": "docs/examples/validation.drum",
+      "summary": {
+        "pages": 1,
+        "systems": 1,
+        "measures": 1,
+        "items": 28,
+        "composites": 2,
+        "itemRoles": {
+          "title": 1,
+          "tempo-glyph": 1,
+          "tempo-equals": 1,
+          "tempo": 1,
+          "staff-line": 5,
+          "percussion-clef": 1,
+          "time-signature-digit": 2,
+          "opening-barline": 1,
+          "notehead": 4,
+          "stem": 4,
+          "rest": 1,
+          "flag": 4,
+          "final-barline-thin": 1,
+          "final-barline-thick": 1
+        },
+        "compositeKinds": {
+          "textBlock": 2
+        },
+        "fragmentKinds": {
+          "textBlock:singleSegment": 2
+        }
+      }
+    },
+    {
+      "file": "examples/你要跳舞吗.drum",
+      "summary": {
+        "pages": 1,
+        "systems": 19,
+        "measures": 73,
+        "items": 1779,
+        "composites": 12,
+        "itemRoles": {
+          "title": 1,
+          "tempo-glyph": 1,
+          "tempo-equals": 1,
+          "tempo": 1,
+          "staff-line": 95,
+          "percussion-clef": 19,
+          "time-signature-digit": 2,
+          "opening-barline": 17,
+          "notehead": 555,
+          "stem": 555,
+          "flag": 414,
+          "barline": 70,
+          "measure-number": 18,
+          "repeat-start-thick": 2,
+          "repeat-start-thin": 2,
+          "repeat-dot": 4,
+          "repeat-end-thin": 2,
+          "repeat-end-thick": 2,
+          "final-barline-thin": 1,
+          "final-barline-thick": 1,
+          "repeat-span-line": 10,
+          "repeat-span-start": 2,
+          "repeat-span-count": 2,
+          "repeat-span-end": 2
+        },
+        "compositeKinds": {
+          "textBlock": 2,
+          "repeatSpan": 10
+        },
+        "fragmentKinds": {
+          "textBlock:singleSegment": 2,
+          "repeatSpan:start": 2,
+          "repeatSpan:continuation": 6,
+          "repeatSpan:end": 2
+        }
+      }
+    },
+    {
+      "file": "examples/李白-李荣浩.drum",
+      "summary": {
+        "pages": 1,
+        "systems": 21,
+        "measures": 80,
+        "items": 3105,
+        "composites": 90,
+        "itemRoles": {
+          "title": 1,
+          "subtitle": 1,
+          "tempo-glyph": 1,
+          "tempo-equals": 1,
+          "tempo": 1,
+          "staff-line": 105,
+          "percussion-clef": 21,
+          "time-signature-digit": 2,
+          "opening-barline": 14,
+          "notehead": 980,
+          "stem": 802,
+          "rest": 169,
+          "flag": 703,
+          "barline": 65,
+          "measure-number": 20,
+          "repeat-start-thick": 7,
+          "repeat-start-thin": 7,
+          "repeat-dot": 17,
+          "repeat-end-thin": 10,
+          "repeat-end-thick": 10,
+          "double-barline-left": 5,
+          "double-barline-right": 5,
+          "repeat-span-line": 67,
+          "repeat-span-start": 10,
+          "repeat-span-count": 10,
+          "repeat-span-end": 10,
+          "volta-line": 18,
+          "volta-start-hook": 13,
+          "volta-label": 13,
+          "volta-end-hook": 13,
+          "hairpin-top": 2,
+          "hairpin-bottom": 2
+        },
+        "compositeKinds": {
+          "textBlock": 3,
+          "repeatSpan": 67,
+          "volta": 18,
+          "hairpin": 2
+        },
+        "fragmentKinds": {
+          "textBlock:singleSegment": 3,
+          "repeatSpan:start": 8,
+          "repeatSpan:continuation": 49,
+          "repeatSpan:end": 8,
+          "repeatSpan:singleSegment": 2,
+          "volta:singleSegment": 9,
+          "volta:start": 4,
+          "volta:end": 4,
+          "volta:continuation": 1,
+          "hairpin:singleSegment": 2
+        }
+      }
+    }
+  ],
+  "oracleReport": [
+    {
+      "file": "docs/examples/architecture.drum",
+      "diffs": {
+        "lineCount": {
+          "layout": 15,
+          "vexflow": 0
+        },
+        "rectCount": {
+          "layout": 3,
+          "vexflow": 15
+        },
+        "textCount": {
+          "layout": 33,
+          "vexflow": 25
+        },
+        "openingBarlines": {
+          "layout": 1,
+          "vexflow": 0
+        },
+        "finalBarlineThin": {
+          "layout": 1,
+          "vexflow": 0
+        },
+        "finalBarlineThick": {
+          "layout": 1,
+          "vexflow": 0
+        },
+        "noteheads": {
+          "layout": 12,
+          "vexflow": 0
+        },
+        "stems": {
+          "layout": 10,
+          "vexflow": 0
+        },
+        "rests": {
+          "layout": 4,
+          "vexflow": 0
+        }
+      }
+    },
+    {
+      "file": "docs/examples/combined-hits.drum",
+      "diffs": {
+        "lineCount": {
+          "layout": 11,
+          "vexflow": 0
+        },
+        "rectCount": {
+          "layout": 3,
+          "vexflow": 15
+        },
+        "textCount": {
+          "layout": 27,
+          "vexflow": 30
+        },
+        "openingBarlines": {
+          "layout": 1,
+          "vexflow": 0
+        },
+        "finalBarlineThin": {
+          "layout": 1,
+          "vexflow": 0
+        },
+        "finalBarlineThick": {
+          "layout": 1,
+          "vexflow": 0
+        },
+        "noteheads": {
+          "layout": 10,
+          "vexflow": 0
+        },
+        "stems": {
+          "layout": 6,
+          "vexflow": 0
+        },
+        "rests": {
+          "layout": 4,
+          "vexflow": 0
+        }
+      }
+    },
+    {
+      "file": "docs/examples/common-16th.drum",
+      "diffs": {
+        "lineCount": {
+          "layout": 25,
+          "vexflow": 0
+        },
+        "rectCount": {
+          "layout": 3,
+          "vexflow": 29
+        },
+        "textCount": {
+          "layout": 58,
+          "vexflow": 42
+        },
+        "openingBarlines": {
+          "layout": 1,
+          "vexflow": 0
+        },
+        "finalBarlineThin": {
+          "layout": 1,
+          "vexflow": 0
+        },
+        "finalBarlineThick": {
+          "layout": 1,
+          "vexflow": 0
+        },
+        "noteheads": {
+          "layout": 23,
+          "vexflow": 0
+        },
+        "stems": {
+          "layout": 20,
+          "vexflow": 0
+        },
+        "rests": {
+          "layout": 8,
+          "vexflow": 0
+        }
+      }
+    },
+    {
+      "file": "docs/examples/common-cross-stick.drum",
+      "diffs": {
+        "lineCount": {
+          "layout": 15,
+          "vexflow": 0
+        },
+        "rectCount": {
+          "layout": 3,
+          "vexflow": 15
+        },
+        "textCount": {
+          "layout": 33,
+          "vexflow": 25
+        },
+        "openingBarlines": {
+          "layout": 1,
+          "vexflow": 0
+        },
+        "finalBarlineThin": {
+          "layout": 1,
+          "vexflow": 0
+        },
+        "finalBarlineThick": {
+          "layout": 1,
+          "vexflow": 0
+        },
+        "noteheads": {
+          "layout": 12,
+          "vexflow": 0
+        },
+        "stems": {
+          "layout": 10,
+          "vexflow": 0
+        },
+        "rests": {
+          "layout": 4,
+          "vexflow": 0
+        }
+      }
+    },
+    {
+      "file": "docs/examples/common-ghost.drum",
+      "diffs": {
+        "lineCount": {
+          "layout": 24,
+          "vexflow": 0
+        },
+        "rectCount": {
+          "layout": 3,
+          "vexflow": 25
+        },
+        "textCount": {
+          "layout": 57,
+          "vexflow": 40
+        },
+        "openingBarlines": {
+          "layout": 1,
+          "vexflow": 0
+        },
+        "finalBarlineThin": {
+          "layout": 1,
+          "vexflow": 0
+        },
+        "finalBarlineThick": {
+          "layout": 1,
+          "vexflow": 0
+        },
+        "noteheads": {
+          "layout": 25,
+          "vexflow": 0
+        },
+        "stems": {
+          "layout": 19,
+          "vexflow": 0
+        },
+        "rests": {
+          "layout": 6,
+          "vexflow": 0
+        }
+      }
+    },
+    {
+      "file": "docs/examples/common-half-time.drum",
+      "diffs": {
+        "lineCount": {
+          "layout": 14,
+          "vexflow": 0
+        },
+        "rectCount": {
+          "layout": 3,
+          "vexflow": 14
+        },
+        "textCount": {
+          "layout": 29,
+          "vexflow": 21
+        },
+        "openingBarlines": {
+          "layout": 1,
+          "vexflow": 0
+        },
+        "finalBarlineThin": {
+          "layout": 1,
+          "vexflow": 0
+        },
+        "finalBarlineThick": {
+          "layout": 1,
+          "vexflow": 0
+        },
+        "noteheads": {
+          "layout": 10,
+          "vexflow": 0
+        },
+        "stems": {
+          "layout": 9,
+          "vexflow": 0
+        },
+        "rests": {
+          "layout": 3,
+          "vexflow": 0
+        }
+      }
+    },
+    {
+      "file": "docs/examples/common-open-hh.drum",
+      "diffs": {
+        "lineCount": {
+          "layout": 23,
+          "vexflow": 0
+        },
+        "rectCount": {
+          "layout": 3,
+          "vexflow": 25
+        },
+        "textCount": {
+          "layout": 51,
+          "vexflow": 36
+        },
+        "openingBarlines": {
+          "layout": 1,
+          "vexflow": 0
+        },
+        "finalBarlineThin": {
+          "layout": 1,
+          "vexflow": 0
+        },
+        "finalBarlineThick": {
+          "layout": 1,
+          "vexflow": 0
+        },
+        "noteheads": {
+          "layout": 20,
+          "vexflow": 0
+        },
+        "stems": {
+          "layout": 18,
+          "vexflow": 0
+        },
+        "rests": {
+          "layout": 6,
+          "vexflow": 0
+        }
+      }
+    },
+    {
+      "file": "docs/examples/common-rock.drum",
+      "diffs": {
+        "lineCount": {
+          "layout": 15,
+          "vexflow": 0
+        },
+        "rectCount": {
+          "layout": 3,
+          "vexflow": 15
+        },
+        "textCount": {
+          "layout": 33,
+          "vexflow": 25
+        },
+        "openingBarlines": {
+          "layout": 1,
+          "vexflow": 0
+        },
+        "finalBarlineThin": {
+          "layout": 1,
+          "vexflow": 0
+        },
+        "finalBarlineThick": {
+          "layout": 1,
+          "vexflow": 0
+        },
+        "noteheads": {
+          "layout": 12,
+          "vexflow": 0
+        },
+        "stems": {
+          "layout": 10,
+          "vexflow": 0
+        },
+        "rests": {
+          "layout": 4,
+          "vexflow": 0
+        }
+      }
+    },
+    {
+      "file": "docs/examples/common-shuffle.drum",
+      "diffs": {
+        "lineCount": {
+          "layout": 20,
+          "vexflow": 0
+        },
+        "rectCount": {
+          "layout": 3,
+          "vexflow": 22
+        },
+        "textCount": {
+          "layout": 43,
+          "vexflow": 32
+        },
+        "openingBarlines": {
+          "layout": 1,
+          "vexflow": 0
+        },
+        "finalBarlineThin": {
+          "layout": 1,
+          "vexflow": 0
+        },
+        "finalBarlineThick": {
+          "layout": 1,
+          "vexflow": 0
+        },
+        "noteheads": {
+          "layout": 17,
+          "vexflow": 0
+        },
+        "stems": {
+          "layout": 15,
+          "vexflow": 0
+        },
+        "rests": {
+          "layout": 4,
+          "vexflow": 0
+        },
+        "semanticTextTokens": {
+          "layout": "12 || 120 || Shuffle Feel",
+          "vexflow": "120 || Shuffle Feel"
+        }
+      }
+    },
+    {
+      "file": "docs/examples/common-triplet-fill.drum",
+      "diffs": {
+        "lineCount": {
+          "layout": 10,
+          "vexflow": 0
+        },
+        "rectCount": {
+          "layout": 3,
+          "vexflow": 25
+        },
+        "textCount": {
+          "layout": 33,
+          "vexflow": 29
+        },
+        "openingBarlines": {
+          "layout": 1,
+          "vexflow": 0
+        },
+        "finalBarlineThin": {
+          "layout": 1,
+          "vexflow": 0
+        },
+        "finalBarlineThick": {
+          "layout": 1,
+          "vexflow": 0
+        },
+        "noteheads": {
+          "layout": 13,
+          "vexflow": 0
+        },
+        "stems": {
+          "layout": 5,
+          "vexflow": 0
+        },
+        "rests": {
+          "layout": 8,
+          "vexflow": 0
+        }
+      }
+    },
+    {
+      "file": "docs/examples/full-example.drum",
+      "diffs": {
+        "lineCount": {
+          "layout": 109,
+          "vexflow": 0
+        },
+        "rectCount": {
+          "layout": 21,
+          "vexflow": 82
+        },
+        "textCount": {
+          "layout": 255,
+          "vexflow": 140
+        },
+        "openingBarlines": {
+          "layout": 6,
+          "vexflow": 0
+        },
+        "genericBarlines": {
+          "layout": 7,
+          "vexflow": 0
+        },
+        "finalBarlineThin": {
+          "layout": 1,
+          "vexflow": 0
+        },
+        "finalBarlineThick": {
+          "layout": 1,
+          "vexflow": 0
+        },
+        "doubleBarlineLeft": {
+          "layout": 1,
+          "vexflow": 0
+        },
+        "doubleBarlineRight": {
+          "layout": 1,
+          "vexflow": 0
+        },
+        "noteheads": {
+          "layout": 92,
+          "vexflow": 0
+        },
+        "stems": {
+          "layout": 70,
+          "vexflow": 0
+        },
+        "rests": {
+          "layout": 51,
+          "vexflow": 0
+        },
+        "navStarts": {
+          "layout": 2,
+          "vexflow": 0
+        },
+        "navEnds": {
+          "layout": 2,
+          "vexflow": 0
+        },
+        "repeatSpanLines": {
+          "layout": 2,
+          "vexflow": 0
+        },
+        "sticking": {
+          "layout": 8,
+          "vexflow": 0
+        },
+        "accents": {
+          "layout": 6,
+          "vexflow": 0
+        },
+        "semanticTextTokens": {
+          "layout": "10 || 108 || 2 || 2x || 3 || 4 || 5 || 6 || > || > || > || > || > || > || @coda || @fine || @segno || @to-coda || Demo — Full Feature Showcase || Fusion Groove || G. Mao || L || L || L || L || R || R || R || R",
+          "vexflow": "108 || 2 || 3 || 4 || 5 || 6 || Demo — Full Feature Showcase || Fine || Fusion Groove || G. Mao || L || L || L || L || R || R || R || R"
+        }
+      }
+    },
+    {
+      "file": "docs/examples/groups.drum",
+      "diffs": {
+        "lineCount": {
+          "layout": 114,
+          "vexflow": 0
+        },
+        "rectCount": {
+          "layout": 15,
+          "vexflow": 145
+        },
+        "textCount": {
+          "layout": 217,
+          "vexflow": 165
+        },
+        "openingBarlines": {
+          "layout": 7,
+          "vexflow": 0
+        },
+        "genericBarlines": {
+          "layout": 6,
+          "vexflow": 0
+        },
+        "finalBarlineThin": {
+          "layout": 1,
+          "vexflow": 0
+        },
+        "finalBarlineThick": {
+          "layout": 1,
+          "vexflow": 0
+        },
+        "noteheads": {
+          "layout": 91,
+          "vexflow": 0
+        },
+        "stems": {
+          "layout": 79,
+          "vexflow": 0
+        },
+        "rests": {
+          "layout": 28,
+          "vexflow": 0
+        }
+      }
+    },
+    {
+      "file": "docs/examples/hairpins.drum",
+      "diffs": {
+        "lineCount": {
+          "layout": 27,
+          "vexflow": 0
+        },
+        "rectCount": {
+          "layout": 4,
+          "vexflow": 30
+        },
+        "textCount": {
+          "layout": 55,
+          "vexflow": 43
+        },
+        "openingBarlines": {
+          "layout": 1,
+          "vexflow": 0
+        },
+        "genericBarlines": {
+          "layout": 1,
+          "vexflow": 0
+        },
+        "finalBarlineThin": {
+          "layout": 1,
+          "vexflow": 0
+        },
+        "finalBarlineThick": {
+          "layout": 1,
+          "vexflow": 0
+        },
+        "noteheads": {
+          "layout": 21,
+          "vexflow": 0
+        },
+        "stems": {
+          "layout": 18,
+          "vexflow": 0
+        },
+        "rests": {
+          "layout": 9,
+          "vexflow": 0
+        },
+        "hairpinTop": {
+          "layout": 2,
+          "vexflow": 0
+        },
+        "hairpinBottom": {
+          "layout": 2,
+          "vexflow": 0
+        }
+      }
+    },
+    {
+      "file": "docs/examples/headers.drum",
+      "diffs": {
+        "lineCount": {
+          "layout": 16,
+          "vexflow": 0
+        },
+        "rectCount": {
+          "layout": 3,
+          "vexflow": 16
+        },
+        "textCount": {
+          "layout": 33,
+          "vexflow": 25
+        },
+        "openingBarlines": {
+          "layout": 1,
+          "vexflow": 0
+        },
+        "finalBarlineThin": {
+          "layout": 1,
+          "vexflow": 0
+        },
+        "finalBarlineThick": {
+          "layout": 1,
+          "vexflow": 0
+        },
+        "noteheads": {
+          "layout": 13,
+          "vexflow": 0
+        },
+        "stems": {
+          "layout": 11,
+          "vexflow": 0
+        },
+        "rests": {
+          "layout": 2,
+          "vexflow": 0
+        }
+      }
+    },
+    {
+      "file": "docs/examples/inline-repeat.drum",
+      "diffs": {
+        "lineCount": {
+          "layout": 37,
+          "vexflow": 0
+        },
+        "rectCount": {
+          "layout": 6,
+          "vexflow": 45
+        },
+        "textCount": {
+          "layout": 71,
+          "vexflow": 43
+        },
+        "openingBarlines": {
+          "layout": 1,
+          "vexflow": 0
+        },
+        "genericBarlines": {
+          "layout": 3,
+          "vexflow": 0
+        },
+        "finalBarlineThin": {
+          "layout": 1,
+          "vexflow": 0
+        },
+        "finalBarlineThick": {
+          "layout": 1,
+          "vexflow": 0
+        },
+        "noteheads": {
+          "layout": 32,
+          "vexflow": 0
+        },
+        "stems": {
+          "layout": 32,
+          "vexflow": 0
+        }
+      }
+    },
+    {
+      "file": "docs/examples/modifiers.drum",
+      "diffs": {
+        "lineCount": {
+          "layout": 50,
+          "vexflow": 0
+        },
+        "rectCount": {
+          "layout": 13,
+          "vexflow": 63
+        },
+        "textCount": {
+          "layout": 88,
+          "vexflow": 104
+        },
+        "openingBarlines": {
+          "layout": 6,
+          "vexflow": 0
+        },
+        "genericBarlines": {
+          "layout": 5,
+          "vexflow": 0
+        },
+        "finalBarlineThin": {
+          "layout": 1,
+          "vexflow": 0
+        },
+        "finalBarlineThick": {
+          "layout": 1,
+          "vexflow": 0
+        },
+        "noteheads": {
+          "layout": 20,
+          "vexflow": 0
+        },
+        "stems": {
+          "layout": 20,
+          "vexflow": 0
+        },
+        "rests": {
+          "layout": 29,
+          "vexflow": 0
+        },
+        "accents": {
+          "layout": 2,
+          "vexflow": 0
+        },
+        "semanticTextTokens": {
+          "layout": "2 || 3 || 4 || 5 || 6 || 96 || > || > || Articulation Techniques",
+          "vexflow": "2 || 3 || 4 || 5 || 6 || 96 || Articulation Techniques"
+        }
+      }
+    },
+    {
+      "file": "docs/examples/multi-rest.drum",
+      "diffs": {
+        "lineCount": {
+          "layout": 6,
+          "vexflow": 0
+        },
+        "textCount": {
+          "layout": 8,
+          "vexflow": 9
+        },
+        "openingBarlines": {
+          "layout": 1,
+          "vexflow": 0
+        },
+        "finalBarlineThin": {
+          "layout": 1,
+          "vexflow": 0
+        },
+        "finalBarlineThick": {
+          "layout": 1,
+          "vexflow": 0
+        },
+        "multiRestBars": {
+          "layout": 1,
+          "vexflow": 0
+        },
+        "multiRestCounts": {
+          "layout": 1,
+          "vexflow": 0
+        },
+        "semanticTextTokens": {
+          "layout": "120 || 16 || Extended Rest",
+          "vexflow": "120 || Extended Rest"
+        }
+      }
+    },
+    {
+      "file": "docs/examples/musicxml.drum",
+      "diffs": {
+        "lineCount": {
+          "layout": 15,
+          "vexflow": 0
+        },
+        "rectCount": {
+          "layout": 3,
+          "vexflow": 15
+        },
+        "textCount": {
+          "layout": 33,
+          "vexflow": 25
+        },
+        "openingBarlines": {
+          "layout": 1,
+          "vexflow": 0
+        },
+        "finalBarlineThin": {
+          "layout": 1,
+          "vexflow": 0
+        },
+        "finalBarlineThick": {
+          "layout": 1,
+          "vexflow": 0
+        },
+        "noteheads": {
+          "layout": 12,
+          "vexflow": 0
+        },
+        "stems": {
+          "layout": 10,
+          "vexflow": 0
+        },
+        "rests": {
+          "layout": 4,
+          "vexflow": 0
+        }
+      }
+    },
+    {
+      "file": "docs/examples/overview.drum",
+      "diffs": {
+        "lineCount": {
+          "layout": 15,
+          "vexflow": 0
+        },
+        "rectCount": {
+          "layout": 3,
+          "vexflow": 15
+        },
+        "textCount": {
+          "layout": 33,
+          "vexflow": 25
+        },
+        "openingBarlines": {
+          "layout": 1,
+          "vexflow": 0
+        },
+        "finalBarlineThin": {
+          "layout": 1,
+          "vexflow": 0
+        },
+        "finalBarlineThick": {
+          "layout": 1,
+          "vexflow": 0
+        },
+        "noteheads": {
+          "layout": 12,
+          "vexflow": 0
+        },
+        "stems": {
+          "layout": 10,
+          "vexflow": 0
+        },
+        "rests": {
+          "layout": 4,
+          "vexflow": 0
+        }
+      }
+    },
+    {
+      "file": "docs/examples/repeats.drum",
+      "diffs": {
+        "lineCount": {
+          "layout": 163,
+          "vexflow": 0
+        },
+        "rectCount": {
+          "layout": 30,
+          "vexflow": 195
+        },
+        "textCount": {
+          "layout": 268,
+          "vexflow": 188
+        },
+        "openingBarlines": {
+          "layout": 5,
+          "vexflow": 0
+        },
+        "genericBarlines": {
+          "layout": 11,
+          "vexflow": 0
+        },
+        "finalBarlineThin": {
+          "layout": 1,
+          "vexflow": 0
+        },
+        "finalBarlineThick": {
+          "layout": 1,
+          "vexflow": 0
+        },
+        "doubleBarlineLeft": {
+          "layout": 4,
+          "vexflow": 0
+        },
+        "doubleBarlineRight": {
+          "layout": 4,
+          "vexflow": 0
+        },
+        "noteheads": {
+          "layout": 132,
+          "vexflow": 0
+        },
+        "stems": {
+          "layout": 116,
+          "vexflow": 0
+        },
+        "rests": {
+          "layout": 26,
+          "vexflow": 0
+        },
+        "measureRepeats": {
+          "layout": 2,
+          "vexflow": 0
+        },
+        "navStarts": {
+          "layout": 2,
+          "vexflow": 0
+        },
+        "navEnds": {
+          "layout": 5,
+          "vexflow": 0
+        },
+        "repeatSpanLines": {
+          "layout": 1,
+          "vexflow": 0
+        },
+        "voltaLines": {
+          "layout": 8,
+          "vexflow": 0
+        },
+        "semanticTextTokens": {
+          "layout": "% || %% || 1. || 10 || 120 || 13 || 16 || 2. || 2x || 3. || 4 || 7 || @coda || @dc-al-coda || @dc-al-fine || @ds-al-coda || @fine || @segno || @to-coda || Repeat Structure",
+          "vexflow": "1. || 10 || 120 || 13 || 16 || 2. || 3. || 4 || 7 || D.C. al Coda || D.C. al Fine || D.S. al Coda || Fine || Repeat Structure || To"
+        }
+      }
+    },
+    {
+      "file": "docs/examples/sticking.drum",
+      "diffs": {
+        "lineCount": {
+          "layout": 13,
+          "vexflow": 0
+        },
+        "rectCount": {
+          "layout": 3,
+          "vexflow": 12
+        },
+        "textCount": {
+          "layout": 31,
+          "vexflow": 24
+        },
+        "openingBarlines": {
+          "layout": 1,
+          "vexflow": 0
+        },
+        "finalBarlineThin": {
+          "layout": 1,
+          "vexflow": 0
+        },
+        "finalBarlineThick": {
+          "layout": 1,
+          "vexflow": 0
+        },
+        "noteheads": {
+          "layout": 8,
+          "vexflow": 0
+        },
+        "stems": {
+          "layout": 8,
+          "vexflow": 0
+        },
+        "sticking": {
+          "layout": 8,
+          "vexflow": 0
+        }
+      }
+    },
+    {
+      "file": "docs/examples/tokens.drum",
+      "diffs": {
+        "lineCount": {
+          "layout": 13,
+          "vexflow": 0
+        },
+        "rectCount": {
+          "layout": 3,
+          "vexflow": 15
+        },
+        "textCount": {
+          "layout": 35,
+          "vexflow": 31
+        },
+        "openingBarlines": {
+          "layout": 1,
+          "vexflow": 0
+        },
+        "finalBarlineThin": {
+          "layout": 1,
+          "vexflow": 0
+        },
+        "finalBarlineThick": {
+          "layout": 1,
+          "vexflow": 0
+        },
+        "noteheads": {
+          "layout": 12,
+          "vexflow": 0
+        },
+        "stems": {
+          "layout": 8,
+          "vexflow": 0
+        },
+        "rests": {
+          "layout": 8,
+          "vexflow": 0
+        }
+      }
+    },
+    {
+      "file": "docs/examples/tracks.drum",
+      "diffs": {
+        "lineCount": {
+          "layout": 72,
+          "vexflow": 0
+        },
+        "rectCount": {
+          "layout": 9,
+          "vexflow": 79
+        },
+        "textCount": {
+          "layout": 150,
+          "vexflow": 100
+        },
+        "openingBarlines": {
+          "layout": 3,
+          "vexflow": 0
+        },
+        "genericBarlines": {
+          "layout": 4,
+          "vexflow": 0
+        },
+        "finalBarlineThin": {
+          "layout": 1,
+          "vexflow": 0
+        },
+        "finalBarlineThick": {
+          "layout": 1,
+          "vexflow": 0
+        },
+        "noteheads": {
+          "layout": 59,
+          "vexflow": 0
+        },
+        "stems": {
+          "layout": 57,
+          "vexflow": 0
+        },
+        "rests": {
+          "layout": 13,
+          "vexflow": 0
+        },
+        "sticking": {
+          "layout": 11,
+          "vexflow": 0
+        }
+      }
+    },
+    {
+      "file": "docs/examples/validation.drum",
+      "diffs": {
+        "lineCount": {
+          "layout": 9,
+          "vexflow": 0
+        },
+        "rectCount": {
+          "layout": 3,
+          "vexflow": 9
+        },
+        "textCount": {
+          "layout": 16,
+          "vexflow": 14
+        },
+        "openingBarlines": {
+          "layout": 1,
+          "vexflow": 0
+        },
+        "finalBarlineThin": {
+          "layout": 1,
+          "vexflow": 0
+        },
+        "finalBarlineThick": {
+          "layout": 1,
+          "vexflow": 0
+        },
+        "noteheads": {
+          "layout": 4,
+          "vexflow": 0
+        },
+        "stems": {
+          "layout": 4,
+          "vexflow": 0
+        },
+        "rests": {
+          "layout": 1,
+          "vexflow": 0
+        }
+      }
+    },
+    {
+      "file": "examples/你要跳舞吗.drum",
+      "diffs": {
+        "lineCount": {
+          "layout": 664,
+          "vexflow": 0
+        },
+        "rectCount": {
+          "layout": 97,
+          "vexflow": 785
+        },
+        "textCount": {
+          "layout": 1018,
+          "vexflow": 675
+        },
+        "openingBarlines": {
+          "layout": 17,
+          "vexflow": 0
+        },
+        "genericBarlines": {
+          "layout": 70,
+          "vexflow": 0
+        },
+        "finalBarlineThin": {
+          "layout": 1,
+          "vexflow": 0
+        },
+        "finalBarlineThick": {
+          "layout": 1,
+          "vexflow": 0
+        },
+        "noteheads": {
+          "layout": 555,
+          "vexflow": 0
+        },
+        "stems": {
+          "layout": 555,
+          "vexflow": 0
+        },
+        "repeatSpanLines": {
+          "layout": 10,
+          "vexflow": 0
+        },
+        "semanticTextTokens": {
+          "layout": "10 || 14 || 150 || 18 || 2 || 22 || 26 || 2x || 2x || 30 || 34 || 38 || 42 || 46 || 50 || 54 || 58 || 6 || 62 || 66 || 70 || 你要跳舞吗",
+          "vexflow": "10 || 14 || 150 || 18 || 2 || 22 || 26 || 30 || 34 || 38 || 42 || 46 || 50 || 54 || 58 || 6 || 62 || 66 || 70 || 你要跳舞吗"
+        }
+      }
+    },
+    {
+      "file": "examples/李白-李荣浩.drum",
+      "diffs": {
+        "lineCount": {
+          "layout": 1042,
+          "vexflow": 0
+        },
+        "rectCount": {
+          "layout": 123,
+          "vexflow": 1198
+        },
+        "textCount": {
+          "layout": 1940,
+          "vexflow": 1220
+        },
+        "openingBarlines": {
+          "layout": 14,
+          "vexflow": 0
+        },
+        "genericBarlines": {
+          "layout": 65,
+          "vexflow": 0
+        },
+        "doubleBarlineLeft": {
+          "layout": 5,
+          "vexflow": 0
+        },
+        "doubleBarlineRight": {
+          "layout": 5,
+          "vexflow": 0
+        },
+        "noteheads": {
+          "layout": 980,
+          "vexflow": 0
+        },
+        "stems": {
+          "layout": 802,
+          "vexflow": 0
+        },
+        "rests": {
+          "layout": 169,
+          "vexflow": 0
+        },
+        "hairpinTop": {
+          "layout": 2,
+          "vexflow": 0
+        },
+        "hairpinBottom": {
+          "layout": 2,
+          "vexflow": 0
+        },
+        "repeatSpanLines": {
+          "layout": 67,
+          "vexflow": 0
+        },
+        "voltaLines": {
+          "layout": 18,
+          "vexflow": 0
+        },
+        "semanticTextTokens": {
+          "layout": "1,2,3. || 1. || 1. || 1. || 1. || 115 || 13 || 17 || 2. || 2. || 2. || 2. || 21 || 26 || 2x || 2x || 2x || 2x || 2x || 2x || 2x || 2x || 2x || 2x || 3. || 3. || 3. || 30 || 34 || 38 || 4. || 42 || 44 || 48 || 5 || 52 || 56 || 59 || 63 || 67 || 71 || 73 || 77 || 9 || 李白 || 李荣浩",
+          "vexflow": "1,2,3. || 1. || 1. || 1. || 1. || 115 || 13 || 17 || 2. || 2. || 2. || 2. || 21 || 26 || 3. || 3. || 3. || 30 || 34 || 38 || 4. || 42 || 44 || 48 || 5 || 52 || 56 || 59 || 63 || 67 || 71 || 73 || 77 || 9 || 李白 || 李荣浩"
+        }
+      }
+    }
+  ]
+}

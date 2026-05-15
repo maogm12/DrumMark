@@ -714,3 +714,23 @@ Nav markers (`@segno`, `@fine`, `@to-coda`, etc.) were converted to `TokenGlyph:
 - In this environment, renderer parity tests cannot rely on rebuilding `src/wasm/pkg` because `wasm-pack build` currently fails without the `wasm32-unknown-unknown` target installed. When that target is missing, the honest fallback is:
   - verify Rust-side integration with `cargo test -p drummark-layout`
   - verify SVG rendering of new scene primitives with precomputed scene fixtures at the TypeScript layer
+
+## 2026-05-15 Addendum: The Active WASM Path Can Be Rebuilt Without wasm-pack
+
+- On this machine, `wasm-pack` still resolves its sysroot/toolchain checks against Homebrew Rust even when `rustup` has the correct `wasm32-unknown-unknown` target installed. The practical rebuild path for the checked-in web package is:
+  - `cargo build --manifest-path crates/drummark-core/Cargo.toml --target wasm32-unknown-unknown --release` with the rustup toolchain first on `PATH`
+  - `~/.cargo/bin/wasm-bindgen --target web --out-dir src/wasm/pkg --omit-default-module-path target/wasm32-unknown-unknown/release/drummark_core.wasm`
+
+- This matters because product/CLI rendering in this repo does not consume Rust sources directly; it consumes the checked-in `src/wasm/pkg` bundle. A fix can be fully correct in Rust and still appear broken in the app until that bundle is rebuilt.
+
+## 2026-05-15 Addendum: Down-Flag Glyphs Should Not Be Pre-Shifted Left
+
+- VexFlow positions unbeamed down-flags by starting the glyph at `stem_x - stem_width / 2`, not by offsetting it left by the full glyph width. The Bravura `flag8thDown`/`flag16thDown`/`flag32ndDown` glyph outlines already extend to the right of that anchor.
+
+- For this repo's scene contract, that means the down-flag `GlyphRun.x_pt` should stay on the stem anchor and let the SMuFL glyph geometry create the right-side overhang. Pre-shifting the glyph left by `flag_metric.width_pt` in layout inverts the visual attachment.
+
+## 2026-05-15 Addendum: Ledger Lines Must Be Emitted as Separate Scene Items
+
+- Drum staff position mapping alone is not enough for out-of-staff notes. When a track lands on an integer staff position above the top line (`-1`, `-2`, ...) or below the bottom line (`5`, `6`, ...), layout must emit explicit short `ledger-line` segments centered on the notehead.
+
+- Space positions just outside the staff (`-0.5`, `4.5`, `5.5`, ...) do not create new ledger lines by themselves; they inherit the nearest already-required ledger lines. Example: crash at `-1.0` needs one top ledger line, and a bottom note at `6.5` needs lines at `5.0` and `6.0`.

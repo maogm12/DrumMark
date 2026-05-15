@@ -966,6 +966,17 @@ mod tests {
     }
 
     #[test]
+    fn test_ledger_line_offsets_cover_top_and_bottom_positions() {
+        assert_eq!(ledger_line_offsets_for_staff_position(-0.5), Vec::<f32>::new());
+        assert_eq!(ledger_line_offsets_for_staff_position(-1.0), vec![-1.0]);
+        assert_eq!(ledger_line_offsets_for_staff_position(-1.5), vec![-1.0]);
+        assert_eq!(ledger_line_offsets_for_staff_position(-2.0), vec![-1.0, -2.0]);
+        assert_eq!(ledger_line_offsets_for_staff_position(4.5), Vec::<f32>::new());
+        assert_eq!(ledger_line_offsets_for_staff_position(5.0), vec![5.0]);
+        assert_eq!(ledger_line_offsets_for_staff_position(6.5), vec![5.0, 6.0]);
+    }
+
+    #[test]
     fn test_rest_glyph_by_fraction() {
         assert_eq!(rest_glyph_for_fraction(Fraction { numerator: 1, denominator: 8 }).codepoint, 0xE4E6);
         assert_eq!(rest_glyph_for_fraction(Fraction { numerator: 1, denominator: 16 }).codepoint, 0xE4E7);
@@ -2675,7 +2686,7 @@ pub fn build_layout_scene(score: &RenderScore, opts: &LayoutOptions) -> LayoutSc
             push_text_item(&mut page.items, &mut item_counter, None, "time-signature-digit", tsx, sy + staff_ss * 4.0, TextRole::TimeSignatureDigit, num_to_glyph(score.header.time_beat_unit), "Bravura,Academico", time_sig_metric.font_size_pt, "#333", None, None);
         }
         if !is_first_system {
-            push_text_item(&mut page.items, &mut item_counter, None, "measure-number", margin, sy - staff_ss, TextRole::MeasureNumber, format!("{}", system.measures[0].paragraph_index + 1), "Academico", 11.0, "#333", None, None);
+            push_text_item(&mut page.items, &mut item_counter, None, "measure-number", margin, sy - staff_ss, TextRole::MeasureNumber, format!("{}", system.measures[0].global_index + 1), "Academico", 11.0, "#333", None, None);
         }
 
         for (mi, (measure, mw)) in system.measures.iter().zip(system.widths.iter()).enumerate() {
@@ -3181,6 +3192,25 @@ fn render_hit_cluster(
         let note_glyph = char::from_u32(glyph_metric.codepoint).unwrap_or('?').to_string();
         let actual_note_y = staff_top + *note_y_offset;
         let note_id = push_text_item(items, counter, Some(measure_id), "notehead", base_note_x, actual_note_y, TextRole::Tempo, note_glyph, "Bravura,Academico", note_font_size, "#333", None, None);
+        let ledger_half_overhang_pt = 3.0_f32;
+        for ledger_y_offset in ledger_line_offsets_for_staff_position(*note_y_offset / 10.0) {
+            let ledger_y = staff_top + ledger_y_offset * 10.0;
+            push_line_item(
+                items,
+                counter,
+                Some(measure_id),
+                "ledger-line",
+                base_note_x - ledger_half_overhang_pt,
+                ledger_y,
+                base_note_x + canonical_glyph_metric(glyph_role_for_codepoint(glyph_metric.codepoint)).width_pt + ledger_half_overhang_pt,
+                ledger_y,
+                "#333",
+                1.25,
+            );
+            if let Some(item) = items.last_mut() {
+                item.anchor_item_id = Some(note_id.clone());
+            }
+        }
         note_placements.push(NotePlacement {
             note_id: note_id.clone(),
             note_x: base_note_x,
@@ -3211,7 +3241,11 @@ fn render_hit_cluster(
                     .max_by(|a, b| a.note_y.partial_cmp(&b.note_y).unwrap_or(std::cmp::Ordering::Equal))
             };
             if let Some(attach_note) = attach_note {
-                let stem_x = attach_note.note_x + anchor_x * smufl_ss;
+                let stem_x = if stem_up {
+                    attach_note.note_x + anchor_x * smufl_ss
+                } else {
+                    attach_note.note_x + 0.12 * smufl_ss
+                };
                 let stem_len = 35.0_f32;
                 let stem_y1 = if stem_up { attach_note.note_y - stem_len } else { attach_note.note_y };
                 let stem_y2 = if stem_up { attach_note.note_y } else { attach_note.note_y + stem_len };
@@ -3247,6 +3281,34 @@ fn render_hit_cluster(
     note_placements
 }
 
+fn glyph_role_for_codepoint(codepoint: u32) -> GlyphRole {
+    match codepoint {
+        0xE0A9 => GlyphRole::NoteheadX,
+        0xE0B3 => GlyphRole::NoteheadDiamond,
+        0xE0DB => GlyphRole::NoteheadCircleX,
+        0xE0CE => GlyphRole::NoteheadRim,
+        _ => GlyphRole::NoteheadBlack,
+    }
+}
+
+fn ledger_line_offsets_for_staff_position(track_ss: f32) -> Vec<f32> {
+    let mut lines = Vec::new();
+    if track_ss <= -1.0 {
+        let mut line_ss = -1.0_f32;
+        while line_ss >= track_ss.ceil() {
+            lines.push(line_ss);
+            line_ss -= 1.0;
+        }
+    } else if track_ss >= 5.0 {
+        let mut line_ss = 5.0_f32;
+        while line_ss <= track_ss.floor() {
+            lines.push(line_ss);
+            line_ss += 1.0;
+        }
+    }
+    lines
+}
+
 fn render_beam_groups(
     items: &mut Vec<SceneItem>,
     counter: &mut usize,
@@ -3277,12 +3339,13 @@ fn render_beam_groups(
                 (false, _) => GlyphRole::Flag8thDown,
             };
             let flag_metric = canonical_glyph_metric(flag_role);
+            let flag_x = anchor.stem_x;
             let flag_id = push_glyph_item(
                 items,
                 counter,
                 Some(measure_id),
                 "flag",
-                anchor.stem_x,
+                flag_x,
                 anchor.stem_tip_y,
                 flag_role,
                 "Bravura,Academico",
@@ -4503,8 +4566,8 @@ fn test_system_boundaries_align_with_staff_edges() {
 }
 
 #[test]
-fn test_later_system_uses_smaller_start_zone_than_first_system() {
-    let measures = [0_u32, 1_u32]
+    fn test_later_system_uses_smaller_start_zone_than_first_system() {
+        let measures = [0_u32, 1_u32]
         .into_iter()
         .map(|index| RenderMeasure {
             index,
@@ -4581,6 +4644,161 @@ fn test_later_system_uses_smaller_start_zone_than_first_system() {
 }
 
 #[test]
+fn test_later_system_measure_number_uses_absolute_measure_index() {
+    let score = RenderScore {
+        version: RENDER_SCORE_VERSION.to_string(),
+        header: RenderHeader {
+            tempo: 120,
+            time_beats: 4,
+            time_beat_unit: 4,
+            divisions: 16,
+            note_value: 8,
+            grouping: vec![1, 1, 1, 1],
+            title: None,
+            subtitle: None,
+            composer: None,
+        },
+        tracks: vec![RenderTrack { id: "HH".into(), family: "cymbal".into() }],
+        measures: vec![
+            RenderMeasure {
+                index: 3,
+                global_index: 3,
+                paragraph_index: 0,
+                measure_in_paragraph: 0,
+                source_line: 1,
+                events: vec![],
+                barline: Some("regular".into()),
+                closing_barline: Some("regular".into()),
+                start_nav: None,
+                end_nav: None,
+                volta_indices: None,
+                hairpins: vec![],
+                measure_repeat_slashes: None,
+                multi_rest_count: None,
+                note_value: 8,
+                volta_terminator: false,
+            },
+            RenderMeasure {
+                index: 7,
+                global_index: 7,
+                paragraph_index: 1,
+                measure_in_paragraph: 0,
+                source_line: 2,
+                events: vec![],
+                barline: Some("final".into()),
+                closing_barline: Some("final".into()),
+                start_nav: None,
+                end_nav: None,
+                volta_indices: None,
+                hairpins: vec![],
+                measure_repeat_slashes: None,
+                multi_rest_count: None,
+                note_value: 8,
+                volta_terminator: false,
+            },
+        ],
+        errors: vec![],
+        repeat_spans: vec![],
+    };
+
+    let scene = build_layout_scene(&score, &LayoutOptions::default());
+    let measure_number = scene.pages[0]
+        .items
+        .iter()
+        .find(|item| item.role == "measure-number")
+        .expect("expected measure number on later system");
+    let ScenePrimitive::TextRun(text) = &measure_number.primitive else {
+        panic!("measure number should be text");
+    };
+    assert_eq!(text.text, "8");
+}
+
+#[test]
+fn test_down_stem_keeps_notehead_on_right_and_flag_on_stem_right_side() {
+    let score = RenderScore {
+        version: RENDER_SCORE_VERSION.to_string(),
+        header: RenderHeader {
+            tempo: 120,
+            time_beats: 4,
+            time_beat_unit: 4,
+            divisions: 16,
+            note_value: 8,
+            grouping: vec![1, 1, 1, 1],
+            title: None,
+            subtitle: None,
+            composer: None,
+        },
+        tracks: vec![RenderTrack { id: "BD".into(), family: "drum".into() }],
+        measures: vec![RenderMeasure {
+            index: 0,
+            global_index: 0,
+            paragraph_index: 0,
+            measure_in_paragraph: 0,
+            source_line: 1,
+            events: vec![RenderEvent {
+                track: "BD".into(),
+                track_family: "drum".into(),
+                start: Fraction { numerator: 0, denominator: 1 },
+                duration: Fraction { numerator: 1, denominator: 8 },
+                kind: EventKind::Hit,
+                glyph: "d".into(),
+                modifiers: vec![],
+                modifier: None,
+                voice: 2,
+                beam: "none".into(),
+                tuplet: None,
+            }],
+            barline: Some("final".into()),
+            closing_barline: Some("final".into()),
+            start_nav: None,
+            end_nav: None,
+            volta_indices: None,
+            hairpins: vec![],
+            measure_repeat_slashes: None,
+            multi_rest_count: None,
+            note_value: 8,
+            volta_terminator: false,
+        }],
+        errors: vec![],
+        repeat_spans: vec![],
+    };
+
+    let scene = build_layout_scene(&score, &LayoutOptions::default());
+    let notehead = scene.pages[0]
+        .items
+        .iter()
+        .find(|item| item.role == "notehead")
+        .expect("expected notehead");
+    let stem = scene.pages[0]
+        .items
+        .iter()
+        .find(|item| item.role == "stem")
+        .expect("expected stem");
+    let flag = scene.pages[0]
+        .items
+        .iter()
+        .find(|item| item.role == "flag")
+        .expect("expected flag");
+
+    let note_x = match &notehead.primitive {
+        ScenePrimitive::TextRun(text) => text.x_pt,
+        _ => panic!("notehead should be text"),
+    };
+    let stem_x = match &stem.primitive {
+        ScenePrimitive::LineSegment(line) => line.x1_pt,
+        _ => panic!("stem should be line"),
+    };
+    let (flag_x, flag_role) = match &flag.primitive {
+        ScenePrimitive::GlyphRun(glyph) => (glyph.x_pt, glyph.glyph_role),
+        _ => panic!("flag should be glyph"),
+    };
+
+    assert!(stem_x < note_x + 4.0, "down stem should anchor on the notehead left side");
+    assert!(flag_x >= stem_x - 0.75, "down flag glyph should start on the stem and extend on its right side");
+    assert_eq!(flag_role, GlyphRole::Flag8thDown);
+}
+
+#[test]
 fn test_crash_maps_to_top_ledger_line() {
     let score = RenderScore {
         version: RENDER_SCORE_VERSION.to_string(),
@@ -4649,6 +4867,91 @@ fn test_crash_maps_to_top_ledger_line() {
             _ => None,
         })
         .expect("expected staff line");
+    let ledger_y = scene.pages[0]
+        .items
+        .iter()
+        .find(|item| item.role == "ledger-line")
+        .and_then(|item| match &item.primitive {
+            ScenePrimitive::LineSegment(line) => Some(line.y1_pt),
+            _ => None,
+        })
+        .expect("expected top ledger line");
 
     assert!((notehead_y - (staff_top - 10.0)).abs() < 0.01);
+    assert!((ledger_y - (staff_top - 10.0)).abs() < 0.01);
+}
+
+#[test]
+fn test_bottom_ledger_lines_render_for_notes_below_staff() {
+    let score = RenderScore {
+        version: RENDER_SCORE_VERSION.to_string(),
+        header: RenderHeader {
+            tempo: 120,
+            time_beats: 4,
+            time_beat_unit: 4,
+            divisions: 16,
+            note_value: 8,
+            grouping: vec![1, 1, 1, 1],
+            title: None,
+            subtitle: None,
+            composer: None,
+        },
+        tracks: vec![RenderTrack { id: "WB".into(), family: "percussion".into() }],
+        measures: vec![RenderMeasure {
+            index: 0,
+            global_index: 0,
+            paragraph_index: 0,
+            measure_in_paragraph: 0,
+            source_line: 1,
+            events: vec![RenderEvent {
+                track: "WB".into(),
+                track_family: "percussion".into(),
+                start: Fraction { numerator: 0, denominator: 1 },
+                duration: Fraction { numerator: 1, denominator: 4 },
+                kind: EventKind::Hit,
+                glyph: "d".into(),
+                modifiers: vec![],
+                modifier: None,
+                voice: 1,
+                beam: "none".into(),
+                tuplet: None,
+            }],
+            barline: Some("final".into()),
+            closing_barline: Some("final".into()),
+            start_nav: None,
+            end_nav: None,
+            volta_indices: None,
+            hairpins: vec![],
+            measure_repeat_slashes: None,
+            multi_rest_count: None,
+            note_value: 8,
+            volta_terminator: false,
+        }],
+        errors: vec![],
+        repeat_spans: vec![],
+    };
+
+    let scene = build_layout_scene(&score, &LayoutOptions::default());
+    let staff_top = scene.pages[0]
+        .items
+        .iter()
+        .find(|item| item.role == "staff-line")
+        .and_then(|item| match &item.primitive {
+            ScenePrimitive::LineSegment(line) => Some(line.y1_pt),
+            _ => None,
+        })
+        .expect("expected staff line");
+    let ledger_ys = scene.pages[0]
+        .items
+        .iter()
+        .filter(|item| item.role == "ledger-line")
+        .filter_map(|item| match &item.primitive {
+            ScenePrimitive::LineSegment(line) => Some(line.y1_pt),
+            _ => None,
+        })
+        .collect::<Vec<_>>();
+
+    assert_eq!(ledger_ys.len(), 2);
+    assert!(ledger_ys.iter().any(|y| (*y - (staff_top + 50.0)).abs() < 0.01));
+    assert!(ledger_ys.iter().any(|y| (*y - (staff_top + 60.0)).abs() < 0.01));
 }

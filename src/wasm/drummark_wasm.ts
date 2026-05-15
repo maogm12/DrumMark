@@ -8,7 +8,8 @@ function isNode(): boolean {
 }
 
 async function initForBrowser(): Promise<void> {
-  await init();
+  const wasmUrl = new URL("./pkg/drummark_core_bg.wasm", import.meta.url);
+  await init({ module_or_path: wasmUrl });
 }
 
 async function initForNode(): Promise<void> {
@@ -19,7 +20,7 @@ async function initForNode(): Promise<void> {
   const currentDir = dirname(fileURLToPath(import.meta.url));
   const wasmPath = join(currentDir, "pkg", "drummark_core_bg.wasm");
   const bytes = readFileSync(wasmPath);
-  initSync(bytes);
+  initSync({ module: bytes });
 }
 
 export async function initWasm(): Promise<void> {

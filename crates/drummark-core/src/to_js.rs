@@ -200,6 +200,9 @@ fn barline_to_js(b: &Barline) -> JsValue {
         Barline::VoltaTerminator => {
             set(&obj, "type", &JsValue::from_str("|."));
         }
+        Barline::RepeatEndVoltaTerminator => {
+            set(&obj, "type", &JsValue::from_str(":|."));
+        }
         Barline::DoubleVoltaTerminator => {
             set(&obj, "type", &JsValue::from_str("||."));
         }

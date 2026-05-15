@@ -117,6 +117,7 @@ pub struct NormalizedMeasure {
     pub source_line: u32,
     pub events: Vec<NormalizedEvent>,
     pub barline: Option<String>,
+    pub closing_barline: Option<String>,
     pub start_nav: Option<StartNav>,
     pub end_nav: Option<EndNav>,
     pub volta: Option<Vec<u32>>,
@@ -236,7 +237,7 @@ fn barline_type(bl: &Barline) -> Option<String> {
         Barline::RepeatStart => Some("repeat-start".to_string()),
         Barline::RepeatEnd => Some("repeat-end".to_string()),
         Barline::VoltaTerminator => Some("regular".to_string()),
-        Barline::DoubleVoltaTerminator => None,
+        Barline::RepeatEndVoltaTerminator | Barline::DoubleVoltaTerminator => None,
         Barline::VoltaRepeatStart => Some("repeat-start".to_string()),
         Barline::Volta { prefix, numbers } => {
             if prefix == "|:" { Some("repeat-start".to_string()) }
@@ -306,7 +307,6 @@ pub fn normalize_document(doc: &Document) -> NormalizedScore {
 
     let mut all_measures: Vec<NormalizedMeasure> = Vec::new();
     let mut global_index: u32 = 0;
-    let mut repeat_spans: Vec<RepeatSpan> = Vec::new();
 
     // Per-track hairpin state
     let mut hairpin_states: HashMap<String, HairpinState> = HashMap::new();
@@ -327,6 +327,7 @@ pub fn normalize_document(doc: &Document) -> NormalizedScore {
             let mut measure_events: Vec<NormalizedEvent> = Vec::new();
             let mut measure_hairpins: Vec<HairpinIntent> = Vec::new();
             let mut barline: Option<String> = None;
+            let mut closing_barline: Option<String> = None;
             let mut repeat_start = false;
             let mut repeat_end = false;
             let mut volta_indices: Option<Vec<u32>> = None;
@@ -361,7 +362,7 @@ pub fn normalize_document(doc: &Document) -> NormalizedScore {
                     Barline::Volta { numbers, .. } => {
                         volta_indices = Some(numbers.clone());
                     }
-                    Barline::VoltaTerminator | Barline::DoubleVoltaTerminator => {
+                    Barline::VoltaTerminator | Barline::RepeatEndVoltaTerminator | Barline::DoubleVoltaTerminator => {
                         volta_terminator = true;
                     }
                     _ => {}
@@ -370,10 +371,30 @@ pub fn normalize_document(doc: &Document) -> NormalizedScore {
                 // Check closing barline for repeat-end and volta terminator
                 if let Some(ref cb) = es.closing_barline {
                     match cb {
-                        Barline::RepeatEnd => repeat_end = true,
-                        Barline::DoubleVoltaTerminator => {
+                        Barline::RepeatEnd => {
+                            repeat_end = true;
+                            closing_barline = Some("repeat-end".to_string());
+                        }
+                        Barline::Double => {
+                            closing_barline = Some("double".to_string());
+                            if barline.is_none() || barline.as_deref() == Some("regular") {
+                                barline = Some("double".to_string());
+                            }
+                        }
+                        Barline::VoltaTerminator => {
+                            volta_terminator = true;
+                        }
+                        Barline::RepeatEndVoltaTerminator => {
                             repeat_end = true;
                             volta_terminator = true;
+                            closing_barline = Some("repeat-end".to_string());
+                        }
+                        Barline::DoubleVoltaTerminator => {
+                            volta_terminator = true;
+                            closing_barline = Some("double".to_string());
+                            if barline.is_none() || barline.as_deref() == Some("regular") {
+                                barline = Some("double".to_string());
+                            }
                         }
                         _ => {}
                     }
@@ -512,6 +533,7 @@ pub fn normalize_document(doc: &Document) -> NormalizedScore {
                 source_line: 0,
                 events: measure_events,
                 barline,
+                closing_barline,
                 start_nav,
                 end_nav,
                 volta: volta_indices,
@@ -543,7 +565,11 @@ pub fn normalize_document(doc: &Document) -> NormalizedScore {
         all_measures[i].volta = vm.volta.as_ref().map(|v| v.indices.clone());
     }
 
-    // ── Post-pass 2: Close dangling hairpins ─────────────────────
+    // ── Post-pass 2: Derive repeat spans ─────────────────────────
+
+    let repeat_spans = derive_repeat_spans(&all_measures, &mut errors);
+
+    // ── Post-pass 3: Close dangling hairpins ─────────────────────
 
     let last_idx = all_measures.len().saturating_sub(1);
     for (track_id, state) in hairpin_states.iter_mut() {
@@ -554,7 +580,7 @@ pub fn normalize_document(doc: &Document) -> NormalizedScore {
         }
     }
 
-    // ── Post-pass 3: Final barline ───────────────────────────────
+    // ── Post-pass 4: Final barline ───────────────────────────────
 
     if let Some(last) = all_measures.last_mut() {
         if last.barline.is_none() || last.barline.as_deref() == Some("regular") {
@@ -570,6 +596,68 @@ pub fn normalize_document(doc: &Document) -> NormalizedScore {
         errors,
         repeat_spans,
     }
+}
+
+fn derive_repeat_spans(measures: &[NormalizedMeasure], errors: &mut Vec<String>) -> Vec<RepeatSpan> {
+    let mut repeat_spans = Vec::new();
+    let mut open_start: Option<u32> = None;
+    let mut open_start_has_ending = false;
+
+    for (index, measure) in measures.iter().enumerate() {
+        let start = matches!(measure.barline.as_deref(), Some("repeat-start") | Some("repeat-both"));
+        let end = matches!(measure.barline.as_deref(), Some("repeat-end") | Some("repeat-both"))
+            || matches!(measure.closing_barline.as_deref(), Some("repeat-end"));
+        let next_volta = measures.get(index + 1).and_then(|next| next.volta.clone());
+
+        if start && !end && open_start.is_some() {
+            errors.push(format!(
+                "Line {}: Nested repeat start at bar {} is not supported",
+                measure.source_line.max(1),
+                measure.global_index + 1
+            ));
+        }
+        if end && open_start.is_none() && !start {
+            errors.push(format!(
+                "Line {}: Repeat end at bar {} has no matching start",
+                measure.source_line.max(1),
+                measure.global_index + 1
+            ));
+        }
+
+        if end {
+            if let Some(start_measure) = open_start {
+                repeat_spans.push(RepeatSpan {
+                    start_measure: start_measure,
+                    end_measure: measure.global_index,
+                    times: 2,
+                });
+                open_start_has_ending = true;
+                if next_volta.is_none() {
+                    open_start = None;
+                    open_start_has_ending = false;
+                }
+            }
+        } else if open_start.is_some() && open_start_has_ending && next_volta.is_none() {
+            open_start = None;
+            open_start_has_ending = false;
+        }
+
+        if start && (open_start.is_none() || end) {
+            open_start = Some(measure.global_index);
+            open_start_has_ending = false;
+        }
+    }
+
+    if let Some(start_measure) = open_start {
+        if !open_start_has_ending {
+            errors.push(format!(
+                "Line 1: Repeat starting at bar {} is missing an end",
+                start_measure + 1
+            ));
+        }
+    }
+
+    repeat_spans
 }
 
 fn token_weight(token: &TokenGlyph) -> Fraction {
@@ -609,5 +697,108 @@ mod volta_test {
         assert_eq!(score.measures.len(), 3);
         assert_eq!(score.measures[1].volta, Some(vec![1]));
         assert_eq!(score.measures[2].volta, Some(vec![2]));
+        assert_eq!(score.repeat_spans.len(), 1);
+        assert_eq!(score.repeat_spans[0].start_measure, 0);
+        assert_eq!(score.repeat_spans[0].end_measure, 1);
+    }
+
+    #[test]
+    fn test_closing_double_barline_survives_normalization() {
+        let p = parser::Parser::new("time 4/4\nnote 1/8\ngrouping 2+2\nSD | d ||\n");
+        let doc = p.parse().unwrap();
+        let score = normalize::normalize_document(&doc);
+        assert_eq!(score.measures.len(), 1);
+        assert_eq!(score.measures[0].barline.as_deref(), Some("double"));
+        assert_eq!(score.measures[0].closing_barline.as_deref(), Some("double"));
+    }
+
+    #[test]
+    fn test_opening_repeat_and_closing_double_are_both_preserved() {
+        let p = parser::Parser::new("time 4/4\nnote 1/8\ngrouping 2+2\nSD |: d ||\n");
+        let doc = p.parse().unwrap();
+        let score = normalize::normalize_document(&doc);
+        assert_eq!(score.measures.len(), 1);
+        assert_eq!(score.measures[0].barline.as_deref(), Some("repeat-start"));
+        assert_eq!(score.measures[0].closing_barline.as_deref(), Some("double"));
+    }
+
+    #[test]
+    fn test_double_volta_terminator_preserves_double_not_repeat_end() {
+        let p = parser::Parser::new("time 4/4\nnote 1/8\ngrouping 2+2\nSD | d ||.\n");
+        let doc = p.parse().unwrap();
+        let score = normalize::normalize_document(&doc);
+        assert_eq!(score.measures.len(), 1);
+        assert_eq!(score.measures[0].barline.as_deref(), Some("double"));
+        assert_eq!(score.measures[0].closing_barline.as_deref(), Some("double"));
+        assert!(score.measures[0].volta_terminator);
+    }
+
+    #[test]
+    fn test_repeat_both_closes_previous_span_and_opens_next() {
+        let measures = vec![
+            normalize::NormalizedMeasure {
+                index: 0,
+                global_index: 0,
+                paragraph_index: 0,
+                measure_in_paragraph: 0,
+                source_line: 1,
+                events: vec![],
+                barline: Some("repeat-start".into()),
+                closing_barline: None,
+                start_nav: None,
+                end_nav: None,
+                volta: None,
+                hairpins: vec![],
+                measure_repeat_slashes: None,
+                multi_rest_count: None,
+                note_value: 8,
+                volta_terminator: false,
+            },
+            normalize::NormalizedMeasure {
+                index: 1,
+                global_index: 1,
+                paragraph_index: 0,
+                measure_in_paragraph: 1,
+                source_line: 1,
+                events: vec![],
+                barline: Some("repeat-both".into()),
+                closing_barline: None,
+                start_nav: None,
+                end_nav: None,
+                volta: None,
+                hairpins: vec![],
+                measure_repeat_slashes: None,
+                multi_rest_count: None,
+                note_value: 8,
+                volta_terminator: false,
+            },
+            normalize::NormalizedMeasure {
+                index: 2,
+                global_index: 2,
+                paragraph_index: 0,
+                measure_in_paragraph: 2,
+                source_line: 1,
+                events: vec![],
+                barline: Some("repeat-end".into()),
+                closing_barline: None,
+                start_nav: None,
+                end_nav: None,
+                volta: None,
+                hairpins: vec![],
+                measure_repeat_slashes: None,
+                multi_rest_count: None,
+                note_value: 8,
+                volta_terminator: false,
+            },
+        ];
+
+        let mut errors = Vec::new();
+        let spans = normalize::derive_repeat_spans(&measures, &mut errors);
+        assert!(errors.is_empty(), "unexpected errors: {:?}", errors);
+        assert_eq!(spans.len(), 2);
+        assert_eq!(spans[0].start_measure, 0);
+        assert_eq!(spans[0].end_measure, 1);
+        assert_eq!(spans[1].start_measure, 1);
+        assert_eq!(spans[1].end_measure, 2);
     }
 }

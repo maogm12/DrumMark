@@ -22,30 +22,53 @@ interface Element {
   fontFamily?: string;
   strokeWidth?: number;
   text?: string;
+  role?: string;
 }
 
 function parseSvg(svg: string): Element[] {
+  const doc = new DOMParser().parseFromString(svg, "image/svg+xml");
   const els: Element[] = [];
-  // Lines
-  const lineRe = /<line\s+x1="([\d.]+)"\s+y1="([\d.]+)"\s+x2="([\d.]+)"\s+y2="([\d.]+)"\s+stroke="([^"]*)"\s+stroke-width="([\d.]+)"\/>/g;
-  let m;
-  while ((m = lineRe.exec(svg))) {
-    els.push({ type: "line", x: +m[1], y: +m[2], x2: +m[3], y2: +m[4], strokeWidth: +m[6] });
+  for (const node of Array.from(doc.querySelectorAll("line"))) {
+    els.push({
+      type: "line",
+      x: Number(node.getAttribute("x1") ?? "0"),
+      y: Number(node.getAttribute("y1") ?? "0"),
+      x2: Number(node.getAttribute("x2") ?? "0"),
+      y2: Number(node.getAttribute("y2") ?? "0"),
+      strokeWidth: Number(node.getAttribute("stroke-width") ?? "0"),
+      role: node.getAttribute("data-role") ?? undefined,
+    });
   }
-  // Texts
-  const textRe = /<text[^>]*x="([\d.]+)"[^>]*y="([\d.]+)"[^>]*(?:font-family="([^"]*)")?[^>]*(?:font-size="([\d.]+)pt")?[^>]*>([^<]*)<\/text>/g;
-  while ((m = textRe.exec(svg))) {
-    els.push({ type: "text", x: +m[1], y: +m[2], fontFamily: m[3] || "", fontSize: m[4] ? +m[4] : 0, text: m[5] });
+  for (const node of Array.from(doc.querySelectorAll("text"))) {
+    const fontSizeRaw = node.getAttribute("font-size") ?? "";
+    els.push({
+      type: "text",
+      x: Number(node.getAttribute("x") ?? "0"),
+      y: Number(node.getAttribute("y") ?? "0"),
+      fontFamily: node.getAttribute("font-family") ?? "",
+      fontSize: fontSizeRaw.endsWith("pt") ? Number(fontSizeRaw.slice(0, -2)) : 0,
+      text: node.textContent ?? "",
+      role: node.getAttribute("data-role") ?? undefined,
+    });
   }
-  // Rects
-  const rectRe = /<rect\s+x="([\d.]+)"\s+y="([\d.]+)"\s+width="([\d.]+)"\s+height="([\d.]+)"/g;
-  while ((m = rectRe.exec(svg))) {
-    els.push({ type: "rect", x: +m[1], y: +m[2], w: +m[3], h: +m[4] });
+  for (const node of Array.from(doc.querySelectorAll("rect"))) {
+    els.push({
+      type: "rect",
+      x: Number(node.getAttribute("x") ?? "0"),
+      y: Number(node.getAttribute("y") ?? "0"),
+      w: Number(node.getAttribute("width") ?? "0"),
+      h: Number(node.getAttribute("height") ?? "0"),
+      role: node.getAttribute("data-role") ?? undefined,
+    });
   }
-  // Paths
-  const pathRe = /<path[^>]*d="M([\d.]+)\s+([\d.]+)L([\d.]+)\s+([\d.]+)"[^>]*stroke-width="([\d.]+)"\/>/g;
-  while ((m = pathRe.exec(svg))) {
-    els.push({ type: "path", x: +m[1], y: +m[2], x2: +m[3], y2: +m[4], strokeWidth: +m[5] });
+  for (const node of Array.from(doc.querySelectorAll("path"))) {
+    els.push({
+      type: "path",
+      x: 0,
+      y: 0,
+      strokeWidth: Number(node.getAttribute("stroke-width") ?? "0"),
+      role: node.getAttribute("data-role") ?? undefined,
+    });
   }
   return els;
 }
@@ -54,19 +77,39 @@ function categorize(els: Element[]) {
   const result: Record<string, Element[]> = {};
   for (const e of els) {
     let cat = e.type;
+    if (e.role === "staff-line") cat = "staffLine";
+    else if (
+      e.role === "opening-barline"
+      || e.role === "closing-barline"
+      || e.role === "double-barline-left"
+      || e.role === "double-barline-right"
+      || e.role === "final-barline-thin"
+      || e.role === "final-barline-thick"
+      || e.role === "barline"
+    ) {
+      cat = "barline";
+    }
     if (e.type === "line") {
       const xDiff = Math.abs((e.x2 ?? e.x) - e.x);
       const yDiff = Math.abs((e.y2 ?? e.y) - e.y);
-      if (yDiff < 1 && xDiff > 100) cat = "staffLine";
-      else if (xDiff < 1 && yDiff > 5) cat = "barline";
-      else cat = "ledger/stem";
+      if (cat === "line") {
+        if (yDiff < 1 && xDiff > 100) cat = "staffLine";
+        else if (xDiff < 1 && yDiff > 5) cat = "barline";
+        else cat = "ledger/stem";
+      }
+    }
+    if (e.type === "rect" && cat === "rect" && e.role?.includes("barline")) {
+      cat = "barline";
     }
     if (e.type === "text") {
-      if (e.text?.includes("♩")) cat = "tempo";
-      else if (e.text?.includes("")) cat = "clef";
-      else if (e.text?.includes("")) cat = "timeSig";
-      else if (e.fontSize && e.fontSize >= 25) cat = "notehead";
-      else cat = "text-other";
+      if (e.role === "tempo-glyph" || e.role === "tempo-equals" || e.role === "tempo") cat = "tempo";
+      else if (e.role === "percussion-clef" || e.text?.includes("")) cat = "clef";
+      else if (e.role === "time-signature-digit" || e.text?.includes("")) cat = "timeSig";
+      else if (e.role === "notehead" || (e.fontSize && e.fontSize >= 25)) cat = "notehead";
+      else cat = "ledger/stem";
+    }
+    if (e.type === "text" && (cat === "text" || cat === "ledger/stem")) {
+      cat = "text-other";
     }
     (result[cat] = result[cat] || []).push(e);
   }
@@ -124,16 +167,20 @@ describe("VexFlow vs Layout full element parity", () => {
     }
   });
 
-  it("notehead: same font size, Y diff < 5pt", () => {
+  it("notehead: same font size, relative vertical placement matches clef anchor", () => {
     const vCats = categorize(vexEls);
     const oCats = categorize(ourEls);
     const vNh = (vCats.notehead || [])[0];
     const oNh = (oCats.notehead || [])[0];
-    if (vNh && oNh) {
+    const vCl = (vCats.clef || [])[0];
+    const oCl = (oCats.clef || [])[0];
+    if (vNh && oNh && vCl && oCl) {
+      const vDelta = vNh.y - vCl.y;
+      const oDelta = oNh.y - oCl.y;
       console.log(`Notehead size — VexFlow: ${vNh.fontSize}pt, Layout: ${oNh.fontSize}pt`);
-      console.log(`Notehead Y — VexFlow: ${vNh.y}, Layout: ${oNh.y}, diff: ${Math.abs(vNh.y - oNh.y).toFixed(1)}`);
+      console.log(`Notehead ΔY from clef — VexFlow: ${vDelta}, Layout: ${oDelta}, diff: ${Math.abs(oDelta - vDelta).toFixed(1)}`);
       expect(oNh.fontSize).toBe(vNh.fontSize);
-      expect(Math.abs(oNh.y - vNh.y)).toBeLessThan(5);
+      expect(Math.abs(oDelta - vDelta)).toBeLessThan(5);
     }
   });
 

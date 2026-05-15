@@ -18,6 +18,7 @@ pub mod nav;
 pub mod volta;
 pub mod event;
 pub mod normalize;
+pub mod render_score;
 
 /// Parse a DrumMark source string and return the AST as a JS object.
 #[wasm_bindgen]
@@ -40,6 +41,40 @@ pub fn build_normalized_score(source: &str) -> JsValue {
     };
     let score = normalize::normalize_document(&doc);
     normalize_to_js(&score)
+}
+
+#[wasm_bindgen]
+pub fn build_render_score(source: &str) -> JsValue {
+    let parser = parser::Parser::new(source);
+    let doc = match parser.parse() {
+        Ok(doc) => doc,
+        Err(errors) => return to_js::errors_to_js(&errors),
+    };
+    let score = normalize::normalize_document(&doc);
+    let render_score = render_score::derive_render_score(&score);
+    render_score_to_js(&render_score)
+}
+
+#[wasm_bindgen]
+pub fn build_layout_scene(source: &str, options: JsValue) -> JsValue {
+    let opts = parse_layout_options(&options);
+    let parser = parser::Parser::new(source);
+    let doc = match parser.parse() {
+        Ok(doc) => doc,
+        Err(errors) => {
+            let scene = drummark_layout::LayoutScene {
+                version: drummark_layout::LAYOUT_SCENE_VERSION.to_string(),
+                metrics_version: drummark_layout::CANONICAL_METRICS_VERSION.to_string(),
+                pages: vec![],
+                issues: errors.iter().map(|error| format!("Line {}, Col {}: {}", error.line, error.column, error.message)).collect(),
+            };
+            return layout_scene_to_js(&scene);
+        }
+    };
+    let score = normalize::normalize_document(&doc);
+    let render_score = render_score::derive_render_score(&score);
+    let scene = drummark_layout::build_layout_scene(&render_score, &opts);
+    layout_scene_to_js(&scene)
 }
 
 fn normalize_to_js(score: &normalize::NormalizedScore) -> JsValue {
@@ -90,6 +125,7 @@ fn normalize_to_js(score: &normalize::NormalizedScore) -> JsValue {
         set(&mo, "measureInParagraph", &JsValue::from_f64(m.measure_in_paragraph as f64));
         set(&mo, "noteValue", &JsValue::from_f64(m.note_value as f64));
         if let Some(ref b) = m.barline { set(&mo, "barline", &JsValue::from_str(b)); }
+        if let Some(ref b) = m.closing_barline { set(&mo, "closingBarline", &JsValue::from_str(b)); }
         if let Some(ref s) = m.start_nav {
             set(&mo, "startNav", &JsValue::from_str(s.kind_name()));
         }
@@ -163,8 +199,200 @@ fn frac_js(f: crate::fraction::Fraction) -> JsValue {
     obj.into()
 }
 
+fn render_fraction_js(f: drummark_layout::Fraction) -> JsValue {
+    let obj = js_sys::Object::new();
+    set(&obj, "numerator", &JsValue::from_f64(f.numerator as f64));
+    set(&obj, "denominator", &JsValue::from_f64(f.denominator as f64));
+    obj.into()
+}
+
+fn render_score_to_js(score: &drummark_layout::RenderScore) -> JsValue {
+    let obj = Object::new();
+    set(&obj, "version", &JsValue::from_str(&score.version));
+
+    let header = Object::new();
+    set(&header, "tempo", &JsValue::from_f64(score.header.tempo as f64));
+    set(&header, "timeBeats", &JsValue::from_f64(score.header.time_beats as f64));
+    set(&header, "timeBeatUnit", &JsValue::from_f64(score.header.time_beat_unit as f64));
+    set(&header, "divisions", &JsValue::from_f64(score.header.divisions as f64));
+    set(&header, "noteValue", &JsValue::from_f64(score.header.note_value as f64));
+    if let Some(ref title) = score.header.title { set(&header, "title", &JsValue::from_str(title)); }
+    if let Some(ref subtitle) = score.header.subtitle { set(&header, "subtitle", &JsValue::from_str(subtitle)); }
+    if let Some(ref composer) = score.header.composer { set(&header, "composer", &JsValue::from_str(composer)); }
+    let grouping = Array::new();
+    for group in &score.header.grouping {
+        grouping.push(&JsValue::from_f64(*group as f64));
+    }
+    set(&header, "grouping", &grouping.into());
+    set(&obj, "header", &header.into());
+
+    let tracks = Array::new();
+    for track in &score.tracks {
+        let entry = Object::new();
+        set(&entry, "id", &JsValue::from_str(&track.id));
+        set(&entry, "family", &JsValue::from_str(&track.family));
+        tracks.push(&entry.into());
+    }
+    set(&obj, "tracks", &tracks.into());
+
+    let measures = Array::new();
+    for measure in &score.measures {
+        let entry = Object::new();
+        set(&entry, "index", &JsValue::from_f64(measure.index as f64));
+        set(&entry, "globalIndex", &JsValue::from_f64(measure.global_index as f64));
+        set(&entry, "paragraphIndex", &JsValue::from_f64(measure.paragraph_index as f64));
+        set(&entry, "measureInParagraph", &JsValue::from_f64(measure.measure_in_paragraph as f64));
+        set(&entry, "sourceLine", &JsValue::from_f64(measure.source_line as f64));
+        set(&entry, "noteValue", &JsValue::from_f64(measure.note_value as f64));
+        set(&entry, "voltaTerminator", &JsValue::from_bool(measure.volta_terminator));
+        if let Some(ref barline) = measure.barline {
+            set(&entry, "barline", &JsValue::from_str(barline));
+        }
+        if let Some(ref closing_barline) = measure.closing_barline {
+            set(&entry, "closingBarline", &JsValue::from_str(closing_barline));
+        }
+        if let Some(ref start_nav) = measure.start_nav {
+            set(&entry, "startNav", &JsValue::from_str(match start_nav {
+                drummark_layout::NavMarker::Segno => "segno",
+                drummark_layout::NavMarker::Coda => "coda",
+            }));
+        }
+        if let Some(ref end_nav) = measure.end_nav {
+            set(&entry, "endNav", &JsValue::from_str(match end_nav {
+                drummark_layout::NavJump::Fine => "fine",
+                drummark_layout::NavJump::DC => "dc",
+                drummark_layout::NavJump::DS => "ds",
+                drummark_layout::NavJump::DCalFine => "dc-al-fine",
+                drummark_layout::NavJump::DCalCoda => "dc-al-coda",
+                drummark_layout::NavJump::DSalFine => "ds-al-fine",
+                drummark_layout::NavJump::DSalCoda => "ds-al-coda",
+                drummark_layout::NavJump::ToCoda => "to-coda",
+            }));
+        }
+        if let Some(ref volta) = measure.volta_indices {
+            let values = Array::new();
+            for index in volta {
+                values.push(&JsValue::from_f64(*index as f64));
+            }
+            set(&entry, "voltaIndices", &values.into());
+        }
+        let hairpins = Array::new();
+        for hairpin in &measure.hairpins {
+            let hairpin_obj = Object::new();
+            set(&hairpin_obj, "kind", &JsValue::from_str(match hairpin.kind {
+                drummark_layout::HairpinKind::Crescendo => "crescendo",
+                drummark_layout::HairpinKind::Decrescendo => "decrescendo",
+            }));
+            set(&hairpin_obj, "start", &render_fraction_js(hairpin.start));
+            set(&hairpin_obj, "end", &render_fraction_js(hairpin.end));
+            set(&hairpin_obj, "startMeasureIndex", &JsValue::from_f64(hairpin.start_measure_index as f64));
+            set(&hairpin_obj, "endMeasureIndex", &JsValue::from_f64(hairpin.end_measure_index as f64));
+            hairpins.push(&hairpin_obj.into());
+        }
+        set(&entry, "hairpins", &hairpins.into());
+        if let Some(count) = measure.measure_repeat_slashes {
+            set(&entry, "measureRepeatSlashes", &JsValue::from_f64(count as f64));
+        }
+        if let Some(count) = measure.multi_rest_count {
+            set(&entry, "multiRestCount", &JsValue::from_f64(count as f64));
+        }
+        let events = Array::new();
+        for event in &measure.events {
+            let event_obj = Object::new();
+            set(&event_obj, "track", &JsValue::from_str(&event.track));
+            set(&event_obj, "trackFamily", &JsValue::from_str(&event.track_family));
+            set(&event_obj, "glyph", &JsValue::from_str(&event.glyph));
+            set(&event_obj, "start", &render_fraction_js(event.start));
+            set(&event_obj, "duration", &render_fraction_js(event.duration));
+            set(&event_obj, "voice", &JsValue::from_f64(event.voice as f64));
+            set(&event_obj, "beam", &JsValue::from_str(&event.beam));
+            set(&event_obj, "kind", &JsValue::from_str(match event.kind {
+                drummark_layout::EventKind::Hit => "hit",
+                drummark_layout::EventKind::Rest => "rest",
+                drummark_layout::EventKind::Sticking => "sticking",
+            }));
+            if let Some(ref modifier) = event.modifier {
+                set(&event_obj, "modifier", &JsValue::from_str(modifier));
+            }
+            if let Some((count, span)) = event.tuplet {
+                let tuplet = Object::new();
+                set(&tuplet, "count", &JsValue::from_f64(count as f64));
+                set(&tuplet, "span", &JsValue::from_f64(span as f64));
+                set(&event_obj, "tuplet", &tuplet.into());
+            }
+            let modifiers = Array::new();
+            for modifier in &event.modifiers {
+                modifiers.push(&JsValue::from_str(modifier));
+            }
+            set(&event_obj, "modifiers", &modifiers.into());
+            events.push(&event_obj.into());
+        }
+        set(&entry, "events", &events.into());
+        measures.push(&entry.into());
+    }
+    set(&obj, "measures", &measures.into());
+
+    let repeats = Array::new();
+    for repeat in &score.repeat_spans {
+        let entry = Object::new();
+        set(&entry, "startMeasure", &JsValue::from_f64(repeat.start_measure as f64));
+        set(&entry, "endMeasure", &JsValue::from_f64(repeat.end_measure as f64));
+        set(&entry, "times", &JsValue::from_f64(repeat.times as f64));
+        repeats.push(&entry.into());
+    }
+    set(&obj, "repeatSpans", &repeats.into());
+
+    let errors = Array::new();
+    for error in &score.errors {
+        errors.push(&JsValue::from_str(error));
+    }
+    set(&obj, "errors", &errors.into());
+
+    obj.into()
+}
+
 fn set(obj: &js_sys::Object, key: &str, val: &JsValue) {
     js_sys::Reflect::set(obj, &JsValue::from_str(key), val).unwrap();
+}
+
+fn parse_layout_options(options: &JsValue) -> drummark_layout::LayoutOptions {
+    if options.is_object() {
+        let get_f64 = |key: &str| -> f64 {
+            js_sys::Reflect::get(options, &JsValue::from_str(key))
+                .ok()
+                .and_then(|v| v.as_f64())
+                .unwrap_or(0.0)
+        };
+        let width = get_f64("pageWidth");
+        let height = get_f64("pageHeight");
+        let top = get_f64("topMargin");
+        let bottom = get_f64("bottomMargin");
+        let left = get_f64("leftMargin");
+        let right = get_f64("rightMargin");
+        let scale = get_f64("staffScale");
+        let px_q = get_f64("pxPerQuarter");
+        if width > 0.0 && height > 0.0 {
+            drummark_layout::LayoutOptions {
+                page_width_pt: width as f32,
+                page_height_pt: height as f32,
+                top_margin_pt: top as f32,
+                bottom_margin_pt: bottom as f32,
+                left_margin_pt: left as f32,
+                right_margin_pt: right as f32,
+                staff_scale: if scale > 0.0 { scale as f32 } else { 0.75 },
+                px_per_quarter: if px_q > 0.0 { px_q as f32 } else { 80.0 },
+                ..drummark_layout::LayoutOptions::default()
+            }
+        } else {
+            drummark_layout::LayoutOptions::default()
+        }
+    } else {
+        drummark_layout::LayoutOptions::default()
+    }
+}
+
+fn layout_scene_to_js(scene: &drummark_layout::LayoutScene) -> JsValue {
+    drummark_layout::layout_scene_to_js(scene)
 }
 
 // ── Combined: Parse + Normalize + Layout → LayoutPlan ──────────
@@ -216,54 +444,7 @@ pub fn build_layout_plan(source: &str, options: JsValue) -> JsValue {
     let score = normalize::normalize_document(&doc);
 
     // 3. Convert to layout-engine NormalizedScore
-    let layout_score = drummark_layout::NormalizedScore {
-        header: drummark_layout::NormalizedHeader {
-            tempo: score.header.tempo,
-            time_beats: score.header.time_beats,
-            time_beat_unit: score.header.time_beat_unit,
-            divisions: score.header.divisions,
-            note_value: score.header.note_value,
-            grouping: score.header.grouping.clone(),
-            title: score.header.title.clone(),
-            subtitle: score.header.subtitle.clone(),
-            composer: score.header.composer.clone(),
-        },
-        tracks: score.tracks.iter().map(|t| drummark_layout::NormalizedTrack {
-            id: t.id.clone(),
-            family: t.family.clone(),
-        }).collect(),
-        measures: score.measures.iter().map(|m| drummark_layout::NormalizedMeasure {
-            index: m.index,
-            global_index: m.global_index,
-            paragraph_index: m.paragraph_index,
-            measure_in_paragraph: m.measure_in_paragraph,
-            events: m.events.iter().map(|ev| drummark_layout::NormalizedEvent {
-                track: ev.track.clone(),
-                start: drummark_layout::Fraction { numerator: ev.start.numerator as u32, denominator: ev.start.denominator as u32 },
-                duration: drummark_layout::Fraction { numerator: ev.duration.numerator as u32, denominator: ev.duration.denominator as u32 },
-                kind: match ev.kind {
-                    event::EventKind::Hit => drummark_layout::EventKind::Hit,
-                    event::EventKind::Rest => drummark_layout::EventKind::Rest,
-                    event::EventKind::Sticking => drummark_layout::EventKind::Sticking,
-                },
-                glyph: ev.glyph.clone(),
-                modifiers: ev.modifiers.clone(),
-                modifier: ev.modifier.clone(),
-                voice: ev.voice,
-                beam: ev.beam.clone(),
-                tuplet: ev.tuplet,
-            }).collect(),
-            barline: m.barline.clone(),
-            start_nav: None,
-            end_nav: None,
-            volta_indices: m.volta.clone(),
-            hairpins: vec![],
-            measure_repeat_slashes: m.measure_repeat_slashes,
-            multi_rest_count: m.multi_rest_count,
-            note_value: m.note_value,
-        }).collect(),
-        errors: score.errors.clone(),
-    };
+    let layout_score = render_score::derive_render_score(&score);
 
     // 4. Build systems grouped by paragraph_index
     let mut para_systems: Vec<Vec<&drummark_layout::NormalizedMeasure>> = Vec::new();

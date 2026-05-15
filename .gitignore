@@ -9,3 +9,6 @@ crates/drummark-core/pkg/
 crates/drummark-layout/target/
 crates/drummark-layout/pkg/
 src/wasm/layout-pkg/
+target
+test-results
+*.actual.txt

@@ -5,8 +5,9 @@
   "type": "module",
   "scripts": {
     "wasm:build": "node scripts/build_wasm.mjs",
+    "wasm:watch": "node scripts/wasm_watch.mjs",
     "predev": "npm run build-docs && npm run wasm:build",
-    "dev": "vite --host",
+    "dev": "concurrently -n wasm,vite \"node scripts/wasm_watch.mjs\" \"vite --host\"",
     "prebuild": "npm run wasm:build",
     "build": "tsc -b && npm run build-docs && vite build && npm run bundle:report",
     "build-docs": "tsx build-docs.ts",
@@ -33,9 +34,10 @@
     "vexflow": "^5.0.0"
   },
   "devDependencies": {
-    "@types/jsdom": "^28.0.1",
     "@preact/preset-vite": "^2.10.0",
+    "@types/jsdom": "^28.0.1",
     "canvas": "^3.2.3",
+    "concurrently": "^9.2.1",
     "jsdom": "^29.0.2",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",

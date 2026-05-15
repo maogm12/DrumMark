@@ -142,8 +142,10 @@ export function renderSceneToSvg(scene: Scene, options?: RenderOptions): string 
           y2Pt: number;
           stroke?: string;
           strokeWidth?: number;
+          strokeLineCap?: string;
         };
-        svg += `<line${roleAttr}${measureAttr}${anchorAttr} x1="${p.x1Pt}" y1="${p.y1Pt}" x2="${p.x2Pt}" y2="${p.y2Pt}" stroke="${p.stroke || "#333"}" stroke-width="${p.strokeWidth || 1}"/>`;
+        const capAttr = p.strokeLineCap ? ` stroke-linecap="${p.strokeLineCap}"` : "";
+        svg += `<line${roleAttr}${measureAttr}${anchorAttr} x1="${p.x1Pt}" y1="${p.y1Pt}" x2="${p.x2Pt}" y2="${p.y2Pt}" stroke="${p.stroke || "#333"}" stroke-width="${p.strokeWidth || 1}"${capAttr}/>`;
         break;
       }
       case "rect": {

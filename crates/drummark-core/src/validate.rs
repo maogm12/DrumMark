@@ -1,5 +1,3 @@
-use crate::resolve::is_valid_track;
-
 /// Check if a modifier is legal on a given track.
 /// Returns an error message if illegal, None if legal.
 pub fn validate_modifier_legality(modifier: &str, track: &str) -> Option<String> {

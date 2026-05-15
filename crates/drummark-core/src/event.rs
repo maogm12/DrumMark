@@ -73,7 +73,7 @@ pub fn token_to_events(
     source_offset: u32,
 ) -> Vec<NormalizedEvent> {
     match token {
-        TokenGlyph::Basic { value, dots, halves, stars, modifiers, track_override } => {
+        TokenGlyph::Basic { value, dots: _, halves: _, stars: _, modifiers, track_override } => {
             if value == "-" { return vec![]; }
 
             let resolved = resolve_token(value, context_track, track_override.as_deref(), modifiers);
@@ -250,8 +250,8 @@ fn apply_modifiers(token: &mut TokenGlyph, mods: &[String]) {
 /// Returns list of (start, open_kind_or_none, close_or_none).
 pub fn scan_hairpin_tokens(
     tokens: &[TokenGlyph],
-    measure_start: Fraction,
-    divisions: u32,
+    _measure_start: Fraction,
+    _divisions: u32,
 ) -> Vec<(Fraction, Option<HairpinKind>, Option<()>)> {
     let mut results = Vec::new();
     let mut position = Fraction::zero();

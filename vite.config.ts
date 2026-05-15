@@ -24,6 +24,9 @@ export default defineConfig({
     hmr: {
       overlay: false,
     },
+    watch: {
+      ignored: ["!**/src/wasm/pkg/**"],
+    },
   },
   build: {
     rollupOptions: {

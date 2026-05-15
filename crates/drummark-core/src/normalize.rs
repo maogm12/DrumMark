@@ -1,11 +1,11 @@
-use crate::fraction::{Fraction, fractions_equal, calculate_token_weight_as_fraction};
+use crate::fraction::{Fraction, calculate_token_weight_as_fraction};
 use crate::resolve::{get_track_family, TrackFamily};
 use crate::validate::{validate_modifier_legality, validate_grouping};
-use crate::hairpin::{HairpinState, HairpinIntent, HairpinKind, collect_track_hairpins, close_dangling_hairpin};
+use crate::hairpin::{HairpinState, HairpinIntent, collect_track_hairpins, close_dangling_hairpin};
 use crate::nav::{StartNav, EndNav, Anchor, BarlineType};
 use crate::volta::{VoltaMeasure, propagate_voltas};
-use crate::event::{NormalizedEvent, EventKind, TokenGlyph, token_to_events, scan_hairpin_tokens};
-use crate::ast::{Document, Barline, MeasureExpr, MeasureSection, TrackLine, HeaderSection};
+use crate::event::{NormalizedEvent, TokenGlyph, token_to_events, scan_hairpin_tokens};
+use crate::ast::{Document, Barline, MeasureExpr, TrackLine, HeaderSection};
 use std::collections::{HashMap, HashSet};
 
 // ── Inline-Repeat Expansion Helpers ────────────────────────────────
@@ -207,11 +207,11 @@ fn to_token_glyph(expr: &MeasureExpr) -> TokenGlyph {
         MeasureExpr::Crescendo => TokenGlyph::Crescendo,
         MeasureExpr::Decrescendo => TokenGlyph::Decrescendo,
         MeasureExpr::HairpinEnd => TokenGlyph::HairpinEnd,
-        MeasureExpr::MeasureRepeat(count) => TokenGlyph::Basic {
+        MeasureExpr::MeasureRepeat(_count) => TokenGlyph::Basic {
             value: "-".to_string(), dots: 0, halves: 0, stars: 0,
             modifiers: vec![], track_override: None,
         },
-        MeasureExpr::MultiRest(count) => TokenGlyph::Basic {
+        MeasureExpr::MultiRest(_count) => TokenGlyph::Basic {
             value: "-".to_string(), dots: 0, halves: 0, stars: 0,
             modifiers: vec![], track_override: None,
         },
@@ -239,7 +239,7 @@ fn barline_type(bl: &Barline) -> Option<String> {
         Barline::VoltaTerminator => Some("regular".to_string()),
         Barline::RepeatEndVoltaTerminator | Barline::DoubleVoltaTerminator => None,
         Barline::VoltaRepeatStart => Some("repeat-start".to_string()),
-        Barline::Volta { prefix, numbers } => {
+        Barline::Volta { prefix, numbers: _numbers } => {
             if prefix == "|:" { Some("repeat-start".to_string()) }
             else if prefix == ":|" { Some("repeat-end".to_string()) }
             else { Some("regular".to_string()) }
@@ -401,7 +401,7 @@ pub fn normalize_document(doc: &Document) -> NormalizedScore {
                 }
 
                 // Scan tokens — filter out zero-time markers before converting
-                let mut tokens: Vec<TokenGlyph> = es.tokens.iter()
+                let tokens: Vec<TokenGlyph> = es.tokens.iter()
                     .filter(|t| !matches!(t,
                         MeasureExpr::NavMarker(_) | MeasureExpr::NavJump(_)
                         | MeasureExpr::MeasureRepeat(_) | MeasureExpr::MultiRest(_)
@@ -447,14 +447,14 @@ pub fn normalize_document(doc: &Document) -> NormalizedScore {
 
                 // Convert tokens to events
                 let duration_per_quarter = Fraction::new(1, para_note_value as u64);
-                let duration: Fraction = Fraction::zero();
+                let _duration: Fraction = Fraction::zero();
 
                 // Calculate total weight for measure duration
                 let mut total_weight = Fraction::zero();
                 for t in &tokens {
                     total_weight = total_weight.add(token_weight(t));
                 }
-                let measure_duration = total_weight.multiply(duration_per_quarter);
+                let _measure_duration = total_weight.multiply(duration_per_quarter);
 
                 // Expand tokens to events
                 let mut position = Fraction::zero();
@@ -572,7 +572,7 @@ pub fn normalize_document(doc: &Document) -> NormalizedScore {
     // ── Post-pass 3: Close dangling hairpins ─────────────────────
 
     let last_idx = all_measures.len().saturating_sub(1);
-    for (track_id, state) in hairpin_states.iter_mut() {
+    for (_track_id, state) in hairpin_states.iter_mut() {
         if let Some(hairpin) = close_dangling_hairpin(state, last_idx, Fraction::new(1, 1)) {
             if let Some(m) = all_measures.last_mut() {
                 m.hairpins.push(hairpin);

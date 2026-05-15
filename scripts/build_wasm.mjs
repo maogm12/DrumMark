@@ -1,6 +1,18 @@
 import { existsSync } from "node:fs";
 import { resolve } from "node:path";
 import { spawnSync } from "node:child_process";
+import { homedir } from "node:os";
+
+const home = homedir();
+for (const dir of [
+  resolve(home, ".cargo/bin"),
+  resolve(home, "brew/bin"),
+  "/usr/local/bin",
+]) {
+  if (existsSync(dir)) {
+    process.env.PATH = `${dir}:${process.env.PATH ?? ""}`;
+  }
+}
 
 const repoRoot = resolve(new URL("..", import.meta.url).pathname);
 const coreManifest = resolve(repoRoot, "crates/drummark-core/Cargo.toml");

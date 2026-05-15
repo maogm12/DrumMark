@@ -308,6 +308,7 @@ pub struct LineSegment {
     pub y2_pt: f32,
     pub stroke: String,
     pub stroke_width: f32,
+    pub stroke_line_cap: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -459,6 +460,7 @@ enum WireScenePrimitive {
         y2_pt: f32,
         stroke: String,
         stroke_width: f32,
+        stroke_line_cap: Option<String>,
     },
     Rect {
         x_pt: f32,
@@ -2945,7 +2947,7 @@ pub fn build_layout_scene(score: &RenderScore, opts: &LayoutOptions) -> LayoutSc
 
         for i in 0..5 {
             let ly = sy + staff_ss * (1.0 + i as f32);
-            push_line_item(&mut page.items, &mut item_counter, None, "staff-line", system_left, ly, system_right, ly, "#333", 1.0);
+            push_line_item(&mut page.items, &mut item_counter, None, "staff-line", system_left, ly, system_right, ly, "#333", 1.0, None);
         }
         let clef_metric = canonical_text_metric(TextRole::PercussionClef);
         let count_metric = canonical_text_metric(TextRole::CountLabel);
@@ -2997,7 +2999,7 @@ pub fn build_layout_scene(score: &RenderScore, opts: &LayoutOptions) -> LayoutSc
 
             if let Some(count) = measure.measure.multi_rest_count {
                 let center_y = s_top + (s_bot - s_top) * 0.5;
-                let bar_id = push_line_item(&mut page.items, &mut item_counter, Some(&measure_id), "multi-rest-bar", mx + 14.0, center_y, mx + *mw - 14.0, center_y, "#333", 3.0);
+                let bar_id = push_line_item(&mut page.items, &mut item_counter, Some(&measure_id), "multi-rest-bar", mx + 14.0, center_y, mx + *mw - 14.0, center_y, "#333", 3.0, None);
                 let count_id = push_text_item(&mut page.items, &mut item_counter, Some(&measure_id), "multi-rest-count", mx + *mw * 0.5, center_y - count_metric.ascent_pt, TextRole::CountLabel, count.to_string(), count_metric.font_family, count_metric.font_size_pt, "#333", Some("middle"), Some("bold"));
                 page.composites.push(SceneComposite {
                     id: format!("multi-rest-{}", measure.global_index),
@@ -3152,12 +3154,12 @@ fn push_repeat_span_composites(
             let x1 = first.x_pt + 4.0;
             let x2 = last.x_pt + last.width_pt - 4.0;
             let mut child_item_ids = Vec::new();
-            child_item_ids.push(push_line_item(items, counter, Some(&first.id), "repeat-span-line", x1, y, x2, y, "#333", 1.2));
+            child_item_ids.push(push_line_item(items, counter, Some(&first.id), "repeat-span-line", x1, y, x2, y, "#333", 1.2, None));
             if fragment_index == 0 {
-                child_item_ids.push(push_line_item(items, counter, Some(&first.id), "repeat-span-start", x1, y, x1, y + 8.0, "#333", 1.2));
+                child_item_ids.push(push_line_item(items, counter, Some(&first.id), "repeat-span-start", x1, y, x1, y + 8.0, "#333", 1.2, None));
             }
             if fragment_index + 1 == fragment_total {
-                child_item_ids.push(push_line_item(items, counter, Some(&last.id), "repeat-span-end", x2, y, x2, y + 8.0, "#333", 1.2));
+                child_item_ids.push(push_line_item(items, counter, Some(&last.id), "repeat-span-end", x2, y, x2, y + 8.0, "#333", 1.2, None));
             }
             if repeat.times > 1 && fragment_index == 0 {
                 child_item_ids.push(push_text_item(items, counter, Some(&first.id), "repeat-span-count", (x1 + x2) * 0.5, y - count_metric.descent_pt - 1.0, TextRole::CountLabel, format!("{}x", repeat.times), count_metric.font_family, count_metric.font_size_pt, "#333", Some("middle"), None));
@@ -3235,13 +3237,13 @@ fn push_volta_segment(
         let x1 = first.x_pt + 2.0;
         let x2 = last.x_pt + last.width_pt - 2.0;
         let mut child_item_ids = Vec::new();
-        child_item_ids.push(push_line_item(items, counter, Some(&first.id), "volta-line", x1, y, x2, y, "#333", 1.2));
+        child_item_ids.push(push_line_item(items, counter, Some(&first.id), "volta-line", x1, y, x2, y, "#333", 1.2, None));
         if fragment_index == 0 {
-            child_item_ids.push(push_line_item(items, counter, Some(&first.id), "volta-start-hook", x1, y, x1, y + 10.0, "#333", 1.2));
+            child_item_ids.push(push_line_item(items, counter, Some(&first.id), "volta-start-hook", x1, y, x1, y + 10.0, "#333", 1.2, None));
             child_item_ids.push(push_text_item(items, counter, Some(&first.id), "volta-label", x1 + 4.0, y - count_metric.descent_pt - 1.0, TextRole::CountLabel, label_text.clone(), count_metric.font_family, count_metric.font_size_pt, "#333", None, None));
         }
         if fragment_index + 1 == fragment_total {
-            child_item_ids.push(push_line_item(items, counter, Some(&last.id), "volta-end-hook", x2, y, x2, y + 10.0, "#333", 1.2));
+            child_item_ids.push(push_line_item(items, counter, Some(&last.id), "volta-end-hook", x2, y, x2, y + 10.0, "#333", 1.2, None));
         }
         composites.push(SceneComposite {
             id: format!("volta-{}-{}-{}", start_measure, end_measure, fragment_index),
@@ -3299,7 +3301,7 @@ fn span_fragment_kind(index: usize, total: usize) -> SpanFragmentKind {
     }
 }
 
-fn push_line_item(items: &mut Vec<SceneItem>, counter: &mut usize, measure_id: Option<&str>, role: &str, x1: f32, y1: f32, x2: f32, y2: f32, stroke: &str, stroke_width: f32) -> String {
+fn push_line_item(items: &mut Vec<SceneItem>, counter: &mut usize, measure_id: Option<&str>, role: &str, x1: f32, y1: f32, x2: f32, y2: f32, stroke: &str, stroke_width: f32, stroke_line_cap: Option<&str>) -> String {
     let id = format!("item-{counter}");
     items.push(SceneItem {
         id: id.clone(),
@@ -3315,6 +3317,7 @@ fn push_line_item(items: &mut Vec<SceneItem>, counter: &mut usize, measure_id: O
             y2_pt: y2,
             stroke: stroke.to_string(),
             stroke_width,
+            stroke_line_cap: stroke_line_cap.map(ToString::to_string),
         }),
     });
     *counter += 1;
@@ -3624,6 +3627,7 @@ fn render_hit_cluster(
                 ledger_y,
                 "#333",
                 1.25,
+                None,
             );
             if let Some(item) = items.last_mut() {
                 item.anchor_item_id = Some(note_id.clone());
@@ -3667,7 +3671,7 @@ fn render_hit_cluster(
                 let stem_len = 31.0_f32;
                 let stem_y1 = if stem_up { attach_note.note_y - stem_len } else { attach_note.note_y };
                 let stem_y2 = if stem_up { attach_note.note_y } else { attach_note.note_y + stem_len };
-                let stem_id = push_line_item(items, counter, Some(measure_id), "stem", stem_x, stem_y1, stem_x, stem_y2, "#333", 1.5);
+                let stem_id = push_line_item(items, counter, Some(measure_id), "stem", stem_x, stem_y1, stem_x, stem_y2, "#333", 1.5, Some("round"));
                 if let Some(item) = items.last_mut() {
                     item.anchor_item_id = Some(attach_note.note_id.clone());
                 }
@@ -4009,8 +4013,8 @@ fn render_hairpin_fragments(
                 let open_height = 10.0;
                 let start_y = base_y + if matches!(hairpin.kind, HairpinKind::Crescendo) { open_height } else { 0.0 };
                 let end_y = base_y + if matches!(hairpin.kind, HairpinKind::Crescendo) { 0.0 } else { open_height };
-                let top_id = push_line_item(items, counter, Some(&first.id), "hairpin-top", start_x, base_y, end_x, end_y, "#333", 1.2);
-                let bottom_id = push_line_item(items, counter, Some(&first.id), "hairpin-bottom", start_x, base_y + open_height, end_x, start_y, "#333", 1.2);
+                let top_id = push_line_item(items, counter, Some(&first.id), "hairpin-top", start_x, base_y, end_x, end_y, "#333", 1.2, None);
+                let bottom_id = push_line_item(items, counter, Some(&first.id), "hairpin-bottom", start_x, base_y + open_height, end_x, start_y, "#333", 1.2, None);
                 composites.push(SceneComposite {
                     id: format!("hairpin-{}-{}-{}", hairpin.start_measure_index, hairpin.end_measure_index, fragment_index),
                     kind: CompositeKind::Hairpin,
@@ -4377,6 +4381,7 @@ fn to_wire_scene(scene: &LayoutScene) -> WireLayoutScene {
                                 y2_pt: line.y2_pt,
                                 stroke: line.stroke.clone(),
                                 stroke_width: line.stroke_width,
+                                stroke_line_cap: line.stroke_line_cap.clone(),
                             },
                             ScenePrimitive::Rect(rect) => WireScenePrimitive::Rect {
                                 x_pt: rect.x_pt,
@@ -4499,7 +4504,7 @@ pub fn layout_scene_snapshot(scene: &LayoutScene) -> String {
                         font_weight.as_deref().unwrap_or("-")
                     ));
                 }
-                WireScenePrimitive::LineSegment { x1_pt, y1_pt, x2_pt, y2_pt, stroke, stroke_width } => {
+                WireScenePrimitive::LineSegment { x1_pt, y1_pt, x2_pt, y2_pt, stroke, stroke_width, stroke_line_cap: _ } => {
                     out.push_str(&format!(
                         " primitive={{x1Pt={:.3} y1Pt={:.3} x2Pt={:.3} y2Pt={:.3} stroke={} strokeWidth={:.3}}}",
                         x1_pt, y1_pt, x2_pt, y2_pt, stroke, stroke_width
@@ -4643,13 +4648,16 @@ pub fn layout_scene_to_js(scene: &LayoutScene) -> JsValue {
                         js_sys::Reflect::set(&primitive, &JsValue::from_str("fontWeight"), &JsValue::from_str(&font_weight)).unwrap();
                     }
                 }
-                WireScenePrimitive::LineSegment { x1_pt, y1_pt, x2_pt, y2_pt, stroke, stroke_width } => {
+                WireScenePrimitive::LineSegment { x1_pt, y1_pt, x2_pt, y2_pt, stroke, stroke_width, stroke_line_cap } => {
                     js_sys::Reflect::set(&primitive, &JsValue::from_str("x1Pt"), &JsValue::from_f64(x1_pt as f64)).unwrap();
                     js_sys::Reflect::set(&primitive, &JsValue::from_str("y1Pt"), &JsValue::from_f64(y1_pt as f64)).unwrap();
                     js_sys::Reflect::set(&primitive, &JsValue::from_str("x2Pt"), &JsValue::from_f64(x2_pt as f64)).unwrap();
                     js_sys::Reflect::set(&primitive, &JsValue::from_str("y2Pt"), &JsValue::from_f64(y2_pt as f64)).unwrap();
                     js_sys::Reflect::set(&primitive, &JsValue::from_str("stroke"), &JsValue::from_str(&stroke)).unwrap();
                     js_sys::Reflect::set(&primitive, &JsValue::from_str("strokeWidth"), &JsValue::from_f64(stroke_width as f64)).unwrap();
+                    if let Some(cap) = stroke_line_cap {
+                        js_sys::Reflect::set(&primitive, &JsValue::from_str("strokeLineCap"), &JsValue::from_str(&cap)).unwrap();
+                    }
                 }
                 WireScenePrimitive::Rect { x_pt, y_pt, width_pt, height_pt, fill, stroke, stroke_width } => {
                     js_sys::Reflect::set(&primitive, &JsValue::from_str("xPt"), &JsValue::from_f64(x_pt as f64)).unwrap();

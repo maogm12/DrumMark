@@ -473,3 +473,244 @@ Nav markers (`@segno`, `@fine`, `@to-coda`, etc.) were converted to `TokenGlyph:
 - Renderer parity tests that previously looked for VexFlow-specific class names (`vf-notehead`, `vf-bar`, `vf-staff`) were stale against the current layout-engine SVG emitter. The stable contract for `src/renderer/svgRenderer.ts` is primitive SVG output (`<text>`, `<line>`, `<rect>`) after `setLayoutSource(dsl)`, not VexFlow DOM class parity.
 
 - `buildNormalizedScore(...)` is now WASM-owned, so any test constructing a score at module top level can race WASM initialization. `src/cli_output.test.ts` had to move score construction behind `beforeAll(async () => await initWasm())`.
+
+## 2026-05-13 Addendum: Platform-Neutral Layout Proposal Research
+
+- The existing custom-renderer direction is architecturally mis-scoped for a real VexFlow replacement:
+  - `crates/drummark-core/src/lib.rs` currently exposes `build_layout_plan(source, options)`, which makes the Rust boundary depend on source text instead of a normalized rendering model.
+  - `src/renderer/svgRenderer.ts` consumes a Rust plan that is already shaped like web drawing instructions (`line`, `rect`, `text`, group open/close markers), so the output contract is browser-oriented rather than platform-neutral.
+
+- A correct replacement boundary for multi-platform rendering is `normalized score -> Rust layout engine -> platform-neutral LayoutScene -> thin platform adapter`. If the Rust layer emits browser/SVG-shaped commands directly, every future platform either reimplements layout or inherits web-specific semantics.
+
+- The replacement scope should stay intentionally narrow: only the drum-notation surface the product already uses. A "general music engraving engine" target will create schedule and design drag before the project even reaches VexFlow removal.
+
+## 2026-05-13 Addendum: RenderScore and LayoutScene Foundation Work
+
+- `drummark-layout` previously treated its input as a self-contained `NormalizedScore` copy, which duplicated `drummark-core` normalization semantics and encouraged source-driven layout wiring. Converting that boundary to an explicit `RenderScore` makes the ownership chain visible and gives `drummark-core` one place to map normalized music data into render-facing data.
+
+- The current normalized model's `source_line` field is preserved into `RenderScore`, but it is not a stable 1-based source contract today. For simple parsed fixtures it may legitimately remain `0`, so downstream code should treat it as best-effort provenance rather than guaranteed user-facing line numbering.
+
+- `LayoutScene` contract work exposed two easy-to-miss failure modes in a platform-neutral exporter:
+  - measure indices must preserve score-space identity rather than resetting per system
+  - line-like geometry cannot be reconstructed with ad hoc `max()` logic from width/height boxes; scene endpoints must remain faithful to resolved absolute geometry
+
+- If `RenderScore` is exported to JS/WASM for fixtures or adapters, omitting semantic fields like navigation markers or hairpins silently re-opens the boundary. A render-facing contract is not "explicit" if the Rust struct is richer than the serialized form consumers actually receive.
+
+## 2026-05-13 Addendum: Scene Export Runtime Integration
+
+- On this machine, `wasm-pack` defaults to the Homebrew Rust toolchain, which does not have the `wasm32-unknown-unknown` target installed in its sysroot. Rebuilding the checked-in wasm glue works only if `wasm-pack` is invoked with rustup's toolchain binaries forced via `PATH`, `CARGO`, and `RUSTC`.
+
+- A `build_layout_scene(...)` export must have a stable return contract even on parser failure. Returning a raw error array from Rust while the JS side assumes `Scene.pages` exists causes the runtime to degrade into misleading placeholder SVGs instead of surfacing diagnostics.
+
+- The scene-construction ownership boundary matters in practice, not just in docs. When the new scene export was first implemented directly inside `drummark-core`, it recreated header placement, system spacing, measure width allocation, note spacing, stem geometry, and font choices in the wrong layer. Moving scene construction back into `drummark-layout` restores the intended ownership chain: `core` parses/normalizes/serializes, `layout` owns geometry.
+
+- A thin renderer adapter should fail on unknown scene item kinds, not silently skip them. Otherwise the first future `glyphRun`/`polyline` scene item becomes an invisible regression instead of an actionable contract mismatch.
+
+- CLI rendering should not use the same "friendly fallback" behavior as interactive preview rendering. For command-line verification, scene export or adapter failures must fail closed so users do not get a plausible-looking SVG file that actually encodes an internal runtime error.
+
+## 2026-05-13 Addendum: Render Path Debugging for the New Layout Engine
+
+- The current app/CLI render path does not consume the TypeScript normalized score; it goes straight through Rust WASM via `build_layout_scene(source, options)`. When a visual result disagrees with `npm run drummark --format ir`, the first suspect is parser/normalize drift between the JS and Rust pipelines, not the SVG adapter.
+
+- `SD | d ||` exposed a concrete Rust parser gap: `parse_measure_section()` only preserved closing `:|` / `:|.` markers, so closing `||` and `|.` were being dropped before normalization. The practical effect was that the last measure silently downgraded to the post-pass default final barline. Fixing this required preserving distinct closing barlines in the AST and teaching normalization to upgrade the resolved measure barline from a closing `Double`.
+
+- For debugging scene-based rendering, emitting stable `data-role` and `data-measure-id` attributes from `src/renderer/svgRenderer.ts` is a high-leverage contract. It turns renderer tests from weak primitive-count checks into semantic assertions against roles like `beam`, `double-barline-left`, `nav-start`, `hairpin-top`, and `multi-rest-bar`.
+
+- The Rust render pipeline currently does not emit ordinary rest events for simple dash gaps such as `SD | d - d - |`; those gaps remain implicit spacing rather than first-class `EventKind::Rest` output. Existing renderer checks for visible rest glyphs therefore need to target explicit render-time constructs that already exist today (multi-rests, measure repeats, hairpins, repeats, nav markers) until the rest-event contract is expanded.
+
+- `:|.` and `||.` cannot share one AST/normalize case. `:|.` means `repeat-end + volta terminator`, while `||.` means `double barline + volta terminator`. Collapsing both into one `DoubleVoltaTerminator` variant caused the new explicit `closing_barline` render path to draw `||.` as a repeat ending. The Rust path needs distinct barline variants so right-edge rendering can stay semantically correct.
+
+## 2026-05-14 Addendum: Implicit Rests Belong in RenderScore, Not the Parser
+
+- The right place to materialize ordinary gap rests for the new layout engine is `crates/drummark-core/src/render_score.rs`, not the parser or normalized AST. The parser's `-` tokens still represent source rhythm syntax, while the renderer needs a continuous per-voice timeline. That timeline can be derived from normalized events without changing parse semantics.
+
+- The VexFlow pipeline's behavior is the right reference for this layer:
+  - each voice should have a continuous measure timeline with gap rests inserted
+  - if an entire voice is empty for the measure, it should collapse to one whole-measure rest
+  - that empty-voice case must not be split at grouping boundaries, even when ordinary interior gaps are
+
+- Once implicit rests are derived in `RenderScore`, the SVG scene renderer can stay simple: it just renders `EventKind::Rest` like any other event. The main additional layout requirement is that lower-voice rests need their own vertical lane, otherwise they overlap upper-voice rests and become visually useless.
+
+- Rest glyph selection cannot be based on denominator alone. `1/1` and `1/2` both have denominator `< 4`, but they are whole-rest vs half-rest. The scene renderer needs duration-aware rest selection keyed by the full fraction, at least for the core undotted values.
+
+## 2026-05-14 Addendum: Render-Time Rest Semantics After the First Prototype
+
+- The first implicit-rest prototype overgeneralized from VexFlow and synthesized a full-measure rest for any voice missing from a measure. That is the wrong contract for this repo's score model. The safe rule is narrower: derive rests only for voices that are actually present somewhere in `score.tracks`, then fill their intra-measure gaps and trailing silence.
+
+- In practice that means `BD | b - - - |` should render lower-voice rests for the remaining silence in voice 2, but it must not invent a separate upper-voice rest lane just because voice 1 exists in traditional drum notation. The layout engine should respect the score's active voice set, not a hard-coded "always two voices" assumption.
+
+- Simple gap materialization also has a visible trailing-silence consequence: `HH | x - x - |` in `4/4` with `note 1/8` does not contain only the two interior eighth rests. After the final hit, the remaining half-measure silence is also a real rest span and should render as a half rest. Tests that assert only the interior gap glyphs undercount the new timeline contract.
+
+- Splitting gap rests only at grouping boundaries is not enough. A renderable rest contract also needs binary-duration decomposition inside each span, otherwise common gaps like `3/8` degrade into one semantically wrong glyph. The current safe baseline is to decompose binary silence into primitive `1`, `1/2`, `1/4`, `1/8`, `1/16`, and `1/32` rest events before layout.
+
+- Once the synth layer can emit `1/32` rests, canonical metrics must carry a real 32nd-rest glyph too. Leaving layout capped at `RestSixteenth` recreates the same cross-layer mismatch in a smaller form: render-score becomes more precise than the scene renderer can actually draw.
+
+## 2026-05-14 Addendum: Scene Composites Must Survive WASM Serialization
+
+- A platform-neutral scene contract is not real if semantic composites disappear at the WASM boundary. `LayoutScene` may contain `SceneComposite` values in Rust, but if `build_layout_scene(...)` serializes only `id` and `kind`, the web adapter cannot render spans such as `volta` or `repeatSpan` without re-inventing layout decisions from source text.
+
+- The minimum useful composite payload for the thin adapter is: `fragment`, `label`/`count`, and `startAnchorId`/`endAnchorId`. With those fields plus page-space measure boxes, the adapter can draw semantic brackets without measuring text or reconstructing span ranges itself.
+
+- `page.items`-only rendering leaves an entire class of notation invisible even when the layout engine is already producing the right semantics. Voltas were the concrete failure mode here: Rust had the notion of `CompositeKind::Volta`, but the app could not show any bracket until both scene serialization and the SVG adapter started consuming `page.composites`.
+
+## 2026-05-14 Addendum: Repeat Spans Need Their Own Rust Post-Pass
+
+- The Rust normalizer previously carried a `repeat_spans` field all the way out to `RenderScore`, but never actually populated it. That kind of "declared but dead" contract is easy to miss because downstream code can look complete while every real corpus example still receives an empty array.
+
+- The correct ownership for repeat-span derivation is a normalization post-pass over canonical measure metadata, after repeat barlines and propagated voltas are already resolved. The logic needs to mirror the score-level rule used in the TypeScript pipeline:
+  - open on `repeat-start`
+  - emit a span when a matching `repeat-end` is reached
+  - keep the logical repeat block open across subsequent alternate endings while `nextVolta` exists
+  - finally close once the volta chain ends
+
+- Once repeat spans are split into scene fragments for the adapter, fragment semantics matter just as much as for voltas. `start` fragments own the label and left hook, `end` fragments own the right hook, and `continuation` fragments own neither. Otherwise multi-system repeat brackets visibly duplicate counts and endcaps even though the scene data is technically present.
+
+## 2026-05-14 Addendum: Structural Composites Should Not Be Reconstructed From Paint Items
+
+- If `multi-rest`, `measure-repeat`, or `hairpin` only exist as ordinary scene items, downstream adapters and non-web renderers lose the semantic distinction between “this is a repeated-measure sign with count 2” and “this is just a text glyph `%` positioned near the staff.” That makes the scene look complete while still forcing every consumer to reverse-engineer structure from paint output.
+
+- The layout layer should emit these constructs twice only in the intentional sense:
+  - once as paint items for the current adapter to draw
+  - once as first-class `SceneComposite` metadata carrying anchors and count/span semantics
+
+- `hairpin` needs the same fragment treatment as `volta` and `repeatSpan`. Even if the current SVG adapter still draws hairpins from line items, the scene contract should already expose cross-system `start` / `continuation` / `end` fragments so future adapters do not need score-specific inference.
+
+## 2026-05-14 Addendum: Parity Bugs Need Contract-Level Fixture Gates
+
+- The layout contract must treat system-start and system-end barlines as resolved geometry, not adapter cleanup:
+  - the first measure's opening barline sits on the visible staff left boundary
+  - clef and first-system time signature live inside that first measure
+  - later systems must not retain phantom time-signature spacing
+  - final system barlines close on the staff right boundary instead of protruding past it
+
+- Tempo defaults are easy to get wrong if beat-unit semantics stay implicit. The canonical default tempo beat is quarter note, and the `note = number` cluster needs explicit horizontal padding in layout output so adapters do not invent spacing.
+
+- Stem attachment is a notehead-metrics problem, not a renderer stroke-placement problem. Up-stems and down-stems both need right-side anchoring derived from canonical notehead bounds, otherwise the scene can be structurally correct but visibly stab through the notehead.
+
+- Drum vertical mapping cannot stay "mostly inferred." The supported render families need explicit staff-position or ledger-line mapping in the render/layout contract. Crash-on-top-ledger-line is the concrete parity check that exposes missing mapping data immediately.
+
+- Flags and slanted beams both need canonical geometry assets rather than line fallbacks:
+  - unbeamed flags should come from dedicated glyph roles or canonical paths
+  - slanted beams should be real polygon/path bodies with stem lengths reprojected to the beam boundary
+
+## 2026-05-14 Addendum: Layout Geometry Must Follow the Legacy Instrument Map
+
+- The quickest reliable source of truth for current drum vertical placement is the existing legacy instrument mapping in `src/vexflow/notes.ts`, not the ad hoc scene-layout defaults. Converting those display-step/display-octave assignments into staff-space positions exposes concrete errors immediately:
+  - `C` (crash) belongs on the top ledger line above the staff
+  - `HH` is above the top line, not on it
+  - `BD`/`BD2` sit higher than the previous layout defaults had them
+
+- A system-start contract is not satisfied just because the correct glyphs exist near the left margin. The measure geometry itself must begin at the staff left boundary, while note-entry spacing inside the first measure is controlled by a decomposed start zone: opening barline, repeated clef, optional time signature, then the first playable slot.
+
+- Right-edge barlines should be modeled against a boundary coordinate, not a barline-left coordinate. If the final/double barline rectangle starts at the boundary and then extends by its width, the barline visibly protrudes past the staff. The safer contract is: the barline's right edge lands on the boundary, so final/double/thick right-edge bars are positioned by subtracting their width from the boundary x.
+
+## 2026-05-14 Addendum: Checked-In WASM Glue Is Part of the Renderer Contract
+
+- The web renderer does not call Rust sources directly in tests; it imports the checked-in package under `src/wasm/pkg`. A Rust-side layout fix can therefore pass `cargo test` while `npm test` still exercises stale scene behavior if the wasm glue is not rebuilt.
+
+- In this repo, a failing renderer parity test that still shows pre-fix SVG output after a Rust layout change should first be treated as a stale `src/wasm/pkg` suspicion, not as evidence that the Rust fix failed.
+
+- On this machine, the reliable rebuild path remains `wasm-pack build crates/drummark-core --target web --out-dir ../../src/wasm/pkg` with rustup toolchain binaries forced through `PATH`, `CARGO`, and `RUSTC`; otherwise `wasm-pack` may resolve to the Homebrew toolchain and miss the correct wasm target setup.
+
+## 2026-05-14 Addendum: Shared Render Enums Must Be Closed at the WASM Serialization Boundary
+
+- If task acceptance or local workflow relies on root-level `cargo test -p ...`, the repository needs a real root Cargo workspace. Without a top-level `Cargo.toml`, task text that names `cargo test -p drummark-layout` is not literally satisfiable from the repo root even if the crate itself builds.
+
+- `drummark-layout` enum growth is not local. Adding new `GlyphRole` or `TextRole` variants for canonical metrics also requires updating the `drummark-core/src/lib.rs` JS serialization matches that lower `LayoutScene` into wasm-bindgen objects. Otherwise Rust unit tests in the layout crate can stay green while `cargo test -p drummark-core` and `wasm-pack build` fail with non-exhaustive pattern errors at the boundary.
+
+## 2026-05-14 Addendum: Scene Goldens Need a Canonical Wire Model, Not Duplicate Lowerings
+
+- A platform-neutral `LayoutScene` fixture harness becomes brittle if Rust snapshots and wasm-export payloads are produced by separate hand-maintained lowering code. The stable pattern here is to let `drummark-layout` own one canonical wire-contract lowering, then derive both:
+  - native scene snapshots for goldens
+  - JS/wasm payloads for adapters
+
+- A useful scene golden for layout migration should mix geometry and semantics in one fixture. The high-leverage combination here was:
+  - header text blocks, especially tempo as a multi-item composite
+  - a flagged unbeamed note, so the snapshot proves `polyline` flag structure instead of anonymous strokes
+  - a slanted beam, so scene structure captures beam geometry independently of final SVG paint
+  - repeat/volta/hairpin fragments spanning multiple systems
+
+- If the web adapter consumes fields like `page.systems`, those fields need to exist in the TypeScript scene contract too. Leaving them out of `src/renderer/svgRenderer.ts` creates a false boundary where wasm exports more structure than the type system admits, which weakens adapter-contract tests.
+
+## 2026-05-14 Addendum: Width-Driven System Breaking Changes Span Fragment Cardinality
+
+- Once system breaking becomes width-driven instead of paragraph-driven, cross-system composite tests must stop assuming a fixed fragment count. A repeat span, volta, or hairpin that used to split into `start/end` over two systems may legitimately become `start/continuation/.../end` when narrower estimated widths force more systems.
+
+- Scene goldens that are meant to validate contract structure should encode whatever the current planner really emits, not preserve an older “two systems” mental model. The useful invariant is fragment semantics and anchor continuity, not a hard-coded number of line breaks.
+
+- Beam-group heuristics that key off rendered X distance are sensitive to width-planning changes. If a fixture is supposed to prove beam structure for serialization/golden purposes, choose rhythmic spacing that still satisfies the beam-group heuristic under wider measures, or the fixture will accidentally turn into a flag fixture after unrelated layout work.
+
+## 2026-05-14 Addendum: System Breaking Must Budget Fixed Start-Zone Costs Before Scaling Content
+
+- A width-driven planner cannot treat the full staff width as scalable measure content. First-measure start-zone costs are fixed geometry:
+  - opening barline
+  - repeated percussion clef
+  - optional first-system time signature
+  - baseline left/right playable padding
+
+- If those fixed costs are only subtracted later during event placement, the planner can accept a system that "fits" on paper while the first measure's actual slot-to-X area is silently compressed. The stable contract is:
+  - estimate inner playable width from rhythm/grouping density
+  - add fixed reservation costs per measure when deciding breaks
+  - scale only the inner playable width, not the reservations
+
+- Grouped-timing tests need to prove geometry, not just presence. A useful acceptance pattern is:
+  - compare quarter-note beat gaps across two groups with different density
+  - assert the denser group receives wider beat spacing
+  - add a near-threshold break case where the first-system reservation alone is what forces the extra system
+
+## 2026-05-14 Addendum: Event Geometry Needs Slot Clusters and Explicit Attachment Anchors
+
+- Scene-level event geometry is not complete if layout only emits noteheads and loose strokes. For drum notation, the stable contract is:
+  - events are grouped by measure slot before drawing
+  - same-voice combined hits can share one stem
+  - opposing voices at the same slot must be horizontally separated by layout, not by adapter heuristics
+
+- Attachment relationships need to survive serialization as first-class data. Adding `anchorItemId` to scene items gives the adapter and goldens a checked-in way to preserve:
+  - stem -> notehead ownership
+  - flag -> stem ownership
+  - beam -> stem ownership
+  - accent/sticking -> notehead ownership
+
+- Source-driven renderer parity should not pretend the parser/normalizer already derive beam semantics when `RenderEvent.beam` is still `none` on that path. If the goal is to verify adapter paint behavior for beams, use precomputed scene fixtures; if the goal is to verify layout beam grouping, use hand-crafted `RenderScore` fixtures in Rust where beam intent is explicit.
+
+## 2026-05-14 Addendum: Structural Scene Contracts Need Explicit Child Geometry and Layout-Owned Edge Stacking
+
+- Structural composites are not actually first-class if the scene only serializes anchors and asks the adapter to redraw the bracket or span from scratch. For repeat spans, volta brackets, and navigation markers, the stable contract is:
+  - layout emits the semantic composite
+  - layout also emits the concrete child scene items that paint that composite
+  - the composite stores `childItemIds` so tests and adapters can verify ownership without reconstructing geometry
+
+- Cross-system continuation semantics are best validated at two levels:
+  - fragment metadata on the composite (`start`, `continuation`, `end`)
+  - checked-in child item cardinality per fragment in a golden snapshot
+  This catches the common regression where continuation metadata survives but the drawable child geometry silently disappears.
+
+- Edge collision resolution for navigation text, repeat spans, volta labels, measure numbers, and hairpins belongs to layout. The adapter should not decide which structural item moves farther away from the staff. A robust layout contract is:
+  - group related child items into structural edge groups
+  - assign deterministic stacking priority by semantic role
+  - translate the whole group after collision detection so labels, hooks, and lines remain internally aligned
+
+## 2026-05-14 Addendum: Corpus Gates Need Separate Layout Goldens and VexFlow Oracle Reports
+
+- A migration gate should not overload one artifact to do two jobs. The stable split is:
+  - a layout-owned corpus scene report that snapshots what `LayoutScene` actually emits for the supported corpus
+  - a separate VexFlow-oracle divergence report that records how the legacy renderer differs on the same corpus
+
+- This split matters because the two artifacts answer different review questions:
+  - scene report drift means the new engine changed its own contract
+  - oracle report drift means the relationship between the new engine and the legacy migration oracle changed
+
+- VexFlow is a useful migration oracle only at the level it can actually expose. For this repo, serialized VexFlow SVG does not preserve layout-side role ownership like `repeat-span-line`, `volta-line`, `nav-start`, or `sticking`. Those need to be documented as approved oracle limitations in a checked-in divergence ledger instead of being silently excluded from review.
+
+## 2026-05-15 Addendum: Flags Belong to SMuFL Glyph Metrics and Paragraphs Own System Breaks
+
+- Unbeamed flags should stay in the same canonical glyph contract as noteheads and rests. In this repo that means emitting `ScenePrimitive::GlyphRun` with SMuFL flag roles, not ad-hoc polylines:
+  - `flag8thUp`/`Down` = `U+E240` / `U+E241`
+  - `flag16thUp`/`Down` = `U+E242` / `U+E243`
+  - `flag32ndUp`/`Down` = `U+E244` / `U+E245`
+
+- `paragraph_index` is not a soft hint for system planning. The layout contract is stricter: one paragraph maps to exactly one system, and width planning may only compress measure contents inside that paragraph-owned system.
+
+- In this environment, renderer parity tests cannot rely on rebuilding `src/wasm/pkg` because `wasm-pack build` currently fails without the `wasm32-unknown-unknown` target installed. When that target is missing, the honest fallback is:
+  - verify Rust-side integration with `cargo test -p drummark-layout`
+  - verify SVG rendering of new scene primitives with precomputed scene fixtures at the TypeScript layer

@@ -16,6 +16,7 @@ type RenderOptions = {
   bottomMargin?: number;
   leftMargin?: number;
   rightMargin?: number;
+  stemLength?: number;
   debug?: boolean;
 };
 
@@ -91,6 +92,7 @@ export function buildLayoutSceneFromSource(source: string, options?: RenderOptio
     rightMargin: (options?.rightMargin ?? 40) / ss,
     staffScale: 1.0,
     pxPerQuarter: 80,
+    stemLenPt: options?.stemLength ?? 31,
     debug: options?.debug ? 1 : 0,
   };
   const scene = build_layout_scene(source, opts as any) as Scene;

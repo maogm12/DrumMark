@@ -845,6 +845,8 @@ pub struct LayoutOptions {
     pub measure_num_offset_y: f32,
     // Padding between edge elements
     pub edge_padding: f32,
+    // Stem
+    pub stem_len_pt: f32,
 }
 
 impl Default for LayoutOptions {
@@ -867,6 +869,7 @@ impl Default for LayoutOptions {
             tempo_offset_y: -25.0,
             measure_num_offset_y: -4.0,
             edge_padding: 4.0,
+            stem_len_pt: 31.0,
         }
     }
 }
@@ -3083,6 +3086,7 @@ pub fn build_layout_scene(score: &RenderScore, opts: &LayoutOptions) -> LayoutSc
                     s_top,
                     s_bot,
                     &mapper,
+                    opts.stem_len_pt,
                 );
             }
 
@@ -3402,6 +3406,7 @@ fn render_measure_events(
     staff_top: f32,
     staff_bottom: f32,
     mapper: &SlotMapper,
+    stem_len_pt: f32,
 ) {
     let mut beam_anchors: Vec<BeamAnchor> = Vec::new();
     let geometry = measure_geometry(header, measure, measure_x, measure_width, left_pad, right_pad, mapper);
@@ -3453,6 +3458,7 @@ fn render_measure_events(
             event_x,
             staff_top,
             &mut beam_anchors,
+            stem_len_pt,
         );
     }
 
@@ -3468,6 +3474,7 @@ fn render_slot_group(
     event_x: f32,
     staff_top: f32,
     beam_anchors: &mut Vec<BeamAnchor>,
+    stem_len_pt: f32,
 ) {
     let hit_voice_count = slot_group
         .iter()
@@ -3499,6 +3506,7 @@ fn render_slot_group(
                 &voice_hits,
                 beam_groups_by_voice.get(&voice).copied(),
                 beam_anchors,
+                stem_len_pt,
             );
             note_anchors_by_voice.insert(voice, placements);
         }
@@ -3593,6 +3601,7 @@ fn render_hit_cluster(
     voice_hits: &[&SlotEvent<'_>],
     beam_group: Option<u32>,
     beam_anchors: &mut Vec<BeamAnchor>,
+    stem_len_pt: f32,
 ) -> Vec<NotePlacement> {
     let note_font_size = 30.0_f32;
     let stem_up = voice_hits.first().map(|slot_event| slot_event.event.voice != 2).unwrap_or(true);
@@ -3652,7 +3661,7 @@ fn render_hit_cluster(
         let needs_stem = first_hit.event.duration.denominator >= 4 || first_hit.event.tuplet.is_some();
         if needs_stem {
             let smufl_ss = note_font_size / 4.0;
-            let anchor_x = 1.18_f32;
+            let anchor_x = 1.50_f32;
             let attach_note = if stem_up {
                 note_placements
                     .iter()
@@ -3666,11 +3675,10 @@ fn render_hit_cluster(
                 let stem_x = if stem_up {
                     attach_note.note_x + anchor_x * smufl_ss
                 } else {
-                    attach_note.note_x + 0.12 * smufl_ss
+                    attach_note.note_x + 0.10 * smufl_ss
                 };
-                let stem_len = 31.0_f32;
-                let stem_y1 = if stem_up { attach_note.note_y - stem_len } else { attach_note.note_y };
-                let stem_y2 = if stem_up { attach_note.note_y } else { attach_note.note_y + stem_len };
+                let stem_y1 = if stem_up { attach_note.note_y - stem_len_pt } else { attach_note.note_y };
+                let stem_y2 = if stem_up { attach_note.note_y } else { attach_note.note_y + stem_len_pt };
                 let stem_id = push_line_item(items, counter, Some(measure_id), "stem", stem_x, stem_y1, stem_x, stem_y2, "#333", 1.5, Some("round"));
                 if let Some(item) = items.last_mut() {
                     item.anchor_item_id = Some(attach_note.note_id.clone());

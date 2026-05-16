@@ -738,7 +738,7 @@ pub fn notehead_glyph(track: &str, modifiers: &[String], _glyph: &str) -> GlyphM
     // Cymbal tracks and hi-hat pedal use X notehead
     if family == "cymbal" || track == "HF" {
         let metric = canonical_glyph_metric(GlyphRole::NoteheadX);
-        return GlyphMetrics { codepoint: metric.smufl_codepoint, width_ss: 1.0, height_ss: 1.0, stem_offset_y: 5.0 };
+        return GlyphMetrics { codepoint: metric.smufl_codepoint, width_ss: 1.0, height_ss: 1.0, stem_offset_y: 4.0 };
     }
 
     // Drum tracks: check modifiers for special noteheads
@@ -750,7 +750,7 @@ pub fn notehead_glyph(track: &str, modifiers: &[String], _glyph: &str) -> GlyphM
             }
             "cross" => {
                 let metric = canonical_glyph_metric(GlyphRole::NoteheadX);
-                return GlyphMetrics { codepoint: metric.smufl_codepoint, width_ss: 1.0, height_ss: 1.0, stem_offset_y: 5.0 };
+                return GlyphMetrics { codepoint: metric.smufl_codepoint, width_ss: 1.0, height_ss: 1.0, stem_offset_y: 4.0 };
             }
             "bell" => {
                 let metric = canonical_glyph_metric(GlyphRole::NoteheadCircleX);
@@ -3667,7 +3667,7 @@ fn render_hit_cluster(
         let needs_stem = first_hit.event.duration.denominator >= 4 || first_hit.event.tuplet.is_some();
         if needs_stem {
             let smufl_ss = note_font_size / 4.0;
-            let anchor_x = 1.50_f32;
+            let anchor_x = 1.48_f32;
             let attach_note = if stem_up {
                 note_placements
                     .iter()
@@ -3685,7 +3685,7 @@ fn render_hit_cluster(
                 };
                 let stem_y1 = if stem_up { attach_note.note_y - stem_len_pt } else { attach_note.note_y + attach_note.stem_offset_y };
                 let stem_y2 = if stem_up { attach_note.note_y - attach_note.stem_offset_y } else { attach_note.note_y + stem_len_pt };
-                let stem_id = push_line_item(items, counter, Some(measure_id), "stem", stem_x, stem_y1, stem_x, stem_y2, "#333", 1.5, Some("round"));
+                let stem_id = push_line_item(items, counter, Some(measure_id), "stem", stem_x, stem_y1, stem_x, stem_y2, "#333", 1.5, None);
                 if let Some(item) = items.last_mut() {
                     item.anchor_item_id = Some(attach_note.note_id.clone());
                 }
@@ -3745,6 +3745,21 @@ fn ledger_line_offsets_for_staff_position(track_ss: f32) -> Vec<f32> {
     lines
 }
 
+fn adjust_stem_tip(items: &mut [SceneItem], stem_id: &str, target_y: f32, stem_up: bool) {
+    for item in items.iter_mut() {
+        if item.id == stem_id {
+            if let ScenePrimitive::LineSegment(ref mut line) = &mut item.primitive {
+                if stem_up {
+                    line.y1_pt = target_y;
+                } else {
+                    line.y2_pt = target_y;
+                }
+            }
+            return;
+        }
+    }
+}
+
 fn render_beam_groups(
     items: &mut Vec<SceneItem>,
     counter: &mut usize,
@@ -3801,6 +3816,20 @@ fn render_beam_groups(
         let last = group.last().unwrap().clone();
         let primary_y = first.stem_tip_y;
         let end_y = last.stem_tip_y;
+
+        // Stretch intermediate stems to reach the beam line
+        if group.len() > 2 {
+            let x1 = first.stem_x;
+            let xn = last.stem_x;
+            let dx = xn - x1;
+            let dy = end_y - primary_y;
+            for anchor in &group[1..group.len() - 1] {
+                let t = if dx.abs() > 0.001 { (anchor.stem_x - x1) / dx } else { 0.5 };
+                let target_tip_y = primary_y + dy * t;
+                adjust_stem_tip(items, &anchor.stem_item_id, target_tip_y, anchor.up);
+            }
+        }
+
         let beam_id = push_path_item(
             items,
             counter,

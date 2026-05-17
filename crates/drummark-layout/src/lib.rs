@@ -157,6 +157,8 @@ pub enum GlyphRole {
     RestEighth,
     RestSixteenth,
     RestThirtySecond,
+    RepeatLeft,
+    RepeatRight,
     RepeatDot,
     MeasureRepeatMark1Bar,
     MeasureRepeatMark2Bars,
@@ -725,6 +727,10 @@ pub fn canonical_glyph_metric(role: GlyphRole) -> CanonicalGlyphMetric {
         GlyphRole::RestThirtySecond => {
             glyph_metric(role, 0xE4E8, [0.0, -2.0], [1.452, 1.704], None, None)
         }
+        GlyphRole::RepeatLeft => glyph_metric(role, 0xE040, [0.0, 0.0], [1.464, 4.0], None, None),
+        GlyphRole::RepeatRight => {
+            glyph_metric(role, 0xE041, [0.004, 0.0], [1.468, 4.0], None, None)
+        }
         GlyphRole::RepeatDot => glyph_metric(role, 0xE044, [0.0, -0.2], [0.4, 0.2], None, None),
         GlyphRole::MeasureRepeatMark1Bar => {
             glyph_metric(role, 0xE500, [0.0, -1.0], [2.128, 1.116], None, None)
@@ -954,6 +960,8 @@ fn glyph_role_name(role: GlyphRole) -> &'static str {
         GlyphRole::RestEighth => "restEighth",
         GlyphRole::RestSixteenth => "restSixteenth",
         GlyphRole::RestThirtySecond => "restThirtySecond",
+        GlyphRole::RepeatLeft => "repeatLeft",
+        GlyphRole::RepeatRight => "repeatRight",
         GlyphRole::RepeatDot => "repeatDot",
         GlyphRole::MeasureRepeatMark1Bar => "measureRepeatMark1Bar",
         GlyphRole::MeasureRepeatMark2Bars => "measureRepeatMark2Bars",
@@ -3028,6 +3036,10 @@ struct SystemStartReservation {
 
 const MEASURE_RIGHT_PAD_PT: f32 = 14.0;
 const NON_INITIAL_MEASURE_LEFT_PAD_PT: f32 = 14.0;
+const SVG_POINT_TO_USER_UNIT: f32 = 4.0 / 3.0;
+const REPEAT_BARLINE_FONT_SIZE_PT: f32 = 30.0;
+const FIRST_MEASURE_START_REPEAT_PREAMBLE_PULL_PT: f32 = 10.0;
+const START_REPEAT_TRAILING_GAP_PT: f32 = 22.0;
 
 impl SystemStartReservation {
     fn width(&self) -> f32 {
@@ -3046,6 +3058,50 @@ fn system_start_reservation(is_first_system: bool) -> SystemStartReservation {
         clef_trailing_gap: 18.0,
         time_signature_width: if is_first_system { 24.0 } else { 0.0 },
         time_signature_trailing_gap: if is_first_system { 18.0 } else { 0.0 },
+    }
+}
+
+fn is_start_repeat_barline(barline: Option<&str>) -> bool {
+    matches!(barline, Some("repeat-start") | Some("repeat-both"))
+}
+
+fn start_repeat_reserved_width() -> f32 {
+    repeat_barline_rendered_width(GlyphRole::RepeatLeft) + START_REPEAT_TRAILING_GAP_PT
+}
+
+fn first_measure_start_repeat_x(measure_x: f32, is_first_system: bool) -> f32 {
+    measure_x + system_start_reservation(is_first_system).width()
+        - FIRST_MEASURE_START_REPEAT_PREAMBLE_PULL_PT
+}
+
+fn start_repeat_vertical_origin(top: f32, bottom: f32) -> f32 {
+    let height_pt = repeat_barline_rendered_height(GlyphRole::RepeatLeft);
+    top + (bottom - top - height_pt) * 0.5 + height_pt
+}
+
+fn repeat_barline_rendered_width(role: GlyphRole) -> f32 {
+    canonical_glyph_metric(role).width_pt(REPEAT_BARLINE_FONT_SIZE_PT) * SVG_POINT_TO_USER_UNIT
+}
+
+fn repeat_barline_rendered_height(role: GlyphRole) -> f32 {
+    let metric = canonical_glyph_metric(role);
+    metric.bbox_height_ss() * (REPEAT_BARLINE_FONT_SIZE_PT / 4.0) * SVG_POINT_TO_USER_UNIT
+}
+
+fn measure_left_pad(
+    measure_index_in_system: usize,
+    is_first_system: bool,
+    barline: Option<&str>,
+) -> f32 {
+    if measure_index_in_system == 0 {
+        let repeat_start_width = if is_start_repeat_barline(barline) {
+            start_repeat_reserved_width() - FIRST_MEASURE_START_REPEAT_PREAMBLE_PULL_PT
+        } else {
+            0.0
+        };
+        system_start_reservation(is_first_system).width() + repeat_start_width
+    } else {
+        NON_INITIAL_MEASURE_LEFT_PAD_PT
     }
 }
 
@@ -3415,30 +3471,31 @@ fn finalize_planned_system<'a>(
         .iter()
         .enumerate()
         .map(|(index, _)| {
-            let left = if index == 0 {
-                system_start_reservation(is_first_system).width()
-            } else {
-                NON_INITIAL_MEASURE_LEFT_PAD_PT
-            };
+            let left = measure_left_pad(
+                index,
+                is_first_system,
+                current_measures[index].barline.as_deref(),
+            );
             left + MEASURE_RIGHT_PAD_PT
         })
         .sum();
     let current_inner_sum: f32 = current_inner_estimates.iter().sum();
     let scale = ((available_width - fixed_width).max(1.0) / current_inner_sum.max(1.0)).max(0.01);
+    let widths = current_inner_estimates
+        .into_iter()
+        .enumerate()
+        .map(|(index, width)| {
+            let left = measure_left_pad(
+                index,
+                is_first_system,
+                current_measures[index].barline.as_deref(),
+            );
+            width * scale + left + MEASURE_RIGHT_PAD_PT
+        })
+        .collect();
     systems.push(PlannedSystem {
         measures: current_measures,
-        widths: current_inner_estimates
-            .into_iter()
-            .enumerate()
-            .map(|(index, width)| {
-                let left = if index == 0 {
-                    system_start_reservation(is_first_system).width()
-                } else {
-                    NON_INITIAL_MEASURE_LEFT_PAD_PT
-                };
-                width * scale + left + MEASURE_RIGHT_PAD_PT
-            })
-            .collect(),
+        widths,
     });
 }
 
@@ -3681,8 +3738,6 @@ pub fn build_layout_scene(score: &RenderScore, opts: &LayoutOptions) -> LayoutSc
         let s_bot = sy + staff_ss * 5.0;
         let s_mid = sy + staff_ss * 3.0;
         let mut mx = system_left;
-        let first_measure_left_pad = system_start_reservation(is_first_system).width();
-        let other_measure_left_pad = NON_INITIAL_MEASURE_LEFT_PAD_PT;
         let mut measure_ids = Vec::new();
 
         for i in 0..5 {
@@ -3774,17 +3829,26 @@ pub fn build_layout_scene(score: &RenderScore, opts: &LayoutOptions) -> LayoutSc
             let measure_id = format!("measure-{}", measure.global_index);
             measure_ids.push(measure_id.clone());
 
+            let left_pad = measure_left_pad(mi, is_first_system, measure.barline.as_deref());
             if mi == 0 {
-                render_left_barline(
+                render_system_opening_barline(
                     &mut page.items,
                     &mut item_counter,
                     Some(&measure_id),
                     mx,
                     s_top,
                     s_bot,
-                    measure.barline.as_deref(),
-                    true,
                 );
+                if is_start_repeat_barline(measure.barline.as_deref()) {
+                    render_start_repeat_barline(
+                        &mut page.items,
+                        &mut item_counter,
+                        Some(&measure_id),
+                        first_measure_start_repeat_x(mx, is_first_system),
+                        s_top,
+                        s_bot,
+                    );
+                }
             } else {
                 render_left_barline(
                     &mut page.items,
@@ -3794,7 +3858,6 @@ pub fn build_layout_scene(score: &RenderScore, opts: &LayoutOptions) -> LayoutSc
                     s_top,
                     s_bot,
                     measure.barline.as_deref(),
-                    false,
                 );
             }
 
@@ -3948,11 +4011,6 @@ pub fn build_layout_scene(score: &RenderScore, opts: &LayoutOptions) -> LayoutSc
                     MeasureRepeatDisplayPart::TwoBarStop => {}
                 }
             } else {
-                let left_pad = if mi == 0 {
-                    first_measure_left_pad
-                } else {
-                    other_measure_left_pad
-                };
                 render_measure_events(
                     &mut page.items,
                     &mut item_counter,
@@ -5140,71 +5198,58 @@ fn render_left_barline(
     top: f32,
     bottom: f32,
     barline: Option<&str>,
-    is_system_start: bool,
 ) {
-    let h = bottom - top + 1.0;
-    let count_metric = canonical_text_metric(TextRole::CountLabel);
     match barline {
         Some("repeat-start") | Some("repeat-both") => {
-            push_rect_item(
-                items,
-                counter,
-                measure_id,
-                "repeat-start-thick",
-                x,
-                top,
-                3.0,
-                h,
-                "#333",
-                None,
-                None,
-            );
-            push_rect_item(
-                items,
-                counter,
-                measure_id,
-                "repeat-start-thin",
-                x + 5.0,
-                top,
-                1.0,
-                h,
-                "#333",
-                None,
-                None,
-            );
-            push_text_item(
-                items,
-                counter,
-                measure_id,
-                "repeat-dot",
-                x + 9.0,
-                top + 12.0,
-                TextRole::CountLabel,
-                ":".to_string(),
-                count_metric.font_family,
-                count_metric.font_size_pt,
-                "#333",
-                None,
-                None,
-            );
-        }
-        _ if is_system_start => {
-            push_rect_item(
-                items,
-                counter,
-                measure_id,
-                "opening-barline",
-                x,
-                top,
-                1.0,
-                h,
-                "#333",
-                None,
-                None,
-            );
+            render_start_repeat_barline(items, counter, measure_id, x, top, bottom)
         }
         _ => {}
     }
+}
+
+fn render_system_opening_barline(
+    items: &mut Vec<SceneItem>,
+    counter: &mut usize,
+    measure_id: Option<&str>,
+    x: f32,
+    top: f32,
+    bottom: f32,
+) {
+    push_rect_item(
+        items,
+        counter,
+        measure_id,
+        "opening-barline",
+        x,
+        top,
+        1.0,
+        bottom - top + 1.0,
+        "#333",
+        None,
+        None,
+    );
+}
+
+fn render_start_repeat_barline(
+    items: &mut Vec<SceneItem>,
+    counter: &mut usize,
+    measure_id: Option<&str>,
+    x: f32,
+    top: f32,
+    bottom: f32,
+) {
+    push_glyph_item(
+        items,
+        counter,
+        measure_id,
+        "repeat-start",
+        x,
+        start_repeat_vertical_origin(top, bottom),
+        GlyphRole::RepeatLeft,
+        "Bravura",
+        REPEAT_BARLINE_FONT_SIZE_PT,
+        "#333",
+    );
 }
 
 fn render_right_barline(
@@ -5218,49 +5263,20 @@ fn render_right_barline(
     is_last_measure_of_score: bool,
 ) {
     let h = bottom - top + 1.0;
-    let count_metric = canonical_text_metric(TextRole::CountLabel);
     match barline {
         Some("repeat-end") | Some("repeat-both") => {
-            push_rect_item(
+            let y = start_repeat_vertical_origin(top, bottom);
+            push_glyph_item(
                 items,
                 counter,
                 measure_id,
-                "repeat-end-thin",
-                x - 6.0,
-                top,
-                1.0,
-                h,
+                "repeat-end",
+                x - repeat_barline_rendered_width(GlyphRole::RepeatRight),
+                y,
+                GlyphRole::RepeatRight,
+                "Bravura",
+                REPEAT_BARLINE_FONT_SIZE_PT,
                 "#333",
-                None,
-                None,
-            );
-            push_rect_item(
-                items,
-                counter,
-                measure_id,
-                "repeat-end-thick",
-                x - 3.0,
-                top,
-                3.0,
-                h,
-                "#333",
-                None,
-                None,
-            );
-            push_text_item(
-                items,
-                counter,
-                measure_id,
-                "repeat-dot",
-                x - 12.0,
-                top + 12.0,
-                TextRole::CountLabel,
-                ":".to_string(),
-                count_metric.font_family,
-                count_metric.font_size_pt,
-                "#333",
-                None,
-                None,
             );
         }
         Some("double") => {
@@ -7332,6 +7348,102 @@ fn test_system_boundaries_align_with_staff_edges() {
         }
         _ => panic!("barlines should be rectangles"),
     }
+}
+
+#[test]
+fn test_first_measure_repeat_start_sits_after_system_preamble() {
+    let score = RenderScore {
+        version: RENDER_SCORE_VERSION.to_string(),
+        header: RenderHeader {
+            tempo: 120,
+            time_beats: 4,
+            time_beat_unit: 4,
+            divisions: 16,
+            note_value: 8,
+            grouping: vec![1, 1, 1, 1],
+            title: None,
+            subtitle: None,
+            composer: None,
+        },
+        tracks: vec![RenderTrack {
+            id: "SD".into(),
+            family: "drum".into(),
+        }],
+        measures: vec![RenderMeasure {
+            index: 0,
+            global_index: 0,
+            paragraph_index: 0,
+            measure_in_paragraph: 0,
+            source_line: 1,
+            events: vec![RenderEvent {
+                track: "SD".into(),
+                track_family: "drum".into(),
+                start: Fraction {
+                    numerator: 0,
+                    denominator: 1,
+                },
+                duration: Fraction {
+                    numerator: 1,
+                    denominator: 4,
+                },
+                kind: EventKind::Hit,
+                glyph: "d".into(),
+                modifiers: vec![],
+                modifier: None,
+                voice: 1,
+                beam: "none".into(),
+                tuplet: None,
+            }],
+            barline: Some("repeat-start".into()),
+            closing_barline: Some("final".into()),
+            start_nav: None,
+            end_nav: None,
+            volta_indices: None,
+            hairpins: vec![],
+            measure_repeat_slashes: None,
+            multi_rest_count: None,
+            note_value: 8,
+            volta_terminator: false,
+        }],
+        errors: vec![],
+        repeat_spans: vec![],
+    };
+
+    let opts = LayoutOptions::default();
+    let scene = build_layout_scene(&score, &opts);
+    let opening = scene.pages[0]
+        .items
+        .iter()
+        .find(|item| item.role == "opening-barline")
+        .expect("expected system opening barline");
+    let repeat_start = scene.pages[0]
+        .items
+        .iter()
+        .find(|item| item.role == "repeat-start")
+        .expect("expected start repeat barline");
+    let notehead = scene.pages[0]
+        .items
+        .iter()
+        .find(|item| item.role == "notehead")
+        .expect("expected notehead");
+
+    let ScenePrimitive::Rect(opening_rect) = &opening.primitive else {
+        panic!("opening barline should be a rect");
+    };
+    let ScenePrimitive::GlyphRun(repeat_glyph) = &repeat_start.primitive else {
+        panic!("repeat start should be a glyph");
+    };
+    let (note_x, _, _, _) = item_bounds(notehead).expect("notehead should have bounds");
+    let repeat_top = repeat_glyph.y_pt - repeat_barline_rendered_height(GlyphRole::RepeatLeft);
+    let repeat_bottom = repeat_glyph.y_pt;
+
+    assert!((opening_rect.x_pt - opts.left_margin_pt).abs() < 0.01);
+    assert_eq!(repeat_glyph.glyph_role, GlyphRole::RepeatLeft);
+    assert_eq!(repeat_glyph.font_size_pt, REPEAT_BARLINE_FONT_SIZE_PT);
+    assert!(repeat_glyph.x_pt > opening_rect.x_pt + 60.0);
+    assert!((repeat_top - opening_rect.y_pt).abs() < 0.01);
+    assert!((repeat_bottom - (opening_rect.y_pt + opening_rect.height_pt - 1.0)).abs() < 0.01);
+    assert!(note_x > repeat_glyph.x_pt + repeat_barline_rendered_width(GlyphRole::RepeatLeft));
 }
 
 #[test]

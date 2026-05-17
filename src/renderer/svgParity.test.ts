@@ -118,8 +118,8 @@ describe("SVG Renderer parity", () => {
 
   it("renders repeat bars", () => {
     const svg = render(HEADER + "SD |: d :|\n");
-    expect(countRole(svg, "repeat-start-thick")).toBe(1);
-    expect(countRole(svg, "repeat-end-thick")).toBe(1);
+    expect(countRole(svg, "repeat-start")).toBe(1);
+    expect(countRole(svg, "repeat-end")).toBe(1);
   });
 
   it("renders repeat-span and volta composites", () => {

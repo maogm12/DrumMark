@@ -778,3 +778,15 @@ Nav markers (`@segno`, `@fine`, `@to-coda`, etc.) were converted to `TokenGlyph:
 - For noteheads, real stem attachment comes from anchors such as `stemUpSE` and `stemDownNW`. For flags, the corresponding anchors are `stemUpNW` and `stemDownSW`. Rests, repeat marks, clefs, navigation glyphs, and time-signature digits in the current table do not expose stem anchors and should store `None` rather than synthetic bbox centers.
 
 - The checked-in Bravura metadata does not expose advance widths. Until a separate font advance source is introduced, `CanonicalGlyphMetric.width_ss` is the bbox width for the glyphs this layout engine uses.
+
+## 2026-05-16 Addendum: Repeat Barlines Have Dedicated SMuFL Glyphs
+
+- Bravura exposes repeat barlines as full-height glyphs: `repeatLeft` (`U+E040`) and `repeatRight` (`U+E041`). Their `glyphBBoxes` span 4 staff spaces vertically, so a 40pt font size aligns naturally to a 10pt staff-space system when the glyph baseline/origin is placed at the staff bottom.
+
+- These repeat glyphs do not define anchors in `glyphsWithAnchors`; layout only needs their bbox width for horizontal reservation and edge placement. The older hand-drawn rect-plus-dot implementation should not be used when the SMuFL font is available.
+
+## 2026-05-16 Addendum: Repeat Barlines Need Optical Size Adjustment in SVG Text
+
+- Although `repeatLeft` / `repeatRight` have a 4-staff-space metadata bbox, browser SVG renders `font-size="Npt"` in CSS points, where `1pt = 4/3` viewBox user units. For a 10-unit staff space and a 40-unit four-space staff height, the repeat font size should therefore be `40 / (4/3) = 30pt`, not the literal 40pt implied by metadata units alone.
+
+- First-system start repeats need two independent horizontal controls: pull the glyph toward the clef/time-signature preamble, then reserve a separate trailing gap before note content. Tying both to a single "width" value makes the repeat either too far from the preamble or too close to the first note.

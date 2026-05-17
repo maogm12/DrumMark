@@ -1081,6 +1081,10 @@ pub struct LayoutOptions {
     // Staff
     pub staff_scale: f32,
     pub px_per_quarter: f32,
+    // Header/title area. Matches the TS renderer: first system starts at
+    // top margin + title area height + title gap.
+    pub header_height_pt: f32,
+    pub header_staff_spacing_pt: f32,
     // Per-element Y offsets in staff space. Volta spacing is positive upward from the top skyline.
     pub volta_offset_y: f32,
     pub nav_offset_y: f32,
@@ -1109,6 +1113,8 @@ impl Default for LayoutOptions {
             right_margin_pt: 50.0,
             staff_scale: 0.75,
             px_per_quarter: 80.0,
+            header_height_pt: 50.0,
+            header_staff_spacing_pt: 60.0,
             volta_offset_y: 0.0,
             nav_offset_y: -10.0,
             hairpin_offset_y: 0.0,
@@ -1388,6 +1394,8 @@ mod tests {
         let opts = LayoutOptions::default();
         assert_eq!(opts.page_width_pt, 612.0);
         assert_eq!(opts.px_per_quarter, 80.0);
+        assert_eq!(opts.header_height_pt, 50.0);
+        assert_eq!(opts.header_staff_spacing_pt, 60.0);
         assert_eq!(opts.volta_offset_y, 0.0);
     }
 
@@ -2184,6 +2192,17 @@ mod tests {
             .collect()
     }
 
+    fn text_y_by_role(scene: &LayoutScene, role: &str) -> f32 {
+        let item = items_by_role(scene, role)
+            .into_iter()
+            .next()
+            .unwrap_or_else(|| panic!("expected {role} text item"));
+        let ScenePrimitive::TextRun(text) = &item.primitive else {
+            panic!("expected {role} to be text");
+        };
+        text.y_pt
+    }
+
     fn test_hit(track: &str, start: Fraction, duration: Fraction, voice: u8) -> RenderEvent {
         RenderEvent {
             track: track.into(),
@@ -2492,6 +2511,51 @@ mod tests {
         assert!(
             first_group_gap > second_group_gap + 1.0,
             "dense first-half grouping should allocate wider beat spacing: {xs:?}"
+        );
+    }
+
+    #[test]
+    fn test_header_height_and_gap_match_ts_system_start_semantics() {
+        let mut score = simple_layout_score(vec![regular_measure(0, 0, 1)]);
+        score.header.title = Some("Title".into());
+        score.header.subtitle = Some("Subtitle".into());
+        score.header.composer = Some("Composer".into());
+
+        let baseline = build_layout_scene(&score, &LayoutOptions::default());
+        let custom_height = build_layout_scene(
+            &score,
+            &LayoutOptions {
+                header_height_pt: 80.0,
+                ..LayoutOptions::default()
+            },
+        );
+        let custom_gap = build_layout_scene(
+            &score,
+            &LayoutOptions {
+                header_staff_spacing_pt: 20.0,
+                ..LayoutOptions::default()
+            },
+        );
+
+        assert_eq!(baseline.pages[0].systems[0].y_pt, 140.0);
+        assert_eq!(custom_height.pages[0].systems[0].y_pt, 170.0);
+        assert_eq!(custom_gap.pages[0].systems[0].y_pt, 100.0);
+
+        assert_eq!(
+            text_y_by_role(&baseline, "title"),
+            text_y_by_role(&custom_height, "title")
+        );
+        assert_eq!(
+            text_y_by_role(&custom_height, "subtitle") - text_y_by_role(&baseline, "subtitle"),
+            30.0
+        );
+        assert_eq!(
+            text_y_by_role(&custom_height, "composer") - text_y_by_role(&baseline, "composer"),
+            30.0
+        );
+        assert_eq!(
+            text_y_by_role(&custom_gap, "subtitle"),
+            text_y_by_role(&baseline, "subtitle")
         );
     }
 
@@ -3884,8 +3948,8 @@ pub fn build_layout_scene(score: &RenderScore, opts: &LayoutOptions) -> LayoutSc
     let center_x = page_w / 2.0;
     let system_left = margin;
     let system_right = page_w - margin;
-    let header_area_h = 130.0;
-    let mut sys_y = opts.top_margin_pt + header_area_h;
+    let header_bottom_y = opts.top_margin_pt + opts.header_height_pt;
+    let mut sys_y = header_bottom_y + opts.header_staff_spacing_pt;
     let mut item_counter = 0usize;
     let mapper = SlotMapper::new(opts.px_per_quarter);
     let expanded = expand_layout_data(score);
@@ -3907,9 +3971,9 @@ pub fn build_layout_scene(score: &RenderScore, opts: &LayoutOptions) -> LayoutSc
     let composer_metric = canonical_text_metric(TextRole::Composer);
     let tempo_metric = canonical_text_metric(TextRole::Tempo);
     let title_y = opts.top_margin_pt + title_metric.ascent_pt + 18.0;
-    let subtitle_y = title_y + title_metric.line_height_pt;
-    let composer_y = opts.top_margin_pt + composer_metric.ascent_pt + 18.0;
-    let tempo_y = opts.top_margin_pt + header_area_h + opts.tempo_offset_y;
+    let subtitle_y = header_bottom_y + subtitle_metric.ascent_pt + 12.0;
+    let composer_y = header_bottom_y + composer_metric.ascent_pt + 12.0;
+    let tempo_y = header_bottom_y + opts.header_staff_spacing_pt + opts.tempo_offset_y;
 
     if let Some(ref text) = score.header.title {
         let title_id = push_text_item(

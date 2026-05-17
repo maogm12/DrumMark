@@ -872,3 +872,11 @@ Nav markers (`@segno`, `@fine`, `@to-coda`, etc.) were converted to `TokenGlyph:
 - Isolated short notes inside a higher beam level are rendered with partial beam stubs. For a `16th, 8th, 16th` group, VexFlow emits one continuous primary beam and two short secondary beam segments, not one secondary beam spanning the whole group.
 
 - Rust layout should model beam anchors with a level count, then generate beam path segments per level instead of checking whether any anchor in the group requires a secondary beam.
+
+## 2026-05-17 Addendum: Title Area Settings Match VexFlow Header Geometry
+
+- VexFlow starts the first system at `pagePadding.top + headerHeight + headerStaffSpacing` after scaling settings into logical staff space. The Rust scene renderer should expose the same two layout options instead of using a fixed header reservation.
+
+- `headerHeight` moves the header bottom. Subtitle and composer anchor to that moving bottom, while the title remains fixed near the top of the title area. `headerStaffSpacing` moves only the systems/tempo region below the title area; it should not move title, subtitle, or composer text.
+
+- The JS layout-engine adapter must divide both settings by `staffScale` before sending them to WASM, matching the TS renderer's `getScaledDimensions()` behavior.

@@ -115,6 +115,16 @@ describe("SVG scene adapter", () => {
     expect(hairpinCenterY(higher) - baselineY).toBeCloseTo(-5, 3);
   });
 
+  it("passes title area height and title gap into the layout engine", () => {
+    const baseline = buildLayoutSceneFromSource(SRC, { pageWidth: 612, staffScale: 1, topMargin: 30, headerHeight: 50, headerStaffSpacing: 60 });
+    const taller = buildLayoutSceneFromSource(SRC, { pageWidth: 612, staffScale: 1, topMargin: 30, headerHeight: 80, headerStaffSpacing: 60 });
+    const tighter = buildLayoutSceneFromSource(SRC, { pageWidth: 612, staffScale: 1, topMargin: 30, headerHeight: 50, headerStaffSpacing: 20 });
+
+    expect(baseline.pages[0].systems[0].yPt).toBeCloseTo(140, 3);
+    expect(taller.pages[0].systems[0].yPt).toBeCloseTo(170, 3);
+    expect(tighter.pages[0].systems[0].yPt).toBeCloseTo(100, 3);
+  });
+
   it("fails closed on parse errors", () => {
     expect(() => buildLayoutSceneFromSource("time 4\nHH | x |\n")).toThrow(/Line/);
     expect(() => renderSourceToSvg("time 4\nHH | x |\n")).toThrow(/Line/);

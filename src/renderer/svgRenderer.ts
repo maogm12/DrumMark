@@ -19,6 +19,8 @@ type RenderOptions = {
   rightMargin?: number;
   stemLength?: number;
   systemSpacing?: number;
+  headerHeight?: number;
+  headerStaffSpacing?: number;
   voltaSpacing?: number;
   hairpinOffsetY?: number;
   debug?: boolean;
@@ -98,6 +100,8 @@ export function buildLayoutSceneFromSource(source: string, options?: RenderOptio
     pxPerQuarter: 80,
     stemLenPt: options?.stemLength ?? 31,
     systemSpacing: (options?.systemSpacing ?? SETTINGS_RANGES.systemSpacing.default) / ss,
+    headerHeight: (options?.headerHeight ?? SETTINGS_RANGES.headerHeight.default) / ss,
+    headerStaffSpacing: (options?.headerStaffSpacing ?? SETTINGS_RANGES.headerStaffSpacing.default) / ss,
     voltaSpacing: (options?.voltaSpacing ?? SETTINGS_RANGES.voltaSpacing.default) / ss,
     hairpinOffsetY: (options?.hairpinOffsetY ?? SETTINGS_RANGES.hairpinOffsetY.default) / ss,
     debug: options?.debug ? 1 : 0,

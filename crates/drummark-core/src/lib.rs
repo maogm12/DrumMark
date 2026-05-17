@@ -378,6 +378,8 @@ fn parse_layout_options(options: &JsValue) -> drummark_layout::LayoutOptions {
         let px_q = get_f64("pxPerQuarter");
         let stem_len = get_f64("stemLenPt");
         let sys_spacing = get_optional_f64("systemSpacing");
+        let header_height = get_optional_f64("headerHeight");
+        let header_staff_spacing = get_optional_f64("headerStaffSpacing");
         let volta_spacing = get_optional_f64("voltaSpacing");
         let hairpin_offset = get_optional_f64("hairpinOffsetY");
         if width > 0.0 && height > 0.0 {
@@ -392,6 +394,8 @@ fn parse_layout_options(options: &JsValue) -> drummark_layout::LayoutOptions {
                 px_per_quarter: if px_q > 0.0 { px_q as f32 } else { 80.0 },
                 stem_len_pt: if stem_len > 0.0 { stem_len as f32 } else { 31.0 },
                 system_spacing_pt: sys_spacing.unwrap_or(30.0) as f32,
+                header_height_pt: header_height.unwrap_or(50.0) as f32,
+                header_staff_spacing_pt: header_staff_spacing.unwrap_or(60.0) as f32,
                 volta_offset_y: volta_spacing.unwrap_or(0.0) as f32,
                 hairpin_offset_y: hairpin_offset.unwrap_or(0.0) as f32,
                 ..drummark_layout::LayoutOptions::default()
@@ -427,6 +431,8 @@ pub fn build_layout_plan(source: &str, options: JsValue) -> JsValue {
         let right = get_f64("rightMargin");
         let scale = get_f64("staffScale");
         let px_q = get_f64("pxPerQuarter");
+        let header_height = get_f64("headerHeight");
+        let header_staff_spacing = get_f64("headerStaffSpacing");
         let hairpin_offset = get_f64("hairpinOffsetY");
         show_debug_bbox = get_f64("debug") > 0.0;
         if width > 0.0 && height > 0.0 {
@@ -439,6 +445,8 @@ pub fn build_layout_plan(source: &str, options: JsValue) -> JsValue {
                 right_margin_pt: right as f32,
                 staff_scale: if scale > 0.0 { scale as f32 } else { 0.75 },
                 px_per_quarter: if px_q > 0.0 { px_q as f32 } else { 80.0 },
+                header_height_pt: if header_height > 0.0 { header_height as f32 } else { 50.0 },
+                header_staff_spacing_pt: header_staff_spacing as f32,
                 hairpin_offset_y: hairpin_offset as f32,
                 ..drummark_layout::LayoutOptions::default()
             }

@@ -2557,6 +2557,56 @@ mod tests {
     }
 
     #[test]
+    fn test_secondary_beams_break_around_eighth_notes() {
+        let mut measure = regular_measure(0, 0, 0);
+        measure.events = vec![
+            test_hit(
+                "SD",
+                Fraction {
+                    numerator: 0,
+                    denominator: 1,
+                },
+                Fraction {
+                    numerator: 1,
+                    denominator: 16,
+                },
+                1,
+            ),
+            test_hit(
+                "SD",
+                Fraction {
+                    numerator: 1,
+                    denominator: 16,
+                },
+                Fraction {
+                    numerator: 1,
+                    denominator: 8,
+                },
+                1,
+            ),
+            test_hit(
+                "SD",
+                Fraction {
+                    numerator: 3,
+                    denominator: 16,
+                },
+                Fraction {
+                    numerator: 1,
+                    denominator: 16,
+                },
+                1,
+            ),
+        ];
+        let mut score = simple_layout_score(vec![measure]);
+        score.header.grouping = vec![4];
+
+        let scene = build_layout_scene(&score, &LayoutOptions::default());
+
+        assert_eq!(items_by_role(&scene, "beam").len(), 1);
+        assert_eq!(items_by_role(&scene, "beam-secondary").len(), 2);
+    }
+
+    #[test]
     fn test_rests_break_grouping_beams() {
         let mut measure = regular_measure(0, 0, 0);
         measure.events = vec![
@@ -3214,6 +3264,12 @@ struct BeamAnchor {
     level: u8,
     up: bool,
     stem_item_id: String,
+}
+
+#[derive(Clone, Copy, Debug)]
+struct BeamLineSegment {
+    start_x: f32,
+    end_x: f32,
 }
 
 #[derive(Clone)]
@@ -5547,27 +5603,41 @@ fn render_beam_groups(
             item.anchor_item_id = Some(first.stem_item_id.clone());
             debug_assert_eq!(item.id, beam_id);
         }
-        if group.iter().any(|anchor| anchor.level >= 2) {
-            let secondary_id = push_path_item(
-                items,
-                counter,
-                Some(measure_id),
-                "beam-secondary",
-                beam_path_d(
-                    first.stem_x,
-                    primary_y + if first.up { 6.0 } else { -6.0 },
-                    last.stem_x,
-                    end_y + if last.up { 6.0 } else { -6.0 },
-                    first.up,
-                    4.0,
-                ),
-                "#333",
-                None,
-                None,
-            );
-            if let Some(item) = items.last_mut() {
-                item.anchor_item_id = Some(first.stem_item_id.clone());
-                debug_assert_eq!(item.id, secondary_id);
+        let max_level = group.iter().map(|anchor| anchor.level).max().unwrap_or(1);
+        for level in 2..=max_level {
+            for segment in beam_line_segments_for_level(group, level) {
+                let level_offset = if first.up {
+                    6.0 * (level - 1) as f32
+                } else {
+                    -6.0 * (level - 1) as f32
+                };
+                let start_y =
+                    beam_y_at_x(segment.start_x, first.stem_x, primary_y, last.stem_x, end_y)
+                        + level_offset;
+                let segment_end_y =
+                    beam_y_at_x(segment.end_x, first.stem_x, primary_y, last.stem_x, end_y)
+                        + level_offset;
+                let secondary_id = push_path_item(
+                    items,
+                    counter,
+                    Some(measure_id),
+                    "beam-secondary",
+                    beam_path_d(
+                        segment.start_x,
+                        start_y,
+                        segment.end_x,
+                        segment_end_y,
+                        first.up,
+                        4.0,
+                    ),
+                    "#333",
+                    None,
+                    None,
+                );
+                if let Some(item) = items.last_mut() {
+                    item.anchor_item_id = Some(first.stem_item_id.clone());
+                    debug_assert_eq!(item.id, secondary_id);
+                }
             }
         }
         group.clear();
@@ -5591,6 +5661,60 @@ fn render_beam_groups(
         }
     }
     flush_group(&mut current);
+}
+
+fn beam_y_at_x(x: f32, x1: f32, y1: f32, x2: f32, y2: f32) -> f32 {
+    let dx = x2 - x1;
+    if dx.abs() < 0.001 {
+        return y1;
+    }
+    y1 + (y2 - y1) * ((x - x1) / dx)
+}
+
+fn beam_line_segments_for_level(group: &[BeamAnchor], level: u8) -> Vec<BeamLineSegment> {
+    const PARTIAL_BEAM_LENGTH_PT: f32 = 10.0;
+
+    let mut segments = Vec::new();
+    let mut active_start: Option<f32> = None;
+
+    for (index, anchor) in group.iter().enumerate() {
+        let gets_beam = anchor.level >= level;
+        let next_gets_beam = group
+            .get(index + 1)
+            .map(|next| next.level >= level)
+            .unwrap_or(false);
+
+        if gets_beam {
+            if let Some(start_x) = active_start {
+                segments.push(BeamLineSegment {
+                    start_x,
+                    end_x: anchor.stem_x,
+                });
+                active_start = next_gets_beam.then_some(anchor.stem_x);
+            } else if next_gets_beam {
+                active_start = Some(anchor.stem_x);
+            } else {
+                let prev_gets_beam = index
+                    .checked_sub(1)
+                    .and_then(|prev| group.get(prev))
+                    .map(|prev| prev.level >= level)
+                    .unwrap_or(false);
+                let direction = if !prev_gets_beam && group.get(index + 1).is_some() {
+                    1.0
+                } else {
+                    -1.0
+                };
+                segments.push(BeamLineSegment {
+                    start_x: anchor.stem_x,
+                    end_x: anchor.stem_x + PARTIAL_BEAM_LENGTH_PT * direction,
+                });
+            }
+        } else {
+            active_start = None;
+        }
+    }
+
+    segments
 }
 
 fn beam_path_d(x1: f32, y1: f32, x2: f32, y2: f32, up: bool, thickness: f32) -> String {

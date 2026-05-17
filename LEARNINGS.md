@@ -864,3 +864,11 @@ Nav markers (`@segno`, `@fine`, `@to-coda`, etc.) were converted to `TokenGlyph:
 - The JS layout-engine adapter must pass `hairpinOffsetY` through to WASM. Keeping the setting only in VexFlow options makes the React control appear live while the Rust scene renderer silently uses its default.
 
 - The UI range must allow negative values because tighter placement is part of the control contract, not an invalid input.
+
+## 2026-05-17 Addendum: VexFlow Secondary Beams Are Layer-Specific Segments
+
+- VexFlow draws beam levels independently. The primary beam connects notes shorter than a quarter note across the beam group, but the secondary 16th-note beam only connects notes shorter than an eighth note. An eighth note inside a group therefore interrupts the secondary beam while leaving the primary beam continuous.
+
+- Isolated short notes inside a higher beam level are rendered with partial beam stubs. For a `16th, 8th, 16th` group, VexFlow emits one continuous primary beam and two short secondary beam segments, not one secondary beam spanning the whole group.
+
+- Rust layout should model beam anchors with a level count, then generate beam path segments per level instead of checking whether any anchor in the group requires a secondary beam.

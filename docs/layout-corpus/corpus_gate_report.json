@@ -340,8 +340,8 @@
         "pages": 1,
         "systems": 7,
         "measures": 10,
-        "items": 356,
-        "composites": 10,
+        "items": 351,
+        "composites": 8,
         "itemRoles": {
           "title": 1,
           "subtitle": 1,
@@ -370,22 +370,15 @@
           "double-barline-left": 1,
           "double-barline-right": 1,
           "final-barline-thin": 1,
-          "final-barline-thick": 1,
-          "repeat-span-line": 2,
-          "repeat-span-start": 1,
-          "repeat-span-count": 1,
-          "repeat-span-end": 1
+          "final-barline-thick": 1
         },
         "compositeKinds": {
           "textBlock": 4,
-          "navigation": 4,
-          "repeatSpan": 2
+          "navigation": 4
         },
         "fragmentKinds": {
           "textBlock:singleSegment": 4,
-          "navigation:singleSegment": 4,
-          "repeatSpan:start": 1,
-          "repeatSpan:end": 1
+          "navigation:singleSegment": 4
         }
       }
     },
@@ -671,8 +664,8 @@
         "pages": 1,
         "systems": 6,
         "measures": 18,
-        "items": 424,
-        "composites": 20,
+        "items": 425,
+        "composites": 19,
         "itemRoles": {
           "title": 1,
           "tempo-glyph": 1,
@@ -699,12 +692,8 @@
           "double-barline-right": 4,
           "final-barline-thin": 1,
           "final-barline-thick": 1,
-          "repeat-span-line": 1,
-          "repeat-span-start": 1,
-          "repeat-span-end": 1,
-          "repeat-span-count": 1,
           "volta-line": 8,
-          "volta-start-hook": 3,
+          "volta-start-hook": 8,
           "volta-label": 3,
           "volta-end-hook": 3
         },
@@ -712,14 +701,12 @@
           "textBlock": 2,
           "measureRepeat": 2,
           "navigation": 7,
-          "repeatSpan": 1,
           "volta": 8
         },
         "fragmentKinds": {
           "textBlock:singleSegment": 2,
           "measureRepeat:singleSegment": 2,
           "navigation:singleSegment": 7,
-          "repeatSpan:singleSegment": 1,
           "volta:singleSegment": 1,
           "volta:start": 2,
           "volta:end": 2,
@@ -868,8 +855,8 @@
         "pages": 1,
         "systems": 19,
         "measures": 73,
-        "items": 1566,
-        "composites": 12,
+        "items": 1550,
+        "composites": 2,
         "itemRoles": {
           "title": 1,
           "tempo-glyph": 1,
@@ -888,21 +875,13 @@
           "beam-secondary": 60,
           "repeat-end": 2,
           "final-barline-thin": 1,
-          "final-barline-thick": 1,
-          "repeat-span-line": 10,
-          "repeat-span-start": 2,
-          "repeat-span-count": 2,
-          "repeat-span-end": 2
+          "final-barline-thick": 1
         },
         "compositeKinds": {
-          "textBlock": 2,
-          "repeatSpan": 10
+          "textBlock": 2
         },
         "fragmentKinds": {
-          "textBlock:singleSegment": 2,
-          "repeatSpan:start": 2,
-          "repeatSpan:continuation": 6,
-          "repeatSpan:end": 2
+          "textBlock:singleSegment": 2
         }
       }
     },
@@ -912,8 +891,8 @@
         "pages": 1,
         "systems": 21,
         "measures": 80,
-        "items": 2749,
-        "composites": 90,
+        "items": 2657,
+        "composites": 23,
         "itemRoles": {
           "title": 1,
           "subtitle": 1,
@@ -937,12 +916,8 @@
           "double-barline-right": 5,
           "flag": 10,
           "beam-secondary": 1,
-          "repeat-span-line": 67,
-          "repeat-span-start": 10,
-          "repeat-span-count": 10,
-          "repeat-span-end": 10,
           "volta-line": 18,
-          "volta-start-hook": 13,
+          "volta-start-hook": 18,
           "volta-label": 13,
           "volta-end-hook": 13,
           "hairpin-top": 2,
@@ -950,16 +925,11 @@
         },
         "compositeKinds": {
           "textBlock": 3,
-          "repeatSpan": 67,
           "volta": 18,
           "hairpin": 2
         },
         "fragmentKinds": {
           "textBlock:singleSegment": 3,
-          "repeatSpan:start": 8,
-          "repeatSpan:continuation": 49,
-          "repeatSpan:end": 8,
-          "repeatSpan:singleSegment": 2,
           "volta:singleSegment": 9,
           "volta:start": 4,
           "volta:end": 4,
@@ -1364,7 +1334,7 @@
       "file": "docs/examples/full-example.drum",
       "diffs": {
         "lineCount": {
-          "layout": 111,
+          "layout": 107,
           "vexflow": 0
         },
         "rectCount": {
@@ -1372,7 +1342,7 @@
           "vexflow": 82
         },
         "textCount": {
-          "layout": 217,
+          "layout": 216,
           "vexflow": 140
         },
         "openingBarlines": {
@@ -1419,10 +1389,6 @@
           "layout": 2,
           "vexflow": 0
         },
-        "repeatSpanLines": {
-          "layout": 2,
-          "vexflow": 0
-        },
         "sticking": {
           "layout": 8,
           "vexflow": 0
@@ -1432,7 +1398,7 @@
           "vexflow": 0
         },
         "semanticTextTokens": {
-          "layout": "10 || 108 || 2 || 2x || 3 || 4 || 5 || 6 || @coda || @fine || @segno || @to-coda || Demo — Full Feature Showcase || Fusion Groove || G. Mao || L || L || L || L || R || R || R || R",
+          "layout": "10 || 108 || 2 || 3 || 4 || 5 || 6 || @coda || @fine || @segno || @to-coda || Demo — Full Feature Showcase || Fusion Groove || G. Mao || L || L || L || L || R || R || R || R",
           "vexflow": "108 || 2 || 3 || 4 || 5 || 6 || Demo — Full Feature Showcase || Fine || Fusion Groove || G. Mao || L || L || L || L || R || R || R || R"
         }
       }
@@ -1769,15 +1735,15 @@
       "file": "docs/examples/repeats.drum",
       "diffs": {
         "lineCount": {
-          "layout": 167,
+          "layout": 169,
           "vexflow": 0
         },
         "rectCount": {
           "layout": 28,
-          "vexflow": 195
+          "vexflow": 196
         },
         "textCount": {
-          "layout": 190,
+          "layout": 189,
           "vexflow": 188
         },
         "openingBarlines": {
@@ -1828,16 +1794,12 @@
           "layout": 5,
           "vexflow": 0
         },
-        "repeatSpanLines": {
-          "layout": 1,
-          "vexflow": 0
-        },
         "voltaLines": {
           "layout": 8,
           "vexflow": 0
         },
         "semanticTextTokens": {
-          "layout": "1. || 10 || 120 || 13 || 16 || 2. || 2x || 3. || 4 || 7 || @coda || @dc-al-coda || @dc-al-fine || @ds-al-coda || @fine || @segno || @to-coda || Repeat Structure",
+          "layout": "1. || 10 || 120 || 13 || 16 || 2. || 3. || 4 || 7 || @coda || @dc-al-coda || @dc-al-fine || @ds-al-coda || @fine || @segno || @to-coda || Repeat Structure",
           "vexflow": "1. || 10 || 120 || 13 || 16 || 2. || 3. || 4 || 7 || D.C. al Coda || D.C. al Fine || D.S. al Coda || Fine || Repeat Structure || To"
         }
       }
@@ -2014,7 +1976,7 @@
       "file": "examples/你要跳舞吗.drum",
       "diffs": {
         "lineCount": {
-          "layout": 664,
+          "layout": 650,
           "vexflow": 0
         },
         "rectCount": {
@@ -2022,7 +1984,7 @@
           "vexflow": 785
         },
         "textCount": {
-          "layout": 604,
+          "layout": 602,
           "vexflow": 675
         },
         "openingBarlines": {
@@ -2048,14 +2010,6 @@
         "stems": {
           "layout": 555,
           "vexflow": 0
-        },
-        "repeatSpanLines": {
-          "layout": 10,
-          "vexflow": 0
-        },
-        "semanticTextTokens": {
-          "layout": "10 || 14 || 150 || 18 || 2 || 22 || 26 || 2x || 2x || 30 || 34 || 38 || 42 || 46 || 50 || 54 || 58 || 6 || 62 || 66 || 70 || 你要跳舞吗",
-          "vexflow": "10 || 14 || 150 || 18 || 2 || 22 || 26 || 30 || 34 || 38 || 42 || 46 || 50 || 54 || 58 || 6 || 62 || 66 || 70 || 你要跳舞吗"
         }
       }
     },
@@ -2063,7 +2017,7 @@
       "file": "examples/李白-李荣浩.drum",
       "diffs": {
         "lineCount": {
-          "layout": 1059,
+          "layout": 977,
           "vexflow": 0
         },
         "rectCount": {
@@ -2071,7 +2025,7 @@
           "vexflow": 1198
         },
         "textCount": {
-          "layout": 1247,
+          "layout": 1237,
           "vexflow": 1220
         },
         "openingBarlines": {
@@ -2110,17 +2064,9 @@
           "layout": 2,
           "vexflow": 0
         },
-        "repeatSpanLines": {
-          "layout": 67,
-          "vexflow": 0
-        },
         "voltaLines": {
           "layout": 18,
           "vexflow": 0
-        },
-        "semanticTextTokens": {
-          "layout": "1,2,3. || 1. || 1. || 1. || 1. || 115 || 13 || 17 || 2. || 2. || 2. || 2. || 21 || 26 || 2x || 2x || 2x || 2x || 2x || 2x || 2x || 2x || 2x || 2x || 3. || 3. || 3. || 30 || 34 || 38 || 4. || 42 || 44 || 48 || 5 || 52 || 56 || 59 || 63 || 67 || 71 || 73 || 77 || 9 || 李白 || 李荣浩",
-          "vexflow": "1,2,3. || 1. || 1. || 1. || 1. || 115 || 13 || 17 || 2. || 2. || 2. || 2. || 21 || 26 || 3. || 3. || 3. || 30 || 34 || 38 || 4. || 42 || 44 || 48 || 5 || 52 || 56 || 59 || 63 || 67 || 71 || 73 || 77 || 9 || 李白 || 李荣浩"
         }
       }
     }

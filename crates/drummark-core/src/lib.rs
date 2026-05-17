@@ -378,6 +378,7 @@ fn parse_layout_options(options: &JsValue) -> drummark_layout::LayoutOptions {
         let px_q = get_f64("pxPerQuarter");
         let stem_len = get_f64("stemLenPt");
         let sys_spacing = get_optional_f64("systemSpacing");
+        let volta_spacing = get_optional_f64("voltaSpacing");
         if width > 0.0 && height > 0.0 {
             drummark_layout::LayoutOptions {
                 page_width_pt: width as f32,
@@ -390,6 +391,7 @@ fn parse_layout_options(options: &JsValue) -> drummark_layout::LayoutOptions {
                 px_per_quarter: if px_q > 0.0 { px_q as f32 } else { 80.0 },
                 stem_len_pt: if stem_len > 0.0 { stem_len as f32 } else { 31.0 },
                 system_spacing_pt: sys_spacing.unwrap_or(30.0) as f32,
+                volta_offset_y: volta_spacing.unwrap_or(0.0) as f32,
                 ..drummark_layout::LayoutOptions::default()
             }
         } else {

@@ -19,6 +19,7 @@ type RenderOptions = {
   rightMargin?: number;
   stemLength?: number;
   systemSpacing?: number;
+  voltaSpacing?: number;
   debug?: boolean;
 };
 
@@ -96,6 +97,7 @@ export function buildLayoutSceneFromSource(source: string, options?: RenderOptio
     pxPerQuarter: 80,
     stemLenPt: options?.stemLength ?? 31,
     systemSpacing: (options?.systemSpacing ?? SETTINGS_RANGES.systemSpacing.default) / ss,
+    voltaSpacing: (options?.voltaSpacing ?? SETTINGS_RANGES.voltaSpacing.default) / ss,
     debug: options?.debug ? 1 : 0,
   };
   const scene = build_layout_scene(source, opts as any) as Scene;

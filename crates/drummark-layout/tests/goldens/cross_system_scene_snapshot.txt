@@ -69,43 +69,35 @@ page index=0 widthPt=612.000 heightPt=792.000
   item id=item-57 measureId=measure-3 anchorItemId=- role=nav-end kind=textRun zIndex=0 primitive={textRole=countLabel text="@ds-al-coda" xPt=558.000 yPt=556.000 fontFamily=Bravura fontSizePt=12.000 fill=#333 textAnchor=end fontWeight=bold}
   item id=item-58 measureId=measure-3 anchorItemId=- role=final-barline-thin kind=rect zIndex=0 primitive={xPt=558.000 yPt=560.000 widthPt=1.000 heightPt=41.000 fill=#333 stroke=- strokeWidth=-}
   item id=item-59 measureId=measure-3 anchorItemId=- role=final-barline-thick kind=rect zIndex=0 primitive={xPt=559.000 yPt=560.000 widthPt=3.000 heightPt=41.000 fill=#333 stroke=- strokeWidth=-}
-  item id=item-60 measureId=measure-0 anchorItemId=- role=repeat-span-line kind=lineSegment zIndex=0 primitive={x1Pt=54.000 y1Pt=127.000 x2Pt=558.000 y2Pt=127.000 stroke=#333 strokeWidth=1.200}
-  item id=item-61 measureId=measure-0 anchorItemId=- role=repeat-span-start kind=lineSegment zIndex=0 primitive={x1Pt=54.000 y1Pt=127.000 x2Pt=54.000 y2Pt=135.000 stroke=#333 strokeWidth=1.200}
-  item id=item-62 measureId=measure-0 anchorItemId=- role=repeat-span-count kind=textRun zIndex=0 primitive={textRole=countLabel text="2x" xPt=306.000 yPt=123.000 fontFamily=Bravura fontSizePt=12.000 fill=#333 textAnchor=middle fontWeight=-}
-  item id=item-63 measureId=measure-1 anchorItemId=- role=repeat-span-line kind=lineSegment zIndex=0 primitive={x1Pt=54.000 y1Pt=257.000 x2Pt=558.000 y2Pt=257.000 stroke=#333 strokeWidth=1.200}
-  item id=item-64 measureId=measure-2 anchorItemId=- role=repeat-span-line kind=lineSegment zIndex=0 primitive={x1Pt=54.000 y1Pt=387.000 x2Pt=558.000 y2Pt=387.000 stroke=#333 strokeWidth=1.200}
-  item id=item-65 measureId=measure-3 anchorItemId=- role=repeat-span-line kind=lineSegment zIndex=0 primitive={x1Pt=54.000 y1Pt=517.000 x2Pt=558.000 y2Pt=517.000 stroke=#333 strokeWidth=1.200}
-  item id=item-66 measureId=measure-3 anchorItemId=- role=repeat-span-end kind=lineSegment zIndex=0 primitive={x1Pt=558.000 y1Pt=517.000 x2Pt=558.000 y2Pt=525.000 stroke=#333 strokeWidth=1.200}
-  item id=item-67 measureId=measure-0 anchorItemId=- role=volta-line kind=lineSegment zIndex=0 primitive={x1Pt=52.000 y1Pt=100.000 x2Pt=560.000 y2Pt=100.000 stroke=#333 strokeWidth=1.200}
-  item id=item-68 measureId=measure-0 anchorItemId=- role=volta-start-hook kind=lineSegment zIndex=0 primitive={x1Pt=52.000 y1Pt=100.000 x2Pt=52.000 y2Pt=110.000 stroke=#333 strokeWidth=1.200}
-  item id=item-69 measureId=measure-0 anchorItemId=- role=volta-label kind=textRun zIndex=0 primitive={textRole=countLabel text="1." xPt=56.000 yPt=96.000 fontFamily=Bravura fontSizePt=12.000 fill=#333 textAnchor=- fontWeight=-}
-  item id=item-70 measureId=measure-1 anchorItemId=- role=volta-line kind=lineSegment zIndex=0 primitive={x1Pt=52.000 y1Pt=275.000 x2Pt=560.000 y2Pt=275.000 stroke=#333 strokeWidth=1.200}
-  item id=item-71 measureId=measure-2 anchorItemId=- role=volta-line kind=lineSegment zIndex=0 primitive={x1Pt=52.000 y1Pt=405.000 x2Pt=560.000 y2Pt=405.000 stroke=#333 strokeWidth=1.200}
-  item id=item-72 measureId=measure-3 anchorItemId=- role=volta-line kind=lineSegment zIndex=0 primitive={x1Pt=52.000 y1Pt=528.000 x2Pt=560.000 y2Pt=528.000 stroke=#333 strokeWidth=1.200}
-  item id=item-73 measureId=measure-3 anchorItemId=- role=volta-end-hook kind=lineSegment zIndex=0 primitive={x1Pt=560.000 y1Pt=528.000 x2Pt=560.000 y2Pt=538.000 stroke=#333 strokeWidth=1.200}
-  item id=item-74 measureId=measure-0 anchorItemId=- role=hairpin-top kind=lineSegment zIndex=0 primitive={x1Pt=64.000 y1Pt=228.000 x2Pt=550.000 y2Pt=228.000 stroke=#333 strokeWidth=1.200}
-  item id=item-75 measureId=measure-0 anchorItemId=- role=hairpin-bottom kind=lineSegment zIndex=0 primitive={x1Pt=64.000 y1Pt=238.000 x2Pt=550.000 y2Pt=238.000 stroke=#333 strokeWidth=1.200}
-  item id=item-76 measureId=measure-1 anchorItemId=- role=hairpin-top kind=lineSegment zIndex=0 primitive={x1Pt=64.000 y1Pt=358.000 x2Pt=550.000 y2Pt=358.000 stroke=#333 strokeWidth=1.200}
-  item id=item-77 measureId=measure-1 anchorItemId=- role=hairpin-bottom kind=lineSegment zIndex=0 primitive={x1Pt=64.000 y1Pt=368.000 x2Pt=550.000 y2Pt=368.000 stroke=#333 strokeWidth=1.200}
-  item id=item-78 measureId=measure-2 anchorItemId=- role=hairpin-top kind=lineSegment zIndex=0 primitive={x1Pt=64.000 y1Pt=488.000 x2Pt=550.000 y2Pt=488.000 stroke=#333 strokeWidth=1.200}
-  item id=item-79 measureId=measure-2 anchorItemId=- role=hairpin-bottom kind=lineSegment zIndex=0 primitive={x1Pt=64.000 y1Pt=498.000 x2Pt=550.000 y2Pt=498.000 stroke=#333 strokeWidth=1.200}
-  item id=item-80 measureId=measure-3 anchorItemId=- role=hairpin-top kind=lineSegment zIndex=0 primitive={x1Pt=64.000 y1Pt=618.000 x2Pt=427.000 y2Pt=618.000 stroke=#333 strokeWidth=1.200}
-  item id=item-81 measureId=measure-3 anchorItemId=- role=hairpin-bottom kind=lineSegment zIndex=0 primitive={x1Pt=64.000 y1Pt=628.000 x2Pt=427.000 y2Pt=628.000 stroke=#333 strokeWidth=1.200}
+  item id=item-60 measureId=measure-0 anchorItemId=- role=volta-line kind=lineSegment zIndex=0 primitive={x1Pt=136.000 y1Pt=100.020 x2Pt=562.000 y2Pt=100.020 stroke=#333 strokeWidth=1.000}
+  item id=item-61 measureId=measure-0 anchorItemId=- role=volta-start-hook kind=lineSegment zIndex=0 primitive={x1Pt=136.000 y1Pt=100.020 x2Pt=136.000 y2Pt=115.020 stroke=#333 strokeWidth=1.000}
+  item id=item-62 measureId=measure-0 anchorItemId=- role=volta-label kind=textRun zIndex=0 primitive={textRole=countLabel text="1." xPt=141.000 yPt=114.020 fontFamily=Academico fontSizePt=12.000 fill=#333 textAnchor=- fontWeight=-}
+  item id=item-63 measureId=measure-1 anchorItemId=- role=volta-line kind=lineSegment zIndex=0 primitive={x1Pt=94.000 y1Pt=231.670 x2Pt=562.000 y2Pt=231.670 stroke=#333 strokeWidth=1.000}
+  item id=item-64 measureId=measure-1 anchorItemId=- role=volta-start-hook kind=lineSegment zIndex=0 primitive={x1Pt=94.000 y1Pt=231.670 x2Pt=94.000 y2Pt=246.670 stroke=#333 strokeWidth=1.000}
+  item id=item-65 measureId=measure-2 anchorItemId=- role=volta-line kind=lineSegment zIndex=0 primitive={x1Pt=94.000 y1Pt=361.670 x2Pt=562.000 y2Pt=361.670 stroke=#333 strokeWidth=1.000}
+  item id=item-66 measureId=measure-2 anchorItemId=- role=volta-start-hook kind=lineSegment zIndex=0 primitive={x1Pt=94.000 y1Pt=361.670 x2Pt=94.000 y2Pt=376.670 stroke=#333 strokeWidth=1.000}
+  item id=item-67 measureId=measure-3 anchorItemId=- role=volta-line kind=lineSegment zIndex=0 primitive={x1Pt=94.000 y1Pt=502.390 x2Pt=562.000 y2Pt=502.390 stroke=#333 strokeWidth=1.000}
+  item id=item-68 measureId=measure-3 anchorItemId=- role=volta-start-hook kind=lineSegment zIndex=0 primitive={x1Pt=94.000 y1Pt=502.390 x2Pt=94.000 y2Pt=517.390 stroke=#333 strokeWidth=1.000}
+  item id=item-69 measureId=measure-3 anchorItemId=- role=volta-end-hook kind=lineSegment zIndex=0 primitive={x1Pt=562.000 y1Pt=502.390 x2Pt=562.000 y2Pt=517.390 stroke=#333 strokeWidth=1.000}
+  item id=item-70 measureId=measure-0 anchorItemId=- role=hairpin-top kind=lineSegment zIndex=0 primitive={x1Pt=64.000 y1Pt=228.000 x2Pt=550.000 y2Pt=228.000 stroke=#333 strokeWidth=1.200}
+  item id=item-71 measureId=measure-0 anchorItemId=- role=hairpin-bottom kind=lineSegment zIndex=0 primitive={x1Pt=64.000 y1Pt=238.000 x2Pt=550.000 y2Pt=238.000 stroke=#333 strokeWidth=1.200}
+  item id=item-72 measureId=measure-1 anchorItemId=- role=hairpin-top kind=lineSegment zIndex=0 primitive={x1Pt=64.000 y1Pt=358.000 x2Pt=550.000 y2Pt=358.000 stroke=#333 strokeWidth=1.200}
+  item id=item-73 measureId=measure-1 anchorItemId=- role=hairpin-bottom kind=lineSegment zIndex=0 primitive={x1Pt=64.000 y1Pt=368.000 x2Pt=550.000 y2Pt=368.000 stroke=#333 strokeWidth=1.200}
+  item id=item-74 measureId=measure-2 anchorItemId=- role=hairpin-top kind=lineSegment zIndex=0 primitive={x1Pt=64.000 y1Pt=488.000 x2Pt=550.000 y2Pt=488.000 stroke=#333 strokeWidth=1.200}
+  item id=item-75 measureId=measure-2 anchorItemId=- role=hairpin-bottom kind=lineSegment zIndex=0 primitive={x1Pt=64.000 y1Pt=498.000 x2Pt=550.000 y2Pt=498.000 stroke=#333 strokeWidth=1.200}
+  item id=item-76 measureId=measure-3 anchorItemId=- role=hairpin-top kind=lineSegment zIndex=0 primitive={x1Pt=64.000 y1Pt=618.000 x2Pt=427.000 y2Pt=618.000 stroke=#333 strokeWidth=1.200}
+  item id=item-77 measureId=measure-3 anchorItemId=- role=hairpin-bottom kind=lineSegment zIndex=0 primitive={x1Pt=64.000 y1Pt=628.000 x2Pt=427.000 y2Pt=628.000 stroke=#333 strokeWidth=1.200}
   composite id=text-block-title kind=textBlock fragment=singleSegment childItemIds=[item-0] label=title count=- startAnchorId=- endAnchorId=-
   composite id=text-block-subtitle kind=textBlock fragment=singleSegment childItemIds=[item-1] label=subtitle count=- startAnchorId=- endAnchorId=-
   composite id=text-block-composer kind=textBlock fragment=singleSegment childItemIds=[item-2] label=composer count=- startAnchorId=- endAnchorId=-
   composite id=text-block-tempo kind=textBlock fragment=singleSegment childItemIds=[item-3,item-4,item-5] label=tempo count=120 startAnchorId=- endAnchorId=-
   composite id=navigation-start-0 kind=navigation fragment=singleSegment childItemIds=[item-18] label=@segno count=- startAnchorId=measure-0 endAnchorId=measure-0
   composite id=navigation-end-3 kind=navigation fragment=singleSegment childItemIds=[item-57] label=@ds-al-coda count=- startAnchorId=measure-3 endAnchorId=measure-3
-  composite id=repeat-span-0-3-0 kind=repeatSpan fragment=start childItemIds=[item-60,item-61,item-62] label=- count=2 startAnchorId=measure-0 endAnchorId=measure-0
-  composite id=repeat-span-0-3-1 kind=repeatSpan fragment=continuation childItemIds=[item-63] label=- count=2 startAnchorId=measure-1 endAnchorId=measure-1
-  composite id=repeat-span-0-3-2 kind=repeatSpan fragment=continuation childItemIds=[item-64] label=- count=2 startAnchorId=measure-2 endAnchorId=measure-2
-  composite id=repeat-span-0-3-3 kind=repeatSpan fragment=end childItemIds=[item-65,item-66] label=- count=2 startAnchorId=measure-3 endAnchorId=measure-3
-  composite id=volta-0-3-0 kind=volta fragment=start childItemIds=[item-67,item-68,item-69] label=1. count=- startAnchorId=measure-0 endAnchorId=measure-0
-  composite id=volta-0-3-1 kind=volta fragment=continuation childItemIds=[item-70] label=1. count=- startAnchorId=measure-1 endAnchorId=measure-1
-  composite id=volta-0-3-2 kind=volta fragment=continuation childItemIds=[item-71] label=1. count=- startAnchorId=measure-2 endAnchorId=measure-2
-  composite id=volta-0-3-3 kind=volta fragment=end childItemIds=[item-72,item-73] label=1. count=- startAnchorId=measure-3 endAnchorId=measure-3
-  composite id=hairpin-0-3-0 kind=hairpin fragment=start childItemIds=[item-74,item-75] label=crescendo count=- startAnchorId=measure-0 endAnchorId=measure-0
-  composite id=hairpin-0-3-1 kind=hairpin fragment=continuation childItemIds=[item-76,item-77] label=crescendo count=- startAnchorId=measure-1 endAnchorId=measure-1
-  composite id=hairpin-0-3-2 kind=hairpin fragment=continuation childItemIds=[item-78,item-79] label=crescendo count=- startAnchorId=measure-2 endAnchorId=measure-2
-  composite id=hairpin-0-3-3 kind=hairpin fragment=end childItemIds=[item-80,item-81] label=crescendo count=- startAnchorId=measure-3 endAnchorId=measure-3
+  composite id=volta-measure-0-measure-0 kind=volta fragment=start childItemIds=[item-60,item-61,item-62] label=1. count=- startAnchorId=measure-0 endAnchorId=measure-0
+  composite id=volta-measure-1-measure-1 kind=volta fragment=continuation childItemIds=[item-63,item-64] label=1. count=- startAnchorId=measure-1 endAnchorId=measure-1
+  composite id=volta-measure-2-measure-2 kind=volta fragment=continuation childItemIds=[item-65,item-66] label=1. count=- startAnchorId=measure-2 endAnchorId=measure-2
+  composite id=volta-measure-3-measure-3 kind=volta fragment=end childItemIds=[item-67,item-68,item-69] label=1. count=- startAnchorId=measure-3 endAnchorId=measure-3
+  composite id=hairpin-0-3-0 kind=hairpin fragment=start childItemIds=[item-70,item-71] label=crescendo count=- startAnchorId=measure-0 endAnchorId=measure-0
+  composite id=hairpin-0-3-1 kind=hairpin fragment=continuation childItemIds=[item-72,item-73] label=crescendo count=- startAnchorId=measure-1 endAnchorId=measure-1
+  composite id=hairpin-0-3-2 kind=hairpin fragment=continuation childItemIds=[item-74,item-75] label=crescendo count=- startAnchorId=measure-2 endAnchorId=measure-2
+  composite id=hairpin-0-3-3 kind=hairpin fragment=end childItemIds=[item-76,item-77] label=crescendo count=- startAnchorId=measure-3 endAnchorId=measure-3

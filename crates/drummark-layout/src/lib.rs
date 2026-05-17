@@ -1081,7 +1081,7 @@ pub struct LayoutOptions {
     // Staff
     pub staff_scale: f32,
     pub px_per_quarter: f32,
-    // Per-element Y offsets (positive = downward in staff space)
+    // Per-element Y offsets in staff space. Volta spacing is positive upward from the top skyline.
     pub volta_offset_y: f32,
     pub nav_offset_y: f32,
     pub hairpin_offset_y: f32,
@@ -1109,7 +1109,7 @@ impl Default for LayoutOptions {
             right_margin_pt: 50.0,
             staff_scale: 0.75,
             px_per_quarter: 80.0,
-            volta_offset_y: -15.0,
+            volta_offset_y: 0.0,
             nav_offset_y: -10.0,
             hairpin_offset_y: 10.0,
             sticking_offset_y: -8.0,
@@ -1388,7 +1388,7 @@ mod tests {
         let opts = LayoutOptions::default();
         assert_eq!(opts.page_width_pt, 612.0);
         assert_eq!(opts.px_per_quarter, 80.0);
-        assert_eq!(opts.volta_offset_y, -15.0);
+        assert_eq!(opts.volta_offset_y, 0.0);
     }
 
     #[test]
@@ -1680,12 +1680,6 @@ mod tests {
     #[test]
     fn test_scene_fixture_supports_span_fragments_across_system_breaks() {
         let scene = build_layout_scene(&cross_system_fixture_score(), &LayoutOptions::default());
-        let repeat_fragments = scene.pages[0]
-            .composites
-            .iter()
-            .filter(|composite| composite.kind == CompositeKind::RepeatSpan)
-            .map(|composite| composite.fragment)
-            .collect::<Vec<_>>();
         let volta_fragments = scene.pages[0]
             .composites
             .iter()
@@ -1699,15 +1693,6 @@ mod tests {
             .map(|composite| composite.fragment)
             .collect::<Vec<_>>();
 
-        assert_eq!(
-            repeat_fragments,
-            vec![
-                SpanFragmentKind::Start,
-                SpanFragmentKind::Continuation,
-                SpanFragmentKind::Continuation,
-                SpanFragmentKind::End
-            ]
-        );
         assert_eq!(
             volta_fragments,
             vec![
@@ -1733,15 +1718,14 @@ mod tests {
         let scene = build_layout_scene(&cross_system_fixture_score(), &LayoutOptions::default());
         let page = &scene.pages[0];
 
-        let repeat_fragments = page
+        assert!(page
             .composites
             .iter()
-            .filter(|composite| composite.kind == CompositeKind::RepeatSpan)
-            .collect::<Vec<_>>();
-        assert!(!repeat_fragments.is_empty());
-        assert!(repeat_fragments
+            .all(|composite| composite.kind != CompositeKind::RepeatSpan));
+        assert!(page
+            .items
             .iter()
-            .all(|fragment| !fragment.child_item_ids.is_empty()));
+            .all(|item| !item.role.starts_with("repeat-span")));
 
         let volta_fragments = page
             .composites
@@ -1752,6 +1736,20 @@ mod tests {
         assert!(volta_fragments
             .iter()
             .all(|fragment| !fragment.child_item_ids.is_empty()));
+        assert_eq!(
+            page.items
+                .iter()
+                .filter(|item| item.role == "volta-start-hook")
+                .count(),
+            4
+        );
+        assert_eq!(
+            page.items
+                .iter()
+                .filter(|item| item.role == "volta-label")
+                .count(),
+            1
+        );
 
         let navigation = page
             .composites
@@ -1772,7 +1770,7 @@ mod tests {
         let page = &scene.pages[0];
         let count_metric = canonical_text_metric(TextRole::CountLabel);
 
-        for role in ["nav-start", "nav-end", "repeat-span-count", "volta-label"] {
+        for role in ["nav-start", "nav-end"] {
             let text_item = page
                 .items
                 .iter()
@@ -1785,6 +1783,18 @@ mod tests {
             assert_eq!(text.font_family, count_metric.font_family);
             assert_eq!(text.font_size_pt, count_metric.font_size_pt);
         }
+
+        let volta_label = page
+            .items
+            .iter()
+            .find(|item| item.role == "volta-label")
+            .expect("expected volta label item");
+        let ScenePrimitive::TextRun(volta_text) = &volta_label.primitive else {
+            panic!("expected text primitive for volta label");
+        };
+        assert_eq!(volta_text.text_role, TextRole::CountLabel);
+        assert_eq!(volta_text.font_family, "Academico");
+        assert_eq!(volta_text.font_size_pt, VOLTA_TEXT_SIZE_PT);
 
         let accent_item = page
             .items
@@ -1905,11 +1915,6 @@ mod tests {
             .iter()
             .find(|item| item.role == "nav-start")
             .expect("expected navigation start item");
-        let repeat_count = page
-            .items
-            .iter()
-            .find(|item| item.role == "repeat-span-count")
-            .expect("expected repeat span count item");
         let volta_label = page
             .items
             .iter()
@@ -1928,14 +1933,11 @@ mod tests {
 
         let (_, measure_number_y, _, _) = item_bounds(measure_number).unwrap();
         let (_, nav_y, _, nav_h) = item_bounds(nav_start).unwrap();
-        let (_, repeat_y, _, repeat_h) = item_bounds(repeat_count).unwrap();
-        let (_, volta_y, _, volta_h) = item_bounds(volta_label).unwrap();
+        assert!(item_bounds(volta_label).is_some());
         let (_, hairpin_y, _, _) = item_bounds(hairpin_top).unwrap();
         let (_, notehead_y, _, notehead_h) = item_bounds(notehead).unwrap();
 
         assert!(nav_y + nav_h <= measure_number_y - 4.0);
-        assert!(repeat_y + repeat_h <= nav_y - 4.0);
-        assert!(volta_y + volta_h <= repeat_y - 4.0);
         assert!(hairpin_y >= notehead_y + notehead_h + 4.0);
     }
 
@@ -3164,6 +3166,8 @@ const SVG_POINT_TO_USER_UNIT: f32 = 4.0 / 3.0;
 const REPEAT_BARLINE_FONT_SIZE_PT: f32 = 30.0;
 const FIRST_MEASURE_START_REPEAT_PREAMBLE_PULL_PT: f32 = 10.0;
 const START_REPEAT_TRAILING_GAP_PT: f32 = 22.0;
+const VOLTA_TEXT_SIZE_PT: f32 = 12.0;
+const VOLTA_LINE_HEIGHT_PT: f32 = 15.0;
 
 impl SystemStartReservation {
     fn width(&self) -> f32 {
@@ -3266,7 +3270,6 @@ struct DisplayMeasure<'a> {
 #[derive(Debug, Clone)]
 struct ExpandedLayoutData<'a> {
     measures: Vec<DisplayMeasure<'a>>,
-    repeat_spans: Vec<RepeatSpan>,
 }
 
 fn normalized_grouping(header: &RenderHeader) -> Vec<u32> {
@@ -3573,20 +3576,7 @@ fn expand_layout_data<'a>(score: &'a RenderScore) -> ExpandedLayoutData<'a> {
         }
     }
 
-    let repeat_spans = score
-        .repeat_spans
-        .iter()
-        .map(|repeat| RepeatSpan {
-            start_measure: map_start(repeat.start_measure),
-            end_measure: map_end(repeat.end_measure),
-            times: repeat.times,
-        })
-        .collect();
-
-    ExpandedLayoutData {
-        measures,
-        repeat_spans,
-    }
+    ExpandedLayoutData { measures }
 }
 
 fn finalize_planned_system<'a>(
@@ -4200,14 +4190,6 @@ pub fn build_layout_scene(score: &RenderScore, opts: &LayoutOptions) -> LayoutSc
         });
     }
 
-    push_repeat_span_composites(
-        &mut page.items,
-        &mut page.composites,
-        &mut item_counter,
-        &page.measures,
-        &expanded.repeat_spans,
-        opts,
-    );
     push_volta_composites(
         &mut page.items,
         &mut page.composites,
@@ -4234,106 +4216,6 @@ pub fn build_layout_scene(score: &RenderScore, opts: &LayoutOptions) -> LayoutSc
     }
 }
 
-fn push_repeat_span_composites(
-    items: &mut Vec<SceneItem>,
-    composites: &mut Vec<SceneComposite>,
-    counter: &mut usize,
-    page_measures: &[SceneMeasure],
-    repeat_spans: &[RepeatSpan],
-    opts: &LayoutOptions,
-) {
-    let count_metric = canonical_text_metric(TextRole::CountLabel);
-    for repeat in repeat_spans {
-        let fragments =
-            measure_fragments_for_range(page_measures, repeat.start_measure, repeat.end_measure);
-        let fragment_total = fragments.len();
-        for (fragment_index, fragment) in fragments.iter().enumerate() {
-            if fragment.is_empty() {
-                continue;
-            }
-            let first = fragment.first().unwrap();
-            let last = fragment.last().unwrap();
-            let y = first.y_pt + opts.volta_offset_y - 18.0;
-            let x1 = first.x_pt + 4.0;
-            let x2 = last.x_pt + last.width_pt - 4.0;
-            let mut child_item_ids = Vec::new();
-            child_item_ids.push(push_line_item(
-                items,
-                counter,
-                Some(&first.id),
-                "repeat-span-line",
-                x1,
-                y,
-                x2,
-                y,
-                "#333",
-                1.2,
-                None,
-            ));
-            if fragment_index == 0 {
-                child_item_ids.push(push_line_item(
-                    items,
-                    counter,
-                    Some(&first.id),
-                    "repeat-span-start",
-                    x1,
-                    y,
-                    x1,
-                    y + 8.0,
-                    "#333",
-                    1.2,
-                    None,
-                ));
-            }
-            if fragment_index + 1 == fragment_total {
-                child_item_ids.push(push_line_item(
-                    items,
-                    counter,
-                    Some(&last.id),
-                    "repeat-span-end",
-                    x2,
-                    y,
-                    x2,
-                    y + 8.0,
-                    "#333",
-                    1.2,
-                    None,
-                ));
-            }
-            if repeat.times > 1 && fragment_index == 0 {
-                child_item_ids.push(push_text_item(
-                    items,
-                    counter,
-                    Some(&first.id),
-                    "repeat-span-count",
-                    (x1 + x2) * 0.5,
-                    y - count_metric.descent_pt - 1.0,
-                    TextRole::CountLabel,
-                    format!("{}x", repeat.times),
-                    count_metric.font_family,
-                    count_metric.font_size_pt,
-                    "#333",
-                    Some("middle"),
-                    None,
-                ));
-            }
-            composites.push(SceneComposite {
-                id: format!(
-                    "repeat-span-{}-{}-{}",
-                    repeat.start_measure, repeat.end_measure, fragment_index
-                ),
-                kind: CompositeKind::RepeatSpan,
-                fragment: span_fragment_kind(fragment_index, fragment_total),
-                child_item_ids,
-                label: None,
-                count: Some(repeat.times),
-                start_anchor_id: Some(first.id.clone()),
-                end_anchor_id: Some(last.id.clone()),
-            });
-        }
-    }
-}
-
 fn push_volta_composites(
     items: &mut Vec<SceneItem>,
     composites: &mut Vec<SceneComposite>,
@@ -4342,45 +4224,124 @@ fn push_volta_composites(
     measures: &[DisplayMeasure<'_>],
     opts: &LayoutOptions,
 ) {
-    let mut current_label: Option<Vec<u32>> = None;
-    let mut current_start: Option<u32> = None;
-
-    for measure in measures {
-        if measure.measure.volta_indices != current_label {
-            if let (Some(start), Some(label)) = (current_start.take(), current_label.take()) {
-                push_volta_segment(
-                    items,
-                    composites,
-                    counter,
-                    page_measures,
-                    start,
-                    measure.global_index.saturating_sub(1),
-                    &label,
-                    opts,
-                );
-            }
-            current_label = measure.measure.volta_indices.clone();
-            current_start = measure
-                .measure
-                .volta_indices
-                .as_ref()
-                .map(|_| measure.global_index);
+    let mut system_start = 0usize;
+    while system_start < page_measures.len() {
+        let system_id = page_measures[system_start].system_id.clone();
+        let mut system_end = system_start;
+        while system_end + 1 < page_measures.len()
+            && page_measures[system_end + 1].system_id == system_id
+        {
+            system_end += 1;
         }
-    }
 
-    if let (Some(start), Some(label)) = (current_start, current_label) {
-        if let Some(last_measure) = measures.last() {
+        push_system_volta_composites(
+            items,
+            composites,
+            counter,
+            &page_measures[system_start..=system_end],
+            measures,
+            opts,
+            system_id == "system-0",
+        );
+
+        system_start = system_end + 1;
+    }
+}
+
+fn push_system_volta_composites(
+    items: &mut Vec<SceneItem>,
+    composites: &mut Vec<SceneComposite>,
+    counter: &mut usize,
+    system_measures: &[SceneMeasure],
+    measures: &[DisplayMeasure<'_>],
+    opts: &LayoutOptions,
+    is_first_system: bool,
+) {
+    let mut block_start = 0usize;
+    while block_start < system_measures.len() {
+        if display_measure_for_scene(measures, &system_measures[block_start])
+            .and_then(|measure| measure.measure.volta_indices.as_ref())
+            .is_none()
+        {
+            block_start += 1;
+            continue;
+        }
+
+        let mut block_end = block_start;
+        while block_end + 1 < system_measures.len()
+            && display_measure_for_scene(measures, &system_measures[block_end + 1])
+                .and_then(|measure| measure.measure.volta_indices.as_ref())
+                .is_some()
+        {
+            block_end += 1;
+        }
+
+        let block_x1 = volta_segment_left_x(
+            &system_measures[block_start],
+            display_measure_for_scene(measures, &system_measures[block_start]),
+            block_start == 0,
+            is_first_system,
+        );
+        let block_x2 = system_measures[block_end].x_pt + system_measures[block_end].width_pt;
+        let occupied_top = top_skyline_sample(
+            items,
+            &system_measures[block_start..=block_end],
+            block_x1,
+            block_x2,
+            system_measures[block_start].y_pt - 60.0,
+        );
+        let line_y = occupied_top - opts.volta_offset_y - (VOLTA_LINE_HEIGHT_PT + VOLTA_TEXT_SIZE_PT + 2.0);
+        let mut index = block_start;
+        while index <= block_end {
+            let Some(display_measure) = display_measure_for_scene(measures, &system_measures[index])
+            else {
+                index += 1;
+                continue;
+            };
+            let Some(label) = display_measure.measure.volta_indices.as_ref() else {
+                index += 1;
+                continue;
+            };
+
+            let mut end = index;
+            while end + 1 <= block_end
+                && display_measure_for_scene(measures, &system_measures[end + 1])
+                    .and_then(|measure| measure.measure.volta_indices.as_ref())
+                    == Some(label)
+            {
+                end += 1;
+            }
+
+            let start_measure = display_measure.global_index;
+            let end_measure = display_measure_for_scene(measures, &system_measures[end])
+                .map(|measure| measure.global_index)
+                .unwrap_or(start_measure);
+            let start_type = volta_type_for_measure(measures, start_measure);
+            let end_type = volta_type_for_measure(measures, end_measure);
+            let show_label = matches!(start_type, VoltaSegmentType::Begin | VoltaSegmentType::BeginEnd);
+            let show_left_hook = show_label || index == 0;
+            let show_right = matches!(end_type, VoltaSegmentType::End | VoltaSegmentType::BeginEnd);
+            let fragment = volta_fragment_kind(show_label, show_right);
             push_volta_segment(
                 items,
                 composites,
                 counter,
-                page_measures,
-                start,
-                last_measure.global_index,
-                &label,
-                opts,
+                &system_measures[index..=end],
+                measures,
+                label,
+                line_y,
+                show_left_hook,
+                show_label,
+                show_right,
+                fragment,
+                index == 0,
+                is_first_system,
             );
+
+            index = end + 1;
         }
+
+        block_start = block_end + 1;
     }
 }
 
@@ -4388,15 +4349,22 @@ fn push_volta_segment(
     items: &mut Vec<SceneItem>,
     composites: &mut Vec<SceneComposite>,
     counter: &mut usize,
-    page_measures: &[SceneMeasure],
-    start_measure: u32,
-    end_measure: u32,
+    segment_measures: &[SceneMeasure],
+    measures: &[DisplayMeasure<'_>],
     label: &[u32],
-    opts: &LayoutOptions,
+    line_y: f32,
+    show_left_hook: bool,
+    show_label: bool,
+    show_right: bool,
+    fragment: SpanFragmentKind,
+    starts_at_system_left: bool,
+    is_first_system: bool,
 ) {
-    let count_metric = canonical_text_metric(TextRole::CountLabel);
-    let fragments = measure_fragments_for_range(page_measures, start_measure, end_measure);
-    let fragment_total = fragments.len();
+    if segment_measures.is_empty() {
+        return;
+    }
+    let first = segment_measures.first().unwrap();
+    let last = segment_measures.last().unwrap();
     let label_text = format!(
         "{}.",
         label
@@ -4405,84 +4373,205 @@ fn push_volta_segment(
             .collect::<Vec<_>>()
             .join(",")
     );
-    for (fragment_index, fragment) in fragments.iter().enumerate() {
-        if fragment.is_empty() {
-            continue;
-        }
-        let first = fragment.first().unwrap();
-        let last = fragment.last().unwrap();
-        let y = first.y_pt + opts.volta_offset_y;
-        let x1 = first.x_pt + 2.0;
-        let x2 = last.x_pt + last.width_pt - 2.0;
-        let mut child_item_ids = Vec::new();
+    let first_display = display_measure_for_scene(measures, first);
+    let x1 = volta_segment_left_x(first, first_display, starts_at_system_left, is_first_system);
+    let x2 = last.x_pt + last.width_pt;
+
+    let mut child_item_ids = Vec::new();
+    child_item_ids.push(push_line_item(
+        items,
+        counter,
+        Some(&first.id),
+        "volta-line",
+        x1,
+        line_y,
+        x2,
+        line_y,
+        "#333",
+        1.0,
+        None,
+    ));
+    if show_left_hook {
         child_item_ids.push(push_line_item(
             items,
             counter,
             Some(&first.id),
-            "volta-line",
+            "volta-start-hook",
             x1,
-            y,
-            x2,
-            y,
+            line_y,
+            x1,
+            line_y + VOLTA_LINE_HEIGHT_PT,
             "#333",
-            1.2,
+            1.0,
             None,
         ));
-        if fragment_index == 0 {
-            child_item_ids.push(push_line_item(
-                items,
-                counter,
-                Some(&first.id),
-                "volta-start-hook",
-                x1,
-                y,
-                x1,
-                y + 10.0,
-                "#333",
-                1.2,
-                None,
-            ));
-            child_item_ids.push(push_text_item(
-                items,
-                counter,
-                Some(&first.id),
-                "volta-label",
-                x1 + 4.0,
-                y - count_metric.descent_pt - 1.0,
-                TextRole::CountLabel,
-                label_text.clone(),
-                count_metric.font_family,
-                count_metric.font_size_pt,
-                "#333",
-                None,
-                None,
-            ));
+    }
+    if show_label {
+        child_item_ids.push(push_text_item(
+            items,
+            counter,
+            Some(&first.id),
+            "volta-label",
+            x1 + 5.0,
+            line_y + VOLTA_TEXT_SIZE_PT + 2.0,
+            TextRole::CountLabel,
+            label_text.clone(),
+            "Academico",
+            VOLTA_TEXT_SIZE_PT,
+            "#333",
+            None,
+            None,
+        ));
+    }
+    if show_right {
+        child_item_ids.push(push_line_item(
+            items,
+            counter,
+            Some(&last.id),
+            "volta-end-hook",
+            x2,
+            line_y,
+            x2,
+            line_y + VOLTA_LINE_HEIGHT_PT,
+            "#333",
+            1.0,
+            None,
+        ));
+    }
+    composites.push(SceneComposite {
+        id: format!("volta-{}-{}", first.id, last.id),
+        kind: CompositeKind::Volta,
+        fragment,
+        child_item_ids,
+        label: Some(label_text),
+        count: None,
+        start_anchor_id: Some(first.id.clone()),
+        end_anchor_id: Some(last.id.clone()),
+    });
+}
+
+fn volta_segment_left_x(
+    first: &SceneMeasure,
+    first_display: Option<&DisplayMeasure<'_>>,
+    starts_at_system_left: bool,
+    is_first_system: bool,
+) -> f32 {
+    if starts_at_system_left {
+        let barline = first_display.and_then(|measure| measure.barline.as_deref());
+        first.x_pt + measure_left_pad(0, is_first_system, barline)
+    } else {
+        first.x_pt
+    }
+}
+
+fn top_skyline_sample(
+    items: &[SceneItem],
+    block_measures: &[SceneMeasure],
+    x1: f32,
+    x2: f32,
+    fallback_top: f32,
+) -> f32 {
+    let left = x1.min(x2);
+    let right = x1.max(x2);
+    let measure_ids = block_measures
+        .iter()
+        .map(|measure| measure.id.as_str())
+        .collect::<std::collections::HashSet<_>>();
+    let system_top = block_measures
+        .iter()
+        .map(|measure| measure.y_pt)
+        .fold(f32::INFINITY, f32::min);
+    let system_bottom = block_measures
+        .iter()
+        .map(|measure| measure.y_pt + measure.height_pt)
+        .fold(f32::NEG_INFINITY, f32::max);
+    let mut top = f32::INFINITY;
+    for item in items {
+        if item.role.starts_with("volta") {
+            continue;
         }
-        if fragment_index + 1 == fragment_total {
-            child_item_ids.push(push_line_item(
-                items,
-                counter,
-                Some(&last.id),
-                "volta-end-hook",
-                x2,
-                y,
-                x2,
-                y + 10.0,
-                "#333",
-                1.2,
-                None,
-            ));
+        let in_block_measure = item
+            .measure_id
+            .as_deref()
+            .is_some_and(|measure_id| measure_ids.contains(measure_id));
+        if let Some((item_x, item_y, item_width, _)) = item_bounds(item) {
+            let in_system_band = item.measure_id.is_none()
+                && item_y >= system_top - 60.0
+                && item_y <= system_bottom + 20.0;
+            if !in_block_measure && !in_system_band {
+                continue;
+            }
+            let item_right = item_x + item_width;
+            if item_x < right && item_right > left {
+                top = top.min(item_y);
+            }
         }
-        composites.push(SceneComposite {
-            id: format!("volta-{}-{}-{}", start_measure, end_measure, fragment_index),
-            kind: CompositeKind::Volta,
-            fragment: span_fragment_kind(fragment_index, fragment_total),
-            child_item_ids,
-            label: Some(label_text.clone()),
-            count: None,
-            start_anchor_id: Some(first.id.clone()),
-            end_anchor_id: Some(last.id.clone()),
-        });
+    }
+    if top.is_finite() {
+        top
+    } else {
+        fallback_top
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum VoltaSegmentType {
+    Begin,
+    Mid,
+    End,
+    BeginEnd,
+}
+
+fn display_measure_for_scene<'a>(
+    measures: &'a [DisplayMeasure<'_>],
+    scene_measure: &SceneMeasure,
+) -> Option<&'a DisplayMeasure<'a>> {
+    measures
+        .iter()
+        .find(|measure| measure.global_index == scene_measure.global_index)
+}
+
+fn volta_key(measure: &DisplayMeasure<'_>) -> Option<String> {
+    measure
+        .measure
+        .volta_indices
+        .as_ref()
+        .map(|indices| indices.iter().map(u32::to_string).collect::<Vec<_>>().join(","))
+}
+
+fn volta_type_for_measure(measures: &[DisplayMeasure<'_>], global_index: u32) -> VoltaSegmentType {
+    let current = measures
+        .iter()
+        .find(|measure| measure.global_index == global_index);
+    let current_key = current.and_then(volta_key);
+    let previous_key = global_index
+        .checked_sub(1)
+        .and_then(|previous| measures.iter().find(|measure| measure.global_index == previous))
+        .and_then(volta_key);
+    let next_key = measures
+        .iter()
+        .find(|measure| measure.global_index == global_index + 1)
+        .and_then(volta_key);
+    let begins = current_key != previous_key;
+    let ends = current_key != next_key
+        || current
+            .and_then(|measure| measure.barline.as_deref())
+            == Some("repeat-end");
+
+    match (begins, ends) {
+        (true, true) => VoltaSegmentType::BeginEnd,
+        (true, false) => VoltaSegmentType::Begin,
+        (false, true) => VoltaSegmentType::End,
+        (false, false) => VoltaSegmentType::Mid,
+    }
+}
+
+fn volta_fragment_kind(show_left: bool, show_right: bool) -> SpanFragmentKind {
+    match (show_left, show_right) {
+        (true, true) => SpanFragmentKind::SingleSegment,
+        (true, false) => SpanFragmentKind::Start,
+        (false, true) => SpanFragmentKind::End,
+        (false, false) => SpanFragmentKind::Continuation,
     }
 }
 
@@ -5754,12 +5843,24 @@ fn stack_scene_structural_items(
         .map(|(index, item)| (item.id.clone(), index))
         .collect::<std::collections::HashMap<_, _>>();
     let mut groups = Vec::new();
+    let mut volta_groups = std::collections::BTreeMap::<i32, Vec<String>>::new();
 
     for composite in composites {
+        if composite.kind == CompositeKind::Volta {
+            if let Some((_, y, _, _)) =
+                bounding_box_for_ids(items, &item_index, &composite.child_item_ids)
+            {
+                let key = (y * 100.0).round() as i32;
+                volta_groups
+                    .entry(key)
+                    .or_default()
+                    .extend(composite.child_item_ids.iter().cloned());
+            }
+            continue;
+        }
         let priority = match composite.kind {
             CompositeKind::Navigation => Some((1_u8, false)),
             CompositeKind::RepeatSpan => Some((2_u8, false)),
-            CompositeKind::Volta => Some((3_u8, false)),
             CompositeKind::Hairpin => Some((1_u8, true)),
             _ => None,
         };
@@ -5780,6 +5881,20 @@ fn stack_scene_structural_items(
                 height,
                 priority,
                 below_staff,
+            });
+        }
+    }
+
+    for (_, item_ids) in volta_groups {
+        if let Some((x, y, width, height)) = bounding_box_for_ids(items, &item_index, &item_ids) {
+            groups.push(EdgeGroup {
+                item_ids,
+                x,
+                y,
+                width,
+                height,
+                priority: 3,
+                below_staff: false,
             });
         }
     }
@@ -7175,7 +7290,11 @@ fn test_contract_scene_smoke() {
     assert!(scene.pages[0]
         .composites
         .iter()
-        .any(|c| c.kind == CompositeKind::RepeatSpan));
+        .all(|c| c.kind != CompositeKind::RepeatSpan));
+    assert!(scene.pages[0]
+        .items
+        .iter()
+        .all(|item| !item.role.starts_with("repeat-span")));
     assert!(scene.pages[0]
         .composites
         .iter()
@@ -7262,6 +7381,93 @@ fn test_volta_composites_are_emitted() {
     assert_eq!(voltas[0].fragment, SpanFragmentKind::SingleSegment);
     assert_eq!(voltas[0].start_anchor_id.as_deref(), Some("measure-0"));
     assert_eq!(voltas[0].end_anchor_id.as_deref(), Some("measure-1"));
+}
+
+#[test]
+fn test_adjacent_voltas_share_y_and_positive_offset_moves_up() {
+    let event = RenderEvent {
+        track: "HH".into(),
+        track_family: "cymbal".into(),
+        start: Fraction {
+            numerator: 0,
+            denominator: 1,
+        },
+        duration: Fraction {
+            numerator: 1,
+            denominator: 4,
+        },
+        kind: EventKind::Hit,
+        glyph: "x".into(),
+        modifiers: vec![],
+        modifier: None,
+        voice: 1,
+        beam: "none".into(),
+        tuplet: None,
+    };
+    let measure = |index: u32, volta: u32| RenderMeasure {
+        index,
+        global_index: index,
+        paragraph_index: 0,
+        measure_in_paragraph: index,
+        source_line: 1,
+        events: vec![event.clone()],
+        barline: Some("regular".into()),
+        closing_barline: Some("regular".into()),
+        start_nav: None,
+        end_nav: None,
+        volta_indices: Some(vec![volta]),
+        hairpins: vec![],
+        measure_repeat_slashes: None,
+        multi_rest_count: None,
+        note_value: 4,
+        volta_terminator: false,
+    };
+    let score = RenderScore {
+        version: RENDER_SCORE_VERSION.to_string(),
+        header: RenderHeader {
+            tempo: 120,
+            time_beats: 4,
+            time_beat_unit: 4,
+            divisions: 4,
+            note_value: 4,
+            grouping: vec![1, 1, 1, 1],
+            title: None,
+            subtitle: None,
+            composer: None,
+        },
+        tracks: vec![RenderTrack {
+            id: "HH".into(),
+            family: "cymbal".into(),
+        }],
+        measures: vec![measure(0, 1), measure(1, 2)],
+        errors: vec![],
+        repeat_spans: vec![],
+    };
+
+    let line_ys = |scene: &LayoutScene| {
+        scene.pages[0]
+            .items
+            .iter()
+            .filter(|item| item.role == "volta-line")
+            .filter_map(|item| match &item.primitive {
+                ScenePrimitive::LineSegment(line) => Some(line.y1_pt),
+                _ => None,
+            })
+            .collect::<Vec<_>>()
+    };
+
+    let default_scene = build_layout_scene(&score, &LayoutOptions::default());
+    let default_ys = line_ys(&default_scene);
+    assert_eq!(default_ys.len(), 2);
+    assert!((default_ys[0] - default_ys[1]).abs() < 0.01);
+
+    let mut spaced_opts = LayoutOptions::default();
+    spaced_opts.volta_offset_y = 10.0;
+    let spaced_scene = build_layout_scene(&score, &spaced_opts);
+    let spaced_ys = line_ys(&spaced_scene);
+    assert_eq!(spaced_ys.len(), 2);
+    assert!((spaced_ys[0] - spaced_ys[1]).abs() < 0.01);
+    assert!(spaced_ys[0] < default_ys[0]);
 }
 
 #[test]

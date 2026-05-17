@@ -124,10 +124,10 @@ describe("SVG Renderer parity", () => {
     expect(countRole(svg, "repeat-end")).toBe(1);
   });
 
-  it("renders repeat-span and volta composites", () => {
+  it("renders volta composites only for explicit numbered endings", () => {
     const svg = render("time 4/4\nnote 1/4\ngrouping 1+1+1+1\n|: s s s s |1. s s [ss] s :|2. s s [ssss] s |\n");
-    expect(countRole(svg, "repeat-span-line")).toBeGreaterThanOrEqual(1);
-    expect(countRole(svg, "repeat-span-count")).toBeGreaterThanOrEqual(1);
+    expect(countRole(svg, "repeat-span-line")).toBe(0);
+    expect(countRole(svg, "repeat-span-count")).toBe(0);
     expect(countRole(svg, "volta-line")).toBeGreaterThanOrEqual(2);
     expect(countRole(svg, "volta-label")).toBeGreaterThanOrEqual(2);
     expect(svg).toContain("1.");

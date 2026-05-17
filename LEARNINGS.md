@@ -810,3 +810,29 @@ Nav markers (`@segno`, `@fine`, `@to-coda`, etc.) were converted to `TokenGlyph:
 - Optional numeric settings should be read as `Option<f64>` and defaulted only when the property is absent or non-numeric. Range validation belongs at the UI/settings layer, not in the WASM bridge.
 
 - The JS scene adapter must also preserve that distinction. When `renderScoreToSvg()` or tests omit `systemSpacing`, the adapter should pass the UI default; when the caller explicitly passes `0`, it should pass `0` through to WASM.
+
+## 2026-05-16 Addendum: Volta Rendering Mirrors TS Block Semantics
+
+- The TypeScript/VexFlow renderer does not build voltas as one global label range and then split it. It first finds contiguous volta blocks within the current system, computes one shared line Y for the block, then emits same-label spans inside that block.
+
+- Left and right hooks are derived from global neighboring measures, not from fragment index. A segment shows the left hook and label only when its label begins at that measure; it shows the right hook only when the label ends there or the measure is a repeat end. Continuation fragments across systems intentionally have no left label/hook until the next real begin.
+
+- VexFlow's volta label baseline is below the bracket line (`topY + VOLTA_TEXT_SIZE + 2`) and uses the navigation text font, not the SMuFL music font. Rust layout scene output should keep the label as semantic `CountLabel` text, but use `Academico` at 12pt for visual parity with the TS overlay.
+
+## 2026-05-16 Addendum: Repeat Counts Are Not Volta Brackets
+
+- The normalized `repeat_spans` list describes repeat playback ranges and counts. It must not be rendered as a visible bracket or `2x` house in the score.
+
+- Visible bracket houses are volta notation only. The layout scene should emit `volta` composites from explicit numbered endings (`|1.`, `|2.`, etc.) and leave ordinary repeat spans to repeat barline rendering and playback semantics.
+
+## 2026-05-16 Addendum: Volta Offset Uses the Top Skyline
+
+- Volta bracket Y placement should be based on the highest already-rendered element under the volta block, not on the staff/system origin. That keeps adjacent numbered-ending houses on one shared Y within the same contiguous volta block.
+
+- A volta offset of `0` means the bracket enclosure is tight to that top skyline. Positive values move the bracket upward and increase clearance (`svg y` decreases); negative values move it downward toward the system.
+
+## 2026-05-17 Addendum: Cross-System Voltas Need Continuation Hooks
+
+- When a numbered ending continues onto a later system, the continuation fragment should still draw a left hook at that system's start. The label should remain only on the true begin fragment, but the hook makes the later system's half of the bracket visibly read as the same house.
+
+- Fragment semantics should still be derived from the global volta begin/end state. A continuation hook is a visual affordance for system breaks, not a new volta begin.

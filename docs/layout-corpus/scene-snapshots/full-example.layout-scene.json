@@ -5809,83 +5809,6 @@
             "heightPt": 41,
             "fill": "#333"
           }
-        },
-        {
-          "id": "item-351",
-          "measureId": "measure-2",
-          "role": "repeat-span-line",
-          "kind": "lineSegment",
-          "zIndex": 0,
-          "primitive": {
-            "x1Pt": 57.33333206176758,
-            "y1Pt": 430.33331298828125,
-            "x2Pt": 758.6666870117188,
-            "y2Pt": 430.33331298828125,
-            "stroke": "#333",
-            "strokeWidth": 1.2000000476837158
-          }
-        },
-        {
-          "id": "item-352",
-          "measureId": "measure-2",
-          "role": "repeat-span-start",
-          "kind": "lineSegment",
-          "zIndex": 0,
-          "primitive": {
-            "x1Pt": 57.33333206176758,
-            "y1Pt": 430.33331298828125,
-            "x2Pt": 57.33333206176758,
-            "y2Pt": 438.33331298828125,
-            "stroke": "#333",
-            "strokeWidth": 1.2000000476837158
-          }
-        },
-        {
-          "id": "item-353",
-          "measureId": "measure-2",
-          "role": "repeat-span-count",
-          "kind": "textRun",
-          "zIndex": 0,
-          "primitive": {
-            "xPt": 408,
-            "yPt": 426.33331298828125,
-            "textRole": "countLabel",
-            "text": "2x",
-            "fontFamily": "Bravura",
-            "fontSizePt": 12,
-            "fill": "#333",
-            "textAnchor": "middle"
-          }
-        },
-        {
-          "id": "item-354",
-          "measureId": "measure-3",
-          "role": "repeat-span-line",
-          "kind": "lineSegment",
-          "zIndex": 0,
-          "primitive": {
-            "x1Pt": 57.33333206176758,
-            "y1Pt": 570.3333129882812,
-            "x2Pt": 758.6666870117188,
-            "y2Pt": 570.3333129882812,
-            "stroke": "#333",
-            "strokeWidth": 1.2000000476837158
-          }
-        },
-        {
-          "id": "item-355",
-          "measureId": "measure-3",
-          "role": "repeat-span-end",
-          "kind": "lineSegment",
-          "zIndex": 0,
-          "primitive": {
-            "x1Pt": 758.6666870117188,
-            "y1Pt": 570.3333129882812,
-            "x2Pt": 758.6666870117188,
-            "y2Pt": 578.3333129882812,
-            "stroke": "#333",
-            "strokeWidth": 1.2000000476837158
-          }
         }
       ],
       "composites": [
@@ -5971,31 +5894,6 @@
           "label": "@fine",
           "startAnchorId": "measure-9",
           "endAnchorId": "measure-9"
-        },
-        {
-          "id": "repeat-span-2-3-0",
-          "kind": "repeatSpan",
-          "fragment": "start",
-          "childItemIds": [
-            "item-351",
-            "item-352",
-            "item-353"
-          ],
-          "count": 2,
-          "startAnchorId": "measure-2",
-          "endAnchorId": "measure-2"
-        },
-        {
-          "id": "repeat-span-2-3-1",
-          "kind": "repeatSpan",
-          "fragment": "end",
-          "childItemIds": [
-            "item-354",
-            "item-355"
-          ],
-          "count": 2,
-          "startAnchorId": "measure-3",
-          "endAnchorId": "measure-3"
         }
       ]
     }

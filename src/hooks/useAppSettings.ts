@@ -36,7 +36,7 @@ export const defaultSettings: AppSettings = {
   headerHeight: 50,
   systemSpacing: 30,
   stemLength: 31,
-  voltaSpacing: -15,
+  voltaSpacing: 0,
   hairpinOffsetY: 0,
   activeTab: "page",
   tempoOffsetX: 0,

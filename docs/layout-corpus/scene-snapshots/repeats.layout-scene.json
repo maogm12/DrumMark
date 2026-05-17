@@ -6480,292 +6480,290 @@
         },
         {
           "id": "item-403",
-          "measureId": "measure-0",
-          "role": "repeat-span-line",
-          "kind": "lineSegment",
-          "zIndex": 0,
-          "primitive": {
-            "x1Pt": 57.33333206176758,
-            "y1Pt": 150.3333282470703,
-            "x2Pt": 550.1194458007812,
-            "y2Pt": 150.3333282470703,
-            "stroke": "#333",
-            "strokeWidth": 1.2000000476837158
-          }
-        },
-        {
-          "id": "item-404",
-          "measureId": "measure-0",
-          "role": "repeat-span-start",
-          "kind": "lineSegment",
-          "zIndex": 0,
-          "primitive": {
-            "x1Pt": 57.33333206176758,
-            "y1Pt": 150.3333282470703,
-            "x2Pt": 57.33333206176758,
-            "y2Pt": 158.3333282470703,
-            "stroke": "#333",
-            "strokeWidth": 1.2000000476837158
-          }
-        },
-        {
-          "id": "item-405",
-          "measureId": "measure-1",
-          "role": "repeat-span-end",
-          "kind": "lineSegment",
-          "zIndex": 0,
-          "primitive": {
-            "x1Pt": 550.1194458007812,
-            "y1Pt": 150.3333282470703,
-            "x2Pt": 550.1194458007812,
-            "y2Pt": 158.3333282470703,
-            "stroke": "#333",
-            "strokeWidth": 1.2000000476837158
-          }
-        },
-        {
-          "id": "item-406",
-          "measureId": "measure-0",
-          "role": "repeat-span-count",
-          "kind": "textRun",
-          "zIndex": 0,
-          "primitive": {
-            "xPt": 303.72637939453125,
-            "yPt": 146.3333282470703,
-            "textRole": "countLabel",
-            "text": "2x",
-            "fontFamily": "Bravura",
-            "fontSizePt": 12,
-            "fill": "#333",
-            "textAnchor": "middle"
-          }
-        },
-        {
-          "id": "item-407",
           "measureId": "measure-1",
           "role": "volta-line",
           "kind": "lineSegment",
           "zIndex": 0,
           "primitive": {
-            "x1Pt": 351.3984680175781,
-            "y1Pt": 123.33332824707031,
-            "x2Pt": 552.1194458007812,
-            "y2Pt": 123.33332824707031,
+            "x1Pt": 349.3984680175781,
+            "y1Pt": 147.072998046875,
+            "x2Pt": 554.1194458007812,
+            "y2Pt": 147.072998046875,
             "stroke": "#333",
-            "strokeWidth": 1.2000000476837158
+            "strokeWidth": 1
           }
         },
         {
-          "id": "item-408",
+          "id": "item-404",
           "measureId": "measure-1",
           "role": "volta-start-hook",
           "kind": "lineSegment",
           "zIndex": 0,
           "primitive": {
-            "x1Pt": 351.3984680175781,
-            "y1Pt": 123.33332824707031,
-            "x2Pt": 351.3984680175781,
-            "y2Pt": 133.3333282470703,
+            "x1Pt": 349.3984680175781,
+            "y1Pt": 147.072998046875,
+            "x2Pt": 349.3984680175781,
+            "y2Pt": 162.072998046875,
             "stroke": "#333",
-            "strokeWidth": 1.2000000476837158
+            "strokeWidth": 1
           }
         },
         {
-          "id": "item-409",
+          "id": "item-405",
           "measureId": "measure-1",
           "role": "volta-label",
           "kind": "textRun",
           "zIndex": 0,
           "primitive": {
-            "xPt": 355.3984680175781,
-            "yPt": 119.33332824707031,
+            "xPt": 354.3984680175781,
+            "yPt": 161.072998046875,
             "textRole": "countLabel",
             "text": "1.",
-            "fontFamily": "Bravura",
+            "fontFamily": "Academico",
+            "fontSizePt": 12,
+            "fill": "#333"
+          }
+        },
+        {
+          "id": "item-406",
+          "measureId": "measure-1",
+          "role": "volta-end-hook",
+          "kind": "lineSegment",
+          "zIndex": 0,
+          "primitive": {
+            "x1Pt": 554.1194458007812,
+            "y1Pt": 147.072998046875,
+            "x2Pt": 554.1194458007812,
+            "y2Pt": 162.072998046875,
+            "stroke": "#333",
+            "strokeWidth": 1
+          }
+        },
+        {
+          "id": "item-407",
+          "measureId": "measure-2",
+          "role": "volta-line",
+          "kind": "lineSegment",
+          "zIndex": 0,
+          "primitive": {
+            "x1Pt": 554.1194458007812,
+            "y1Pt": 147.072998046875,
+            "x2Pt": 762.6666259765625,
+            "y2Pt": 147.072998046875,
+            "stroke": "#333",
+            "strokeWidth": 1
+          }
+        },
+        {
+          "id": "item-408",
+          "measureId": "measure-2",
+          "role": "volta-start-hook",
+          "kind": "lineSegment",
+          "zIndex": 0,
+          "primitive": {
+            "x1Pt": 554.1194458007812,
+            "y1Pt": 147.072998046875,
+            "x2Pt": 554.1194458007812,
+            "y2Pt": 162.072998046875,
+            "stroke": "#333",
+            "strokeWidth": 1
+          }
+        },
+        {
+          "id": "item-409",
+          "measureId": "measure-2",
+          "role": "volta-label",
+          "kind": "textRun",
+          "zIndex": 0,
+          "primitive": {
+            "xPt": 559.1194458007812,
+            "yPt": 161.072998046875,
+            "textRole": "countLabel",
+            "text": "2.",
+            "fontFamily": "Academico",
             "fontSizePt": 12,
             "fill": "#333"
           }
         },
         {
           "id": "item-410",
-          "measureId": "measure-1",
-          "role": "volta-end-hook",
+          "measureId": "measure-3",
+          "role": "volta-line",
           "kind": "lineSegment",
           "zIndex": 0,
           "primitive": {
-            "x1Pt": 552.1194458007812,
-            "y1Pt": 123.33332824707031,
-            "x2Pt": 552.1194458007812,
-            "y2Pt": 133.3333282470703,
+            "x1Pt": 97.33332824707031,
+            "y1Pt": 260.0033264160156,
+            "x2Pt": 315.0527648925781,
+            "y2Pt": 260.0033264160156,
             "stroke": "#333",
-            "strokeWidth": 1.2000000476837158
+            "strokeWidth": 1
           }
         },
         {
           "id": "item-411",
-          "measureId": "measure-2",
-          "role": "volta-line",
-          "kind": "lineSegment",
-          "zIndex": 0,
-          "primitive": {
-            "x1Pt": 556.1194458007812,
-            "y1Pt": 168.3333282470703,
-            "x2Pt": 760.6666259765625,
-            "y2Pt": 168.3333282470703,
-            "stroke": "#333",
-            "strokeWidth": 1.2000000476837158
-          }
-        },
-        {
-          "id": "item-412",
-          "measureId": "measure-2",
+          "measureId": "measure-3",
           "role": "volta-start-hook",
           "kind": "lineSegment",
           "zIndex": 0,
           "primitive": {
-            "x1Pt": 556.1194458007812,
-            "y1Pt": 168.3333282470703,
-            "x2Pt": 556.1194458007812,
-            "y2Pt": 178.3333282470703,
+            "x1Pt": 97.33332824707031,
+            "y1Pt": 260.0033264160156,
+            "x2Pt": 97.33332824707031,
+            "y2Pt": 275.0033264160156,
             "stroke": "#333",
-            "strokeWidth": 1.2000000476837158
+            "strokeWidth": 1
           }
         },
         {
-          "id": "item-413",
-          "measureId": "measure-2",
-          "role": "volta-label",
-          "kind": "textRun",
-          "zIndex": 0,
-          "primitive": {
-            "xPt": 560.1194458007812,
-            "yPt": 164.3333282470703,
-            "textRole": "countLabel",
-            "text": "2.",
-            "fontFamily": "Bravura",
-            "fontSizePt": 12,
-            "fill": "#333"
-          }
-        },
-        {
-          "id": "item-414",
-          "measureId": "measure-3",
-          "role": "volta-line",
-          "kind": "lineSegment",
-          "zIndex": 0,
-          "primitive": {
-            "x1Pt": 55.33333206176758,
-            "y1Pt": 301.33331298828125,
-            "x2Pt": 313.0527648925781,
-            "y2Pt": 301.33331298828125,
-            "stroke": "#333",
-            "strokeWidth": 1.2000000476837158
-          }
-        },
-        {
-          "id": "item-415",
+          "id": "item-412",
           "measureId": "measure-3",
           "role": "volta-end-hook",
           "kind": "lineSegment",
           "zIndex": 0,
           "primitive": {
-            "x1Pt": 313.0527648925781,
-            "y1Pt": 301.33331298828125,
-            "x2Pt": 313.0527648925781,
-            "y2Pt": 311.33331298828125,
+            "x1Pt": 315.0527648925781,
+            "y1Pt": 260.0033264160156,
+            "x2Pt": 315.0527648925781,
+            "y2Pt": 275.0033264160156,
             "stroke": "#333",
-            "strokeWidth": 1.2000000476837158
+            "strokeWidth": 1
           }
         },
         {
-          "id": "item-416",
+          "id": "item-413",
           "measureId": "measure-4",
           "role": "volta-line",
           "kind": "lineSegment",
           "zIndex": 0,
           "primitive": {
-            "x1Pt": 317.0527648925781,
-            "y1Pt": 308.33331298828125,
-            "x2Pt": 760.666748046875,
-            "y2Pt": 308.33331298828125,
+            "x1Pt": 315.0527648925781,
+            "y1Pt": 260.0033264160156,
+            "x2Pt": 762.666748046875,
+            "y2Pt": 260.0033264160156,
             "stroke": "#333",
-            "strokeWidth": 1.2000000476837158
+            "strokeWidth": 1
           }
         },
         {
-          "id": "item-417",
+          "id": "item-414",
           "measureId": "measure-4",
           "role": "volta-start-hook",
           "kind": "lineSegment",
           "zIndex": 0,
           "primitive": {
-            "x1Pt": 317.0527648925781,
-            "y1Pt": 308.33331298828125,
-            "x2Pt": 317.0527648925781,
-            "y2Pt": 318.33331298828125,
+            "x1Pt": 315.0527648925781,
+            "y1Pt": 260.0033264160156,
+            "x2Pt": 315.0527648925781,
+            "y2Pt": 275.0033264160156,
             "stroke": "#333",
-            "strokeWidth": 1.2000000476837158
+            "strokeWidth": 1
           }
         },
         {
-          "id": "item-418",
+          "id": "item-415",
           "measureId": "measure-4",
           "role": "volta-label",
           "kind": "textRun",
           "zIndex": 0,
           "primitive": {
-            "xPt": 321.0527648925781,
-            "yPt": 304.33331298828125,
+            "xPt": 320.0527648925781,
+            "yPt": 274.0033264160156,
             "textRole": "countLabel",
             "text": "3.",
-            "fontFamily": "Bravura",
+            "fontFamily": "Academico",
             "fontSizePt": 12,
             "fill": "#333"
           }
         },
         {
-          "id": "item-419",
+          "id": "item-416",
           "measureId": "measure-6",
           "role": "volta-line",
           "kind": "lineSegment",
           "zIndex": 0,
           "primitive": {
-            "x1Pt": 55.33333206176758,
-            "y1Pt": 448.33331298828125,
-            "x2Pt": 760.6668090820312,
-            "y2Pt": 448.33331298828125,
+            "x1Pt": 97.33332824707031,
+            "y1Pt": 405.0033264160156,
+            "x2Pt": 762.6668090820312,
+            "y2Pt": 405.0033264160156,
             "stroke": "#333",
-            "strokeWidth": 1.2000000476837158
+            "strokeWidth": 1
           }
         },
         {
-          "id": "item-420",
+          "id": "item-417",
+          "measureId": "measure-6",
+          "role": "volta-start-hook",
+          "kind": "lineSegment",
+          "zIndex": 0,
+          "primitive": {
+            "x1Pt": 97.33332824707031,
+            "y1Pt": 405.0033264160156,
+            "x2Pt": 97.33332824707031,
+            "y2Pt": 420.0033264160156,
+            "stroke": "#333",
+            "strokeWidth": 1
+          }
+        },
+        {
+          "id": "item-418",
           "measureId": "measure-10",
           "role": "volta-line",
           "kind": "lineSegment",
           "zIndex": 0,
           "primitive": {
-            "x1Pt": 55.33333206176758,
-            "y1Pt": 588.3333129882812,
-            "x2Pt": 760.666748046875,
-            "y2Pt": 588.3333129882812,
+            "x1Pt": 97.33332824707031,
+            "y1Pt": 540.0029907226562,
+            "x2Pt": 762.666748046875,
+            "y2Pt": 540.0029907226562,
             "stroke": "#333",
-            "strokeWidth": 1.2000000476837158
+            "strokeWidth": 1
           }
         },
         {
-          "id": "item-421",
+          "id": "item-419",
+          "measureId": "measure-10",
+          "role": "volta-start-hook",
+          "kind": "lineSegment",
+          "zIndex": 0,
+          "primitive": {
+            "x1Pt": 97.33332824707031,
+            "y1Pt": 540.0029907226562,
+            "x2Pt": 97.33332824707031,
+            "y2Pt": 555.0029907226562,
+            "stroke": "#333",
+            "strokeWidth": 1
+          }
+        },
+        {
+          "id": "item-420",
           "measureId": "measure-13",
           "role": "volta-line",
           "kind": "lineSegment",
           "zIndex": 0,
           "primitive": {
-            "x1Pt": 55.33333206176758,
-            "y1Pt": 717.13330078125,
-            "x2Pt": 760.666748046875,
-            "y2Pt": 717.13330078125,
+            "x1Pt": 97.33332824707031,
+            "y1Pt": 680.0029907226562,
+            "x2Pt": 762.666748046875,
+            "y2Pt": 680.0029907226562,
             "stroke": "#333",
-            "strokeWidth": 1.2000000476837158
+            "strokeWidth": 1
+          }
+        },
+        {
+          "id": "item-421",
+          "measureId": "measure-13",
+          "role": "volta-start-hook",
+          "kind": "lineSegment",
+          "zIndex": 0,
+          "primitive": {
+            "x1Pt": 97.33332824707031,
+            "y1Pt": 680.0029907226562,
+            "x2Pt": 97.33332824707031,
+            "y2Pt": 695.0029907226562,
+            "stroke": "#333",
+            "strokeWidth": 1
           }
         },
         {
@@ -6775,27 +6773,42 @@
           "kind": "lineSegment",
           "zIndex": 0,
           "primitive": {
-            "x1Pt": 55.33333206176758,
-            "y1Pt": 861.3333129882812,
-            "x2Pt": 760.666748046875,
-            "y2Pt": 861.3333129882812,
+            "x1Pt": 97.33332824707031,
+            "y1Pt": 820.0029907226562,
+            "x2Pt": 762.666748046875,
+            "y2Pt": 820.0029907226562,
             "stroke": "#333",
-            "strokeWidth": 1.2000000476837158
+            "strokeWidth": 1
           }
         },
         {
           "id": "item-423",
+          "measureId": "measure-16",
+          "role": "volta-start-hook",
+          "kind": "lineSegment",
+          "zIndex": 0,
+          "primitive": {
+            "x1Pt": 97.33332824707031,
+            "y1Pt": 820.0029907226562,
+            "x2Pt": 97.33332824707031,
+            "y2Pt": 835.0029907226562,
+            "stroke": "#333",
+            "strokeWidth": 1
+          }
+        },
+        {
+          "id": "item-424",
           "measureId": "measure-17",
           "role": "volta-end-hook",
           "kind": "lineSegment",
           "zIndex": 0,
           "primitive": {
-            "x1Pt": 760.666748046875,
-            "y1Pt": 861.3333129882812,
-            "x2Pt": 760.666748046875,
-            "y2Pt": 871.3333129882812,
+            "x1Pt": 762.666748046875,
+            "y1Pt": 820.0029907226562,
+            "x2Pt": 762.666748046875,
+            "y2Pt": 835.0029907226562,
             "stroke": "#333",
-            "strokeWidth": 1.2000000476837158
+            "strokeWidth": 1
           }
         }
       ],
@@ -6921,8 +6934,8 @@
           "endAnchorId": "measure-17"
         },
         {
-          "id": "repeat-span-0-1-0",
-          "kind": "repeatSpan",
+          "id": "volta-measure-1-measure-1",
+          "kind": "volta",
           "fragment": "singleSegment",
           "childItemIds": [
             "item-403",
@@ -6930,89 +6943,79 @@
             "item-405",
             "item-406"
           ],
-          "count": 2,
-          "startAnchorId": "measure-0",
-          "endAnchorId": "measure-1"
-        },
-        {
-          "id": "volta-1-1-0",
-          "kind": "volta",
-          "fragment": "singleSegment",
-          "childItemIds": [
-            "item-407",
-            "item-408",
-            "item-409",
-            "item-410"
-          ],
           "label": "1.",
           "startAnchorId": "measure-1",
           "endAnchorId": "measure-1"
         },
         {
-          "id": "volta-2-3-0",
+          "id": "volta-measure-2-measure-2",
           "kind": "volta",
           "fragment": "start",
           "childItemIds": [
-            "item-411",
-            "item-412",
-            "item-413"
+            "item-407",
+            "item-408",
+            "item-409"
           ],
           "label": "2.",
           "startAnchorId": "measure-2",
           "endAnchorId": "measure-2"
         },
         {
-          "id": "volta-2-3-1",
+          "id": "volta-measure-3-measure-3",
           "kind": "volta",
           "fragment": "end",
           "childItemIds": [
-            "item-414",
-            "item-415"
+            "item-410",
+            "item-411",
+            "item-412"
           ],
           "label": "2.",
           "startAnchorId": "measure-3",
           "endAnchorId": "measure-3"
         },
         {
-          "id": "volta-4-17-0",
+          "id": "volta-measure-4-measure-5",
           "kind": "volta",
           "fragment": "start",
           "childItemIds": [
-            "item-416",
-            "item-417",
-            "item-418"
+            "item-413",
+            "item-414",
+            "item-415"
           ],
           "label": "3.",
           "startAnchorId": "measure-4",
           "endAnchorId": "measure-5"
         },
         {
-          "id": "volta-4-17-1",
+          "id": "volta-measure-6-measure-9",
           "kind": "volta",
           "fragment": "continuation",
           "childItemIds": [
-            "item-419"
+            "item-416",
+            "item-417"
           ],
           "label": "3.",
           "startAnchorId": "measure-6",
           "endAnchorId": "measure-9"
         },
         {
-          "id": "volta-4-17-2",
+          "id": "volta-measure-10-measure-12",
           "kind": "volta",
           "fragment": "continuation",
           "childItemIds": [
-            "item-420"
+            "item-418",
+            "item-419"
           ],
           "label": "3.",
           "startAnchorId": "measure-10",
           "endAnchorId": "measure-12"
         },
         {
-          "id": "volta-4-17-3",
+          "id": "volta-measure-13-measure-15",
           "kind": "volta",
           "fragment": "continuation",
           "childItemIds": [
+            "item-420",
             "item-421"
           ],
           "label": "3.",
@@ -7020,12 +7023,13 @@
           "endAnchorId": "measure-15"
         },
         {
-          "id": "volta-4-17-4",
+          "id": "volta-measure-16-measure-17",
           "kind": "volta",
           "fragment": "end",
           "childItemIds": [
             "item-422",
-            "item-423"
+            "item-423",
+            "item-424"
           ],
           "label": "3.",
           "startAnchorId": "measure-16",

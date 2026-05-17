@@ -1343,9 +1343,10 @@ function buildVoltaSpans(
       }
       const voltaType = voltaTypeForMeasure(score, measure);
       const endType = voltaTypeForMeasure(score, endMeasure);
-      const showLeft = voltaType === VoltaType.BEGIN || voltaType === VoltaType.BEGIN_END;
+      const beginsHere = voltaType === VoltaType.BEGIN || voltaType === VoltaType.BEGIN_END;
+      const showLeft = beginsHere || index === 0;
       const showRight = endType === VoltaType.END || endType === VoltaType.BEGIN_END;
-      const displayLabel = showLeft ? label : undefined;
+      const displayLabel = beginsHere ? label : undefined;
 
       spans.push({
         x1,

@@ -1111,7 +1111,7 @@ impl Default for LayoutOptions {
             px_per_quarter: 80.0,
             volta_offset_y: 0.0,
             nav_offset_y: -10.0,
-            hairpin_offset_y: 10.0,
+            hairpin_offset_y: 0.0,
             sticking_offset_y: -8.0,
             accent_offset_y: -6.0,
             text_offset_y: -40.0,
@@ -1677,6 +1677,36 @@ mod tests {
         }
     }
 
+    fn line_for_role<'a>(page: &'a ScenePage, role: &str) -> &'a LineSegment {
+        let item = page
+            .items
+            .iter()
+            .find(|item| item.role == role)
+            .unwrap_or_else(|| panic!("expected {role} line item"));
+        let ScenePrimitive::LineSegment(line) = &item.primitive else {
+            panic!("expected {role} to be a line segment");
+        };
+        line
+    }
+
+    fn line_for_id<'a>(page: &'a ScenePage, id: &str) -> &'a LineSegment {
+        let item = page
+            .items
+            .iter()
+            .find(|item| item.id == id)
+            .unwrap_or_else(|| panic!("expected line item {id}"));
+        let ScenePrimitive::LineSegment(line) = &item.primitive else {
+            panic!("expected {id} to be a line segment");
+        };
+        line
+    }
+
+    fn hairpin_center_y(page: &ScenePage) -> f32 {
+        let top = line_for_role(page, "hairpin-top");
+        let bottom = line_for_role(page, "hairpin-bottom");
+        (top.y1_pt + top.y2_pt + bottom.y1_pt + bottom.y2_pt) / 4.0
+    }
+
     #[test]
     fn test_scene_fixture_supports_span_fragments_across_system_breaks() {
         let scene = build_layout_scene(&cross_system_fixture_score(), &LayoutOptions::default());
@@ -1711,6 +1741,89 @@ mod tests {
                 SpanFragmentKind::End
             ]
         );
+    }
+
+    #[test]
+    fn test_single_system_hairpin_is_conical() {
+        let mut measure = regular_measure(0, 0, 4);
+        measure.hairpins = vec![HairpinSpan {
+            kind: HairpinKind::Crescendo,
+            start: Fraction {
+                numerator: 0,
+                denominator: 1,
+            },
+            end: Fraction {
+                numerator: 1,
+                denominator: 1,
+            },
+            start_measure_index: 0,
+            end_measure_index: 0,
+        }];
+        let scene = build_layout_scene(&simple_layout_score(vec![measure]), &LayoutOptions::default());
+        let page = &scene.pages[0];
+        let top = line_for_role(page, "hairpin-top");
+        let bottom = line_for_role(page, "hairpin-bottom");
+
+        assert!((bottom.y1_pt - top.y1_pt).abs() < 0.01);
+        assert!(bottom.y2_pt - top.y2_pt > 8.0);
+    }
+
+    #[test]
+    fn test_hairpin_vertical_offset_moves_down_when_positive() {
+        let mut measure = regular_measure(0, 0, 4);
+        measure.hairpins = vec![HairpinSpan {
+            kind: HairpinKind::Crescendo,
+            start: Fraction {
+                numerator: 0,
+                denominator: 1,
+            },
+            end: Fraction {
+                numerator: 1,
+                denominator: 1,
+            },
+            start_measure_index: 0,
+            end_measure_index: 0,
+        }];
+        let score = simple_layout_score(vec![measure]);
+
+        let baseline = build_layout_scene(&score, &LayoutOptions::default());
+        let below = build_layout_scene(
+            &score,
+            &LayoutOptions {
+                hairpin_offset_y: 10.0,
+                ..LayoutOptions::default()
+            },
+        );
+        let above = build_layout_scene(
+            &score,
+            &LayoutOptions {
+                hairpin_offset_y: -5.0,
+                ..LayoutOptions::default()
+            },
+        );
+
+        let baseline_y = hairpin_center_y(&baseline.pages[0]);
+        assert!((hairpin_center_y(&below.pages[0]) - baseline_y - 10.0).abs() < 0.01);
+        assert!((hairpin_center_y(&above.pages[0]) - baseline_y + 5.0).abs() < 0.01);
+    }
+
+    #[test]
+    fn test_cross_system_hairpin_continuation_keeps_partial_opening() {
+        let scene = build_layout_scene(&cross_system_fixture_score(), &LayoutOptions::default());
+        let page = &scene.pages[0];
+        let continuation = page
+            .composites
+            .iter()
+            .find(|composite| {
+                composite.kind == CompositeKind::Hairpin
+                    && composite.fragment == SpanFragmentKind::Continuation
+            })
+            .expect("expected continuation hairpin fragment");
+        let top = line_for_id(page, &continuation.child_item_ids[0]);
+        let bottom = line_for_id(page, &continuation.child_item_ids[1]);
+
+        assert!(bottom.y1_pt - top.y1_pt > 0.5);
+        assert!(bottom.y2_pt - top.y2_pt > bottom.y1_pt - top.y1_pt);
     }
 
     #[test]
@@ -5768,6 +5881,9 @@ fn render_hairpin_fragments(
     measures: &[DisplayMeasure<'_>],
     hairpin_offset_y: f32,
 ) {
+    const HAIRPIN_OPEN_HEIGHT_PT: f32 = 10.0;
+    const HAIRPIN_GAP_BELOW_PT: f32 = 0.0;
+
     for measure in measures {
         for hairpin in &measure.hairpins {
             let fragments = measure_fragments_for_range(
@@ -5776,14 +5892,29 @@ fn render_hairpin_fragments(
                 hairpin.end_measure_index,
             );
             let fragment_total = fragments.len();
+            let total_start = hairpin.start_measure_index as f32 + fraction_to_f32(hairpin.start);
+            let mut total_end =
+                hairpin.end_measure_index as f32 + fraction_to_f32(hairpin.end);
+            if total_end <= total_start {
+                total_end = total_start + 0.05;
+            }
+            let total_span = total_end - total_start;
             for (fragment_index, fragment) in fragments.iter().enumerate() {
                 if fragment.is_empty() {
                     continue;
                 }
                 let first = fragment.first().unwrap();
                 let last = fragment.last().unwrap();
-                let start_progress = fraction_to_f32(hairpin.start);
-                let end_progress = fraction_to_f32(hairpin.end).max(start_progress + 0.05);
+                let start_progress = if first.global_index == hairpin.start_measure_index {
+                    fraction_to_f32(hairpin.start)
+                } else {
+                    0.0
+                };
+                let end_progress = if last.global_index == hairpin.end_measure_index {
+                    fraction_to_f32(hairpin.end).max(start_progress + 0.05)
+                } else {
+                    1.0
+                };
                 let start_x = if fragment_index == 0 {
                     first.x_pt + 14.0 + start_progress * (first.width_pt - 28.0)
                 } else {
@@ -5794,29 +5925,36 @@ fn render_hairpin_fragments(
                 } else {
                     last.x_pt + last.width_pt - 12.0
                 };
-                let base_y = first.y_pt + first.height_pt + 8.0 + hairpin_offset_y;
-                let open_height = 10.0;
-                let start_y = base_y
-                    + if matches!(hairpin.kind, HairpinKind::Crescendo) {
-                        open_height
-                    } else {
-                        0.0
-                    };
-                let end_y = base_y
-                    + if matches!(hairpin.kind, HairpinKind::Crescendo) {
-                        0.0
-                    } else {
-                        open_height
-                    };
+                if end_x <= start_x {
+                    continue;
+                }
+                let fragment_start_abs = first.global_index as f32 + start_progress;
+                let fragment_end_abs = last.global_index as f32 + end_progress;
+                let left_progress = ((fragment_start_abs - total_start) / total_span).clamp(0.0, 1.0);
+                let right_progress = ((fragment_end_abs - total_start) / total_span).clamp(0.0, 1.0);
+                let left_open_height = hairpin_open_height_at_progress(hairpin.kind, left_progress, HAIRPIN_OPEN_HEIGHT_PT);
+                let right_open_height = hairpin_open_height_at_progress(hairpin.kind, right_progress, HAIRPIN_OPEN_HEIGHT_PT);
+                let top_y = bottom_skyline_sample(
+                    items,
+                    fragment,
+                    start_x,
+                    end_x,
+                    first.y_pt + first.height_pt,
+                ) + HAIRPIN_GAP_BELOW_PT + hairpin_offset_y;
+                let center_y = top_y + HAIRPIN_OPEN_HEIGHT_PT * 0.5;
+                let left_top_y = center_y - left_open_height * 0.5;
+                let left_bottom_y = center_y + left_open_height * 0.5;
+                let right_top_y = center_y - right_open_height * 0.5;
+                let right_bottom_y = center_y + right_open_height * 0.5;
                 let top_id = push_line_item(
                     items,
                     counter,
                     Some(&first.id),
                     "hairpin-top",
                     start_x,
-                    base_y,
+                    left_top_y,
                     end_x,
-                    end_y,
+                    right_top_y,
                     "#333",
                     1.2,
                     None,
@@ -5827,9 +5965,9 @@ fn render_hairpin_fragments(
                     Some(&first.id),
                     "hairpin-bottom",
                     start_x,
-                    base_y + open_height,
+                    left_bottom_y,
                     end_x,
-                    start_y,
+                    right_bottom_y,
                     "#333",
                     1.2,
                     None,
@@ -5852,6 +5990,64 @@ fn render_hairpin_fragments(
                 });
             }
         }
+    }
+}
+
+fn hairpin_open_height_at_progress(kind: HairpinKind, progress: f32, max_height: f32) -> f32 {
+    let clamped = progress.clamp(0.0, 1.0);
+    match kind {
+        HairpinKind::Crescendo => max_height * clamped,
+        HairpinKind::Decrescendo => max_height * (1.0 - clamped),
+    }
+}
+
+fn bottom_skyline_sample(
+    items: &[SceneItem],
+    block_measures: &[&SceneMeasure],
+    x1: f32,
+    x2: f32,
+    fallback_bottom: f32,
+) -> f32 {
+    let left = x1.min(x2);
+    let right = x1.max(x2);
+    let measure_ids = block_measures
+        .iter()
+        .map(|measure| measure.id.as_str())
+        .collect::<std::collections::HashSet<_>>();
+    let system_top = block_measures
+        .iter()
+        .map(|measure| measure.y_pt)
+        .fold(f32::INFINITY, f32::min);
+    let system_bottom = block_measures
+        .iter()
+        .map(|measure| measure.y_pt + measure.height_pt)
+        .fold(f32::NEG_INFINITY, f32::max);
+    let mut bottom = f32::NEG_INFINITY;
+    for item in items {
+        if item.role.starts_with("hairpin") {
+            continue;
+        }
+        let in_block_measure = item
+            .measure_id
+            .as_deref()
+            .is_some_and(|measure_id| measure_ids.contains(measure_id));
+        if let Some((item_x, item_y, item_width, item_height)) = item_bounds(item) {
+            let in_system_band = item.measure_id.is_none()
+                && item_y >= system_top - 20.0
+                && item_y <= system_bottom + 60.0;
+            if !in_block_measure && !in_system_band {
+                continue;
+            }
+            let item_right = item_x + item_width;
+            if item_x < right && item_right > left {
+                bottom = bottom.max(item_y + item_height);
+            }
+        }
+    }
+    if bottom.is_finite() {
+        bottom
+    } else {
+        fallback_bottom
     }
 }
 

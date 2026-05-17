@@ -451,7 +451,7 @@ const PagePreview = memo(function PagePreview({
     if (useLayoutEngine) {
       import("./renderer/svgRenderer")
         .then(({ renderScoreToSvg }) => {
-          const svg = renderScoreToSvg(score, { staffScale, pageWidth: pdfPageWidth, showTitle: true, topMargin: pagePadding.top, bottomMargin: pagePadding.bottom, leftMargin: pagePadding.left, rightMargin: pagePadding.right, stemLength, systemSpacing, voltaSpacing, debug: showDebugBbox });
+          const svg = renderScoreToSvg(score, { staffScale, pageWidth: pdfPageWidth, showTitle: true, topMargin: pagePadding.top, bottomMargin: pagePadding.bottom, leftMargin: pagePadding.left, rightMargin: pagePadding.right, stemLength, systemSpacing, voltaSpacing, hairpinOffsetY, debug: showDebugBbox });
           setRenderedMarkup(`<section class="staff-preview-page" data-page="1">${svg}</section>`);
           setIsRendering(false);
           if (shellRef.current) { shellRef.current.scrollTop = targetTop; shellRef.current.scrollLeft = targetLeft; }

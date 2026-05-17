@@ -9,6 +9,20 @@ note 1/8
 HH | x x x x |
 `;
 
+const HAIRPIN_SRC = `title Hairpin Offset
+time 4/4
+note 1/8
+
+HH | < x x x x ! |
+`;
+
+function hairpinCenterY(scene: any): number {
+  const items = scene.pages[0].items;
+  const top = items.find((item: any) => item.role === "hairpin-top").primitive;
+  const bottom = items.find((item: any) => item.role === "hairpin-bottom").primitive;
+  return (top.y1Pt + top.y2Pt + bottom.y1Pt + bottom.y2Pt) / 4;
+}
+
 describe("SVG scene adapter", () => {
   it("renders a precomputed scene without source cache", () => {
     const scene = {
@@ -89,6 +103,16 @@ describe("SVG scene adapter", () => {
     expect(svg).toContain("<svg");
     expect(svg).toContain("Smoke");
     expect(svg).toContain('data-role="notehead"');
+  });
+
+  it("passes hairpin vertical offset into the layout engine", () => {
+    const baseline = buildLayoutSceneFromSource(HAIRPIN_SRC, { pageWidth: 612, staffScale: 1, hairpinOffsetY: 0 });
+    const lower = buildLayoutSceneFromSource(HAIRPIN_SRC, { pageWidth: 612, staffScale: 1, hairpinOffsetY: 10 });
+    const higher = buildLayoutSceneFromSource(HAIRPIN_SRC, { pageWidth: 612, staffScale: 1, hairpinOffsetY: -5 });
+    const baselineY = hairpinCenterY(baseline);
+
+    expect(hairpinCenterY(lower) - baselineY).toBeCloseTo(10, 3);
+    expect(hairpinCenterY(higher) - baselineY).toBeCloseTo(-5, 3);
   });
 
   it("fails closed on parse errors", () => {

@@ -379,6 +379,7 @@ fn parse_layout_options(options: &JsValue) -> drummark_layout::LayoutOptions {
         let stem_len = get_f64("stemLenPt");
         let sys_spacing = get_optional_f64("systemSpacing");
         let volta_spacing = get_optional_f64("voltaSpacing");
+        let hairpin_offset = get_optional_f64("hairpinOffsetY");
         if width > 0.0 && height > 0.0 {
             drummark_layout::LayoutOptions {
                 page_width_pt: width as f32,
@@ -392,6 +393,7 @@ fn parse_layout_options(options: &JsValue) -> drummark_layout::LayoutOptions {
                 stem_len_pt: if stem_len > 0.0 { stem_len as f32 } else { 31.0 },
                 system_spacing_pt: sys_spacing.unwrap_or(30.0) as f32,
                 volta_offset_y: volta_spacing.unwrap_or(0.0) as f32,
+                hairpin_offset_y: hairpin_offset.unwrap_or(0.0) as f32,
                 ..drummark_layout::LayoutOptions::default()
             }
         } else {
@@ -425,6 +427,7 @@ pub fn build_layout_plan(source: &str, options: JsValue) -> JsValue {
         let right = get_f64("rightMargin");
         let scale = get_f64("staffScale");
         let px_q = get_f64("pxPerQuarter");
+        let hairpin_offset = get_f64("hairpinOffsetY");
         show_debug_bbox = get_f64("debug") > 0.0;
         if width > 0.0 && height > 0.0 {
             drummark_layout::LayoutOptions {
@@ -436,6 +439,7 @@ pub fn build_layout_plan(source: &str, options: JsValue) -> JsValue {
                 right_margin_pt: right as f32,
                 staff_scale: if scale > 0.0 { scale as f32 } else { 0.75 },
                 px_per_quarter: if px_q > 0.0 { px_q as f32 } else { 80.0 },
+                hairpin_offset_y: hairpin_offset as f32,
                 ..drummark_layout::LayoutOptions::default()
             }
         } else {

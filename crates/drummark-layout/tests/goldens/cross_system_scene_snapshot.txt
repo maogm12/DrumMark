@@ -79,14 +79,14 @@ page index=0 widthPt=612.000 heightPt=792.000
   item id=item-67 measureId=measure-3 anchorItemId=- role=volta-line kind=lineSegment zIndex=0 primitive={x1Pt=94.000 y1Pt=502.390 x2Pt=562.000 y2Pt=502.390 stroke=#333 strokeWidth=1.000}
   item id=item-68 measureId=measure-3 anchorItemId=- role=volta-start-hook kind=lineSegment zIndex=0 primitive={x1Pt=94.000 y1Pt=502.390 x2Pt=94.000 y2Pt=517.390 stroke=#333 strokeWidth=1.000}
   item id=item-69 measureId=measure-3 anchorItemId=- role=volta-end-hook kind=lineSegment zIndex=0 primitive={x1Pt=562.000 y1Pt=502.390 x2Pt=562.000 y2Pt=517.390 stroke=#333 strokeWidth=1.000}
-  item id=item-70 measureId=measure-0 anchorItemId=- role=hairpin-top kind=lineSegment zIndex=0 primitive={x1Pt=64.000 y1Pt=228.000 x2Pt=550.000 y2Pt=228.000 stroke=#333 strokeWidth=1.200}
-  item id=item-71 measureId=measure-0 anchorItemId=- role=hairpin-bottom kind=lineSegment zIndex=0 primitive={x1Pt=64.000 y1Pt=238.000 x2Pt=550.000 y2Pt=238.000 stroke=#333 strokeWidth=1.200}
-  item id=item-72 measureId=measure-1 anchorItemId=- role=hairpin-top kind=lineSegment zIndex=0 primitive={x1Pt=64.000 y1Pt=358.000 x2Pt=550.000 y2Pt=358.000 stroke=#333 strokeWidth=1.200}
-  item id=item-73 measureId=measure-1 anchorItemId=- role=hairpin-bottom kind=lineSegment zIndex=0 primitive={x1Pt=64.000 y1Pt=368.000 x2Pt=550.000 y2Pt=368.000 stroke=#333 strokeWidth=1.200}
-  item id=item-74 measureId=measure-2 anchorItemId=- role=hairpin-top kind=lineSegment zIndex=0 primitive={x1Pt=64.000 y1Pt=488.000 x2Pt=550.000 y2Pt=488.000 stroke=#333 strokeWidth=1.200}
-  item id=item-75 measureId=measure-2 anchorItemId=- role=hairpin-bottom kind=lineSegment zIndex=0 primitive={x1Pt=64.000 y1Pt=498.000 x2Pt=550.000 y2Pt=498.000 stroke=#333 strokeWidth=1.200}
-  item id=item-76 measureId=measure-3 anchorItemId=- role=hairpin-top kind=lineSegment zIndex=0 primitive={x1Pt=64.000 y1Pt=618.000 x2Pt=427.000 y2Pt=618.000 stroke=#333 strokeWidth=1.200}
-  item id=item-77 measureId=measure-3 anchorItemId=- role=hairpin-bottom kind=lineSegment zIndex=0 primitive={x1Pt=64.000 y1Pt=628.000 x2Pt=427.000 y2Pt=628.000 stroke=#333 strokeWidth=1.200}
+  item id=item-70 measureId=measure-0 anchorItemId=- role=hairpin-top kind=lineSegment zIndex=0 primitive={x1Pt=64.000 y1Pt=216.000 x2Pt=550.000 y2Pt=214.667 stroke=#333 strokeWidth=1.200}
+  item id=item-71 measureId=measure-0 anchorItemId=- role=hairpin-bottom kind=lineSegment zIndex=0 primitive={x1Pt=64.000 y1Pt=216.000 x2Pt=550.000 y2Pt=217.333 stroke=#333 strokeWidth=1.200}
+  item id=item-72 measureId=measure-1 anchorItemId=- role=hairpin-top kind=lineSegment zIndex=0 primitive={x1Pt=64.000 y1Pt=344.667 x2Pt=550.000 y2Pt=343.333 stroke=#333 strokeWidth=1.200}
+  item id=item-73 measureId=measure-1 anchorItemId=- role=hairpin-bottom kind=lineSegment zIndex=0 primitive={x1Pt=64.000 y1Pt=347.333 x2Pt=550.000 y2Pt=348.667 stroke=#333 strokeWidth=1.200}
+  item id=item-74 measureId=measure-2 anchorItemId=- role=hairpin-top kind=lineSegment zIndex=0 primitive={x1Pt=64.000 y1Pt=473.333 x2Pt=550.000 y2Pt=472.000 stroke=#333 strokeWidth=1.200}
+  item id=item-75 measureId=measure-2 anchorItemId=- role=hairpin-bottom kind=lineSegment zIndex=0 primitive={x1Pt=64.000 y1Pt=478.667 x2Pt=550.000 y2Pt=480.000 stroke=#333 strokeWidth=1.200}
+  item id=item-76 measureId=measure-3 anchorItemId=- role=hairpin-top kind=lineSegment zIndex=0 primitive={x1Pt=64.000 y1Pt=602.000 x2Pt=427.000 y2Pt=601.000 stroke=#333 strokeWidth=1.200}
+  item id=item-77 measureId=measure-3 anchorItemId=- role=hairpin-bottom kind=lineSegment zIndex=0 primitive={x1Pt=64.000 y1Pt=610.000 x2Pt=427.000 y2Pt=611.000 stroke=#333 strokeWidth=1.200}
   composite id=text-block-title kind=textBlock fragment=singleSegment childItemIds=[item-0] label=title count=- startAnchorId=- endAnchorId=-
   composite id=text-block-subtitle kind=textBlock fragment=singleSegment childItemIds=[item-1] label=subtitle count=- startAnchorId=- endAnchorId=-
   composite id=text-block-composer kind=textBlock fragment=singleSegment childItemIds=[item-2] label=composer count=- startAnchorId=- endAnchorId=-

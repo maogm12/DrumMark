@@ -848,3 +848,19 @@ Nav markers (`@segno`, `@fine`, `@to-coda`, etc.) were converted to `TokenGlyph:
 - Editor diagnostics that point at structural barlines cannot be reconstructed reliably from normalized measures alone. The Rust parser should attach source locations to opening and closing barlines before exporting the WASM skeleton.
 
 - For continuing-volta validation, the important location is the offending closing repeat-end token. `MeasureSection.closing_barline_location` should point at the `:|` start column, and the TS adapter should carry that through as `repeatEndLocation` so CodeMirror can underline the exact token.
+
+## 2026-05-17 Addendum: Rust Hairpins Need Bottom Skyline and Fragment Progress
+
+- Rust layout hairpins should use a bottom skyline, not a fixed staff-bottom offset. The skyline sample must include noteheads, stems, beams, flags, rests, articulations, and staff lines in the hairpin's visible X range, then place the hairpin below the lowest occupied element with a small gap.
+
+- Hairpin geometry should be drawn as a true wedge: for a crescendo, the opening height grows from zero at the global start to full height at the global end; for a decrescendo, it shrinks. Same-system hairpins therefore have a closed end and an open end, not crossed or parallel lines.
+
+- Cross-system hairpin fragments should compute their left/right aperture from the fragment's progress through the whole hairpin. This mirrors the TS clipping behavior without needing clip paths: each Rust fragment draws only its visible segment with partial openings at continuation boundaries.
+
+## 2026-05-17 Addendum: Hairpin Vertical Offset Is Relative to Bottom Skyline
+
+- The user-facing `hairpinOffsetY` setting is a direct vertical delta from the Rust bottom skyline result. `0` means the hairpin's top edge starts at the lowest occupied element under its X range, positive values increase SVG Y and move it downward, and negative values decrease SVG Y and move it upward.
+
+- The JS layout-engine adapter must pass `hairpinOffsetY` through to WASM. Keeping the setting only in VexFlow options makes the React control appear live while the Rust scene renderer silently uses its default.
+
+- The UI range must allow negative values because tighter placement is part of the control contract, not an invalid input.

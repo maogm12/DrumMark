@@ -20,6 +20,7 @@ type RenderOptions = {
   stemLength?: number;
   systemSpacing?: number;
   voltaSpacing?: number;
+  hairpinOffsetY?: number;
   debug?: boolean;
 };
 
@@ -98,6 +99,7 @@ export function buildLayoutSceneFromSource(source: string, options?: RenderOptio
     stemLenPt: options?.stemLength ?? 31,
     systemSpacing: (options?.systemSpacing ?? SETTINGS_RANGES.systemSpacing.default) / ss,
     voltaSpacing: (options?.voltaSpacing ?? SETTINGS_RANGES.voltaSpacing.default) / ss,
+    hairpinOffsetY: (options?.hairpinOffsetY ?? SETTINGS_RANGES.hairpinOffsetY.default) / ss,
     debug: options?.debug ? 1 : 0,
   };
   const scene = build_layout_scene(source, opts as any) as Scene;

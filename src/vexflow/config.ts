@@ -17,7 +17,7 @@ export const VOLTA_TEXT_SIZE = 12;
 // ── User-facing setting value ranges ──
 
 export const SETTINGS_RANGES = {
-  hairpinOffsetY: { min: 0, max: 20, default: 0 },
+  hairpinOffsetY: { min: -20, max: 20, default: 0 },
   voltaSpacing: { min: -20, max: 20, default: 0 },
   staffScale: { min: 30, max: 150 },
   stemLength: { min: 20, max: 40, default: 31 },

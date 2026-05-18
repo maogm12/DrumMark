@@ -1100,6 +1100,8 @@ pub struct LayoutOptions {
     pub stem_len_pt: f32,
     // Inter-system spacing (pt)
     pub system_spacing_pt: f32,
+    // Whether to hide lower-voice rests (matching VexFlow hideVoice2Rests)
+    pub hide_voice2_rests: bool,
 }
 
 impl Default for LayoutOptions {
@@ -1126,6 +1128,7 @@ impl Default for LayoutOptions {
             edge_padding: 4.0,
             stem_len_pt: 31.0,
             system_spacing_pt: 30.0,
+            hide_voice2_rests: false,
         }
     }
 }
@@ -4417,6 +4420,7 @@ pub fn build_layout_scene(score: &RenderScore, opts: &LayoutOptions) -> LayoutSc
                     s_bot,
                     &mapper,
                     opts.stem_len_pt,
+                    opts.hide_voice2_rests,
                 );
             }
 
@@ -5006,6 +5010,7 @@ fn render_measure_events(
     staff_bottom: f32,
     mapper: &SlotMapper,
     stem_len_pt: f32,
+    hide_voice2_rests: bool,
 ) {
     let mut beam_anchors: Vec<BeamAnchor> = Vec::new();
     let geometry = measure_geometry(
@@ -5071,6 +5076,7 @@ fn render_measure_events(
             staff_top,
             &mut beam_anchors,
             stem_len_pt,
+            hide_voice2_rests,
         );
     }
 
@@ -5094,6 +5100,7 @@ fn render_slot_group(
     staff_top: f32,
     beam_anchors: &mut Vec<BeamAnchor>,
     stem_len_pt: f32,
+    hide_voice2_rests: bool,
 ) {
     let hit_voice_count = slot_group
         .iter()
@@ -5144,29 +5151,28 @@ fn render_slot_group(
         for rest in slot_group.iter().filter(|slot_event| {
             slot_event.event.voice == voice && matches!(slot_event.event.kind, EventKind::Rest)
         }) {
+            if hide_voice2_rests && rest.event.voice == 2 {
+                continue;
+            }
             let rest_metric = rest_glyph_for_fraction(rest.event.duration);
-            let rest_glyph_char = char::from_u32(rest_metric.smufl_codepoint)
-                .unwrap_or('?')
-                .to_string();
+            let rest_role = rest_metric.role;
+            let rest_font_size = BASE_FONT_SIZE_PT;
             let rest_y = if rest.event.voice == 2 {
                 staff_top + 30.0
             } else {
                 staff_top + 20.0
             };
-            push_text_item(
+            push_glyph_item(
                 items,
                 counter,
                 Some(measure_id),
                 "rest",
                 event_x,
                 rest_y,
-                TextRole::CountLabel,
-                rest_glyph_char,
+                rest_role,
                 "Bravura",
-                28.0,
+                rest_font_size,
                 "#333",
-                Some("middle"),
-                None,
             );
         }
     }

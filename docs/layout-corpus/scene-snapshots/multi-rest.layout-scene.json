@@ -12,7 +12,7 @@
           "index": 0,
           "pageIndex": 0,
           "xPt": 53.33333206176758,
-          "yPt": 183.3333282470703,
+          "yPt": 200,
           "widthPt": 709.3333740234375,
           "heightPt": 50,
           "measureIds": [
@@ -27,7 +27,7 @@
           "globalIndex": 0,
           "systemId": "system-0",
           "xPt": 53.33333206176758,
-          "yPt": 183.3333282470703,
+          "yPt": 200,
           "widthPt": 709.3333740234375,
           "heightPt": 50
         }
@@ -57,7 +57,7 @@
           "zIndex": 0,
           "primitive": {
             "xPt": 62.33333206176758,
-            "yPt": 173.3333282470703,
+            "yPt": 190,
             "textRole": "tempo",
             "text": "",
             "fontFamily": "Bravura",
@@ -72,7 +72,7 @@
           "zIndex": 0,
           "primitive": {
             "xPt": 78.63333129882812,
-            "yPt": 173.3333282470703,
+            "yPt": 190,
             "textRole": "tempo",
             "text": "=",
             "fontFamily": "Academico",
@@ -87,7 +87,7 @@
           "zIndex": 0,
           "primitive": {
             "xPt": 91.63333129882812,
-            "yPt": 173.3333282470703,
+            "yPt": 190,
             "textRole": "tempo",
             "text": "120",
             "fontFamily": "Academico",
@@ -102,9 +102,9 @@
           "zIndex": 0,
           "primitive": {
             "x1Pt": 53.33333206176758,
-            "y1Pt": 193.3333282470703,
+            "y1Pt": 210,
             "x2Pt": 762.6666870117188,
-            "y2Pt": 193.3333282470703,
+            "y2Pt": 210,
             "stroke": "#333",
             "strokeWidth": 1
           }
@@ -116,9 +116,9 @@
           "zIndex": 0,
           "primitive": {
             "x1Pt": 53.33333206176758,
-            "y1Pt": 203.3333282470703,
+            "y1Pt": 220,
             "x2Pt": 762.6666870117188,
-            "y2Pt": 203.3333282470703,
+            "y2Pt": 220,
             "stroke": "#333",
             "strokeWidth": 1
           }
@@ -130,9 +130,9 @@
           "zIndex": 0,
           "primitive": {
             "x1Pt": 53.33333206176758,
-            "y1Pt": 213.3333282470703,
+            "y1Pt": 230,
             "x2Pt": 762.6666870117188,
-            "y2Pt": 213.3333282470703,
+            "y2Pt": 230,
             "stroke": "#333",
             "strokeWidth": 1
           }
@@ -144,9 +144,9 @@
           "zIndex": 0,
           "primitive": {
             "x1Pt": 53.33333206176758,
-            "y1Pt": 223.3333282470703,
+            "y1Pt": 240,
             "x2Pt": 762.6666870117188,
-            "y2Pt": 223.3333282470703,
+            "y2Pt": 240,
             "stroke": "#333",
             "strokeWidth": 1
           }
@@ -158,9 +158,9 @@
           "zIndex": 0,
           "primitive": {
             "x1Pt": 53.33333206176758,
-            "y1Pt": 233.3333282470703,
+            "y1Pt": 250,
             "x2Pt": 762.6666870117188,
-            "y2Pt": 233.3333282470703,
+            "y2Pt": 250,
             "stroke": "#333",
             "strokeWidth": 1
           }
@@ -172,7 +172,7 @@
           "zIndex": 0,
           "primitive": {
             "xPt": 58.33333206176758,
-            "yPt": 213.3333282470703,
+            "yPt": 230,
             "textRole": "percussionClef",
             "text": "",
             "fontFamily": "Bravura",
@@ -187,7 +187,7 @@
           "zIndex": 0,
           "primitive": {
             "xPt": 88.33332824707031,
-            "yPt": 203.3333282470703,
+            "yPt": 220,
             "textRole": "timeSignatureDigit",
             "text": "",
             "fontFamily": "Bravura",
@@ -202,7 +202,7 @@
           "zIndex": 0,
           "primitive": {
             "xPt": 88.33332824707031,
-            "yPt": 223.3333282470703,
+            "yPt": 240,
             "textRole": "timeSignatureDigit",
             "text": "",
             "fontFamily": "Bravura",
@@ -218,7 +218,7 @@
           "zIndex": 0,
           "primitive": {
             "xPt": 53.33333206176758,
-            "yPt": 193.3333282470703,
+            "yPt": 210,
             "widthPt": 1,
             "heightPt": 41,
             "fill": "#333"
@@ -232,9 +232,9 @@
           "zIndex": 0,
           "primitive": {
             "x1Pt": 124.26667785644531,
-            "y1Pt": 213.3333282470703,
+            "y1Pt": 230,
             "x2Pt": 691.7333374023438,
-            "y2Pt": 213.3333282470703,
+            "y2Pt": 230,
             "stroke": "#333",
             "strokeWidth": 5,
             "strokeLineCap": "butt"
@@ -248,9 +248,9 @@
           "zIndex": 0,
           "primitive": {
             "x1Pt": 124.26667785644531,
-            "y1Pt": 203.3333282470703,
+            "y1Pt": 220,
             "x2Pt": 124.26667785644531,
-            "y2Pt": 223.3333282470703,
+            "y2Pt": 240,
             "stroke": "#333",
             "strokeWidth": 2,
             "strokeLineCap": "butt"
@@ -264,9 +264,9 @@
           "zIndex": 0,
           "primitive": {
             "x1Pt": 691.7333374023438,
-            "y1Pt": 203.3333282470703,
+            "y1Pt": 220,
             "x2Pt": 691.7333374023438,
-            "y2Pt": 223.3333282470703,
+            "y2Pt": 240,
             "stroke": "#333",
             "strokeWidth": 2,
             "strokeLineCap": "butt"
@@ -280,7 +280,7 @@
           "zIndex": 0,
           "primitive": {
             "xPt": 408.0000305175781,
-            "yPt": 173.3333282470703,
+            "yPt": 190,
             "textRole": "timeSignatureDigit",
             "text": "",
             "fontFamily": "Bravura",
@@ -297,7 +297,7 @@
           "zIndex": 0,
           "primitive": {
             "xPt": 758.6666870117188,
-            "yPt": 193.3333282470703,
+            "yPt": 210,
             "widthPt": 1,
             "heightPt": 41,
             "fill": "#333"
@@ -311,7 +311,7 @@
           "zIndex": 0,
           "primitive": {
             "xPt": 759.6666870117188,
-            "yPt": 193.3333282470703,
+            "yPt": 210,
             "widthPt": 3,
             "heightPt": 41,
             "fill": "#333"

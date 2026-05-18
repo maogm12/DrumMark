@@ -880,3 +880,11 @@ Nav markers (`@segno`, `@fine`, `@to-coda`, etc.) were converted to `TokenGlyph:
 - `headerHeight` moves the header bottom. Subtitle and composer anchor to that moving bottom, while the title remains fixed near the top of the title area. `headerStaffSpacing` moves only the systems/tempo region below the title area; it should not move title, subtitle, or composer text.
 
 - The JS layout-engine adapter must divide both settings by `staffScale` before sending them to WASM, matching the TS renderer's `getScaledDimensions()` behavior.
+
+## 2026-05-17 Addendum: Rust Scene Rests Must Be Glyph Runs
+
+- The layout scene SVG adapter renders `glyphRun` items by converting their numeric `codepoint` to a SMuFL character. Rest scene items should therefore use `GlyphRun` with `RestWhole` / `RestHalf` / `RestQuarter` / `RestEighth` / `RestSixteenth` / `RestThirtySecond` roles, not `TextRun` carrying a private-use character.
+
+- The generated WASM package under `src/wasm/pkg` is ignored by git, so local preview and CLI checks can continue to use stale layout code unless `npm run wasm:build` has been run after changes in `crates/drummark-layout`.
+
+- A minimal SVG verification for ordinary rests is `npm run drummark -- /tmp/rest-test.drum --format svg` followed by checking for `data-role="rest"` and SMuFL rest codepoints such as `U+E4E6` for eighth rests and `U+E4E4` for half rests.

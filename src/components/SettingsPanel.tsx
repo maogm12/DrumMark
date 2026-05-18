@@ -119,16 +119,6 @@ export function SettingsPanel({
                 <Switch.Thumb className="toggle-thumb" />
               </Switch.Root>
             </label>
-            <label className="setting-row toggle">
-              <span>{t("settings.showDebugBbox")}</span>
-              <Switch.Root
-                className="toggle-root"
-                checked={settings.showDebugBbox}
-                onCheckedChange={(checked) => updateSetting("showDebugBbox", checked)}
-              >
-                <Switch.Thumb className="toggle-thumb" />
-              </Switch.Root>
-            </label>
             <div className="settings-group-label">Coordinate Offsets</div>
             <NumericSettingControl
               label="Tempo X"

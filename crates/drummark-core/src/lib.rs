@@ -382,6 +382,10 @@ fn parse_layout_options(options: &JsValue) -> drummark_layout::LayoutOptions {
         let header_staff_spacing = get_optional_f64("headerStaffSpacing");
         let volta_spacing = get_optional_f64("voltaSpacing");
         let hairpin_offset = get_optional_f64("hairpinOffsetY");
+        let hide_v2_rests = js_sys::Reflect::get(options, &JsValue::from_str("hideVoice2Rests"))
+            .ok()
+            .and_then(|v| v.as_bool())
+            .unwrap_or(false);
         if width > 0.0 && height > 0.0 {
             drummark_layout::LayoutOptions {
                 page_width_pt: width as f32,
@@ -398,6 +402,7 @@ fn parse_layout_options(options: &JsValue) -> drummark_layout::LayoutOptions {
                 header_staff_spacing_pt: header_staff_spacing.unwrap_or(60.0) as f32,
                 volta_offset_y: volta_spacing.unwrap_or(0.0) as f32,
                 hairpin_offset_y: hairpin_offset.unwrap_or(0.0) as f32,
+                hide_voice2_rests: hide_v2_rests,
                 ..drummark_layout::LayoutOptions::default()
             }
         } else {

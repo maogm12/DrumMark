@@ -23,6 +23,7 @@ type RenderOptions = {
   headerStaffSpacing?: number;
   voltaSpacing?: number;
   hairpinOffsetY?: number;
+  hideVoice2Rests?: boolean;
   debug?: boolean;
 };
 
@@ -104,6 +105,7 @@ export function buildLayoutSceneFromSource(source: string, options?: RenderOptio
     headerStaffSpacing: (options?.headerStaffSpacing ?? SETTINGS_RANGES.headerStaffSpacing.default) / ss,
     voltaSpacing: (options?.voltaSpacing ?? SETTINGS_RANGES.voltaSpacing.default) / ss,
     hairpinOffsetY: (options?.hairpinOffsetY ?? SETTINGS_RANGES.hairpinOffsetY.default) / ss,
+    hideVoice2Rests: options?.hideVoice2Rests ?? false,
     debug: options?.debug ? 1 : 0,
   };
   const scene = build_layout_scene(source, opts as any) as Scene;

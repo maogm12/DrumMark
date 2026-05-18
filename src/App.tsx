@@ -382,7 +382,6 @@ const PagePreview = memo(function PagePreview({
   active,
   theme,
   useLayoutEngine,
-  showDebugBbox,
 }: {
   score: NormalizedScore | null;
   pagePadding: PagePadding;
@@ -404,7 +403,6 @@ const PagePreview = memo(function PagePreview({
   active: boolean;
   theme: AppTheme;
   useLayoutEngine: boolean;
-  showDebugBbox: boolean;
 }) {
   const { t } = useT();
   const shellRef = useRef<HTMLDivElement | null>(null);
@@ -451,7 +449,7 @@ const PagePreview = memo(function PagePreview({
     if (useLayoutEngine) {
       import("./renderer/svgRenderer")
         .then(({ renderScoreToSvg }) => {
-          const svg = renderScoreToSvg(score, { staffScale, pageWidth: pdfPageWidth, showTitle: true, topMargin: pagePadding.top, bottomMargin: pagePadding.bottom, leftMargin: pagePadding.left, rightMargin: pagePadding.right, stemLength, systemSpacing, headerHeight, headerStaffSpacing, voltaSpacing, hairpinOffsetY, debug: showDebugBbox });
+          const svg = renderScoreToSvg(score, { staffScale, pageWidth: pdfPageWidth, showTitle: true, topMargin: pagePadding.top, bottomMargin: pagePadding.bottom, leftMargin: pagePadding.left, rightMargin: pagePadding.right, stemLength, systemSpacing, headerHeight, headerStaffSpacing, voltaSpacing, hairpinOffsetY, hideVoice2Rests });
           setRenderedMarkup(`<section class="staff-preview-page" data-page="1">${svg}</section>`);
           setIsRendering(false);
           if (shellRef.current) { shellRef.current.scrollTop = targetTop; shellRef.current.scrollLeft = targetLeft; }
@@ -481,7 +479,7 @@ const PagePreview = memo(function PagePreview({
         console.error("VexFlow render error:", renderError);
         setError(msg || t("preview.error"));
       });
-  }, [score, systemSpacing, stemLength, voltaSpacing, hairpinOffsetY, headerStaffSpacing, headerHeight, active, hideVoice2Rests, pagePadding, staffScale, tempoOffsetX, tempoOffsetY, measureNumberOffsetX, measureNumberOffsetY, measureNumberFontSize, durationSpacingCompression, measureWidthCompression, useLayoutEngine, showDebugBbox]);
+  }, [score, systemSpacing, stemLength, voltaSpacing, hairpinOffsetY, headerStaffSpacing, headerHeight, active, hideVoice2Rests, pagePadding, staffScale, tempoOffsetX, tempoOffsetY, measureNumberOffsetX, measureNumberOffsetY, measureNumberFontSize, durationSpacingCompression, measureWidthCompression, useLayoutEngine]);
 
   if (!score) {
     return (
@@ -1248,8 +1246,7 @@ export function App() {
                        active={true}
                        theme={resolvedTheme}
                        useLayoutEngine={settings.useLayoutEngine}
-                       showDebugBbox={settings.showDebugBbox}
-                     />
+                      />
                   ) : null}
                 </div>
               </div>

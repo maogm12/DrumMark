@@ -52,7 +52,6 @@ export const I18N_KEYS = [
   "settings.voltaOffset",
   "settings.hairpinOffset",
   "settings.useLayoutEngine",
-  "settings.showDebugBbox",
   "settings.decrease",
   "settings.increase",
 ] as const;

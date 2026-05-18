@@ -52,7 +52,6 @@
   "settings.voltaOffset": "房子偏移",
   "settings.hairpinOffset": "强弱记号偏移",
   "settings.useLayoutEngine": "使用排版引擎 (SVG)",
-  "settings.showDebugBbox": "显示音符边界框",
   "settings.decrease": "减小 {{label}}",
   "settings.increase": "增大 {{label}}"
 }

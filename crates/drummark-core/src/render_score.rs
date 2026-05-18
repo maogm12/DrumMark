@@ -218,6 +218,10 @@ fn active_voices_for_score(score: &normalize::NormalizedScore) -> Vec<u8> {
             voices.push(voice);
         }
     }
+    if voices.is_empty() {
+        // Anonymous-only scores have no registered tracks; default to voice 1.
+        voices.push(1);
+    }
     voices
 }
 

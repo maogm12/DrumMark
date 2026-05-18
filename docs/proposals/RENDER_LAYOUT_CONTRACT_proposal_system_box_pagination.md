@@ -406,3 +406,20 @@ Addendum v0.2 resolves the Round 1 blockers sufficiently for implementation.
 Residual implementation notes, not approval blockers: make `local_system_origin_y` and header bounds coordinate space explicit in code/types, and ensure the validator treats `LAYOUT_WARNING overflow` pages as exempt only for the specific overflowing system/items rather than masking unrelated reference or ID failures.
 
 STATUS: APPROVED
+
+### Consolidated Changes
+
+The approved layout contract changes the multi-page strategy from estimate-first pagination to system-box pagination:
+
+- The layout engine first plans systems from the known page width and content width.
+- Each planned system is rendered into a `SystemLayoutBox` in system-local coordinates.
+- `SystemLayoutBox.visual_top` and `visual_bottom` are computed from actual emitted item bounds after structural stacking.
+- Page 0 header/title/tempo content is rendered into a separate `HeaderLayoutBox`; it is not part of any system box.
+- Pagination is deterministic over ordered boxes. Page 0 starts at `max(top_margin + header_height + header_staff_spacing, header_visual_bottom + header_staff_spacing)`, later pages start at the top margin, and non-first systems on a page receive `system_spacing`.
+- A system taller than an empty page is placed anyway and emits a non-fatal `LAYOUT_WARNING overflow page=... system=... visualHeight=... availableHeight=...` issue.
+- Page assembly translates local systems, measures, items, composites, and primitive geometry by explicit `dx` and `dy`.
+- Final `SceneSystem.y_pt` remains the page-space staff/system origin, not the visual top.
+- Local system item/composite IDs are remapped with deterministic `system-{system_index}-` prefixes, and all child/item references are rewritten through the remap table.
+- Adapter-rendered composite `start_anchor_id` / `end_anchor_id` remain page-local measure IDs for this proposal.
+- The TypeScript adapter exposes `renderScenePagesToSvgs(scene, options): string[]`; the legacy `renderSceneToSvg` remains page-0-compatible and warns for multi-page scenes in development.
+- Final layout tests include a validator for page ordering, system page indices, global item/composite ID uniqueness, page-local references, composite measure anchors, item anchors, and bounded page containment. Overflow suppresses only bounds failures for the explicitly overflowing system.

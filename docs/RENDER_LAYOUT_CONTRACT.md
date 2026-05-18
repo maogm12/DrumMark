@@ -112,3 +112,65 @@ The approved repository contract for the current migration additionally requires
 ### Migration Gate
 
 The supported-corpus gate for final migration and cutover requires the full supported drum corpus. Representative slices are allowed only for intermediate fixture development, not for final parity approval.
+
+## Addendum 2026-05-18: System Box Pagination Contract
+
+The approved multi-page layout strategy is system-box pagination:
+
+- Plan systems from known page width and content width.
+- Render each planned system into a `SystemLayoutBox` in system-local coordinates.
+- Compute every system box's `visual_top` and `visual_bottom` from actual emitted item bounds after structural stacking.
+- Render page-0 title, subtitle, composer, and tempo content into a separate `HeaderLayoutBox`.
+- Paginate ordered system boxes deterministically, then assemble final page scenes by translating local geometry into absolute page-space coordinates.
+
+### Box Placement
+
+`SystemLayoutBox` carries global system identity, local staff origin, local visual bounds, width, local measures, local systems, items, and composites.
+
+`HeaderLayoutBox` carries page-0 header items and actual visual bounds. Page 0's first system cursor is:
+
+`max(top_margin_pt + header_height_pt + header_staff_spacing_pt, header_visual_bottom + header_staff_spacing_pt)`
+
+Later pages start at `top_margin_pt`. A non-first system on a page receives `system_spacing_pt` before placement.
+
+`PlacedSystemBox` carries page index, `page_x`, `page_y`, and the system metadata needed to assemble `SceneSystem` records. Page assembly applies:
+
+`dx = page_x`
+
+`dy = page_y - local_visual_top`
+
+The translation applies to systems, measures, items, composites, line endpoints, rect origins, text/glyph origins, polyline points, path coordinates, and explicit path bounds.
+
+Final `SceneSystem.y_pt` remains the page-space staff/system origin, computed from the local staff origin plus `dy`; it is not the visual top.
+
+### Bounds and Overflow
+
+Every primitive emitted by the layout engine must have deterministic bounds. Bounds cover text runs, glyph runs, line segments, rects, polylines, and all path commands emitted by the engine. Unsupported or unbounded primitives are test failures.
+
+A system taller than an empty page is placed anyway and emits a non-fatal issue using this schema:
+
+`LAYOUT_WARNING overflow page=<index> system=<id> visualHeight=<pt> availableHeight=<pt>`
+
+Existing parser and normalization issues remain preserved in `LayoutScene.issues`.
+
+### References and Adapters
+
+System-local item and composite IDs are remapped during page assembly with deterministic `system-{system_index}-` prefixes. Composite child IDs and item references are rewritten through the remap table. Measure anchors use final measure IDs directly.
+
+For this contract, adapter-rendered composite `start_anchor_id` and `end_anchor_id` must be page-local measure IDs. Item anchors remain valid for individual item attachment, but composite item anchors require a future adapter contract update.
+
+The TypeScript adapter exposes `renderScenePagesToSvgs(scene, options): string[]`, returning one SVG per `ScenePage`. The legacy `renderSceneToSvg(scene, options)` remains page-0-compatible and emits a development warning when asked to render a multi-page scene.
+
+### Validation Gate
+
+Layout tests must validate final scenes for:
+
+- contiguous page indices matching array order
+- system page indices matching containing pages
+- global item and composite ID uniqueness
+- page-local composite child references
+- page-local composite measure anchors
+- page-local item references
+- bounded item containment within page dimensions
+
+Overflow suppresses only bounds failures for the explicitly overflowing system named by a `LAYOUT_WARNING overflow ...` issue. Page order, ID uniqueness, page-local references, header bounds, and unrelated system bounds remain validated.

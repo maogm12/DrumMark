@@ -5825,16 +5825,14 @@ fn beam_line_segments_for_level(group: &[BeamAnchor], level: u8) -> Vec<BeamLine
             } else if next_gets_beam {
                 active_start = Some(anchor.stem_x);
             } else {
-                let prev_gets_beam = index
-                    .checked_sub(1)
-                    .and_then(|prev| group.get(prev))
-                    .map(|prev| prev.level >= level)
-                    .unwrap_or(false);
-                let direction = if !prev_gets_beam && group.get(index + 1).is_some() {
-                    1.0
-                } else {
-                    -1.0
-                };
+                // Isolated beamable note: draw a partial stub.
+                // Direction: if any PREVIOUS anchor has this beam level → left;
+                // otherwise (first in group) → right.
+                // This matches VexFlow's partial beam direction logic.
+                let has_prev_beam = group[..index]
+                    .iter()
+                    .any(|prev| prev.level >= level);
+                let direction: f32 = if has_prev_beam { -1.0 } else { 1.0 };
                 segments.push(BeamLineSegment {
                     start_x: anchor.stem_x,
                     end_x: anchor.stem_x + PARTIAL_BEAM_LENGTH_PT * direction,

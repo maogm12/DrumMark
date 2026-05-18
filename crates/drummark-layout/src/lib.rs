@@ -1,5 +1,3 @@
-#![allow(clippy::too_many_arguments)]
-
 use js_sys::{Array, Object};
 use wasm_bindgen::prelude::*;
 
@@ -3592,6 +3590,7 @@ fn gcd_u32(mut a: u32, mut b: u32) -> u32 {
     a
 }
 
+#[allow(clippy::too_many_arguments)]
 fn measure_geometry(
     header: &RenderHeader,
     measure: &RenderMeasure,
@@ -4648,6 +4647,7 @@ fn push_system_volta_composites(
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 fn push_volta_segment(
     items: &mut Vec<SceneItem>,
     composites: &mut Vec<SceneComposite>,
@@ -4925,6 +4925,7 @@ fn span_fragment_kind(index: usize, total: usize) -> SpanFragmentKind {
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 fn push_line_item(
     items: &mut Vec<SceneItem>,
     counter: &mut usize,
@@ -4960,6 +4961,7 @@ fn push_line_item(
     id
 }
 
+#[allow(clippy::too_many_arguments)]
 fn push_path_item(
     items: &mut Vec<SceneItem>,
     counter: &mut usize,
@@ -4989,6 +4991,7 @@ fn push_path_item(
     id
 }
 
+#[allow(clippy::too_many_arguments)]
 fn push_glyph_item(
     items: &mut Vec<SceneItem>,
     counter: &mut usize,
@@ -5025,6 +5028,7 @@ fn push_glyph_item(
     id
 }
 
+#[allow(clippy::too_many_arguments)]
 fn render_measure_events(
     items: &mut Vec<SceneItem>,
     counter: &mut usize,
@@ -5121,6 +5125,7 @@ fn render_measure_events(
     );
 }
 
+#[allow(clippy::too_many_arguments)]
 fn render_slot_group(
     items: &mut Vec<SceneItem>,
     counter: &mut usize,
@@ -5300,6 +5305,7 @@ fn beam_groups_for_slot(
     result
 }
 
+#[allow(clippy::too_many_arguments)]
 fn render_hit_cluster(
     items: &mut Vec<SceneItem>,
     counter: &mut usize,
@@ -5925,6 +5931,7 @@ fn render_start_repeat_barline(
     );
 }
 
+#[allow(clippy::too_many_arguments)]
 fn render_right_barline(
     items: &mut Vec<SceneItem>,
     counter: &mut usize,
@@ -6045,6 +6052,7 @@ fn render_right_barline(
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 fn render_nav_markers(
     items: &mut Vec<SceneItem>,
     composites: &mut Vec<SceneComposite>,
@@ -6600,6 +6608,7 @@ fn fraction_to_f32(fraction: Fraction) -> f32 {
     fraction.numerator as f32 / fraction.denominator.max(1) as f32
 }
 
+#[allow(clippy::too_many_arguments)]
 fn push_rect_item(
     items: &mut Vec<SceneItem>,
     counter: &mut usize,

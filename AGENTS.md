@@ -10,6 +10,47 @@
 - **Design First**: For any significant DSL or architectural changes, the agent MUST present a design proposal (documented in the relevant specification file or a dedicated design document) and obtain explicit user approval before writing or modifying any implementation code. **All design proposals and their subsequent reviews MUST follow the Linear Ledger Protocol defined below.**
 - **Proposal-Scoped Review**: Do not stop for a sub-agent review after every individual code change. Instead, each approved proposal is implemented on its own branch, and the branch receives one concentrated review pass before it is merged back to `main`.
 
+## Project Map & Fast Orientation
+
+Use this map before broad repository searches. Prefer targeted reads over whole-tree `rg` scans; this repo has generated WASM packages, fixtures, archived proposals, and large SVG/golden outputs that can waste context quickly.
+
+```text
+src/
+  App.tsx, main.tsx              Preact app shell and preview wiring
+  components/                    UI controls, settings panel
+  dsl/                           TypeScript parser/normalizer/types and DSL tests
+  renderer/                      Thin SVG/LayoutScene adapters and renderer tests
+  wasm/                          Generated parser/layout WASM JS wrappers and packages
+crates/
+  drummark-core/                 Rust parser, normalizer, RenderScore creation, CLI-native path
+  drummark-layout/               Rust layout engine: RenderScore -> LayoutScene
+docs/
+  DRUMMARK_SPEC.md               Append-only language spec
+  RENDER_LAYOUT_CONTRACT.md      Rendering/layout contract
+  examples/                      Example .drum inputs and generated SVG outputs
+  proposals/                     Active proposal/task ledgers
+  archived/                      Historical proposal/task/spec material
+  layout-corpus/                 Layout corpus reports and scene snapshots
+scripts/                         Build/audit/report scripts
+public/fonts/                    Bravura font assets and metadata
+```
+
+### Where To Look First
+
+- **Parser or AST issue**: start with `crates/drummark-core/src/parser.rs`, `crates/drummark-core/src/lexer.rs`, then `src/dsl/ast.ts` and `src/dsl/types.ts` only if the browser/TS boundary is involved.
+- **Normalization or IR issue**: start with `crates/drummark-core/src/normalize.rs`, `crates/drummark-core/src/render_score.rs`, and verify with `npm run drummark -- <input> --format ir`.
+- **Layout/engraving issue**: start with `crates/drummark-layout/src/lib.rs`. The main contract is `RenderScore -> LayoutScene`; do not patch geometry in `src/renderer` unless the bug is purely SVG translation.
+- **SVG adapter issue**: start with `src/renderer/svgSceneAdapter.test.ts`, `src/renderer/svgRenderer.ts`, and `src/renderer/svgRendererNode.ts`.
+- **Settings/UI issue**: start with `src/components/SettingsPanel.tsx`, `src/components/NumericSettingControl.tsx`, `src/hooks/useAppSettings.ts`, `src/styles.css`, and `src/i18n/*`.
+- **WASM boundary issue**: start with `src/wasm/parser_wasm_*`, `src/wasm/layout_wasm_*`, `scripts/build_wasm.mjs`, then rebuild with `npm run wasm:build`.
+- **Docs/spec change**: start with `docs/DRUMMARK_SPEC.md`, `docs/RENDER_LAYOUT_CONTRACT.md`, and active files under `docs/proposals/`.
+
+### Search Discipline
+
+- Avoid broad patterns like `rg "note|measure|x"` across the whole repo. Scope first, e.g. `rg "measure_geometry|x_for_fraction" crates/drummark-layout/src/lib.rs`.
+- Exclude generated/heavy areas unless needed: `src/wasm/*/drummark_core_bg.wasm`, `docs/archived/`, generated `docs/examples/*.svg`, and layout snapshots.
+- For rendering bugs, use the CLI pipeline first, then inspect code: `--format ast`, `--format ir`, then `--format svg` or `--format xml`.
+
 ## Specification & Design Review Protocol
 
 To ensure technical integrity and historical traceability, all formal specifications (e.g., `DRUMMARK_SPEC.md`, `DRUM_IR_SPEC.md`) and design proposals must follow this **Proposal-based Review Protocol**. Proposals are authored, reviewed, and iterated in isolated files; only the final approved result lands in the spec.

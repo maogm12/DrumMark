@@ -100,7 +100,7 @@ describe("parser/layout wasm semantic parity", () => {
     expect(sceneMeasures(scene)).toHaveLength(score.measures.length);
 
     const scoreHasRepeat = score.measures.some(
-      (measure) => Boolean(measure.measureRepeatSlashes)
+      (measure) => Boolean(measure.measureRepeat?.slashes)
         || String(measure.barline ?? "").includes("repeat"),
     );
     if (scoreHasRepeat) {
@@ -117,7 +117,9 @@ describe("parser/layout wasm semantic parity", () => {
       expect(countSceneComposite(scene, "navigation")).toBeGreaterThan(0);
     }
 
-    const scoreHasVolta = score.measures.some((measure) => (measure.volta?.length ?? 0) > 0);
+    const scoreHasVolta = score.measures.some(
+      (measure) => (measure.volta?.indices.length ?? 0) > 0,
+    );
     if (scoreHasVolta) {
       expect(countSceneComposite(scene, "volta")).toBeGreaterThan(0);
     }

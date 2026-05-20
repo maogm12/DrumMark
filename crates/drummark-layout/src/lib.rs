@@ -2608,12 +2608,16 @@ mod tests {
         };
         let score = simple_layout_score(vec![measure]);
         let scene = build_layout_scene(&score, &LayoutOptions::default());
+        let measure_box = scene.pages[0]
+            .measures
+            .iter()
+            .find(|measure| measure.id == "measure-0")
+            .unwrap();
         let xs = notehead_positions(&scene, "measure-0");
         let gaps = xs
             .windows(2)
             .map(|pair| pair[1] - pair[0])
             .collect::<Vec<_>>();
-
         assert_eq!(xs.len(), 4);
         assert!(
             (gaps[0] - gaps[1]).abs() < 0.5,
@@ -2622,6 +2626,26 @@ mod tests {
         assert!(
             (gaps[1] - gaps[2]).abs() < 0.5,
             "quarter-note gaps should match: {gaps:?}"
+        );
+
+        let mut note_centers = scene.pages[0]
+            .items
+            .iter()
+            .filter(|item| {
+                item.role == "notehead" && item.measure_id.as_deref() == Some("measure-0")
+            })
+            .filter_map(|item| {
+                item_bounds(item).map(|(x, _, width, _)| x + width * 0.5)
+            })
+            .collect::<Vec<_>>();
+        note_centers.sort_by(|a, b| a.partial_cmp(b).unwrap());
+        let inner_left = measure_box.x_pt + measure_left_pad(0, true, Some("regular"));
+        let inner_right = measure_box.x_pt + measure_box.width_pt - MEASURE_RIGHT_PAD_PT;
+        let left_edge_gap = note_centers[0] - inner_left;
+        let right_edge_gap = inner_right - note_centers[3];
+        assert!(
+            right_edge_gap - left_edge_gap < 8.0,
+            "first/last quarter notes should have balanced edge gaps: left={left_edge_gap:.2} right={right_edge_gap:.2} centers={note_centers:?}"
         );
     }
 
@@ -3872,7 +3896,8 @@ fn measure_geometry(
     let mut weighted_width_sum = 0.0_f32;
     let mut start_slot = 0_u32;
 
-    // Collect all event start slots for the measure (once)
+    let total_slots = header.divisions.max(1);
+    // Collect event starts for density and event starts/ends for spacing cells.
     let mut all_starts: Vec<u32> = measure
         .events
         .iter()
@@ -3887,6 +3912,25 @@ fn measure_geometry(
         .collect();
     all_starts.sort();
     all_starts.dedup();
+    let mut all_boundaries = all_starts.clone();
+    all_boundaries.extend(measure.events.iter().map(|event| {
+        let start_slot = fraction_to_measure_slot(
+            event.start,
+            header.time_beats,
+            header.time_beat_unit,
+            header.divisions,
+        );
+        let duration_slots = fraction_to_measure_slot(
+            event.duration,
+            header.time_beats,
+            header.time_beat_unit,
+            header.divisions,
+        )
+        .max(1);
+        (start_slot + duration_slots).min(total_slots)
+    }));
+    all_boundaries.sort();
+    all_boundaries.dedup();
 
     for beat_units in grouping {
         let group_slots = beat_units.max(1) * slots_per_beat_unit;
@@ -3910,7 +3954,11 @@ fn measure_geometry(
         weighted_width_sum += weighted_width;
 
         // Duration-weighted segment offsets within this group
-        let mut segment_slots: Vec<u32> = group_starts;
+        let mut segment_slots: Vec<u32> = all_boundaries
+            .iter()
+            .copied()
+            .filter(|s| *s >= start_slot && *s <= end_slot)
+            .collect();
         // Ensure we have at least start_slot as first segment
         if segment_slots.first() != Some(&start_slot) {
             segment_slots.insert(0, start_slot);
@@ -3921,11 +3969,9 @@ fn measure_geometry(
         }
 
         let mut segment_offsets = Vec::with_capacity(segment_slots.len());
-        if segment_slots.len() <= 2 {
-            // One segment: linear
-            segment_offsets.push(0.0);
+        if segment_slots.len() <= 1 {
+            segment_offsets.push(0.5);
         } else {
-            // Compute segment durations and weights
             let slot_span = (end_slot - start_slot).max(1) as f32;
             let mut raw_weights = Vec::with_capacity(segment_slots.len() - 1);
             for i in 0..segment_slots.len() - 1 {
@@ -3934,7 +3980,6 @@ fn measure_geometry(
                 raw_weights.push(seg_duration);
             }
 
-            // Apply compression: weight = 1 + compression * log2(ratio + 1)
             let min_dur = raw_weights
                 .iter()
                 .fold(f32::MAX, |a, &b| if b > 0.0 { a.min(b) } else { a });
@@ -3947,13 +3992,13 @@ fn measure_geometry(
                 })
                 .collect();
 
-            let total_weight: f32 = weights.iter().sum();
+            let total_weight = weights.iter().sum::<f32>().max(1e-6);
             let mut cum = 0.0_f32;
-            segment_offsets.push(0.0);
-            for &w in &weights[..weights.len() - 1] {
-                cum += w / total_weight.max(1e-6);
-                segment_offsets.push(cum);
+            for &w in &weights {
+                segment_offsets.push(cum + (w / total_weight) * 0.5);
+                cum += w / total_weight;
             }
+            segment_offsets.push(1.0);
         }
 
         groups.push(GroupGeometry {
@@ -10210,6 +10255,12 @@ fn test_first_measure_repeat_start_sits_after_system_preamble() {
     assert!((repeat_top - opening_rect.y_pt).abs() < 0.01);
     assert!((repeat_bottom - (opening_rect.y_pt + opening_rect.height_pt - 1.0)).abs() < 0.01);
     assert!(note_x > repeat_glyph.x_pt + repeat_barline_rendered_width(GlyphRole::RepeatLeft));
+    assert!(
+        note_x - (repeat_glyph.x_pt + repeat_barline_rendered_width(GlyphRole::RepeatLeft))
+            >= 10.0,
+        "first note should have visual clearance after the start repeat: repeat_x={:.2} note_x={note_x:.2}",
+        repeat_glyph.x_pt
+    );
 }
 
 #[test]

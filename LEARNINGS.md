@@ -153,3 +153,9 @@ When an older note conflicts with this file, treat this file plus the active spe
 - The active rendering ownership rule is `RenderScore -> LayoutScene -> thin platform adapter`.
 - Legacy VexFlow removal is governed by `docs/proposals/ARCHITECTURE_proposal_remove_vexflow.md` and `docs/proposals/ARCHITECTURE_tasks_remove_vexflow.md`.
 - During removal, do not use VexFlow output as an active oracle. Replace old parity coverage with layout scene snapshots, SVG semantic reports, adapter tests, CLI SVG tests, and corpus gates.
+
+## 2026-05-20 Layout Event Spacing
+
+- `measure_geometry()` owns note X placement inside `drummark-layout`; SVG adapters should not shift notes away from barlines.
+- Event placement should use both event start slots and event end slots as spacing-cell boundaries. Centering only between adjacent starts incorrectly moves a lone short downbeat toward the middle of the measure.
+- The first event in a measure should sit in the center of its rhythmic cell, not on the cell's left boundary. This creates clearance after left barlines/repeat starts while keeping the final event from leaving a full trailing beat of empty space.

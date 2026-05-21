@@ -198,3 +198,8 @@ When an older note conflicts with this file, treat this file plus the active spe
 - Same-slot hits in the same voice are laid out in `crates/drummark-layout/src/lib.rs` by `render_hit_cluster()`, so chord collision handling belongs in layout, not in the SVG adapter.
 - Adjacent noteheads within one same-voice chord should keep a shared stem but stagger horizontally to avoid overlap; for the current contract, the higher staff position shifts to the right column and the lower stays on the left column.
 - The displacement rule should trigger only for immediately adjacent staff positions (a line-space or space-line second), leaving wider intervals vertically aligned on the shared stem.
+
+## 2026-05-21 Layout Fractional Rhythm Resolution
+
+- `drummark-layout` must not quantize event starts to `header.divisions` when grouping same-time hits, assigning beam runs, or computing intra-group spacing. In meters like `6/8` with `note 1/8`, that quantization collapses distinct 16th-note starts (`1/2` and `9/16`) into one fake slot.
+- Group-local spacing should use exact start/end `Fraction` boundaries from the rendered events, then weight only the segments inside each declared grouping span. This preserves rhythmic subdivision without distorting neighboring eighth-note positions.

@@ -15,6 +15,48 @@ pub struct Fraction {
     pub denominator: u32,
 }
 
+fn reduce_fraction(fraction: Fraction) -> Fraction {
+    if fraction.numerator == 0 {
+        return Fraction {
+            numerator: 0,
+            denominator: 1,
+        };
+    }
+    let gcd = gcd_u32(fraction.numerator, fraction.denominator.max(1)).max(1);
+    Fraction {
+        numerator: fraction.numerator / gcd,
+        denominator: fraction.denominator.max(1) / gcd,
+    }
+}
+
+fn add_fractions(left: Fraction, right: Fraction) -> Fraction {
+    reduce_fraction(Fraction {
+        numerator: (left.numerator as u64 * right.denominator as u64
+            + right.numerator as u64 * left.denominator as u64) as u32,
+        denominator: (left.denominator as u64 * right.denominator as u64) as u32,
+    })
+}
+
+fn subtract_fractions(left: Fraction, right: Fraction) -> Fraction {
+    let left_scaled = left.numerator as i64 * right.denominator as i64;
+    let right_scaled = right.numerator as i64 * left.denominator as i64;
+    let numerator = (left_scaled - right_scaled).max(0) as u32;
+    reduce_fraction(Fraction {
+        numerator,
+        denominator: (left.denominator as u64 * right.denominator as u64) as u32,
+    })
+}
+
+fn compare_fractions(left: Fraction, right: Fraction) -> std::cmp::Ordering {
+    (left.numerator as u64 * right.denominator as u64)
+        .cmp(&(right.numerator as u64 * left.denominator as u64))
+}
+
+fn sort_and_dedup_fractions(fractions: &mut Vec<Fraction>) {
+    fractions.sort_by(|left, right| compare_fractions(*left, *right));
+    fractions.dedup_by(|left, right| compare_fractions(*left, *right) == std::cmp::Ordering::Equal);
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RenderScore {
     pub version: String,
@@ -3084,6 +3126,164 @@ mod tests {
     }
 
     #[test]
+    fn test_fractional_subdivision_starts_do_not_collapse_inside_grouping_segment() {
+        let mut measure = regular_measure(0, 0, 0);
+        measure.events = vec![
+            test_hit(
+                "SD",
+                Fraction {
+                    numerator: 0,
+                    denominator: 1,
+                },
+                Fraction {
+                    numerator: 1,
+                    denominator: 8,
+                },
+                1,
+            ),
+            test_hit(
+                "T3",
+                Fraction {
+                    numerator: 0,
+                    denominator: 1,
+                },
+                Fraction {
+                    numerator: 1,
+                    denominator: 8,
+                },
+                1,
+            ),
+            test_hit(
+                "SD",
+                Fraction {
+                    numerator: 1,
+                    denominator: 8,
+                },
+                Fraction {
+                    numerator: 1,
+                    denominator: 8,
+                },
+                1,
+            ),
+            test_hit(
+                "HH",
+                Fraction {
+                    numerator: 1,
+                    denominator: 8,
+                },
+                Fraction {
+                    numerator: 1,
+                    denominator: 8,
+                },
+                1,
+            ),
+            test_hit(
+                "SD",
+                Fraction {
+                    numerator: 1,
+                    denominator: 4,
+                },
+                Fraction {
+                    numerator: 1,
+                    denominator: 8,
+                },
+                1,
+            ),
+            test_hit(
+                "T2",
+                Fraction {
+                    numerator: 1,
+                    denominator: 4,
+                },
+                Fraction {
+                    numerator: 1,
+                    denominator: 8,
+                },
+                1,
+            ),
+            test_hit(
+                "HH",
+                Fraction {
+                    numerator: 3,
+                    denominator: 8,
+                },
+                Fraction {
+                    numerator: 1,
+                    denominator: 8,
+                },
+                1,
+            ),
+            test_hit(
+                "HH",
+                Fraction {
+                    numerator: 1,
+                    denominator: 2,
+                },
+                Fraction {
+                    numerator: 1,
+                    denominator: 16,
+                },
+                1,
+            ),
+            test_hit(
+                "SD",
+                Fraction {
+                    numerator: 9,
+                    denominator: 16,
+                },
+                Fraction {
+                    numerator: 1,
+                    denominator: 16,
+                },
+                1,
+            ),
+            test_hit(
+                "HH",
+                Fraction {
+                    numerator: 5,
+                    denominator: 8,
+                },
+                Fraction {
+                    numerator: 1,
+                    denominator: 8,
+                },
+                1,
+            ),
+        ];
+        let mut score = simple_layout_score(vec![measure]);
+        score.header.time_beats = 6;
+        score.header.time_beat_unit = 8;
+        score.header.divisions = 6;
+        score.header.note_value = 8;
+        score.header.grouping = vec![3, 3];
+
+        let scene = build_layout_scene(&score, &LayoutOptions::default());
+        let stems = items_by_role(&scene, "stem");
+
+        assert_eq!(
+            stems.len(),
+            7,
+            "fractional starts inside a 6/8 grouping segment should render as separate rhythmic positions"
+        );
+
+        let mut stem_xs = stems
+            .iter()
+            .filter_map(|item| match &item.primitive {
+                ScenePrimitive::LineSegment(line) => Some(line.x1_pt),
+                _ => None,
+            })
+            .collect::<Vec<_>>();
+        stem_xs.sort_by(|a, b| a.partial_cmp(b).unwrap());
+
+        let pair_gap = stem_xs[5] - stem_xs[4];
+        let tail_gap = stem_xs[6] - stem_xs[5];
+        assert!(
+            pair_gap > 0.01 && tail_gap > 0.01,
+            "split 16th starts and the trailing 8th must all keep distinct x positions: {stem_xs:?}"
+        );
+    }
+
+    #[test]
     fn test_rests_break_grouping_beams() {
         let mut measure = regular_measure(0, 0, 0);
         measure.events = vec![
@@ -3814,12 +4014,12 @@ impl SlotMapper {
 
 #[derive(Debug, Clone)]
 struct GroupGeometry {
-    end_slot: u32,
+    end_fraction: Fraction,
     width_pt: f32,
     /// Position of each event start within the group, as fraction of group width.
     /// Maps slot → cumulative offset fraction (0..1). Used by x_for_fraction.
     segment_offsets: Vec<f32>,
-    segment_slots: Vec<u32>,
+    segment_boundaries: Vec<Fraction>,
 }
 
 #[derive(Debug, Clone)]
@@ -3830,28 +4030,24 @@ struct MeasureGeometry {
 }
 
 impl MeasureGeometry {
-    fn x_for_fraction(&self, header: &RenderHeader, fraction: Fraction) -> f32 {
+    fn x_for_fraction(&self, _header: &RenderHeader, fraction: Fraction) -> f32 {
         if self.groups.is_empty() || self.inner_width_pt <= 0.0 {
             return self.inner_left_pt;
         }
 
-        let slot = fraction_to_measure_slot(
-            fraction,
-            header.time_beats,
-            header.time_beat_unit,
-            header.divisions,
-        );
         let mut group_start_x = self.inner_left_pt;
 
         for group in &self.groups {
-            if slot < group.end_slot {
-                if group.segment_slots.is_empty() {
+            if compare_fractions(fraction, group.end_fraction) == std::cmp::Ordering::Less {
+                if group.segment_boundaries.is_empty() {
                     return group_start_x;
                 }
-                // Binary search for the segment containing this slot
-                let seg = match group.segment_slots.binary_search(&slot) {
-                    Ok(i) => i,
-                    Err(i) => i.saturating_sub(1),
+                let seg = match group
+                    .segment_boundaries
+                    .binary_search_by(|boundary| compare_fractions(*boundary, fraction))
+                {
+                    Ok(index) => index,
+                    Err(index) => index.saturating_sub(1),
                 };
                 let offset_frac = group.segment_offsets[seg.min(group.segment_offsets.len() - 1)];
                 return group_start_x + offset_frac * group.width_pt;
@@ -4070,7 +4266,7 @@ struct BeamLineSegment {
 
 #[derive(Clone)]
 struct SlotEvent<'a> {
-    slot: u32,
+    start: Fraction,
     event_x: f32,
     event: &'a RenderEvent,
 }
@@ -4350,25 +4546,20 @@ fn normalized_grouping(header: &RenderHeader) -> Vec<u32> {
     }
 }
 
-fn fraction_to_measure_slot(
-    fraction: Fraction,
-    time_beats: u32,
-    time_beat_unit: u32,
-    divisions: u32,
-) -> u32 {
-    let numerator =
-        fraction.numerator as u64 * divisions.max(1) as u64 * time_beat_unit.max(1) as u64;
-    let denominator = fraction.denominator.max(1) as u64 * time_beats.max(1) as u64;
-    ((numerator + denominator / 2) / denominator) as u32
+fn measure_fraction_for_beat_units(beat_units: u32, beat_unit: u32) -> Fraction {
+    reduce_fraction(Fraction {
+        numerator: beat_units,
+        denominator: beat_unit.max(1),
+    })
 }
 
-fn grouping_segment_index_for_slot(header: &RenderHeader, slot: u32) -> usize {
+fn grouping_segment_index_for_fraction(header: &RenderHeader, fraction: Fraction) -> usize {
     let grouping = normalized_grouping(header);
-    let slots_per_beat_unit = (header.divisions / header.time_beats.max(1)).max(1);
-    let mut boundary = 0_u32;
+    let mut boundary_units = 0_u32;
     for (index, beat_units) in grouping.iter().enumerate() {
-        boundary += (*beat_units).max(1) * slots_per_beat_unit;
-        if slot < boundary {
+        boundary_units += (*beat_units).max(1);
+        let boundary = measure_fraction_for_beat_units(boundary_units, header.time_beat_unit);
+        if compare_fractions(fraction, boundary) == std::cmp::Ordering::Less {
             return index;
         }
     }
@@ -4405,58 +4596,47 @@ fn measure_geometry(
 ) -> MeasureGeometry {
     let inner_left_pt = input.measure_x + input.left_pad;
     let inner_width_pt = (input.measure_width - input.left_pad - input.right_pad).max(1.0);
-    let slots_per_beat_unit = (header.divisions / header.time_beats.max(1)).max(1);
     let grouping = normalized_grouping(header);
     let mut groups = Vec::new();
     let mut weighted_width_sum = 0.0_f32;
-    let mut start_slot = 0_u32;
+    let mut start_fraction = Fraction {
+        numerator: 0,
+        denominator: 1,
+    };
+    let measure_end = measure_fraction_for_beat_units(header.time_beats, header.time_beat_unit);
 
-    let total_slots = header.divisions.max(1);
-    // Collect event starts for density and event starts/ends for spacing cells.
-    let mut all_starts: Vec<u32> = measure
-        .events
-        .iter()
-        .map(|event| {
-            fraction_to_measure_slot(
-                event.start,
-                header.time_beats,
-                header.time_beat_unit,
-                header.divisions,
-            )
-        })
-        .collect();
-    all_starts.sort();
-    all_starts.dedup();
+    let mut all_starts: Vec<Fraction> = measure.events.iter().map(|event| event.start).collect();
+    sort_and_dedup_fractions(&mut all_starts);
+
     let mut all_boundaries = all_starts.clone();
-    all_boundaries.extend(measure.events.iter().map(|event| {
-        let start_slot = fraction_to_measure_slot(
-            event.start,
-            header.time_beats,
-            header.time_beat_unit,
-            header.divisions,
-        );
-        let duration_slots = fraction_to_measure_slot(
-            event.duration,
-            header.time_beats,
-            header.time_beat_unit,
-            header.divisions,
-        )
-        .max(1);
-        (start_slot + duration_slots).min(total_slots)
-    }));
-    all_boundaries.sort();
-    all_boundaries.dedup();
+    all_boundaries.extend(
+        measure
+            .events
+            .iter()
+            .map(|event| {
+                let end = add_fractions(event.start, event.duration);
+                if compare_fractions(end, measure_end) == std::cmp::Ordering::Greater {
+                    measure_end
+                } else {
+                    end
+                }
+            }),
+    );
+    sort_and_dedup_fractions(&mut all_boundaries);
 
     for beat_units in grouping {
-        let group_slots = beat_units.max(1) * slots_per_beat_unit;
-        let end_slot = start_slot + group_slots;
+        let group_duration = measure_fraction_for_beat_units(beat_units.max(1), header.time_beat_unit);
+        let end_fraction = add_fractions(start_fraction, group_duration);
         let base_quarters = beat_units as f32 * 4.0 / header.time_beat_unit.max(1) as f32;
 
         // Content weight for measure-width compression
-        let group_starts: Vec<u32> = all_starts
+        let group_starts: Vec<Fraction> = all_starts
             .iter()
             .copied()
-            .filter(|s| *s >= start_slot && *s < end_slot)
+            .filter(|start| {
+                compare_fractions(*start, start_fraction) != std::cmp::Ordering::Less
+                    && compare_fractions(*start, end_fraction) == std::cmp::Ordering::Less
+            })
             .collect();
         let segment_count = if group_starts.is_empty() {
             1
@@ -4469,29 +4649,40 @@ fn measure_geometry(
         weighted_width_sum += weighted_width;
 
         // Duration-weighted segment offsets within this group
-        let mut segment_slots: Vec<u32> = all_boundaries
+        let mut segment_boundaries: Vec<Fraction> = all_boundaries
             .iter()
             .copied()
-            .filter(|s| *s >= start_slot && *s <= end_slot)
+            .filter(|boundary| {
+                compare_fractions(*boundary, start_fraction) != std::cmp::Ordering::Less
+                    && compare_fractions(*boundary, end_fraction) != std::cmp::Ordering::Greater
+            })
             .collect();
-        // Ensure we have at least start_slot as first segment
-        if segment_slots.first() != Some(&start_slot) {
-            segment_slots.insert(0, start_slot);
+        if segment_boundaries
+            .first()
+            .map(|boundary| compare_fractions(*boundary, start_fraction))
+            != Some(std::cmp::Ordering::Equal)
+        {
+            segment_boundaries.insert(0, start_fraction);
         }
-        // Add group end as last segment boundary
-        if segment_slots.last() != Some(&end_slot) {
-            segment_slots.push(end_slot);
+        if segment_boundaries
+            .last()
+            .map(|boundary| compare_fractions(*boundary, end_fraction))
+            != Some(std::cmp::Ordering::Equal)
+        {
+            segment_boundaries.push(end_fraction);
         }
 
-        let mut segment_offsets = Vec::with_capacity(segment_slots.len());
-        if segment_slots.len() <= 1 {
+        let mut segment_offsets = Vec::with_capacity(segment_boundaries.len());
+        if segment_boundaries.len() <= 1 {
             segment_offsets.push(0.5);
         } else {
-            let slot_span = (end_slot - start_slot).max(1) as f32;
-            let mut raw_weights = Vec::with_capacity(segment_slots.len() - 1);
-            for i in 0..segment_slots.len() - 1 {
-                let seg_slots = (segment_slots[i + 1] - segment_slots[i]) as f32;
-                let seg_duration = seg_slots / slot_span;
+            let group_span = fraction_to_f32(group_duration).max(0.0001);
+            let mut raw_weights = Vec::with_capacity(segment_boundaries.len() - 1);
+            for i in 0..segment_boundaries.len() - 1 {
+                let seg_duration = fraction_to_f32(subtract_fractions(
+                    segment_boundaries[i + 1],
+                    segment_boundaries[i],
+                )) / group_span;
                 raw_weights.push(seg_duration);
             }
 
@@ -4517,12 +4708,12 @@ fn measure_geometry(
         }
 
         groups.push(GroupGeometry {
-            end_slot,
+            end_fraction,
             width_pt: weighted_width,
             segment_offsets,
-            segment_slots,
+            segment_boundaries,
         });
-        start_slot = end_slot;
+        start_fraction = end_fraction;
     }
 
     let scale = inner_width_pt / weighted_width_sum.max(1.0);
@@ -4548,23 +4739,9 @@ fn estimated_measure_width(
     }
 
     let grouping = normalized_grouping(header);
-    let slots_per_beat_unit = (header.divisions / header.time_beats.max(1)).max(1);
 
-    // Collect all unique event start slots
-    let mut starts: Vec<u32> = measure
-        .events
-        .iter()
-        .map(|event| {
-            fraction_to_measure_slot(
-                event.start,
-                header.time_beats,
-                header.time_beat_unit,
-                header.divisions,
-            )
-        })
-        .collect();
-    starts.sort();
-    starts.dedup();
+    let mut starts: Vec<Fraction> = measure.events.iter().map(|event| event.start).collect();
+    sort_and_dedup_fractions(&mut starts);
     let segment_count = starts.len().max(1);
 
     // Modifier bonuses (matching VexFlow)
@@ -4579,11 +4756,11 @@ fn estimated_measure_width(
 
     grouping
         .into_iter()
-        .scan(0_u32, |start_slot, beat_units| {
+        .scan(0_u32, |accumulated_units, beat_units| {
             let base_quarters = beat_units as f32 * 4.0 / header.time_beat_unit.max(1) as f32;
             let content_weight =
                 1.0 + compression * (segment_count as f32).max(1.0).log2() + modifier_bonus;
-            *start_slot += beat_units.max(1) * slots_per_beat_unit;
+            *accumulated_units += beat_units.max(1);
             Some(base_quarters * mapper.px_per_quarter * content_weight)
         })
         .sum()
@@ -6542,19 +6719,13 @@ fn render_measure_events(sink: &mut SceneEmitSink<'_>, input: RenderMeasureEvent
         .events
         .iter()
         .map(|event| SlotEvent {
-            slot: fraction_to_measure_slot(
-                event.start,
-                input.header.time_beats,
-                input.header.time_beat_unit,
-                input.header.divisions,
-            ),
+            start: event.start,
             event_x: geometry.x_for_fraction(input.header, event.start),
             event,
         })
         .collect::<Vec<_>>();
     slot_events.sort_by(|a, b| {
-        a.slot
-            .cmp(&b.slot)
+        compare_fractions(a.start, b.start)
             .then_with(|| a.event.voice.cmp(&b.event.voice))
             .then_with(|| {
                 staff_y_for_track(&a.event.track)
@@ -6568,16 +6739,18 @@ fn render_measure_events(sink: &mut SceneEmitSink<'_>, input: RenderMeasureEvent
         std::collections::BTreeMap::new();
     let mut next_beam_group = 0_u32;
     while index < slot_events.len() {
-        let slot = slot_events[index].slot;
+        let start = slot_events[index].start;
         let event_x = slot_events[index].event_x;
         let slot_start = index;
-        while index < slot_events.len() && slot_events[index].slot == slot {
+        while index < slot_events.len()
+            && compare_fractions(slot_events[index].start, start) == std::cmp::Ordering::Equal
+        {
             index += 1;
         }
         let slot_group = &slot_events[slot_start..index];
         let beam_groups_by_voice = beam_groups_for_slot(
             input.header,
-            slot,
+            start,
             slot_group,
             &mut beam_states_by_voice,
             &mut next_beam_group,
@@ -6746,7 +6919,7 @@ fn render_slot_group(sink: &mut SceneEmitSink<'_>, input: RenderSlotGroupInput<'
 
 fn beam_groups_for_slot(
     header: &RenderHeader,
-    slot: u32,
+    start: Fraction,
     slot_group: &[SlotEvent<'_>],
     states_by_voice: &mut std::collections::BTreeMap<u8, BeamRunState>,
     next_group: &mut u32,
@@ -6775,7 +6948,7 @@ fn beam_groups_for_slot(
             continue;
         }
 
-        let segment = grouping_segment_index_for_slot(header, slot);
+        let segment = grouping_segment_index_for_fraction(header, start);
         let group = match states_by_voice.get(&voice).copied() {
             Some(state) if state.segment == segment => state.group,
             _ => {

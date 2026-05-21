@@ -61,8 +61,14 @@ pub enum Barline {
 #[derive(Debug, Clone)]
 pub enum MeasureExpr {
     BasicNote(NoteExpr),
-    SummonedNote { track: String, note: NoteExpr },
-    RoutedBracedBlock { track: String, content: Vec<MeasureExpr> },
+    SummonedNote {
+        track: String,
+        note: NoteExpr,
+    },
+    RoutedBracedBlock {
+        track: String,
+        content: Vec<MeasureExpr>,
+    },
     InlineBracedBlock(Vec<MeasureExpr>),
     Group(GroupExpr),
     CombinedHit(Vec<MeasureExpr>),

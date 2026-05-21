@@ -1,12 +1,14 @@
-use crate::fraction::{Fraction, calculate_token_weight_as_fraction};
-use crate::resolve::{get_track_family, TrackFamily};
-use crate::validate::{validate_modifier_legality, validate_grouping};
-use crate::hairpin::{HairpinState, HairpinIntent, collect_track_hairpins, close_dangling_hairpin};
-use crate::nav::{StartNav, EndNav, Anchor, BarlineType};
-use crate::volta::{VoltaMeasure, propagate_voltas};
-use crate::event::{NormalizedEvent, TokenGlyph, token_to_events, scan_hairpin_tokens, scan_dynamic_tokens};
 use crate::ast::DynamicLevel;
-use crate::ast::{Document, Barline, MeasureExpr, TrackLine, HeaderSection, SourceLocation};
+use crate::ast::{Barline, Document, HeaderSection, MeasureExpr, SourceLocation, TrackLine};
+use crate::event::{
+    scan_dynamic_tokens, scan_hairpin_tokens, token_to_events, NormalizedEvent, TokenGlyph,
+};
+use crate::fraction::{calculate_token_weight_as_fraction, Fraction};
+use crate::hairpin::{close_dangling_hairpin, collect_track_hairpins, HairpinIntent, HairpinState};
+use crate::nav::{Anchor, BarlineType, EndNav, StartNav};
+use crate::resolve::{get_track_family, TrackFamily};
+use crate::validate::{validate_grouping, validate_modifier_legality};
+use crate::volta::{propagate_voltas, VoltaMeasure};
 use std::collections::{HashMap, HashSet};
 
 // ── Inline-Repeat Expansion Helpers ────────────────────────────────
@@ -59,10 +61,22 @@ fn expand_line_sections(line: &TrackLine, errors: &mut Vec<String>) -> Vec<Expan
                     let is_last = i + 1 == n as usize;
                     result.push(ExpandedSection {
                         tokens: content.clone(),
-                        barline: if is_first { section.barline.clone() } else { Barline::Regular },
+                        barline: if is_first {
+                            section.barline.clone()
+                        } else {
+                            Barline::Regular
+                        },
                         barline_location: section.barline_location.clone(),
-                        closing_barline: if is_last { section.closing_barline.clone() } else { None },
-                        closing_barline_location: if is_last { section.closing_barline_location.clone() } else { None },
+                        closing_barline: if is_last {
+                            section.closing_barline.clone()
+                        } else {
+                            None
+                        },
+                        closing_barline_location: if is_last {
+                            section.closing_barline_location.clone()
+                        } else {
+                            None
+                        },
                     });
                 }
             }
@@ -172,28 +186,35 @@ fn to_token_glyph(expr: &MeasureExpr) -> TokenGlyph {
             track_override: Some(track.clone()),
         },
         MeasureExpr::CombinedHit(hits) => TokenGlyph::Combined {
-            items: hits.iter().map(|e| match e {
-                MeasureExpr::BasicNote(n) => TokenGlyph::Basic {
-                    value: n.glyph.clone(),
-                    dots: n.dots,
-                    halves: n.halves,
-                    stars: n.stars,
-                    modifiers: n.modifiers.clone(),
-                    track_override: None,
-                },
-                MeasureExpr::SummonedNote { track, note } => TokenGlyph::Basic {
-                    value: note.glyph.clone(),
-                    dots: note.dots,
-                    halves: note.halves,
-                    stars: note.stars,
-                    modifiers: note.modifiers.clone(),
-                    track_override: Some(track.clone()),
-                },
-                _ => TokenGlyph::Basic {
-                    value: "-".to_string(), dots: 0, halves: 0, stars: 0,
-                    modifiers: vec![], track_override: None,
-                },
-            }).collect(),
+            items: hits
+                .iter()
+                .map(|e| match e {
+                    MeasureExpr::BasicNote(n) => TokenGlyph::Basic {
+                        value: n.glyph.clone(),
+                        dots: n.dots,
+                        halves: n.halves,
+                        stars: n.stars,
+                        modifiers: n.modifiers.clone(),
+                        track_override: None,
+                    },
+                    MeasureExpr::SummonedNote { track, note } => TokenGlyph::Basic {
+                        value: note.glyph.clone(),
+                        dots: note.dots,
+                        halves: note.halves,
+                        stars: note.stars,
+                        modifiers: note.modifiers.clone(),
+                        track_override: Some(track.clone()),
+                    },
+                    _ => TokenGlyph::Basic {
+                        value: "-".to_string(),
+                        dots: 0,
+                        halves: 0,
+                        stars: 0,
+                        modifiers: vec![],
+                        track_override: None,
+                    },
+                })
+                .collect(),
         },
         MeasureExpr::Group(g) => {
             // Check if any item is itself a Group (nested group)
@@ -204,7 +225,11 @@ fn to_token_glyph(expr: &MeasureExpr) -> TokenGlyph {
                 // Without N (no ratio): span defaults to 1.
                 // For nested groups, match Lezer: treat outer as if span=items.len()
                 count: g.items.len() as u32,
-                span: if has_nested { g.items.len() as u32 } else { g.n.unwrap_or(1) },
+                span: if has_nested {
+                    g.items.len() as u32
+                } else {
+                    g.n.unwrap_or(1)
+                },
                 items: g.items.iter().map(to_token_glyph).collect(),
                 modifiers: g.modifiers.clone(),
             }
@@ -225,24 +250,44 @@ fn to_token_glyph(expr: &MeasureExpr) -> TokenGlyph {
         MeasureExpr::HairpinEnd => TokenGlyph::HairpinEnd,
         MeasureExpr::Dynamic(level) => TokenGlyph::Dynamic(level.clone()),
         MeasureExpr::MeasureRepeat(_count) => TokenGlyph::Basic {
-            value: "-".to_string(), dots: 0, halves: 0, stars: 0,
-            modifiers: vec![], track_override: None,
+            value: "-".to_string(),
+            dots: 0,
+            halves: 0,
+            stars: 0,
+            modifiers: vec![],
+            track_override: None,
         },
         MeasureExpr::MultiRest(_count) => TokenGlyph::Basic {
-            value: "-".to_string(), dots: 0, halves: 0, stars: 0,
-            modifiers: vec![], track_override: None,
+            value: "-".to_string(),
+            dots: 0,
+            halves: 0,
+            stars: 0,
+            modifiers: vec![],
+            track_override: None,
         },
         MeasureExpr::InlineRepeat(_) => TokenGlyph::Basic {
-            value: "-".to_string(), dots: 0, halves: 0, stars: 0,
-            modifiers: vec![], track_override: None,
+            value: "-".to_string(),
+            dots: 0,
+            halves: 0,
+            stars: 0,
+            modifiers: vec![],
+            track_override: None,
         },
         MeasureExpr::NavMarker(_) => TokenGlyph::Basic {
-            value: "-".to_string(), dots: 0, halves: 0, stars: 0,
-            modifiers: vec![], track_override: None,
+            value: "-".to_string(),
+            dots: 0,
+            halves: 0,
+            stars: 0,
+            modifiers: vec![],
+            track_override: None,
         },
         MeasureExpr::NavJump(_) => TokenGlyph::Basic {
-            value: "-".to_string(), dots: 0, halves: 0, stars: 0,
-            modifiers: vec![], track_override: None,
+            value: "-".to_string(),
+            dots: 0,
+            halves: 0,
+            stars: 0,
+            modifiers: vec![],
+            track_override: None,
         },
     }
 }
@@ -256,10 +301,17 @@ fn barline_type(bl: &Barline) -> Option<String> {
         Barline::VoltaTerminator => Some("regular".to_string()),
         Barline::RepeatEndVoltaTerminator | Barline::DoubleVoltaTerminator => None,
         Barline::VoltaRepeatStart => Some("repeat-start".to_string()),
-        Barline::Volta { prefix, numbers: _numbers } => {
-            if prefix == "|:" { Some("repeat-start".to_string()) }
-            else if prefix == ":|" { Some("repeat-end".to_string()) }
-            else { Some("regular".to_string()) }
+        Barline::Volta {
+            prefix,
+            numbers: _numbers,
+        } => {
+            if prefix == "|:" {
+                Some("repeat-start".to_string())
+            } else if prefix == ":|" {
+                Some("repeat-end".to_string())
+            } else {
+                Some("regular".to_string())
+            }
         }
     }
 }
@@ -308,16 +360,22 @@ pub fn normalize_document(doc: &Document) -> NormalizedScore {
         }
     }
 
-    let mut tracks: Vec<NormalizedTrack> = track_set.iter().map(|id| {
-        let family = match get_track_family(id) {
-            TrackFamily::Cymbal => "cymbal",
-            TrackFamily::Drum => "drum",
-            TrackFamily::Pedal => "pedal",
-            TrackFamily::Percussion => "percussion",
-            TrackFamily::Auxiliary => "auxiliary",
-        };
-        NormalizedTrack { id: id.clone(), family: family.to_string() }
-    }).collect();
+    let mut tracks: Vec<NormalizedTrack> = track_set
+        .iter()
+        .map(|id| {
+            let family = match get_track_family(id) {
+                TrackFamily::Cymbal => "cymbal",
+                TrackFamily::Drum => "drum",
+                TrackFamily::Pedal => "pedal",
+                TrackFamily::Percussion => "percussion",
+                TrackFamily::Auxiliary => "auxiliary",
+            };
+            NormalizedTrack {
+                id: id.clone(),
+                family: family.to_string(),
+            }
+        })
+        .collect();
     tracks.sort_by(|a, b| a.id.cmp(&b.id));
 
     // ── Main Pass: walk paragraphs → measures → tracks → tokens ──
@@ -332,13 +390,12 @@ pub fn normalize_document(doc: &Document) -> NormalizedScore {
         let para_note_value = para.note.map(|(_, d)| d).unwrap_or(note_value);
 
         // ── Inline-repeat expansion ──
-        let expanded_lines: Vec<Vec<ExpandedSection>> = para.lines.iter()
+        let expanded_lines: Vec<Vec<ExpandedSection>> = para
+            .lines
+            .iter()
             .map(|line| expand_line_sections(line, &mut errors))
             .collect();
-        let measure_count = expanded_lines.iter()
-            .map(|l| l.len())
-            .max()
-            .unwrap_or(0);
+        let measure_count = expanded_lines.iter().map(|l| l.len()).max().unwrap_or(0);
 
         for m_idx in 0..measure_count {
             let mut measure_events: Vec<NormalizedEvent> = Vec::new();
@@ -380,7 +437,9 @@ pub fn normalize_document(doc: &Document) -> NormalizedScore {
                     Barline::Volta { numbers, .. } => {
                         volta_indices = Some(numbers.clone());
                     }
-                    Barline::VoltaTerminator | Barline::RepeatEndVoltaTerminator | Barline::DoubleVoltaTerminator => {
+                    Barline::VoltaTerminator
+                    | Barline::RepeatEndVoltaTerminator
+                    | Barline::DoubleVoltaTerminator => {
                         volta_terminator = true;
                     }
                     _ => {}
@@ -419,11 +478,18 @@ pub fn normalize_document(doc: &Document) -> NormalizedScore {
                 }
 
                 // Scan tokens — filter out zero-time markers before converting
-                let tokens: Vec<TokenGlyph> = es.tokens.iter()
-                    .filter(|t| !matches!(t,
-                        MeasureExpr::NavMarker(_) | MeasureExpr::NavJump(_)
-                        | MeasureExpr::MeasureRepeat(_) | MeasureExpr::MultiRest(_)
-                    ))
+                let tokens: Vec<TokenGlyph> = es
+                    .tokens
+                    .iter()
+                    .filter(|t| {
+                        !matches!(
+                            t,
+                            MeasureExpr::NavMarker(_)
+                                | MeasureExpr::NavJump(_)
+                                | MeasureExpr::MeasureRepeat(_)
+                                | MeasureExpr::MultiRest(_)
+                        )
+                    })
                     .map(to_token_glyph)
                     .collect();
 
@@ -431,36 +497,56 @@ pub fn normalize_document(doc: &Document) -> NormalizedScore {
                 // Skip metadata on padded sections to avoid repeating non-note data
                 if !is_padded {
                     for tok in &es.tokens {
-                    match tok {
-                        MeasureExpr::MeasureRepeat(count) => {
-                            measure_repeat_slashes = Some(*count);
+                        match tok {
+                            MeasureExpr::MeasureRepeat(count) => {
+                                measure_repeat_slashes = Some(*count);
+                            }
+                            MeasureExpr::MultiRest(count) => {
+                                multi_rest_count = Some(*count);
+                            }
+                            MeasureExpr::NavMarker(name) => {
+                                start_nav = Some(match name.as_str() {
+                                    "segno" => StartNav::Segno {
+                                        anchor: Anchor::LeftEdge,
+                                    },
+                                    "coda" => StartNav::Coda {
+                                        anchor: Anchor::LeftEdge,
+                                    },
+                                    _ => continue,
+                                });
+                            }
+                            MeasureExpr::NavJump(name) => {
+                                end_nav = Some(match name.as_str() {
+                                    "fine" => EndNav::Fine {
+                                        anchor: Anchor::RightEdge,
+                                    },
+                                    "dc" => EndNav::DC {
+                                        anchor: Anchor::RightEdge,
+                                    },
+                                    "ds" => EndNav::DS {
+                                        anchor: Anchor::RightEdge,
+                                    },
+                                    "dc-al-fine" => EndNav::DCalFine {
+                                        anchor: Anchor::RightEdge,
+                                    },
+                                    "dc-al-coda" => EndNav::DCalCoda {
+                                        anchor: Anchor::RightEdge,
+                                    },
+                                    "ds-al-fine" => EndNav::DSalFine {
+                                        anchor: Anchor::RightEdge,
+                                    },
+                                    "ds-al-coda" => EndNav::DSalCoda {
+                                        anchor: Anchor::RightEdge,
+                                    },
+                                    "to-coda" => EndNav::ToCoda {
+                                        anchor: Anchor::RightEdge,
+                                    },
+                                    _ => continue,
+                                });
+                            }
+                            _ => {}
                         }
-                        MeasureExpr::MultiRest(count) => {
-                            multi_rest_count = Some(*count);
-                        }
-                        MeasureExpr::NavMarker(name) => {
-                            start_nav = Some(match name.as_str() {
-                                "segno" => StartNav::Segno { anchor: Anchor::LeftEdge },
-                                "coda" => StartNav::Coda { anchor: Anchor::LeftEdge },
-                                _ => continue,
-                            });
-                        }
-                        MeasureExpr::NavJump(name) => {
-                            end_nav = Some(match name.as_str() {
-                                "fine" => EndNav::Fine { anchor: Anchor::RightEdge },
-                                "dc" => EndNav::DC { anchor: Anchor::RightEdge },
-                                "ds" => EndNav::DS { anchor: Anchor::RightEdge },
-                                "dc-al-fine" => EndNav::DCalFine { anchor: Anchor::RightEdge },
-                                "dc-al-coda" => EndNav::DCalCoda { anchor: Anchor::RightEdge },
-                                "ds-al-fine" => EndNav::DSalFine { anchor: Anchor::RightEdge },
-                                "ds-al-coda" => EndNav::DSalCoda { anchor: Anchor::RightEdge },
-                                "to-coda" => EndNav::ToCoda { anchor: Anchor::RightEdge },
-                                _ => continue,
-                            });
-                        }
-                        _ => {}
                     }
-                }
                 } // !is_padded
 
                 // Convert tokens to events
@@ -479,16 +565,18 @@ pub fn normalize_document(doc: &Document) -> NormalizedScore {
                 for token in tokens.iter() {
                     let token_start = position.multiply(duration_per_quarter);
                     // Validate modifier legality
-                    if let TokenGlyph::Basic { value, modifiers, .. } = token {
+                    if let TokenGlyph::Basic {
+                        value, modifiers, ..
+                    } = token
+                    {
                         if value != "-" {
-                            if let Some(resolved) = crate::resolve::resolve_token(
-                                value,
-                                context_track,
-                                None,
-                                modifiers,
-                            ) {
+                            if let Some(resolved) =
+                                crate::resolve::resolve_token(value, context_track, None, modifiers)
+                            {
                                 for m in &resolved.modifiers {
-                                    if let Some(err) = validate_modifier_legality(m, &resolved.track) {
+                                    if let Some(err) =
+                                        validate_modifier_legality(m, &resolved.track)
+                                    {
                                         errors.push(err);
                                     }
                                 }
@@ -516,12 +604,13 @@ pub fn normalize_document(doc: &Document) -> NormalizedScore {
 
                 // Collect hairpins per track (positions are raw weight counts — convert to time)
                 let hairpin_scan = scan_hairpin_tokens(&tokens, Fraction::zero(), divisions);
-                let hairpin_scan_time: Vec<_> = hairpin_scan.iter().map(|(pos, kind, sig)| {
-                    (pos.multiply(duration_per_quarter), *kind, *sig)
-                }).collect();
-                let state = hairpin_states.entry(use_track.to_string())
-                    .or_default();
-                let track_hairpins = collect_track_hairpins(&hairpin_scan_time, global_index as usize, state);
+                let hairpin_scan_time: Vec<_> = hairpin_scan
+                    .iter()
+                    .map(|(pos, kind, sig)| (pos.multiply(duration_per_quarter), *kind, *sig))
+                    .collect();
+                let state = hairpin_states.entry(use_track.to_string()).or_default();
+                let track_hairpins =
+                    collect_track_hairpins(&hairpin_scan_time, global_index as usize, state);
                 measure_hairpins.extend(track_hairpins);
 
                 if !is_padded {
@@ -536,12 +625,8 @@ pub fn normalize_document(doc: &Document) -> NormalizedScore {
                 }
             }
 
-            let measure_dynamics = merge_measure_dynamics(
-                dynamic_candidates,
-                &mut errors,
-                global_index,
-                1,
-            );
+            let measure_dynamics =
+                merge_measure_dynamics(dynamic_candidates, &mut errors, global_index, 1);
 
             // End-nav barline forcing
             if let Some(ref en) = end_nav {
@@ -587,14 +672,17 @@ pub fn normalize_document(doc: &Document) -> NormalizedScore {
 
     // ── Post-pass 1: Volta propagation ───────────────────────────
 
-    let mut volta_measures: Vec<VoltaMeasure> = all_measures.iter().map(|m| VoltaMeasure {
-        seed_volta: m.volta.clone(),
-        volta: None,
-        repeat_end: m.barline.as_deref() == Some("repeat-end"),
-        repeat_both: m.barline.as_deref() == Some("repeat-both"),
-        volta_terminator: m.volta_terminator,
-        paragraph_index: m.paragraph_index,
-    }).collect();
+    let mut volta_measures: Vec<VoltaMeasure> = all_measures
+        .iter()
+        .map(|m| VoltaMeasure {
+            seed_volta: m.volta.clone(),
+            volta: None,
+            repeat_end: m.barline.as_deref() == Some("repeat-end"),
+            repeat_both: m.barline.as_deref() == Some("repeat-both"),
+            volta_terminator: m.volta_terminator,
+            paragraph_index: m.paragraph_index,
+        })
+        .collect();
 
     propagate_voltas(&mut volta_measures);
 
@@ -635,15 +723,23 @@ pub fn normalize_document(doc: &Document) -> NormalizedScore {
     }
 }
 
-fn derive_repeat_spans(measures: &[NormalizedMeasure], errors: &mut Vec<String>) -> Vec<RepeatSpan> {
+fn derive_repeat_spans(
+    measures: &[NormalizedMeasure],
+    errors: &mut Vec<String>,
+) -> Vec<RepeatSpan> {
     let mut repeat_spans = Vec::new();
     let mut open_start: Option<u32> = None;
     let mut open_start_has_ending = false;
 
     for (index, measure) in measures.iter().enumerate() {
-        let start = matches!(measure.barline.as_deref(), Some("repeat-start") | Some("repeat-both"));
-        let end = matches!(measure.barline.as_deref(), Some("repeat-end") | Some("repeat-both"))
-            || matches!(measure.closing_barline.as_deref(), Some("repeat-end"));
+        let start = matches!(
+            measure.barline.as_deref(),
+            Some("repeat-start") | Some("repeat-both")
+        );
+        let end = matches!(
+            measure.barline.as_deref(),
+            Some("repeat-end") | Some("repeat-both")
+        ) || matches!(measure.closing_barline.as_deref(), Some("repeat-end"));
         let next_volta = measures.get(index + 1).and_then(|next| next.volta.clone());
 
         if start && !end && open_start.is_some() {
@@ -699,25 +795,29 @@ fn derive_repeat_spans(measures: &[NormalizedMeasure], errors: &mut Vec<String>)
 
 fn token_weight(token: &TokenGlyph) -> Fraction {
     match token {
-        TokenGlyph::Basic { dots, halves, stars, .. } => {
-            calculate_token_weight_as_fraction(*dots, *stars, *halves, None)
-        }
+        TokenGlyph::Basic {
+            dots,
+            halves,
+            stars,
+            ..
+        } => calculate_token_weight_as_fraction(*dots, *stars, *halves, None),
         TokenGlyph::Group { span, .. } => {
             // Group total weight = span (normal duration the group occupies)
             Fraction::new(*span as u64, 1)
         }
-        TokenGlyph::Combined { items } => {
-            items.iter().map(token_weight)
-                .max_by(|a, b| a.compare(*b))
-                .unwrap_or(Fraction::zero())
-        }
-        TokenGlyph::Braced { items, .. } => {
-            items.iter().map(token_weight)
-                .fold(Fraction::zero(), |a, b| a.add(b))
-        }
-        TokenGlyph::Crescendo | TokenGlyph::Decrescendo | TokenGlyph::HairpinEnd | TokenGlyph::Dynamic(_) => {
-            Fraction::zero()
-        }
+        TokenGlyph::Combined { items } => items
+            .iter()
+            .map(token_weight)
+            .max_by(|a, b| a.compare(*b))
+            .unwrap_or(Fraction::zero()),
+        TokenGlyph::Braced { items, .. } => items
+            .iter()
+            .map(token_weight)
+            .fold(Fraction::zero(), |a, b| a.add(b)),
+        TokenGlyph::Crescendo
+        | TokenGlyph::Decrescendo
+        | TokenGlyph::HairpinEnd
+        | TokenGlyph::Dynamic(_) => Fraction::zero(),
     }
 }
 
@@ -752,12 +852,13 @@ fn merge_measure_dynamics(
 mod dynamic_test {
     use crate::ast::DynamicLevel;
     use crate::fraction::Fraction;
-    use crate::parser;
     use crate::normalize;
+    use crate::parser;
 
     #[test]
     fn normalizes_and_sorts_explicit_dynamics() {
-        let p = parser::Parser::new("time 4/4\ndivisions 4\ngrouping 2+2\nSD | @p d d @f d d @ff |\n");
+        let p =
+            parser::Parser::new("time 4/4\ndivisions 4\ngrouping 2+2\nSD | @p d d @f d d @ff |\n");
         let doc = p.parse().unwrap();
         let score = normalize::normalize_document(&doc);
 
@@ -773,17 +874,21 @@ mod dynamic_test {
 
     #[test]
     fn deduplicates_same_level_and_rejects_conflicts() {
-        let same = parser::Parser::new("time 4/4\ndivisions 4\ngrouping 2+2\nHH | @p x x x x |\nSD | @p d d d d |\n")
-            .parse()
-            .unwrap();
+        let same = parser::Parser::new(
+            "time 4/4\ndivisions 4\ngrouping 2+2\nHH | @p x x x x |\nSD | @p d d d d |\n",
+        )
+        .parse()
+        .unwrap();
         let same_score = normalize::normalize_document(&same);
         assert_eq!(same_score.errors, Vec::<String>::new());
         assert_eq!(same_score.measures[0].dynamics.len(), 1);
         assert_eq!(same_score.measures[0].dynamics[0].level, DynamicLevel::P);
 
-        let conflict = parser::Parser::new("time 4/4\ndivisions 4\ngrouping 2+2\nHH | @p x x x x |\nSD | @f d d d d |\n")
-            .parse()
-            .unwrap();
+        let conflict = parser::Parser::new(
+            "time 4/4\ndivisions 4\ngrouping 2+2\nHH | @p x x x x |\nSD | @f d d d d |\n",
+        )
+        .parse()
+        .unwrap();
         let conflict_score = normalize::normalize_document(&conflict);
         assert!(conflict_score
             .errors
@@ -810,8 +915,8 @@ mod dynamic_test {
 
 #[cfg(test)]
 mod volta_test {
-    use crate::parser;
     use crate::normalize;
+    use crate::parser;
 
     #[test]
     fn test_volta_barlines() {

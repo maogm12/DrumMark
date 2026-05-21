@@ -8,9 +8,7 @@ pub struct VoltaIntent {
 /// until cleared by a repeat-both or voltaTerminator.
 /// The clearing happens *after* applying the volta to the current measure,
 /// so the terminator measure itself displays the volta but the next measure does not.
-pub fn propagate_voltas(
-    measures: &mut [VoltaMeasure],
-) {
+pub fn propagate_voltas(measures: &mut [VoltaMeasure]) {
     let mut active: Option<Vec<u32>> = None;
 
     for m in measures.iter_mut() {

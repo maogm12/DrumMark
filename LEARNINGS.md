@@ -185,3 +185,16 @@ When an older note conflicts with this file, treat this file plus the active spe
 - The active MusicXML exporter is `src/dsl/musicxml.ts`; CLI XML export flows through the TypeScript normalized score rather than a separate Rust XML writer.
 - Existing hairpin wedges are emitted as score-level `<direction>` elements with MusicXML `<offset>` values, so explicit dynamics should follow that direction-offset style instead of adding forward/backup cursor events.
 - `collectDivisions()` must include dynamic anchor denominators, otherwise dynamic offsets from nested groups or tuplets can become fractional even when notes alone do not require those divisions.
+
+## 2026-05-21 Layout Structural Edge Padding
+
+- Measure content padding must be derived from the visible structural edge, not only from a flat left/right constant.
+- Non-initial start-repeat barlines need their own reserved width plus trailing content gap; otherwise dense first events can collide visually with the repeat glyph.
+- Right repeat-end barlines need symmetrical reserved width before the glyph. Final and double barlines need a smaller extra gap beyond regular barlines.
+- System-start clef/time-signature preambles should add a small trailing content gap on top of their reserved symbol widths.
+
+## 2026-05-21 Same-Voice Chord Notehead Displacement
+
+- Same-slot hits in the same voice are laid out in `crates/drummark-layout/src/lib.rs` by `render_hit_cluster()`, so chord collision handling belongs in layout, not in the SVG adapter.
+- Adjacent noteheads within one same-voice chord should keep a shared stem but stagger horizontally to avoid overlap; for the current contract, the higher staff position shifts to the right column and the lower stays on the left column.
+- The displacement rule should trigger only for immediately adjacent staff positions (a line-space or space-line second), leaving wider intervals vertically aligned on the shared stem.

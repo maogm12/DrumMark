@@ -31,14 +31,15 @@ pub fn derive_render_score(score: &normalize::NormalizedScore) -> drummark_layou
             .measures
             .iter()
             .map(|measure| {
-                let mut events: Vec<drummark_layout::RenderEvent> = measure
-                    .events
-                    .iter()
-                    .map(event_to_render_event)
-                    .collect();
+                let mut events: Vec<drummark_layout::RenderEvent> =
+                    measure.events.iter().map(event_to_render_event).collect();
 
                 if measure.measure_repeat_slashes.is_none() && measure.multi_rest_count.is_none() {
-                    events.extend(derive_implicit_rest_events(score, measure, &default_voice_tracks));
+                    events.extend(derive_implicit_rest_events(
+                        score,
+                        measure,
+                        &default_voice_tracks,
+                    ));
                     sort_render_events(&mut events);
                 }
 
@@ -60,7 +61,9 @@ pub fn derive_render_score(score: &normalize::NormalizedScore) -> drummark_layou
                         .map(|hairpin| drummark_layout::HairpinSpan {
                             kind: match hairpin.kind {
                                 HairpinKind::Crescendo => drummark_layout::HairpinKind::Crescendo,
-                                HairpinKind::Decrescendo => drummark_layout::HairpinKind::Decrescendo,
+                                HairpinKind::Decrescendo => {
+                                    drummark_layout::HairpinKind::Decrescendo
+                                }
                             },
                             start: drummark_layout::Fraction {
                                 numerator: hairpin.start.numerator as u32,
@@ -118,7 +121,9 @@ fn dynamic_level_to_render(level: &crate::ast::DynamicLevel) -> drummark_layout:
 fn event_to_render_event(event: &crate::event::NormalizedEvent) -> drummark_layout::RenderEvent {
     drummark_layout::RenderEvent {
         track: event.track.clone(),
-        track_family: crate::resolve::get_track_family(&event.track).as_str().to_string(),
+        track_family: crate::resolve::get_track_family(&event.track)
+            .as_str()
+            .to_string(),
         start: render_fraction(event.start),
         duration: render_fraction(event.duration),
         kind: match event.kind {
@@ -146,7 +151,9 @@ fn default_voice_tracks(score: &normalize::NormalizedScore) -> [(String, String)
     let mut voice_one = ("HH".to_string(), "cymbal".to_string());
     let mut voice_two = ("BD".to_string(), "drum".to_string());
     for track in &score.tracks {
-        let family = crate::resolve::get_track_family(&track.id).as_str().to_string();
+        let family = crate::resolve::get_track_family(&track.id)
+            .as_str()
+            .to_string();
         match crate::resolve::voice_for_track(&track.id) {
             1 if voice_one.0 == "HH" => voice_one = (track.id.clone(), family),
             2 if voice_two.0 == "BD" => voice_two = (track.id.clone(), family),
@@ -187,11 +194,25 @@ fn derive_implicit_rest_events(
         let fallback = &default_voice_tracks[(voice - 1) as usize];
         let track = voice_events
             .first()
-            .map(|event| (event.track.clone(), crate::resolve::get_track_family(&event.track).as_str().to_string()))
+            .map(|event| {
+                (
+                    event.track.clone(),
+                    crate::resolve::get_track_family(&event.track)
+                        .as_str()
+                        .to_string(),
+                )
+            })
             .unwrap_or_else(|| fallback.clone());
 
         if voice_events.is_empty() {
-            push_rest_event(&mut rests, Fraction::zero(), measure_duration, voice, &track.0, &track.1);
+            push_rest_event(
+                &mut rests,
+                Fraction::zero(),
+                measure_duration,
+                voice,
+                &track.0,
+                &track.1,
+            );
             continue;
         }
 
@@ -262,14 +283,35 @@ fn extend_voice_rests(
             continue;
         }
         if end.compare(boundary).is_le() {
-            push_rest_span(output, cursor, end.subtract(cursor), voice, track, track_family);
+            push_rest_span(
+                output,
+                cursor,
+                end.subtract(cursor),
+                voice,
+                track,
+                track_family,
+            );
             return;
         }
-        push_rest_span(output, cursor, boundary.subtract(cursor), voice, track, track_family);
+        push_rest_span(
+            output,
+            cursor,
+            boundary.subtract(cursor),
+            voice,
+            track,
+            track_family,
+        );
         cursor = boundary;
     }
     if cursor.compare(end).is_lt() {
-        push_rest_span(output, cursor, end.subtract(cursor), voice, track, track_family);
+        push_rest_span(
+            output,
+            cursor,
+            end.subtract(cursor),
+            voice,
+            track,
+            track_family,
+        );
     }
 }
 
@@ -434,13 +476,34 @@ mod tests {
         assert_eq!(render.version, drummark_layout::RENDER_SCORE_VERSION);
         assert_eq!(render.header.time_beats, 4);
         assert_eq!(render.measures.len(), 1);
-        assert_eq!(render.measures[0].source_line, normalized.measures[0].source_line);
+        assert_eq!(
+            render.measures[0].source_line,
+            normalized.measures[0].source_line
+        );
         assert_eq!(render.measures[0].events[0].track_family, "cymbal");
         assert_eq!(render.measures[0].dynamics.len(), 2);
-        assert_eq!(render.measures[0].dynamics[0].level, drummark_layout::DynamicLevel::P);
-        assert_eq!(render.measures[0].dynamics[0].at, drummark_layout::Fraction { numerator: 0, denominator: 1 });
-        assert_eq!(render.measures[0].dynamics[1].level, drummark_layout::DynamicLevel::Ff);
-        assert_eq!(render.measures[0].dynamics[1].at, drummark_layout::Fraction { numerator: 1, denominator: 2 });
+        assert_eq!(
+            render.measures[0].dynamics[0].level,
+            drummark_layout::DynamicLevel::P
+        );
+        assert_eq!(
+            render.measures[0].dynamics[0].at,
+            drummark_layout::Fraction {
+                numerator: 0,
+                denominator: 1
+            }
+        );
+        assert_eq!(
+            render.measures[0].dynamics[1].level,
+            drummark_layout::DynamicLevel::Ff
+        );
+        assert_eq!(
+            render.measures[0].dynamics[1].at,
+            drummark_layout::Fraction {
+                numerator: 1,
+                denominator: 2
+            }
+        );
     }
 
     #[test]
@@ -471,14 +534,24 @@ mod tests {
                 events: vec![],
                 barline: Some("double".into()),
                 closing_barline: Some("double".into()),
-                start_nav: Some(StartNav::Segno { anchor: Anchor::LeftEdge }),
-                end_nav: Some(EndNav::DCalCoda { anchor: Anchor::RightEdge }),
+                start_nav: Some(StartNav::Segno {
+                    anchor: Anchor::LeftEdge,
+                }),
+                end_nav: Some(EndNav::DCalCoda {
+                    anchor: Anchor::RightEdge,
+                }),
                 volta: Some(vec![1, 2]),
                 hairpins: vec![HairpinIntent {
                     kind: HairpinKind::Crescendo,
-                    start: Fraction { numerator: 0, denominator: 1 },
+                    start: Fraction {
+                        numerator: 0,
+                        denominator: 1,
+                    },
                     start_measure_index: 7,
-                    end: Fraction { numerator: 1, denominator: 1 },
+                    end: Fraction {
+                        numerator: 1,
+                        denominator: 1,
+                    },
                     end_measure_index: 8,
                 }],
                 dynamics: vec![],
@@ -496,8 +569,14 @@ mod tests {
         };
 
         let render = derive_render_score(&score);
-        assert!(matches!(render.measures[0].start_nav, Some(drummark_layout::NavMarker::Segno)));
-        assert!(matches!(render.measures[0].end_nav, Some(drummark_layout::NavJump::DCalCoda)));
+        assert!(matches!(
+            render.measures[0].start_nav,
+            Some(drummark_layout::NavMarker::Segno)
+        ));
+        assert!(matches!(
+            render.measures[0].end_nav,
+            Some(drummark_layout::NavJump::DCalCoda)
+        ));
         assert_eq!(render.measures[0].hairpins.len(), 1);
         assert_eq!(render.measures[0].hairpins[0].start_measure_index, 7);
         assert_eq!(render.repeat_spans[0].times, 2);
@@ -505,16 +584,33 @@ mod tests {
 
     #[test]
     fn derives_implicit_voice_rests_for_measure_gaps() {
-        let source = "time 4/4\nnote 1/8\ngrouping 2+2\nHH | x x x x x x x x |\nBD | p - - - p - - - |\n";
+        let source =
+            "time 4/4\nnote 1/8\ngrouping 2+2\nHH | x x x x x x x x |\nBD | p - - - p - - - |\n";
         let document = Parser::new(source).parse().expect("parse");
         let normalized = crate::normalize::normalize_document(&document);
         let render = derive_render_score(&normalized);
         let measure = &render.measures[0];
-        let rest_events: Vec<_> = measure.events.iter().filter(|event| event.kind == drummark_layout::EventKind::Rest).collect();
-        assert_eq!(rest_events.len(), 4, "3/8 gaps should decompose into quarter + eighth twice");
+        let rest_events: Vec<_> = measure
+            .events
+            .iter()
+            .filter(|event| event.kind == drummark_layout::EventKind::Rest)
+            .collect();
+        assert_eq!(
+            rest_events.len(),
+            4,
+            "3/8 gaps should decompose into quarter + eighth twice"
+        );
         assert!(rest_events.iter().all(|event| event.voice == 2));
-        assert!(rest_events.iter().any(|event| event.duration == drummark_layout::Fraction { numerator: 1, denominator: 4 }));
-        assert!(rest_events.iter().any(|event| event.duration == drummark_layout::Fraction { numerator: 1, denominator: 8 }));
+        assert!(rest_events.iter().any(|event| event.duration
+            == drummark_layout::Fraction {
+                numerator: 1,
+                denominator: 4
+            }));
+        assert!(rest_events.iter().any(|event| event.duration
+            == drummark_layout::Fraction {
+                numerator: 1,
+                denominator: 8
+            }));
     }
 
     #[test]
@@ -524,13 +620,30 @@ mod tests {
         let normalized = crate::normalize::normalize_document(&document);
         let render = derive_render_score(&normalized);
         let measure = &render.measures[0];
-        let rest_events: Vec<_> = measure.events.iter().filter(|event| event.kind == drummark_layout::EventKind::Rest).collect();
-        assert!(!measure.events.iter().any(|event| {
-            event.kind == drummark_layout::EventKind::Rest && event.voice == 1
-        }));
+        let rest_events: Vec<_> = measure
+            .events
+            .iter()
+            .filter(|event| event.kind == drummark_layout::EventKind::Rest)
+            .collect();
+        assert!(!measure
+            .events
+            .iter()
+            .any(|event| { event.kind == drummark_layout::EventKind::Rest && event.voice == 1 }));
         assert_eq!(rest_events.len(), 3);
-        assert!(rest_events.iter().any(|event| event.duration == drummark_layout::Fraction { numerator: 1, denominator: 4 }));
-        assert!(rest_events.iter().any(|event| event.duration == drummark_layout::Fraction { numerator: 1, denominator: 8 }));
-        assert!(rest_events.iter().any(|event| event.duration == drummark_layout::Fraction { numerator: 1, denominator: 2 }));
+        assert!(rest_events.iter().any(|event| event.duration
+            == drummark_layout::Fraction {
+                numerator: 1,
+                denominator: 4
+            }));
+        assert!(rest_events.iter().any(|event| event.duration
+            == drummark_layout::Fraction {
+                numerator: 1,
+                denominator: 8
+            }));
+        assert!(rest_events.iter().any(|event| event.duration
+            == drummark_layout::Fraction {
+                numerator: 1,
+                denominator: 2
+            }));
     }
 }

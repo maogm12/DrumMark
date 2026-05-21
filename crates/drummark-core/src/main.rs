@@ -60,15 +60,25 @@ fn main() {
                 // For now, print a simple representation
                 println!("{{");
                 println!("  \"headers\": {{");
-                if let Some(ref t) = doc.headers.title { println!("    \"title\": \"{}\",", t); }
-                if let Some(t) = doc.headers.tempo { println!("    \"tempo\": {},", t); }
-                if let Some((b, u)) = doc.headers.time { println!("    \"time\": [{}, {}],", b, u); }
-                if let Some(ref g) = doc.headers.grouping { println!("    \"grouping\": {:?},", g); }
-                if let Some(d) = doc.headers.divisions { println!("    \"divisions\": {},", d); }
+                if let Some(ref t) = doc.headers.title {
+                    println!("    \"title\": \"{}\",", t);
+                }
+                if let Some(t) = doc.headers.tempo {
+                    println!("    \"tempo\": {},", t);
+                }
+                if let Some((b, u)) = doc.headers.time {
+                    println!("    \"time\": [{}, {}],", b, u);
+                }
+                if let Some(ref g) = doc.headers.grouping {
+                    println!("    \"grouping\": {:?},", g);
+                }
+                if let Some(d) = doc.headers.divisions {
+                    println!("    \"divisions\": {},", d);
+                }
                 println!("    \"_ok\": true");
                 println!("  }},");
-                println!("  \"paragraphs_count\": {},"  , doc.paragraphs.len());
-                println!("  \"errors_count\": {}"       , doc.errors.len());
+                println!("  \"paragraphs_count\": {},", doc.paragraphs.len());
+                println!("  \"errors_count\": {}", doc.errors.len());
                 println!("}}");
             }
             _ => {

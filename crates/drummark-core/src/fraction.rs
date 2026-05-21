@@ -11,15 +11,25 @@ pub struct Fraction {
 impl Fraction {
     pub fn new(numerator: u64, denominator: u64) -> Self {
         assert!(denominator > 0, "denominator must be positive");
-        Self { numerator, denominator }.simplify()
+        Self {
+            numerator,
+            denominator,
+        }
+        .simplify()
     }
 
     pub fn zero() -> Self {
-        Self { numerator: 0, denominator: 1 }
+        Self {
+            numerator: 0,
+            denominator: 1,
+        }
     }
 
     pub fn one() -> Self {
-        Self { numerator: 1, denominator: 1 }
+        Self {
+            numerator: 1,
+            denominator: 1,
+        }
     }
 
     // ── Arithmetic ──────────────────────────────────────────
@@ -28,7 +38,10 @@ impl Fraction {
         let g = gcd(self.numerator, self.denominator);
         let n = self.numerator / g;
         let d = self.denominator / g;
-        Self { numerator: n, denominator: d }
+        Self {
+            numerator: n,
+            denominator: d,
+        }
     }
 
     pub fn add(self, other: Self) -> Self {
@@ -60,24 +73,16 @@ impl Fraction {
 
     pub fn multiply(self, other: Self) -> Self {
         Fraction {
-            numerator: safe_downcast(
-                (self.numerator as u128) * (other.numerator as u128),
-            ),
-            denominator: safe_downcast(
-                (self.denominator as u128) * (other.denominator as u128),
-            ),
+            numerator: safe_downcast((self.numerator as u128) * (other.numerator as u128)),
+            denominator: safe_downcast((self.denominator as u128) * (other.denominator as u128)),
         }
         .simplify()
     }
 
     pub fn divide(self, other: Self) -> Self {
         Fraction {
-            numerator: safe_downcast(
-                (self.numerator as u128) * (other.denominator as u128),
-            ),
-            denominator: safe_downcast(
-                (self.denominator as u128) * (other.numerator as u128),
-            ),
+            numerator: safe_downcast((self.numerator as u128) * (other.denominator as u128)),
+            denominator: safe_downcast((self.denominator as u128) * (other.numerator as u128)),
         }
         .simplify()
     }
@@ -116,12 +121,7 @@ impl Fraction {
 
     /// Convert to a slot count for the given time signature and divisions.
     /// slot = fraction * (beat_unit * divisions / beats)
-    pub fn to_slot_count(
-        self,
-        divisions: u32,
-        beat_unit: u32,
-        beats: u32,
-    ) -> f64 {
+    pub fn to_slot_count(self, divisions: u32, beat_unit: u32, beats: u32) -> f64 {
         let slots_per_whole = divisions as f64;
         let whole_ratio = self.numerator as f64 / self.denominator as f64;
         // fraction is relative to a whole note? No, in DrumMark, fractions are
@@ -141,7 +141,11 @@ pub fn gcd(a: u64, b: u64) -> u64 {
         x = y;
         y = next;
     }
-    if x == 0 { 1 } else { x }
+    if x == 0 {
+        1
+    } else {
+        x
+    }
 }
 
 pub fn lcm(a: u64, b: u64) -> u64 {
@@ -328,8 +332,7 @@ pub fn calculate_token_weight_as_fraction(
 
     // Dot weight = (2^(dots+1) - 1) / 2^dots
     let dot_denom = 1u64 << dots; // 2^dots
-    let dot_num = (1u64 << (dots + 1))
-        .saturating_sub(1);
+    let dot_num = (1u64 << (dots + 1)).saturating_sub(1);
     let _dot_weight = Fraction::new(dot_num, dot_denom);
 
     // Net stars/halves
@@ -340,6 +343,9 @@ pub fn calculate_token_weight_as_fraction(
         (1u64, 1u64 << ((-net) as u32))
     };
 
-    Fraction::new(dot_num.saturating_mul(base).saturating_mul(star_mul), dot_denom.saturating_mul(half_div))
-        .simplify()
+    Fraction::new(
+        dot_num.saturating_mul(base).saturating_mul(star_mul),
+        dot_denom.saturating_mul(half_div),
+    )
+    .simplify()
 }

@@ -266,7 +266,7 @@
           "kind": "textRun",
           "zIndex": 0,
           "primitive": {
-            "xPt": 166.41665649414062,
+            "xPt": 173.41665649414062,
             "yPt": 269.5,
             "textRole": "tempo",
             "text": "",
@@ -283,9 +283,9 @@
           "kind": "lineSegment",
           "zIndex": 0,
           "primitive": {
-            "x1Pt": 177.59165954589844,
+            "x1Pt": 184.59165954589844,
             "y1Pt": 234.75,
-            "x2Pt": 177.59165954589844,
+            "x2Pt": 184.59165954589844,
             "y2Pt": 265.75,
             "stroke": "#333",
             "strokeWidth": 1.5
@@ -298,7 +298,7 @@
           "kind": "textRun",
           "zIndex": 0,
           "primitive": {
-            "xPt": 174.41665649414062,
+            "xPt": 181.41665649414062,
             "yPt": 309.5,
             "textRole": "tempo",
             "text": "",
@@ -315,9 +315,9 @@
           "kind": "lineSegment",
           "zIndex": 0,
           "primitive": {
-            "x1Pt": 175.16665649414062,
+            "x1Pt": 182.16665649414062,
             "y1Pt": 310.70001220703125,
-            "x2Pt": 175.16665649414062,
+            "x2Pt": 182.16665649414062,
             "y2Pt": 341.70001220703125,
             "stroke": "#333",
             "strokeWidth": 1.5
@@ -330,7 +330,7 @@
           "kind": "textRun",
           "zIndex": 0,
           "primitive": {
-            "xPt": 246.58334350585938,
+            "xPt": 251.58334350585938,
             "yPt": 269.5,
             "textRole": "tempo",
             "text": "",
@@ -347,9 +347,9 @@
           "kind": "lineSegment",
           "zIndex": 0,
           "primitive": {
-            "x1Pt": 257.7583312988281,
+            "x1Pt": 262.7583312988281,
             "y1Pt": 234.75,
-            "x2Pt": 257.7583312988281,
+            "x2Pt": 262.7583312988281,
             "y2Pt": 265.75,
             "stroke": "#333",
             "strokeWidth": 1.5
@@ -362,7 +362,7 @@
           "kind": "textRun",
           "zIndex": 0,
           "primitive": {
-            "xPt": 322.75,
+            "xPt": 325.75,
             "yPt": 269.5,
             "textRole": "tempo",
             "text": "",
@@ -378,7 +378,7 @@
           "kind": "textRun",
           "zIndex": 0,
           "primitive": {
-            "xPt": 322.75,
+            "xPt": 325.75,
             "yPt": 289.5,
             "textRole": "tempo",
             "text": "",
@@ -395,9 +395,9 @@
           "kind": "lineSegment",
           "zIndex": 0,
           "primitive": {
-            "x1Pt": 333.92498779296875,
+            "x1Pt": 336.92498779296875,
             "y1Pt": 234.75,
-            "x2Pt": 333.92498779296875,
+            "x2Pt": 336.92498779296875,
             "y2Pt": 265.75,
             "stroke": "#333",
             "strokeWidth": 1.5
@@ -410,7 +410,7 @@
           "kind": "glyphRun",
           "zIndex": 0,
           "primitive": {
-            "xPt": 329.75,
+            "xPt": 332.75,
             "yPt": 304.5,
             "glyphRole": "restEighth",
             "glyphCount": 1,
@@ -427,7 +427,7 @@
           "kind": "textRun",
           "zIndex": 0,
           "primitive": {
-            "xPt": 394.91668701171875,
+            "xPt": 395.91668701171875,
             "yPt": 269.5,
             "textRole": "tempo",
             "text": "",
@@ -444,9 +444,9 @@
           "kind": "lineSegment",
           "zIndex": 0,
           "primitive": {
-            "x1Pt": 406.0916748046875,
+            "x1Pt": 407.0916748046875,
             "y1Pt": 234.75,
-            "x2Pt": 406.0916748046875,
+            "x2Pt": 407.0916748046875,
             "y2Pt": 265.75,
             "stroke": "#333",
             "strokeWidth": 1.5
@@ -459,7 +459,7 @@
           "kind": "textRun",
           "zIndex": 0,
           "primitive": {
-            "xPt": 402.91668701171875,
+            "xPt": 403.91668701171875,
             "yPt": 309.5,
             "textRole": "tempo",
             "text": "",
@@ -476,9 +476,9 @@
           "kind": "lineSegment",
           "zIndex": 0,
           "primitive": {
-            "x1Pt": 403.66668701171875,
+            "x1Pt": 404.66668701171875,
             "y1Pt": 310.70001220703125,
-            "x2Pt": 403.66668701171875,
+            "x2Pt": 404.66668701171875,
             "y2Pt": 341.70001220703125,
             "stroke": "#333",
             "strokeWidth": 1.5
@@ -491,7 +491,7 @@
           "kind": "textRun",
           "zIndex": 0,
           "primitive": {
-            "xPt": 471.0833435058594,
+            "xPt": 470.0833435058594,
             "yPt": 269.5,
             "textRole": "tempo",
             "text": "",
@@ -508,9 +508,9 @@
           "kind": "lineSegment",
           "zIndex": 0,
           "primitive": {
-            "x1Pt": 482.2583312988281,
+            "x1Pt": 481.2583312988281,
             "y1Pt": 234.75,
-            "x2Pt": 482.2583312988281,
+            "x2Pt": 481.2583312988281,
             "y2Pt": 265.75,
             "stroke": "#333",
             "strokeWidth": 1.5
@@ -523,7 +523,7 @@
           "kind": "textRun",
           "zIndex": 0,
           "primitive": {
-            "xPt": 479.0833435058594,
+            "xPt": 478.0833435058594,
             "yPt": 309.5,
             "textRole": "tempo",
             "text": "",
@@ -540,9 +540,9 @@
           "kind": "lineSegment",
           "zIndex": 0,
           "primitive": {
-            "x1Pt": 479.8333435058594,
+            "x1Pt": 478.8333435058594,
             "y1Pt": 310.70001220703125,
-            "x2Pt": 479.8333435058594,
+            "x2Pt": 478.8333435058594,
             "y2Pt": 341.70001220703125,
             "stroke": "#333",
             "strokeWidth": 1.5
@@ -555,7 +555,7 @@
           "kind": "textRun",
           "zIndex": 0,
           "primitive": {
-            "xPt": 551.25,
+            "xPt": 548.25,
             "yPt": 269.5,
             "textRole": "tempo",
             "text": "",
@@ -572,9 +572,9 @@
           "kind": "lineSegment",
           "zIndex": 0,
           "primitive": {
-            "x1Pt": 562.4249877929688,
+            "x1Pt": 559.4249877929688,
             "y1Pt": 234.75,
-            "x2Pt": 562.4249877929688,
+            "x2Pt": 559.4249877929688,
             "y2Pt": 265.75,
             "stroke": "#333",
             "strokeWidth": 1.5
@@ -587,7 +587,7 @@
           "kind": "textRun",
           "zIndex": 0,
           "primitive": {
-            "xPt": 627.4166870117188,
+            "xPt": 622.4166870117188,
             "yPt": 269.5,
             "textRole": "tempo",
             "text": "",
@@ -603,7 +603,7 @@
           "kind": "textRun",
           "zIndex": 0,
           "primitive": {
-            "xPt": 627.4166870117188,
+            "xPt": 622.4166870117188,
             "yPt": 289.5,
             "textRole": "tempo",
             "text": "",
@@ -620,9 +620,9 @@
           "kind": "lineSegment",
           "zIndex": 0,
           "primitive": {
-            "x1Pt": 638.5916748046875,
+            "x1Pt": 633.5916748046875,
             "y1Pt": 234.75,
-            "x2Pt": 638.5916748046875,
+            "x2Pt": 633.5916748046875,
             "y2Pt": 265.75,
             "stroke": "#333",
             "strokeWidth": 1.5
@@ -635,7 +635,7 @@
           "kind": "glyphRun",
           "zIndex": 0,
           "primitive": {
-            "xPt": 634.4166870117188,
+            "xPt": 629.4166870117188,
             "yPt": 304.5,
             "glyphRole": "restQuarter",
             "glyphCount": 1,
@@ -652,7 +652,7 @@
           "kind": "textRun",
           "zIndex": 0,
           "primitive": {
-            "xPt": 703.5833740234375,
+            "xPt": 696.5833740234375,
             "yPt": 269.5,
             "textRole": "tempo",
             "text": "",
@@ -669,9 +669,9 @@
           "kind": "lineSegment",
           "zIndex": 0,
           "primitive": {
-            "x1Pt": 714.7583618164062,
+            "x1Pt": 707.7583618164062,
             "y1Pt": 234.75,
-            "x2Pt": 714.7583618164062,
+            "x2Pt": 707.7583618164062,
             "y2Pt": 265.75,
             "stroke": "#333",
             "strokeWidth": 1.5
@@ -685,7 +685,7 @@
           "kind": "path",
           "zIndex": 0,
           "primitive": {
-            "d": "M 177.592 234.750 L 406.092 234.750 L 406.092 238.750 L 177.592 238.750 Z",
+            "d": "M 184.592 234.750 L 407.092 234.750 L 407.092 238.750 L 184.592 238.750 Z",
             "fill": "#333"
           }
         },
@@ -697,7 +697,7 @@
           "kind": "path",
           "zIndex": 0,
           "primitive": {
-            "d": "M 482.258 234.750 L 714.758 234.750 L 714.758 238.750 L 482.258 238.750 Z",
+            "d": "M 481.258 234.750 L 707.758 234.750 L 707.758 238.750 L 481.258 238.750 Z",
             "fill": "#333"
           }
         },
@@ -709,7 +709,7 @@
           "kind": "glyphRun",
           "zIndex": 0,
           "primitive": {
-            "xPt": 403.66668701171875,
+            "xPt": 404.66668701171875,
             "yPt": 342.69000244140625,
             "glyphRole": "flag8thDown",
             "glyphCount": 1,

@@ -1,6 +1,6 @@
-use logos::Logos;
-use crate::lexer::Token;
 use crate::ast::*;
+use crate::lexer::Token;
+use logos::Logos;
 use std::ops::Range;
 
 pub struct Parser<'a> {
@@ -72,7 +72,8 @@ impl<'a> Parser<'a> {
                 Some(Err(())) => {
                     let span = self.lexer.span();
                     let text = &self.source[span.start..span.end];
-                    self.peek_buf.push((Token::FreeText(text.to_string()), span));
+                    self.peek_buf
+                        .push((Token::FreeText(text.to_string()), span));
                 }
                 None => return None,
             }
@@ -84,26 +85,44 @@ impl<'a> Parser<'a> {
         let pos = self.lexer.span().end;
         let rest = &self.source[pos..];
         let bytes = rest.as_bytes();
-        if !rest.starts_with("--") { return None; }
+        if !rest.starts_with("--") {
+            return None;
+        }
         let mut i = 2;
-        while bytes.get(i) == Some(&b'-') { i += 1; }
-        while bytes.get(i) == Some(&b' ') || bytes.get(i) == Some(&b'\t') { i += 1; }
+        while bytes.get(i) == Some(&b'-') {
+            i += 1;
+        }
+        while bytes.get(i) == Some(&b' ') || bytes.get(i) == Some(&b'\t') {
+            i += 1;
+        }
         let num_start = i;
         if bytes.get(i) == Some(&b'1') {
             i += 1;
-            if !bytes.get(i).is_some_and(|b| b.is_ascii_digit()) { return None; }
-            while bytes.get(i).is_some_and(|b| b.is_ascii_digit()) { i += 1; }
+            if !bytes.get(i).is_some_and(|b| b.is_ascii_digit()) {
+                return None;
+            }
+            while bytes.get(i).is_some_and(|b| b.is_ascii_digit()) {
+                i += 1;
+            }
         } else if bytes.get(i).is_some_and(|b| (b'2'..=b'9').contains(b)) {
             i += 1;
-            while bytes.get(i).is_some_and(|b| b.is_ascii_digit()) { i += 1; }
+            while bytes.get(i).is_some_and(|b| b.is_ascii_digit()) {
+                i += 1;
+            }
         } else {
             return None;
         }
         let count: u32 = rest[num_start..i].parse().unwrap_or(2);
-        while bytes.get(i) == Some(&b' ') || bytes.get(i) == Some(&b'\t') { i += 1; }
-        if bytes.get(i) != Some(&b'-') || bytes.get(i + 1) != Some(&b'-') { return None; }
+        while bytes.get(i) == Some(&b' ') || bytes.get(i) == Some(&b'\t') {
+            i += 1;
+        }
+        if bytes.get(i) != Some(&b'-') || bytes.get(i + 1) != Some(&b'-') {
+            return None;
+        }
         i += 2;
-        while bytes.get(i) == Some(&b'-') { i += 1; }
+        while bytes.get(i) == Some(&b'-') {
+            i += 1;
+        }
         for _ in 0..i {
             let _ = self.lexer.next();
         }
@@ -175,7 +194,10 @@ impl<'a> Parser<'a> {
         if std::mem::discriminant(&t) == std::mem::discriminant(&expected) {
             Ok(t)
         } else {
-            Err(self.error_at(self.last_end, &format!("expected {:?}, found {:?}", expected, t)))
+            Err(self.error_at(
+                self.last_end,
+                &format!("expected {:?}, found {:?}", expected, t),
+            ))
         }
     }
 
@@ -183,7 +205,11 @@ impl<'a> Parser<'a> {
 
     fn error_at(&mut self, pos: usize, msg: &str) -> ParseError {
         let line_col = self.line_column(pos);
-        ParseError { line: line_col.0, column: line_col.1, message: msg.to_string() }
+        ParseError {
+            line: line_col.0,
+            column: line_col.1,
+            message: msg.to_string(),
+        }
     }
 
     fn push_error(&mut self, pos: usize, msg: &str) {
@@ -192,7 +218,11 @@ impl<'a> Parser<'a> {
     }
 
     fn line_column(&self, offset: usize) -> (u32, u32) {
-        let offset = if offset > self.source.len() { self.source.len() } else { offset };
+        let offset = if offset > self.source.len() {
+            self.source.len()
+        } else {
+            offset
+        };
         let prefix = &self.source[..offset];
         let line = prefix.bytes().filter(|&b| b == b'\n').count() as u32 + 1;
         let last_nl = prefix.rfind('\n').map(|i| i + 1).unwrap_or(0);
@@ -279,14 +309,17 @@ impl<'a> Parser<'a> {
         }
     }
 
-
     // ── Document ──────────────────────────────────────────────────
 
     fn parse_document(&mut self) -> Document {
         self.skip_newlines();
         let headers = self.parse_headers();
         let paragraphs = self.parse_track_body();
-        Document { headers, paragraphs, errors: std::mem::take(&mut self.errors) }
+        Document {
+            headers,
+            paragraphs,
+            errors: std::mem::take(&mut self.errors),
+        }
     }
 
     // ── Headers ───────────────────────────────────────────────────
@@ -312,20 +345,32 @@ impl<'a> Parser<'a> {
     fn parse_header_line(&mut self, hs: &mut HeaderSection) {
         let kw = self.next().unwrap();
         match kw {
-            Token::KwTitle => { hs.title = Some(self.parse_header_value()); }
-            Token::KwSubtitle => { hs.subtitle = Some(self.parse_header_value()); }
-            Token::KwComposer => { hs.composer = Some(self.parse_header_value()); }
+            Token::KwTitle => {
+                hs.title = Some(self.parse_header_value());
+            }
+            Token::KwSubtitle => {
+                hs.subtitle = Some(self.parse_header_value());
+            }
+            Token::KwComposer => {
+                hs.composer = Some(self.parse_header_value());
+            }
             Token::KwTempo => {
                 if let Some(Token::Integer(n)) = self.peek() {
                     self.next().ok();
                     if self.line_has_trailing_content() {
-                        self.push_error(self.last_end, "invalid tempo header; expected `tempo <int>`");
+                        self.push_error(
+                            self.last_end,
+                            "invalid tempo header; expected `tempo <int>`",
+                        );
                         self.consume_line_remainder();
                         return;
                     }
                     hs.tempo = Some(n);
                 } else {
-                    self.push_error(self.last_end, "invalid tempo header; expected `tempo <int>`");
+                    self.push_error(
+                        self.last_end,
+                        "invalid tempo header; expected `tempo <int>`",
+                    );
                     self.consume_line_remainder();
                     return;
                 }
@@ -334,15 +379,23 @@ impl<'a> Parser<'a> {
                 if let (Some(Token::Integer(b)), Some(Token::Slash), Some(Token::Integer(u))) =
                     (self.peek_n(0), self.peek_n(1), self.peek_n(2))
                 {
-                    self.next().ok(); self.next().ok(); self.next().ok();
+                    self.next().ok();
+                    self.next().ok();
+                    self.next().ok();
                     if self.line_has_trailing_content() {
-                        self.push_error(self.last_end, "invalid time header; expected `time <int>/<int>`");
+                        self.push_error(
+                            self.last_end,
+                            "invalid time header; expected `time <int>/<int>`",
+                        );
                         self.consume_line_remainder();
                         return;
                     }
                     hs.time = Some((b, u));
                 } else {
-                    self.push_error(self.last_end, "invalid time header; expected `time <int>/<int>`");
+                    self.push_error(
+                        self.last_end,
+                        "invalid time header; expected `time <int>/<int>`",
+                    );
                     self.consume_line_remainder();
                     return;
                 }
@@ -372,7 +425,10 @@ impl<'a> Parser<'a> {
                     valid = false;
                 }
                 if !valid || nums.is_empty() || self.line_has_trailing_content() {
-                    self.push_error(self.last_end, "invalid grouping header; expected `grouping <int>+<int>...`");
+                    self.push_error(
+                        self.last_end,
+                        "invalid grouping header; expected `grouping <int>+<int>...`",
+                    );
                     self.consume_line_remainder();
                     return;
                 }
@@ -382,20 +438,31 @@ impl<'a> Parser<'a> {
                 if let (Some(Token::Integer(b)), Some(Token::Slash), Some(Token::Integer(u))) =
                     (self.peek_n(0), self.peek_n(1), self.peek_n(2))
                 {
-                    self.next().ok(); self.next().ok(); self.next().ok();
+                    self.next().ok();
+                    self.next().ok();
+                    self.next().ok();
                     if b != 1 || !Self::is_supported_note_denominator(u) {
-                        self.push_error(self.last_end, "invalid note header; expected `note 1/<power of 2>`");
+                        self.push_error(
+                            self.last_end,
+                            "invalid note header; expected `note 1/<power of 2>`",
+                        );
                         self.consume_line_remainder();
                         return;
                     }
                     if self.line_has_trailing_content() {
-                        self.push_error(self.last_end, "invalid note header; expected `note <int>/<int>`");
+                        self.push_error(
+                            self.last_end,
+                            "invalid note header; expected `note <int>/<int>`",
+                        );
                         self.consume_line_remainder();
                         return;
                     }
                     hs.note = Some((b, u));
                 } else {
-                    self.push_error(self.last_end, "invalid note header; expected `note <int>/<int>`");
+                    self.push_error(
+                        self.last_end,
+                        "invalid note header; expected `note <int>/<int>`",
+                    );
                     self.consume_line_remainder();
                     return;
                 }
@@ -404,13 +471,19 @@ impl<'a> Parser<'a> {
                 if let Some(Token::Integer(n)) = self.peek() {
                     self.next().ok();
                     if self.line_has_trailing_content() {
-                        self.push_error(self.last_end, "invalid divisions header; expected `divisions <int>`");
+                        self.push_error(
+                            self.last_end,
+                            "invalid divisions header; expected `divisions <int>`",
+                        );
                         self.consume_line_remainder();
                         return;
                     }
                     hs.divisions = Some(n);
                 } else {
-                    self.push_error(self.last_end, "invalid divisions header; expected `divisions <int>`");
+                    self.push_error(
+                        self.last_end,
+                        "invalid divisions header; expected `divisions <int>`",
+                    );
                     self.consume_line_remainder();
                     return;
                 }
@@ -498,8 +571,13 @@ impl<'a> Parser<'a> {
 
         loop {
             match self.peek() {
-                None | Some(Token::KwTitle) | Some(Token::KwSubtitle) | Some(Token::KwComposer)
-                | Some(Token::KwTempo) | Some(Token::KwTime) | Some(Token::KwGrouping)
+                None
+                | Some(Token::KwTitle)
+                | Some(Token::KwSubtitle)
+                | Some(Token::KwComposer)
+                | Some(Token::KwTempo)
+                | Some(Token::KwTime)
+                | Some(Token::KwGrouping)
                 | Some(Token::KwDivisions) => {
                     commit_para!();
                     break;
@@ -519,10 +597,16 @@ impl<'a> Parser<'a> {
                             continue;
                         }
                         commit_para!();
-                        current_para = Paragraph { note: Some((b, u)), lines: Vec::new() };
+                        current_para = Paragraph {
+                            note: Some((b, u)),
+                            lines: Vec::new(),
+                        };
                         self.skip_newlines();
                     } else if at_paragraph_start {
-                        self.push_error(self.last_end, "invalid paragraph note override; expected `note <int>/<int>`");
+                        self.push_error(
+                            self.last_end,
+                            "invalid paragraph note override; expected `note <int>/<int>`",
+                        );
                         self.consume_line_remainder();
                     } else {
                         self.push_error(self.last_end, "unexpected 'note' in track body; paragraph note overrides must appear at paragraph start");
@@ -536,19 +620,17 @@ impl<'a> Parser<'a> {
                         commit_para!();
                     }
                 }
-                Some(_) => {
-                    match self.parse_track_line() {
-                        Ok(line) => {
-                            flush_line!();
-                            current_line = Some(line);
-                            at_paragraph_start = false;
-                        }
-                        Err(e) => {
-                            self.errors.push(e);
-                            self.consume_line_remainder();
-                        }
+                Some(_) => match self.parse_track_line() {
+                    Ok(line) => {
+                        flush_line!();
+                        current_line = Some(line);
+                        at_paragraph_start = false;
                     }
-                }
+                    Err(e) => {
+                        self.errors.push(e);
+                        self.consume_line_remainder();
+                    }
+                },
             }
         }
         paragraphs
@@ -556,7 +638,12 @@ impl<'a> Parser<'a> {
 
     fn is_complete_paragraph_note_override(&mut self) -> bool {
         matches!(
-            (self.peek_n(0), self.peek_n(1), self.peek_n(2), self.peek_n(3)),
+            (
+                self.peek_n(0),
+                self.peek_n(1),
+                self.peek_n(2),
+                self.peek_n(3)
+            ),
             (
                 Some(Token::KwNote),
                 Some(Token::Integer(_)),
@@ -609,7 +696,9 @@ impl<'a> Parser<'a> {
                 Some(ref t) if t.is_barline_like() => {
                     if let Some(ms) = self.parse_measure_section()? {
                         measures.push(ms);
-                    } else { break; }
+                    } else {
+                        break;
+                    }
                 }
                 Some(_) => {
                     if let Some(ms) = self.parse_measure_section()? {
@@ -629,7 +718,9 @@ impl<'a> Parser<'a> {
             match self.peek() {
                 None | Some(Token::Newline) => break,
                 Some(ref t) if t.is_barline_like() => break,
-                Some(_) => { tokens.push(self.parse_measure_expr()?); }
+                Some(_) => {
+                    tokens.push(self.parse_measure_expr()?);
+                }
             }
         }
         // Capture distinct closing barlines after the measure payload.
@@ -662,10 +753,19 @@ impl<'a> Parser<'a> {
             }
             _ => None,
         };
-        if tokens.is_empty() && closing_barline.is_none() && matches!(self.peek(), Some(Token::Newline) | None) {
+        if tokens.is_empty()
+            && closing_barline.is_none()
+            && matches!(self.peek(), Some(Token::Newline) | None)
+        {
             return Ok(None);
         }
-        Ok(Some(MeasureSection { barline, barline_location, tokens, closing_barline, closing_barline_location }))
+        Ok(Some(MeasureSection {
+            barline,
+            barline_location,
+            tokens,
+            closing_barline,
+            closing_barline_location,
+        }))
     }
 
     fn parse_optional_track_name(&mut self) -> Option<String> {
@@ -705,23 +805,39 @@ impl<'a> Parser<'a> {
                 let content = self.parse_inline_braced_block()?;
                 Ok(MeasureExpr::InlineBracedBlock(content))
             }
-            Some(Token::CrescendoStart) => { self.next().ok(); Ok(MeasureExpr::Crescendo) }
-            Some(Token::DecrescendoStart) => { self.next().ok(); Ok(MeasureExpr::Decrescendo) }
-            Some(Token::HairpinEnd) => { self.next().ok(); Ok(MeasureExpr::HairpinEnd) }
+            Some(Token::CrescendoStart) => {
+                self.next().ok();
+                Ok(MeasureExpr::Crescendo)
+            }
+            Some(Token::DecrescendoStart) => {
+                self.next().ok();
+                Ok(MeasureExpr::Decrescendo)
+            }
+            Some(Token::HairpinEnd) => {
+                self.next().ok();
+                Ok(MeasureExpr::HairpinEnd)
+            }
             Some(ref t) if t.dynamic_level().is_some() => self.parse_dynamic(),
             Some(Token::NavSegno) | Some(Token::NavCoda) => {
                 let t = self.next().unwrap();
                 let name = self.token_text(&t);
                 Ok(MeasureExpr::NavMarker(name))
             }
-            Some(Token::NavFine) | Some(Token::NavDC) | Some(Token::NavDS)
-            | Some(Token::NavDCalFine) | Some(Token::NavDCalCoda)
-            | Some(Token::NavDSalFine) | Some(Token::NavDSalCoda) | Some(Token::NavToCoda) => {
+            Some(Token::NavFine)
+            | Some(Token::NavDC)
+            | Some(Token::NavDS)
+            | Some(Token::NavDCalFine)
+            | Some(Token::NavDCalCoda)
+            | Some(Token::NavDSalFine)
+            | Some(Token::NavDSalCoda)
+            | Some(Token::NavToCoda) => {
                 let t = self.next().unwrap();
                 let name = t.nav_name().to_string();
                 Ok(MeasureExpr::NavJump(name))
             }
-            Some(ref t) if t.is_glyph_like() || t.is_summon_prefix() => self.parse_basic_or_combined(),
+            Some(ref t) if t.is_glyph_like() || t.is_summon_prefix() => {
+                self.parse_basic_or_combined()
+            }
             Some(Token::Rest) => self.parse_basic_or_combined(),
             Some(ref t) if t.is_routed_prefix() => {
                 let track = t.track_prefix_name().unwrap().to_string();
@@ -740,7 +856,10 @@ impl<'a> Parser<'a> {
     fn parse_dynamic(&mut self) -> Result<MeasureExpr, ParseError> {
         let t = self.next()?;
         let Some(level) = t.dynamic_level() else {
-            return Err(self.error_at(self.last_end, &format!("expected dynamic token, found {:?}", t)));
+            return Err(self.error_at(
+                self.last_end,
+                &format!("expected dynamic token, found {:?}", t),
+            ));
         };
         if let Some(next) = self.source[self.last_end..].chars().next() {
             if !Self::is_dynamic_delimiter(next) {
@@ -759,15 +878,17 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_basic_or_combined(&mut self) -> Result<MeasureExpr, ParseError> {
-        let first = if let Some(ref t) = self.peek() { if t.is_summon_prefix() {
-            let track = t.track_prefix_name().unwrap().to_string();
-            self.next().ok();
-            let note = self.parse_basic_note()?;
-            MeasureExpr::SummonedNote { track, note }
+        let first = if let Some(ref t) = self.peek() {
+            if t.is_summon_prefix() {
+                let track = t.track_prefix_name().unwrap().to_string();
+                self.next().ok();
+                let note = self.parse_basic_note()?;
+                MeasureExpr::SummonedNote { track, note }
+            } else {
+                let note = self.parse_basic_note()?;
+                MeasureExpr::BasicNote(note)
+            }
         } else {
-            let note = self.parse_basic_note()?;
-            MeasureExpr::BasicNote(note)
-        }} else {
             return Err(self.error_at(self.last_end, "expected glyph or summon prefix"));
         };
         if self.peek() == Some(Token::Plus) {
@@ -775,8 +896,11 @@ impl<'a> Parser<'a> {
             let mut hits = vec![first];
             loop {
                 hits.push(self.parse_single_hit()?);
-                if self.peek() == Some(Token::Plus) { self.next().ok(); }
-                else { break; }
+                if self.peek() == Some(Token::Plus) {
+                    self.next().ok();
+                } else {
+                    break;
+                }
             }
             Ok(MeasureExpr::CombinedHit(hits))
         } else {
@@ -802,26 +926,54 @@ impl<'a> Parser<'a> {
         let glyph = match self.next()? {
             ref t if t.is_glyph_like() => t.glyph_name().unwrap().to_string(),
             Token::Rest => "-".to_string(),
-            t => return Err(self.error_at(self.last_end, &format!("expected glyph or rest, found {:?}", t))),
+            t => {
+                return Err(self.error_at(
+                    self.last_end,
+                    &format!("expected glyph or rest, found {:?}", t),
+                ))
+            }
         };
         let (dots, halves, stars, modifiers) = self.parse_suffix_chain();
-        Ok(NoteExpr { glyph, dots, halves, stars, modifiers })
+        Ok(NoteExpr {
+            glyph,
+            dots,
+            halves,
+            stars,
+            modifiers,
+        })
     }
 
     fn parse_suffix_chain(&mut self) -> (u32, u32, u32, Vec<String>) {
-        let mut dots = 0; let mut halves = 0; let mut stars = 0;
+        let mut dots = 0;
+        let mut halves = 0;
+        let mut stars = 0;
         let mut modifiers = Vec::new();
         loop {
             match self.peek() {
-                Some(Token::Dot) => { self.next().ok(); dots += 1; }
-                Some(Token::Slash) => { self.next().ok(); halves += 1; }
-                Some(Token::Star) => { self.next().ok(); stars += 1; }
+                Some(Token::Dot) => {
+                    self.next().ok();
+                    dots += 1;
+                }
+                Some(Token::Slash) => {
+                    self.next().ok();
+                    halves += 1;
+                }
+                Some(Token::Star) => {
+                    self.next().ok();
+                    stars += 1;
+                }
                 Some(Token::Colon) => {
                     self.next().ok();
                     if let Some(ref t) = self.peek() {
-                        if let Some(m) = t.modifier_name() { self.next().ok(); modifiers.push(m.to_string()); }
-                        else { break; }
-                    } else { break; }
+                        if let Some(m) = t.modifier_name() {
+                            self.next().ok();
+                            modifiers.push(m.to_string());
+                        } else {
+                            break;
+                        }
+                    } else {
+                        break;
+                    }
                 }
                 _ => break,
             }
@@ -835,16 +987,23 @@ impl<'a> Parser<'a> {
         self.expect(Token::LBracket)?;
         let n = if let Some(Token::Integer(num)) = self.peek() {
             if self.peek_n(1) == Some(Token::Colon) {
-                self.next().ok(); self.next().ok();
+                self.next().ok();
+                self.next().ok();
                 Some(num)
-            } else { None }
-        } else { None };
+            } else {
+                None
+            }
+        } else {
+            None
+        };
 
         let mut items = Vec::new();
         loop {
             match self.peek() {
                 Some(Token::RBracket) => break,
-                Some(_) => { items.push(self.parse_measure_expr()?); }
+                Some(_) => {
+                    items.push(self.parse_measure_expr()?);
+                }
                 None => return Err(self.error_at(self.last_end, "unclosed group bracket")),
             }
         }
@@ -854,11 +1013,21 @@ impl<'a> Parser<'a> {
         while let Some(Token::Colon) = self.peek() {
             self.next().ok();
             if let Some(ref t) = self.peek() {
-                if let Some(m) = t.modifier_name() { self.next().ok(); group_mods.push(m.to_string()); }
-                else { break; }
-            } else { break; }
+                if let Some(m) = t.modifier_name() {
+                    self.next().ok();
+                    group_mods.push(m.to_string());
+                } else {
+                    break;
+                }
+            } else {
+                break;
+            }
         }
-        Ok(MeasureExpr::Group(GroupExpr { n, items, modifiers: group_mods }))
+        Ok(MeasureExpr::Group(GroupExpr {
+            n,
+            items,
+            modifiers: group_mods,
+        }))
     }
 
     // ── Braced Block ──────────────────────────────────────────────
@@ -879,9 +1048,13 @@ impl<'a> Parser<'a> {
                 }
                 Some(Token::RBrace) => {
                     level -= 1;
-                    if level > 0 { self.next_raw().ok(); }
+                    if level > 0 {
+                        self.next_raw().ok();
+                    }
                 }
-                Some(_) => { content.push(self.parse_measure_expr()?); }
+                Some(_) => {
+                    content.push(self.parse_measure_expr()?);
+                }
                 None => return Err(self.error_at(self.last_end, "unclosed brace")),
             }
         }
@@ -904,9 +1077,13 @@ impl<'a> Parser<'a> {
                 }
                 Some(Token::RBrace) => {
                     level -= 1;
-                    if level > 0 { self.next_raw().ok(); }
+                    if level > 0 {
+                        self.next_raw().ok();
+                    }
                 }
-                Some(_) => { content.push(self.parse_measure_expr()?); }
+                Some(_) => {
+                    content.push(self.parse_measure_expr()?);
+                }
                 None => return Err(self.error_at(self.last_end, "unclosed brace")),
             }
         }
@@ -940,14 +1117,23 @@ impl<'a> Parser<'a> {
             while let Some(Token::Integer(n2)) = self.peek() {
                 self.next().ok();
                 nums.push(n2);
-                if self.peek() == Some(Token::Comma) { self.next().ok(); }
-                else { break; }
+                if self.peek() == Some(Token::Comma) {
+                    self.next().ok();
+                } else {
+                    break;
+                }
             }
             if self.peek() == Some(Token::Dot) {
                 self.next().ok();
-                return Ok(Barline::Volta { prefix: String::new(), numbers: nums });
+                return Ok(Barline::Volta {
+                    prefix: String::new(),
+                    numbers: nums,
+                });
             }
-            return Err(self.error_at(self.last_end, "expected barline or volta number (e.g. '1.'), found standalone number"));
+            return Err(self.error_at(
+                self.last_end,
+                "expected barline or volta number (e.g. '1.'), found standalone number",
+            ));
         }
 
         match self.next()? {
@@ -968,12 +1154,18 @@ impl<'a> Parser<'a> {
             while let Some(Token::Integer(n)) = self.peek() {
                 self.next().ok();
                 nums.push(n);
-                if self.peek() == Some(Token::Comma) { self.next().ok(); }
-                else { break; }
+                if self.peek() == Some(Token::Comma) {
+                    self.next().ok();
+                } else {
+                    break;
+                }
             }
             if self.peek() == Some(Token::Dot) {
                 self.next().ok();
-                Ok(Barline::Volta { prefix: prefix.to_string(), numbers: nums })
+                Ok(Barline::Volta {
+                    prefix: prefix.to_string(),
+                    numbers: nums,
+                })
             } else {
                 Ok(match prefix {
                     "|:" => Barline::RepeatStart,
@@ -995,56 +1187,114 @@ impl<'a> Parser<'a> {
 // ── Token Extension Methods ──────────────────────────────────────
 
 impl Token {
-    fn is_newline_like(&self) -> bool { matches!(self, Token::Newline) }
+    fn is_newline_like(&self) -> bool {
+        matches!(self, Token::Newline)
+    }
 
     fn is_barline_like(&self) -> bool {
-        matches!(self,
-            Token::Barline | Token::DoubleBarline
-            | Token::RepeatStart | Token::RepeatEnd
-            | Token::VoltaTerminator | Token::DoubleVoltaTerminator
-            | Token::VoltaRepeatStart
+        matches!(
+            self,
+            Token::Barline
+                | Token::DoubleBarline
+                | Token::RepeatStart
+                | Token::RepeatEnd
+                | Token::VoltaTerminator
+                | Token::DoubleVoltaTerminator
+                | Token::VoltaRepeatStart
         )
     }
 
-    fn is_glyph_like(&self) -> bool { self.glyph_name().is_some() }
+    fn is_glyph_like(&self) -> bool {
+        self.glyph_name().is_some()
+    }
 
     fn is_track_name_glyph(&self) -> bool {
         matches!(
             self.glyph_name(),
             Some(
-                "HH" | "HF" | "SD" | "BD" | "T1" | "T2" | "T3" | "T4" | "RC" | "C" | "ST"
-                    | "BD2" | "RC2" | "C2" | "SPL" | "CHN" | "CB" | "WB" | "CL"
+                "HH" | "HF"
+                    | "SD"
+                    | "BD"
+                    | "T1"
+                    | "T2"
+                    | "T3"
+                    | "T4"
+                    | "RC"
+                    | "C"
+                    | "ST"
+                    | "BD2"
+                    | "RC2"
+                    | "C2"
+                    | "SPL"
+                    | "CHN"
+                    | "CB"
+                    | "WB"
+                    | "CL"
             )
         )
     }
 
     fn is_routed_prefix(&self) -> bool {
-        self.track_prefix_name().is_some() && matches!(self,
-            Token::RouteHH | Token::RouteHF | Token::RouteSD | Token::RouteBD
-            | Token::RouteT1 | Token::RouteT2 | Token::RouteT3 | Token::RouteT4
-            | Token::RouteRC | Token::RouteC | Token::RouteST
-            | Token::RouteBD2 | Token::RouteRC2 | Token::RouteC2
-            | Token::RouteSPL | Token::RouteCHN | Token::RouteCB | Token::RouteWB
-            | Token::RouteCL
-        )
+        self.track_prefix_name().is_some()
+            && matches!(
+                self,
+                Token::RouteHH
+                    | Token::RouteHF
+                    | Token::RouteSD
+                    | Token::RouteBD
+                    | Token::RouteT1
+                    | Token::RouteT2
+                    | Token::RouteT3
+                    | Token::RouteT4
+                    | Token::RouteRC
+                    | Token::RouteC
+                    | Token::RouteST
+                    | Token::RouteBD2
+                    | Token::RouteRC2
+                    | Token::RouteC2
+                    | Token::RouteSPL
+                    | Token::RouteCHN
+                    | Token::RouteCB
+                    | Token::RouteWB
+                    | Token::RouteCL
+            )
     }
 
     fn is_summon_prefix(&self) -> bool {
-        self.track_prefix_name().is_some() && matches!(self,
-            Token::SummonHH | Token::SummonHF | Token::SummonSD | Token::SummonBD
-            | Token::SummonT1 | Token::SummonT2 | Token::SummonT3 | Token::SummonT4
-            | Token::SummonRC | Token::SummonC | Token::SummonST
-            | Token::SummonBD2 | Token::SummonRC2 | Token::SummonC2
-            | Token::SummonSPL | Token::SummonCHN | Token::SummonCB | Token::SummonWB
-            | Token::SummonCL
-        )
+        self.track_prefix_name().is_some()
+            && matches!(
+                self,
+                Token::SummonHH
+                    | Token::SummonHF
+                    | Token::SummonSD
+                    | Token::SummonBD
+                    | Token::SummonT1
+                    | Token::SummonT2
+                    | Token::SummonT3
+                    | Token::SummonT4
+                    | Token::SummonRC
+                    | Token::SummonC
+                    | Token::SummonST
+                    | Token::SummonBD2
+                    | Token::SummonRC2
+                    | Token::SummonC2
+                    | Token::SummonSPL
+                    | Token::SummonCHN
+                    | Token::SummonCB
+                    | Token::SummonWB
+                    | Token::SummonCL
+            )
     }
 
     fn nav_name(&self) -> &'static str {
         match self {
-            Token::NavFine => "fine", Token::NavDC => "dc", Token::NavDS => "ds",
-            Token::NavDCalFine => "dc-al-fine", Token::NavDCalCoda => "dc-al-coda",
-            Token::NavDSalFine => "ds-al-fine", Token::NavDSalCoda => "ds-al-coda",
+            Token::NavFine => "fine",
+            Token::NavDC => "dc",
+            Token::NavDS => "ds",
+            Token::NavDCalFine => "dc-al-fine",
+            Token::NavDCalCoda => "dc-al-coda",
+            Token::NavDSalFine => "ds-al-fine",
+            Token::NavDSalCoda => "ds-al-coda",
             Token::NavToCoda => "to-coda",
             _ => "unknown",
         }
@@ -1156,7 +1406,10 @@ mod tests {
         let doc = parse_ok("time 4/4\nnote 1/8\ngrouping 2+2\nSD | d :|.\n");
         let measures = &doc.paragraphs[0].lines[0].measures;
         assert_eq!(measures.len(), 1);
-        assert!(matches!(measures[0].closing_barline, Some(Barline::RepeatEndVoltaTerminator)));
+        assert!(matches!(
+            measures[0].closing_barline,
+            Some(Barline::RepeatEndVoltaTerminator)
+        ));
     }
 
     #[test]
@@ -1177,9 +1430,15 @@ mod tests {
         let measures = &doc.paragraphs[0].lines[0].measures;
         assert_eq!(measures.len(), 2);
         assert!(matches!(measures[0].barline, Barline::RepeatStart));
-        assert!(matches!(measures[0].closing_barline, Some(Barline::RepeatEnd)));
+        assert!(matches!(
+            measures[0].closing_barline,
+            Some(Barline::RepeatEnd)
+        ));
         assert!(matches!(measures[1].barline, Barline::RepeatStart));
-        assert!(matches!(measures[1].closing_barline, Some(Barline::RepeatEnd)));
+        assert!(matches!(
+            measures[1].closing_barline,
+            Some(Barline::RepeatEnd)
+        ));
     }
 
     #[test]
@@ -1245,7 +1504,10 @@ mod tests {
 
         // With mixed special chars
         let doc = parse_ok("title Song No. 5 (Remix) [2024]\n");
-        assert_eq!(doc.headers.title.as_deref(), Some("Song No. 5 (Remix) [2024]"));
+        assert_eq!(
+            doc.headers.title.as_deref(),
+            Some("Song No. 5 (Remix) [2024]")
+        );
 
         // Chinese characters
         let doc = parse_ok("title 李白 李荣浩\n");
@@ -1253,7 +1515,10 @@ mod tests {
 
         // Subtitle also works the same way
         let doc = parse_ok("subtitle feat. Artist / prod. by G\n");
-        assert_eq!(doc.headers.subtitle.as_deref(), Some("feat. Artist / prod. by G"));
+        assert_eq!(
+            doc.headers.subtitle.as_deref(),
+            Some("feat. Artist / prod. by G")
+        );
 
         // Composer with dots
         let doc = parse_ok("composer G. Mao\n");
@@ -1299,7 +1564,10 @@ mod tests {
             "SD | @pf |\n",
             "SD | @f:accent |\n",
         ] {
-            assert!(!parse_err(src).is_empty(), "expected parse error for {src:?}");
+            assert!(
+                !parse_err(src).is_empty(),
+                "expected parse error for {src:?}"
+            );
         }
     }
 
@@ -1307,8 +1575,12 @@ mod tests {
     fn test_dynamic_does_not_shadow_routes_or_navigation() {
         let doc = parse_ok("HH | @SD { d } @C { x } @fine |\n");
         let tokens = &doc.paragraphs[0].lines[0].measures[0].tokens;
-        assert!(matches!(tokens[0], MeasureExpr::RoutedBracedBlock { ref track, .. } if track == "SD"));
-        assert!(matches!(tokens[1], MeasureExpr::RoutedBracedBlock { ref track, .. } if track == "C"));
+        assert!(
+            matches!(tokens[0], MeasureExpr::RoutedBracedBlock { ref track, .. } if track == "SD")
+        );
+        assert!(
+            matches!(tokens[1], MeasureExpr::RoutedBracedBlock { ref track, .. } if track == "C")
+        );
         assert!(matches!(tokens[2], MeasureExpr::NavJump(ref name) if name == "fine"));
     }
 
@@ -1316,7 +1588,7 @@ mod tests {
     fn test_measure_repeat() {
         let doc = parse_ok("HH | x | % |\n");
         let measures = &doc.paragraphs[0].lines[0].measures;
-        assert_eq!(measures.len(), 2); // | x | and | % | 
+        assert_eq!(measures.len(), 2); // | x | and | % |
     }
 
     #[test]
@@ -1348,22 +1620,33 @@ mod tests {
     #[test]
     fn test_malformed_headers_are_errors() {
         let errors = parse_err("time 4\nHH | x |\n");
-        assert!(errors.iter().any(|e| e.message.contains("invalid time header")));
+        assert!(errors
+            .iter()
+            .any(|e| e.message.contains("invalid time header")));
 
         let errors = parse_err("tempo fast\nHH | x |\n");
-        assert!(errors.iter().any(|e| e.message.contains("invalid tempo header")));
+        assert!(errors
+            .iter()
+            .any(|e| e.message.contains("invalid tempo header")));
 
         let errors = parse_err("grouping 3+\nHH | x |\n");
-        assert!(errors.iter().any(|e| e.message.contains("invalid grouping header")));
+        assert!(errors
+            .iter()
+            .any(|e| e.message.contains("invalid grouping header")));
     }
 
     #[test]
     fn test_paragraph_note_override_position_and_shape() {
         let errors = parse_err("time 4/4\nnote 1/8\n\nnote\nHH | x - x - |\n");
-        assert!(errors.iter().any(|e| e.message.contains("invalid paragraph note override")));
+        assert!(errors
+            .iter()
+            .any(|e| e.message.contains("invalid paragraph note override")));
 
-        let errors = parse_err("time 4/4\nnote 1/8\nHH | x - x - |\nnote 1/16\nHH | x x x x x x x x |\n");
-        assert!(errors.iter().any(|e| e.message.contains("paragraph note overrides must appear at paragraph start")));
+        let errors =
+            parse_err("time 4/4\nnote 1/8\nHH | x - x - |\nnote 1/16\nHH | x x x x x x x x |\n");
+        assert!(errors.iter().any(|e| e
+            .message
+            .contains("paragraph note overrides must appear at paragraph start")));
     }
 
     #[test]

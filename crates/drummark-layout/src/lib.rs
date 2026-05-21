@@ -2757,7 +2757,8 @@ mod tests {
             .collect::<Vec<_>>();
         note_centers.sort_by(|a, b| a.partial_cmp(b).unwrap());
         let inner_left = measure_box.x_pt + measure_left_pad(0, true, Some("regular"));
-        let inner_right = measure_box.x_pt + measure_box.width_pt - MEASURE_RIGHT_PAD_PT;
+        let inner_right =
+            measure_box.x_pt + measure_box.width_pt - measure_right_pad(Some("final"));
         let left_edge_gap = note_centers[0] - inner_left;
         let right_edge_gap = inner_right - note_centers[3];
         assert!(
@@ -3340,6 +3341,100 @@ mod tests {
     }
 
     #[test]
+    fn test_same_voice_adjacent_chord_noteheads_stagger_higher_right_lower_left() {
+        let measure = RenderMeasure {
+            index: 0,
+            global_index: 0,
+            paragraph_index: 0,
+            measure_in_paragraph: 0,
+            source_line: 1,
+            events: vec![
+                RenderEvent {
+                    track: "SD".into(),
+                    track_family: "drum".into(),
+                    start: Fraction {
+                        numerator: 0,
+                        denominator: 1,
+                    },
+                    duration: Fraction {
+                        numerator: 1,
+                        denominator: 8,
+                    },
+                    kind: EventKind::Hit,
+                    glyph: "d".into(),
+                    modifiers: vec![],
+                    modifier: None,
+                    voice: 1,
+                    beam: "none".into(),
+                    tuplet: None,
+                },
+                RenderEvent {
+                    track: "T2".into(),
+                    track_family: "drum".into(),
+                    start: Fraction {
+                        numerator: 0,
+                        denominator: 1,
+                    },
+                    duration: Fraction {
+                        numerator: 1,
+                        denominator: 8,
+                    },
+                    kind: EventKind::Hit,
+                    glyph: "d".into(),
+                    modifiers: vec![],
+                    modifier: None,
+                    voice: 1,
+                    beam: "none".into(),
+                    tuplet: None,
+                },
+            ],
+            barline: Some("regular".into()),
+            closing_barline: Some("final".into()),
+            start_nav: None,
+            end_nav: None,
+            volta_indices: None,
+            hairpins: vec![],
+            dynamics: vec![],
+            measure_repeat_slashes: None,
+            multi_rest_count: None,
+            note_value: 8,
+            volta_terminator: false,
+        };
+        let scene = build_layout_scene(
+            &simple_layout_score(vec![measure]),
+            &LayoutOptions::default(),
+        );
+        let noteheads = items_by_role(&scene, "notehead");
+        let stems = items_by_role(&scene, "stem");
+
+        assert_eq!(noteheads.len(), 2);
+        assert_eq!(
+            stems.len(),
+            1,
+            "same-voice chord should keep one shared stem"
+        );
+
+        let mut positioned = noteheads
+            .iter()
+            .filter_map(|item| match &item.primitive {
+                ScenePrimitive::TextRun(text) => {
+                    let (_, y, _, _) = item_bounds(item)?;
+                    Some((text.x_pt, y))
+                }
+                _ => None,
+            })
+            .collect::<Vec<_>>();
+        positioned.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap());
+
+        let upper_x = positioned[0].0;
+        let lower_x = positioned[1].0;
+        assert!(
+            upper_x > lower_x + 6.0,
+            "adjacent same-voice chord noteheads should stagger with the higher note on the right: upper_x={upper_x:.2} lower_x={lower_x:.2}"
+        );
+    }
+
+    #[test]
     fn test_accent_uses_smufl_glyph_centered_on_notehead_and_clears_stem_tip() {
         let measure = RenderMeasure {
             index: 0,
@@ -3754,6 +3849,16 @@ struct NotePlacement {
     stem_down_anchor_ss: Option<GlyphPoint>,
 }
 
+#[derive(Clone, Copy)]
+struct PreparedClusterNote<'a> {
+    slot_event: &'a SlotEvent<'a>,
+    staff_position_ss: f32,
+    note_y_offset: f32,
+    note_role: GlyphRole,
+    glyph_metric: CanonicalGlyphMetric,
+    x_offset: f32,
+}
+
 /// Build systems from a NormalizedScore.
 pub fn build_systems(score: &NormalizedScore, opts: &LayoutOptions) -> Vec<System> {
     let mapper = SlotMapper::new(opts.px_per_quarter);
@@ -3826,6 +3931,8 @@ struct SystemStartReservation {
 
 const MEASURE_RIGHT_PAD_PT: f32 = 14.0;
 const NON_INITIAL_MEASURE_LEFT_PAD_PT: f32 = 14.0;
+const SYSTEM_PREAMBLE_TRAILING_CONTENT_GAP_PT: f32 = 8.0;
+const COMPLEX_BARLINE_TRAILING_CONTENT_GAP_PT: f32 = 8.0;
 const SVG_POINT_TO_USER_UNIT: f32 = 4.0 / 3.0;
 const REPEAT_BARLINE_FONT_SIZE_PT: f32 = 30.0;
 const FIRST_MEASURE_START_REPEAT_PREAMBLE_PULL_PT: f32 = 10.0;
@@ -3867,6 +3974,10 @@ fn start_repeat_reserved_width() -> f32 {
     repeat_barline_rendered_width(GlyphRole::RepeatLeft) + START_REPEAT_TRAILING_GAP_PT
 }
 
+fn end_repeat_reserved_width() -> f32 {
+    repeat_barline_rendered_width(GlyphRole::RepeatRight) + START_REPEAT_TRAILING_GAP_PT
+}
+
 fn first_measure_start_repeat_x(measure_x: f32, is_first_system: bool) -> f32 {
     measure_x + system_start_reservation(is_first_system).width()
         - FIRST_MEASURE_START_REPEAT_PREAMBLE_PULL_PT
@@ -3905,9 +4016,28 @@ fn measure_left_pad(
         } else {
             0.0
         };
-        system_start_reservation(is_first_system).width() + repeat_start_width
+        system_start_reservation(is_first_system).width()
+            + SYSTEM_PREAMBLE_TRAILING_CONTENT_GAP_PT
+            + repeat_start_width
     } else {
-        NON_INITIAL_MEASURE_LEFT_PAD_PT
+        if is_start_repeat_barline(barline) {
+            start_repeat_reserved_width()
+        } else {
+            NON_INITIAL_MEASURE_LEFT_PAD_PT
+        }
+    }
+}
+
+fn measure_right_pad(barline: Option<&str>) -> f32 {
+    if is_end_repeat_barline(barline) {
+        end_repeat_reserved_width()
+    } else {
+        match barline {
+            Some("double") | Some("final") => {
+                MEASURE_RIGHT_PAD_PT + COMPLEX_BARLINE_TRAILING_CONTENT_GAP_PT
+            }
+            _ => MEASURE_RIGHT_PAD_PT,
+        }
     }
 }
 
@@ -4327,7 +4457,11 @@ fn finalize_planned_system<'a>(
                 is_first_system,
                 current_measures[index].barline.as_deref(),
             );
-            left + MEASURE_RIGHT_PAD_PT
+            let right_barline = current_measures[index]
+                .closing_barline
+                .as_deref()
+                .or(current_measures[index].barline.as_deref());
+            left + measure_right_pad(right_barline)
         })
         .sum();
     let current_inner_sum: f32 = current_inner_estimates.iter().sum();
@@ -4341,7 +4475,11 @@ fn finalize_planned_system<'a>(
                 is_first_system,
                 current_measures[index].barline.as_deref(),
             );
-            width * scale + left + MEASURE_RIGHT_PAD_PT
+            let right_barline = current_measures[index]
+                .closing_barline
+                .as_deref()
+                .or(current_measures[index].barline.as_deref());
+            width * scale + left + measure_right_pad(right_barline)
         })
         .collect();
     systems.push(PlannedSystem {
@@ -4836,6 +4974,11 @@ pub fn build_layout_scene(score: &RenderScore, opts: &LayoutOptions) -> LayoutSc
             measure_ids.push(measure_id.clone());
 
             let left_pad = measure_left_pad(mi, is_first_system, measure.barline.as_deref());
+            let right_barline = measure
+                .closing_barline
+                .as_deref()
+                .or(measure.barline.as_deref());
+            let right_pad = measure_right_pad(right_barline);
             let left_repeat_is_shared_boundary = mi > 0
                 && is_start_repeat_barline(measure.barline.as_deref())
                 && system.measures.get(mi - 1).is_some_and(|previous| {
@@ -5017,7 +5160,7 @@ pub fn build_layout_scene(score: &RenderScore, opts: &LayoutOptions) -> LayoutSc
                             measure_x: mx,
                             measure_width: *mw,
                             left_pad,
-                            right_pad: MEASURE_RIGHT_PAD_PT,
+                            right_pad,
                             duration_compression: opts.duration_spacing_compression,
                         },
                         staff_top: s_top,
@@ -5038,10 +5181,6 @@ pub fn build_layout_scene(score: &RenderScore, opts: &LayoutOptions) -> LayoutSc
                 width: *mw,
                 top: s_top,
             });
-            let right_barline = measure
-                .closing_barline
-                .as_deref()
-                .or(measure.barline.as_deref());
             let right_repeat_is_shared_boundary = is_end_repeat_barline(right_barline)
                 && system
                     .measures
@@ -6409,28 +6548,40 @@ fn render_hit_cluster(
         .voice_hits
         .iter()
         .map(|slot_event| {
-            let track_ss = staff_y_for_track(&slot_event.event.track);
-            let note_y = track_ss * 10.0;
-            (*slot_event, note_y)
+            let staff_position_ss = staff_y_for_track(&slot_event.event.track);
+            let glyph_metric = notehead_glyph(
+                &slot_event.event.track,
+                &slot_event.event.modifiers,
+                &slot_event.event.glyph,
+            );
+            PreparedClusterNote {
+                slot_event,
+                staff_position_ss,
+                note_y_offset: staff_position_ss * 10.0,
+                note_role: glyph_role_for_codepoint(glyph_metric.smufl_codepoint),
+                glyph_metric,
+                x_offset: 0.0,
+            }
         })
         .collect::<Vec<_>>();
-    placements.sort_by(|(_, ay), (_, by)| ay.partial_cmp(by).unwrap_or(std::cmp::Ordering::Equal));
+    placements.sort_by(|a, b| {
+        a.note_y_offset
+            .partial_cmp(&b.note_y_offset)
+            .unwrap_or(std::cmp::Ordering::Equal)
+    });
+    displace_overlapping_same_voice_noteheads(&mut placements, note_font_size);
 
     let mut note_placements = Vec::new();
-    for (slot_event, note_y_offset) in &placements {
-        let glyph_metric = notehead_glyph(
-            &slot_event.event.track,
-            &slot_event.event.modifiers,
-            &slot_event.event.glyph,
-        );
-        let note_glyph = char::from_u32(glyph_metric.smufl_codepoint)
+    for placement in &placements {
+        let note_x = base_note_x + placement.x_offset;
+        let note_glyph = char::from_u32(placement.glyph_metric.smufl_codepoint)
             .unwrap_or('?')
             .to_string();
-        let actual_note_y = input.staff_top + *note_y_offset;
+        let actual_note_y = input.staff_top + placement.note_y_offset;
         let note_id = sink.push_text_item(TextItemSpec {
             measure_id: Some(input.measure_id),
             role: "notehead",
-            x: base_note_x,
+            x: note_x,
             y: actual_note_y,
             text_role: TextRole::Tempo,
             text: note_glyph,
@@ -6441,20 +6592,15 @@ fn render_hit_cluster(
             font_weight: None,
         });
         let ledger_half_overhang_pt = 3.0_f32;
-        for ledger_y_offset in ledger_line_offsets_for_staff_position(*note_y_offset / 10.0) {
+        for ledger_y_offset in ledger_line_offsets_for_staff_position(placement.staff_position_ss) {
             let ledger_y = input.staff_top + ledger_y_offset * 10.0;
             sink.push_line_item(LineItemSpec {
                 measure_id: Some(input.measure_id),
                 role: "ledger-line",
-                x1: base_note_x - ledger_half_overhang_pt,
+                x1: note_x - ledger_half_overhang_pt,
                 y1: ledger_y,
-                x2: base_note_x
-                    + canonical_glyph_metric(glyph_role_for_codepoint(
-                        glyph_metric.smufl_codepoint,
-                    ))
-                    .width_ss()
-                        * note_font_size
-                        / 4.0
+                x2: note_x
+                    + canonical_glyph_metric(placement.note_role).width_ss() * note_font_size / 4.0
                     + ledger_half_overhang_pt,
                 y2: ledger_y,
                 stroke: "#333",
@@ -6465,21 +6611,22 @@ fn render_hit_cluster(
                 item.anchor_item_id = Some(note_id.clone());
             }
         }
-        let note_role = glyph_role_for_codepoint(glyph_metric.smufl_codepoint);
-        let note_center_x = base_note_x + rendered_glyph_width(note_role, note_font_size) * 0.5;
-        let has_accent = slot_event
+        let note_center_x =
+            note_x + rendered_glyph_width(placement.note_role, note_font_size) * 0.5;
+        let has_accent = placement
+            .slot_event
             .event
             .modifiers
             .iter()
             .any(|modifier| modifier == "accent");
         note_placements.push(NotePlacement {
             note_id: note_id.clone(),
-            note_x: base_note_x,
+            note_x,
             note_y: actual_note_y,
             note_center_x,
             has_accent,
-            stem_up_anchor_ss: glyph_metric.stem_up_anchor_ss,
-            stem_down_anchor_ss: glyph_metric.stem_down_anchor_ss,
+            stem_up_anchor_ss: placement.glyph_metric.stem_up_anchor_ss,
+            stem_down_anchor_ss: placement.glyph_metric.stem_down_anchor_ss,
         });
     }
 
@@ -6595,6 +6742,46 @@ fn render_hit_cluster(
     );
 
     note_placements
+}
+
+fn displace_overlapping_same_voice_noteheads(
+    placements: &mut [PreparedClusterNote<'_>],
+    note_font_size: f32,
+) {
+    let mut run_start = 0usize;
+    while run_start < placements.len() {
+        let mut run_end = run_start;
+        while run_end + 1 < placements.len()
+            && noteheads_overlap_on_adjacent_staff_positions(
+                placements[run_end].staff_position_ss,
+                placements[run_end + 1].staff_position_ss,
+            )
+        {
+            run_end += 1;
+        }
+        if run_end > run_start {
+            let right_column_offset = placements[run_start..=run_end]
+                .iter()
+                .map(|placement| rendered_glyph_width(placement.note_role, note_font_size))
+                .fold(0.0_f32, f32::max);
+            for (index_in_run, placement) in placements[run_start..=run_end].iter_mut().enumerate()
+            {
+                placement.x_offset = if index_in_run % 2 == 0 {
+                    right_column_offset
+                } else {
+                    0.0
+                };
+            }
+        }
+        run_start = run_end + 1;
+    }
+}
+
+fn noteheads_overlap_on_adjacent_staff_positions(
+    upper_staff_position_ss: f32,
+    lower_staff_position_ss: f32,
+) -> bool {
+    ((lower_staff_position_ss - upper_staff_position_ss).abs() - 0.5).abs() < 0.001
 }
 
 fn render_accent_glyphs(
@@ -10608,6 +10795,157 @@ fn test_first_measure_repeat_start_sits_after_system_preamble() {
             >= 10.0,
         "first note should have visual clearance after the start repeat: repeat_x={:.2} note_x={note_x:.2}",
         repeat_glyph.x_pt
+    );
+}
+
+#[cfg(test)]
+fn edge_padding_measure(index: u32, event_count: u32) -> RenderMeasure {
+    let events = (0..event_count)
+        .map(|event_index| RenderEvent {
+            track: "HH".into(),
+            track_family: "cymbal".into(),
+            start: Fraction {
+                numerator: event_index,
+                denominator: event_count.max(1),
+            },
+            duration: Fraction {
+                numerator: 1,
+                denominator: event_count.max(1),
+            },
+            kind: EventKind::Hit,
+            glyph: "x".into(),
+            modifiers: vec![],
+            modifier: None,
+            voice: 1,
+            beam: "none".into(),
+            tuplet: None,
+        })
+        .collect::<Vec<_>>();
+
+    RenderMeasure {
+        index,
+        global_index: index,
+        paragraph_index: 0,
+        measure_in_paragraph: index,
+        source_line: index + 1,
+        events,
+        barline: Some("regular".into()),
+        closing_barline: Some("regular".into()),
+        start_nav: None,
+        end_nav: None,
+        volta_indices: None,
+        hairpins: vec![],
+        dynamics: vec![],
+        measure_repeat_slashes: None,
+        multi_rest_count: None,
+        note_value: 8,
+        volta_terminator: false,
+    }
+}
+
+#[cfg(test)]
+fn edge_padding_score(measures: Vec<RenderMeasure>) -> RenderScore {
+    RenderScore {
+        version: RENDER_SCORE_VERSION.to_string(),
+        header: RenderHeader {
+            tempo: 120,
+            time_beats: 4,
+            time_beat_unit: 4,
+            divisions: 16,
+            note_value: 8,
+            grouping: vec![1, 1, 1, 1],
+            title: None,
+            subtitle: None,
+            composer: None,
+        },
+        tracks: vec![RenderTrack {
+            id: "HH".into(),
+            family: "cymbal".into(),
+        }],
+        measures,
+        errors: vec![],
+        repeat_spans: vec![],
+    }
+}
+
+#[test]
+fn test_non_initial_repeat_start_reserves_content_gap() {
+    let mut first = edge_padding_measure(0, 16);
+    first.closing_barline = Some("regular".into());
+    let mut second = edge_padding_measure(1, 16);
+    second.barline = Some("repeat-start".into());
+    second.closing_barline = Some("final".into());
+
+    let scene = build_layout_scene(
+        &edge_padding_score(vec![first, second]),
+        &LayoutOptions::default(),
+    );
+    let repeat_start = scene.pages[0]
+        .items
+        .iter()
+        .find(|item| item.role == "repeat-start" && item.measure_id.as_deref() == Some("measure-1"))
+        .expect("expected non-initial start repeat");
+    let first_note = scene.pages[0]
+        .items
+        .iter()
+        .filter(|item| item.role == "notehead" && item.measure_id.as_deref() == Some("measure-1"))
+        .min_by(|a, b| {
+            let ax = item_bounds(a)
+                .map(|(x, _, _, _)| x)
+                .unwrap_or(f32::INFINITY);
+            let bx = item_bounds(b)
+                .map(|(x, _, _, _)| x)
+                .unwrap_or(f32::INFINITY);
+            ax.partial_cmp(&bx).unwrap()
+        })
+        .expect("expected first notehead in second measure");
+
+    let (repeat_x, _, repeat_w, _) = item_bounds(repeat_start).expect("repeat should have bounds");
+    let (note_x, _, _, _) = item_bounds(first_note).expect("notehead should have bounds");
+    let gap = note_x - (repeat_x + repeat_w);
+
+    assert!(
+        gap >= 10.0,
+        "non-initial start repeat should reserve visual content gap: gap={gap:.2}"
+    );
+}
+
+#[test]
+fn test_repeat_end_reserves_content_gap_before_right_barline() {
+    let mut measure = edge_padding_measure(0, 16);
+    measure.closing_barline = Some("repeat-end".into());
+
+    let scene = build_layout_scene(
+        &edge_padding_score(vec![measure]),
+        &LayoutOptions::default(),
+    );
+    let repeat_end = scene.pages[0]
+        .items
+        .iter()
+        .find(|item| item.role == "repeat-end" && item.measure_id.as_deref() == Some("measure-0"))
+        .expect("expected repeat end");
+    let last_note = scene.pages[0]
+        .items
+        .iter()
+        .filter(|item| item.role == "notehead" && item.measure_id.as_deref() == Some("measure-0"))
+        .max_by(|a, b| {
+            let ax = item_bounds(a)
+                .map(|(x, _, width, _)| x + width)
+                .unwrap_or(f32::NEG_INFINITY);
+            let bx = item_bounds(b)
+                .map(|(x, _, width, _)| x + width)
+                .unwrap_or(f32::NEG_INFINITY);
+            ax.partial_cmp(&bx).unwrap()
+        })
+        .expect("expected last notehead");
+
+    let (repeat_x, _, _, _) = item_bounds(repeat_end).expect("repeat should have bounds");
+    let (note_x, _, note_w, _) = item_bounds(last_note).expect("notehead should have bounds");
+    let gap = repeat_x - (note_x + note_w);
+
+    assert!(
+        gap >= 10.0,
+        "repeat end should reserve visual content gap before the barline: gap={gap:.2}"
     );
 }
 

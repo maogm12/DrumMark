@@ -1,7 +1,7 @@
-use crate::fraction::{Fraction, calculate_token_weight_as_fraction, fractions_equal};
-use crate::resolve::{resolve_token, voice_for_track};
-use crate::hairpin::HairpinKind;
 use crate::ast::DynamicLevel;
+use crate::fraction::{calculate_token_weight_as_fraction, fractions_equal, Fraction};
+use crate::hairpin::HairpinKind;
+use crate::resolve::{resolve_token, voice_for_track};
 
 // ── Normalized Event ─────────────────────────────────────────────
 
@@ -81,20 +81,32 @@ pub fn token_to_events(
     source_offset: u32,
 ) -> Vec<NormalizedEvent> {
     match token {
-        TokenGlyph::Basic { value, dots: _, halves: _, stars: _, modifiers, track_override } => {
-            if value == "-" { return vec![]; }
+        TokenGlyph::Basic {
+            value,
+            dots: _,
+            halves: _,
+            stars: _,
+            modifiers,
+            track_override,
+        } => {
+            if value == "-" {
+                return vec![];
+            }
 
-            let resolved = resolve_token(value, context_track, track_override.as_deref(), modifiers);
+            let resolved =
+                resolve_token(value, context_track, track_override.as_deref(), modifiers);
             let resolved = match resolved {
                 Some(r) => r,
                 None => return vec![],
             };
 
-            let primary_modifier = resolved.modifiers.iter()
-                .find(|m| *m != "accent")
-                .cloned();
+            let primary_modifier = resolved.modifiers.iter().find(|m| *m != "accent").cloned();
 
-            let kind = if resolved.track == "ST" { EventKind::Sticking } else { EventKind::Hit };
+            let kind = if resolved.track == "ST" {
+                EventKind::Sticking
+            } else {
+                EventKind::Hit
+            };
 
             let event = NormalizedEvent {
                 track: resolved.track.clone(),
@@ -114,11 +126,22 @@ pub fn token_to_events(
             };
             vec![event]
         }
-        TokenGlyph::Combined { items } => {
-            items.iter()
-                .flat_map(|item| token_to_events(item, start, duration, context_track, paragraph_index, measure_index, measure_in_paragraph, inherited_tuplet, source_offset))
-                .collect()
-        }
+        TokenGlyph::Combined { items } => items
+            .iter()
+            .flat_map(|item| {
+                token_to_events(
+                    item,
+                    start,
+                    duration,
+                    context_track,
+                    paragraph_index,
+                    measure_index,
+                    measure_in_paragraph,
+                    inherited_tuplet,
+                    source_offset,
+                )
+            })
+            .collect(),
         TokenGlyph::Braced { track, items } => {
             let mut events = Vec::new();
             let total_weight = braced_total_weight(items);
@@ -130,9 +153,7 @@ pub fn token_to_events(
             let mut current_start = start;
             for item in items {
                 let item_weight = item_weight(item);
-                let item_duration = duration
-                    .multiply(item_weight)
-                    .divide(total_weight);
+                let item_duration = duration.multiply(item_weight).divide(total_weight);
 
                 events.extend(token_to_events(
                     item,
@@ -149,7 +170,12 @@ pub fn token_to_events(
             }
             events
         }
-        TokenGlyph::Group { count, span, items, modifiers } => {
+        TokenGlyph::Group {
+            count,
+            span,
+            items,
+            modifiers,
+        } => {
             let mut events = Vec::new();
             let total_weight = group_total_weight(items);
 
@@ -159,11 +185,14 @@ pub fn token_to_events(
 
             let count = *count;
             let span = *span;
-            let effective_count = if count == 0 { items.len() as u32 } else { count };
+            let effective_count = if count == 0 {
+                items.len() as u32
+            } else {
+                count
+            };
             let effective_span = span;
             // Only mark as tuplet if there's actual compression/expansion
-            let group_tuplet = if effective_count != span && effective_count > effective_span
-            {
+            let group_tuplet = if effective_count != span && effective_count > effective_span {
                 Some((effective_count, effective_span))
             } else {
                 inherited_tuplet
@@ -177,9 +206,7 @@ pub fn token_to_events(
                     apply_modifiers(&mut item, modifiers);
                 }
                 let item_weight = item_weight(&item);
-                let item_duration = duration
-                    .multiply(item_weight)
-                    .divide(total_weight);
+                let item_duration = duration.multiply(item_weight).divide(total_weight);
 
                 events.extend(token_to_events(
                     &item,
@@ -196,7 +223,10 @@ pub fn token_to_events(
             }
             events
         }
-        TokenGlyph::Crescendo | TokenGlyph::Decrescendo | TokenGlyph::HairpinEnd | TokenGlyph::Dynamic(_) => {
+        TokenGlyph::Crescendo
+        | TokenGlyph::Decrescendo
+        | TokenGlyph::HairpinEnd
+        | TokenGlyph::Dynamic(_) => {
             vec![]
         }
     }
@@ -206,35 +236,42 @@ pub fn token_to_events(
 
 fn item_weight(token: &TokenGlyph) -> Fraction {
     match token {
-        TokenGlyph::Basic { dots, halves, stars, .. } => {
-            calculate_token_weight_as_fraction(*dots, *stars, *halves, None)
-        }
+        TokenGlyph::Basic {
+            dots,
+            halves,
+            stars,
+            ..
+        } => calculate_token_weight_as_fraction(*dots, *stars, *halves, None),
         TokenGlyph::Group { span, .. } => {
             // Group weight = span (normal duration)
             Fraction::new(*span as u64, 1)
         }
         TokenGlyph::Combined { items } => {
             // max weight of items
-            items.iter()
+            items
+                .iter()
                 .map(item_weight)
                 .max_by(|a, b| a.compare(*b))
                 .unwrap_or(Fraction::zero())
         }
         TokenGlyph::Braced { items, .. } => braced_total_weight(items),
-        TokenGlyph::Crescendo | TokenGlyph::Decrescendo | TokenGlyph::HairpinEnd | TokenGlyph::Dynamic(_) => {
-            Fraction::zero()
-        }
+        TokenGlyph::Crescendo
+        | TokenGlyph::Decrescendo
+        | TokenGlyph::HairpinEnd
+        | TokenGlyph::Dynamic(_) => Fraction::zero(),
     }
 }
 
 fn group_total_weight(items: &[TokenGlyph]) -> Fraction {
-    items.iter()
+    items
+        .iter()
         .map(item_weight)
         .fold(Fraction::zero(), |a, b| a.add(b))
 }
 
 fn braced_total_weight(items: &[TokenGlyph]) -> Fraction {
-    items.iter()
+    items
+        .iter()
         .map(item_weight)
         .fold(Fraction::zero(), |a, b| a.add(b))
 }
@@ -338,7 +375,13 @@ fn scan_dynamic_sequence(
             let cluster_duration = duration.multiply(cluster_weight).divide(total_weight);
             for token in cluster {
                 if let TokenGlyph::Braced { items, .. } = token {
-                    scan_dynamic_sequence(items, current_start, cluster_duration, measure_duration, results);
+                    scan_dynamic_sequence(
+                        items,
+                        current_start,
+                        cluster_duration,
+                        measure_duration,
+                        results,
+                    );
                 }
             }
             current_start = current_start.add(cluster_duration);
@@ -355,7 +398,13 @@ fn scan_dynamic_sequence(
             }
             TokenGlyph::Group { items, .. } => {
                 let item_duration = duration.multiply(item_weight(token)).divide(total_weight);
-                scan_dynamic_sequence(items, current_start, item_duration, measure_duration, results);
+                scan_dynamic_sequence(
+                    items,
+                    current_start,
+                    item_duration,
+                    measure_duration,
+                    results,
+                );
                 current_start = current_start.add(item_duration);
             }
             TokenGlyph::Braced { .. } => unreachable!("braced clusters are handled above"),
@@ -440,15 +489,7 @@ mod tests {
             items: vec![dynamic(DynamicLevel::F), note(), note()],
         };
 
-        let dynamics = scan_dynamic_tokens(
-            &[
-                sd,
-                bd,
-                dynamic(DynamicLevel::Mp),
-                note(),
-            ],
-            3,
-        );
+        let dynamics = scan_dynamic_tokens(&[sd, bd, dynamic(DynamicLevel::Mp), note()], 3);
 
         assert_eq!(dynamics[0].at, Fraction::zero());
         assert_eq!(dynamics[1].at, Fraction::zero());

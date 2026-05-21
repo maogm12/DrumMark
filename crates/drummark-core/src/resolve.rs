@@ -1,20 +1,16 @@
 // ── Track family sets ───────────────────────────────────────────
 
-const CYMBAL_TRACKS: &[&str] = &[
-    "HH", "RC", "RC2", "C", "C2", "SPL", "CHN",
-];
+const CYMBAL_TRACKS: &[&str] = &["HH", "RC", "RC2", "C", "C2", "SPL", "CHN"];
 
-const DRUM_TRACKS: &[&str] = &[
-    "SD", "BD", "BD2", "T1", "T2", "T3", "T4", "ST",
-];
+const DRUM_TRACKS: &[&str] = &["SD", "BD", "BD2", "T1", "T2", "T3", "T4", "ST"];
 
 const PEDAL_TRACKS: &[&str] = &["HF"];
 
 const PERCUSSION_TRACKS: &[&str] = &["CB", "WB", "CL"];
 
 const ALL_TRACKS: &[&str] = &[
-    "HH", "HF", "SD", "BD", "T1", "T2", "T3", "RC", "C", "ST",
-    "BD2", "T4", "RC2", "C2", "SPL", "CHN", "CB", "WB", "CL",
+    "HH", "HF", "SD", "BD", "T1", "T2", "T3", "RC", "C", "ST", "BD2", "T4", "RC2", "C2", "SPL",
+    "CHN", "CB", "WB", "CL",
 ];
 
 /// Track family classification.
@@ -37,10 +33,18 @@ pub fn voice_for_track(track: &str) -> u8 {
 
 /// Returns the track family for a given track name.
 pub fn get_track_family(track: &str) -> TrackFamily {
-    if CYMBAL_TRACKS.contains(&track) { return TrackFamily::Cymbal; }
-    if DRUM_TRACKS.contains(&track)    { return TrackFamily::Drum; }
-    if PEDAL_TRACKS.contains(&track)   { return TrackFamily::Pedal; }
-    if PERCUSSION_TRACKS.contains(&track) { return TrackFamily::Percussion; }
+    if CYMBAL_TRACKS.contains(&track) {
+        return TrackFamily::Cymbal;
+    }
+    if DRUM_TRACKS.contains(&track) {
+        return TrackFamily::Drum;
+    }
+    if PEDAL_TRACKS.contains(&track) {
+        return TrackFamily::Pedal;
+    }
+    if PERCUSSION_TRACKS.contains(&track) {
+        return TrackFamily::Percussion;
+    }
     TrackFamily::Auxiliary
 }
 
@@ -53,17 +57,15 @@ pub fn is_valid_track(s: &str) -> bool {
 
 /// Glyphs that are NOT specific to a single track and need resolution.
 const STATIC_MAGIC_TOKENS: &[&str] = &[
-    "s", "S", "b", "B", "b2", "B2", "r", "R", "r2", "R2",
-    "c", "C", "c2", "C2", "t1", "T1", "t2", "T2", "t3", "T3", "t4", "T4",
-    "o", "O", "spl", "SPL", "chn", "CHN", "cb", "CB", "wb", "WB", "cl", "CL",
+    "s", "S", "b", "B", "b2", "B2", "r", "R", "r2", "R2", "c", "C", "c2", "C2", "t1", "T1", "t2",
+    "T2", "t3", "T3", "t4", "T4", "o", "O", "spl", "SPL", "chn", "CHN", "cb", "CB", "wb", "WB",
+    "cl", "CL",
 ];
 
 /// Uppercase magic tokens that receive an automatic "accent" modifier
 /// (unless on ST sticking track).
 const ACCENT_MAGIC_TOKENS: &[&str] = &[
-    "D", "X", "P", "G", "S", "B", "B2",
-    "R", "R2", "C", "C2", "O", "SPL",
-    "CHN", "CB", "WB", "CL",
+    "D", "X", "P", "G", "S", "B", "B2", "R", "R2", "C", "C2", "O", "SPL", "CHN", "CB", "WB", "CL",
 ];
 
 fn has_modifier(modifiers: &[String], name: &str) -> bool {
@@ -87,7 +89,9 @@ pub fn resolve_token(
     track_override: Option<&str>,
     incoming_modifiers: &[String],
 ) -> Option<ResolvedToken> {
-    if glyph == "-" { return None; }
+    if glyph == "-" {
+        return None;
+    }
 
     let mut modifiers: Vec<String> = incoming_modifiers.to_vec();
     let is_sticking = glyph == "R" || glyph == "L";
@@ -138,7 +142,11 @@ pub fn resolve_token(
         "d".to_string()
     };
 
-    Some(ResolvedToken { track, glyph, modifiers })
+    Some(ResolvedToken {
+        track,
+        glyph,
+        modifiers,
+    })
 }
 
 /// Map a magic token glyph to its default track.
@@ -163,7 +171,8 @@ pub fn resolve_fallback_track(glyph: &str) -> String {
         "p" | "P" => "HF",
         "g" | "G" => "SD",
         _ => "HH",
-    }.to_string()
+    }
+    .to_string()
 }
 
 // ── Tests ────────────────────────────────────────────────────────

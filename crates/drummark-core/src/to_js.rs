@@ -1,6 +1,6 @@
-use wasm_bindgen::JsValue;
-use js_sys::{Array, Object};
 use crate::ast::*;
+use js_sys::{Array, Object};
+use wasm_bindgen::JsValue;
 
 pub fn document_to_js(doc: &Document) -> JsValue {
     let obj = Object::new();
@@ -24,14 +24,30 @@ pub fn errors_to_js(errors: &[ParseError]) -> JsValue {
 
 fn headers_to_js(h: &HeaderSection) -> JsValue {
     let obj = Object::new();
-    if let Some(ref v) = h.title { set(&obj, "title", &JsValue::from_str(v)); }
-    if let Some(ref v) = h.subtitle { set(&obj, "subtitle", &JsValue::from_str(v)); }
-    if let Some(ref v) = h.composer { set(&obj, "composer", &JsValue::from_str(v)); }
-    if let Some(v) = h.tempo { set(&obj, "tempo", &JsValue::from_f64(v as f64)); }
-    if let Some((b, u)) = h.time { set(&obj, "time", &frac_to_js(b, u)); }
-    if let Some(ref v) = h.grouping { set(&obj, "grouping", &vec_u32_to_js(v)); }
-    if let Some((b, u)) = h.note { set(&obj, "note", &frac_to_js(b, u)); }
-    if let Some(v) = h.divisions { set(&obj, "divisions", &JsValue::from_f64(v as f64)); }
+    if let Some(ref v) = h.title {
+        set(&obj, "title", &JsValue::from_str(v));
+    }
+    if let Some(ref v) = h.subtitle {
+        set(&obj, "subtitle", &JsValue::from_str(v));
+    }
+    if let Some(ref v) = h.composer {
+        set(&obj, "composer", &JsValue::from_str(v));
+    }
+    if let Some(v) = h.tempo {
+        set(&obj, "tempo", &JsValue::from_f64(v as f64));
+    }
+    if let Some((b, u)) = h.time {
+        set(&obj, "time", &frac_to_js(b, u));
+    }
+    if let Some(ref v) = h.grouping {
+        set(&obj, "grouping", &vec_u32_to_js(v));
+    }
+    if let Some((b, u)) = h.note {
+        set(&obj, "note", &frac_to_js(b, u));
+    }
+    if let Some(v) = h.divisions {
+        set(&obj, "divisions", &JsValue::from_f64(v as f64));
+    }
     obj.into()
 }
 
@@ -69,12 +85,20 @@ fn measures_to_js(measures: &[MeasureSection]) -> JsValue {
     for m in measures {
         let obj = Object::new();
         set(&obj, "barline", &barline_to_js(&m.barline));
-        set(&obj, "barlineLocation", &source_location_to_js(&m.barline_location));
+        set(
+            &obj,
+            "barlineLocation",
+            &source_location_to_js(&m.barline_location),
+        );
         if let Some(ref closing) = m.closing_barline {
             set(&obj, "closingBarline", &barline_to_js(closing));
         }
         if let Some(ref location) = m.closing_barline_location {
-            set(&obj, "closingBarlineLocation", &source_location_to_js(location));
+            set(
+                &obj,
+                "closingBarlineLocation",
+                &source_location_to_js(location),
+            );
         }
         set(&obj, "tokens", &exprs_to_js(&m.tokens));
         arr.push(&obj);
@@ -104,9 +128,15 @@ fn expr_to_js(e: &MeasureExpr) -> JsValue {
         MeasureExpr::BasicNote(note) => {
             set(&obj, "kind", &JsValue::from_str("basic"));
             set(&obj, "glyph", &JsValue::from_str(&note.glyph));
-            if note.dots > 0 { set(&obj, "dots", &JsValue::from_f64(note.dots as f64)); }
-            if note.halves > 0 { set(&obj, "halves", &JsValue::from_f64(note.halves as f64)); }
-            if note.stars > 0 { set(&obj, "stars", &JsValue::from_f64(note.stars as f64)); }
+            if note.dots > 0 {
+                set(&obj, "dots", &JsValue::from_f64(note.dots as f64));
+            }
+            if note.halves > 0 {
+                set(&obj, "halves", &JsValue::from_f64(note.halves as f64));
+            }
+            if note.stars > 0 {
+                set(&obj, "stars", &JsValue::from_f64(note.stars as f64));
+            }
             if !note.modifiers.is_empty() {
                 set(&obj, "modifiers", &strings_to_js(&note.modifiers));
             }
@@ -115,9 +145,15 @@ fn expr_to_js(e: &MeasureExpr) -> JsValue {
             set(&obj, "kind", &JsValue::from_str("summoned"));
             set(&obj, "track", &JsValue::from_str(track));
             set(&obj, "glyph", &JsValue::from_str(&note.glyph));
-            if note.dots > 0 { set(&obj, "dots", &JsValue::from_f64(note.dots as f64)); }
-            if note.halves > 0 { set(&obj, "halves", &JsValue::from_f64(note.halves as f64)); }
-            if note.stars > 0 { set(&obj, "stars", &JsValue::from_f64(note.stars as f64)); }
+            if note.dots > 0 {
+                set(&obj, "dots", &JsValue::from_f64(note.dots as f64));
+            }
+            if note.halves > 0 {
+                set(&obj, "halves", &JsValue::from_f64(note.halves as f64));
+            }
+            if note.stars > 0 {
+                set(&obj, "stars", &JsValue::from_f64(note.stars as f64));
+            }
             if !note.modifiers.is_empty() {
                 set(&obj, "modifiers", &strings_to_js(&note.modifiers));
             }
@@ -187,9 +223,15 @@ fn notes_to_js(notes: &[NoteExpr]) -> JsValue {
     for n in notes {
         let obj = Object::new();
         set(&obj, "glyph", &JsValue::from_str(&n.glyph));
-        if n.dots > 0 { set(&obj, "dots", &JsValue::from_f64(n.dots as f64)); }
-        if n.halves > 0 { set(&obj, "halves", &JsValue::from_f64(n.halves as f64)); }
-        if n.stars > 0 { set(&obj, "stars", &JsValue::from_f64(n.stars as f64)); }
+        if n.dots > 0 {
+            set(&obj, "dots", &JsValue::from_f64(n.dots as f64));
+        }
+        if n.halves > 0 {
+            set(&obj, "halves", &JsValue::from_f64(n.halves as f64));
+        }
+        if n.stars > 0 {
+            set(&obj, "stars", &JsValue::from_f64(n.stars as f64));
+        }
         if !n.modifiers.is_empty() {
             set(&obj, "modifiers", &strings_to_js(&n.modifiers));
         }

@@ -32,165 +32,323 @@ pub enum Token {
     Comment,
 
     // --- Navigation (multi-word first for longest-match) ---
-    #[token("@dc-al-fine")]   NavDCalFine,
-    #[token("@dc-al-coda")]   NavDCalCoda,
-    #[token("@ds-al-fine")]   NavDSalFine,
-    #[token("@ds-al-coda")]   NavDSalCoda,
-    #[token("@to-coda")]      NavToCoda,
-    #[token("@segno")]        NavSegno,
-    #[token("@coda")]         NavCoda,
-    #[token("@fine")]         NavFine,
-    #[token("@dc")]           NavDC,
-    #[token("@ds")]           NavDS,
+    #[token("@dc-al-fine")]
+    NavDCalFine,
+    #[token("@dc-al-coda")]
+    NavDCalCoda,
+    #[token("@ds-al-fine")]
+    NavDSalFine,
+    #[token("@ds-al-coda")]
+    NavDSalCoda,
+    #[token("@to-coda")]
+    NavToCoda,
+    #[token("@segno")]
+    NavSegno,
+    #[token("@coda")]
+    NavCoda,
+    #[token("@fine")]
+    NavFine,
+    #[token("@dc")]
+    NavDC,
+    #[token("@ds")]
+    NavDS,
 
     // --- Dynamic marks (longest first for prefix disambiguation) ---
-    #[token("@ppp")] DynamicPpp,
-    #[token("@fff")] DynamicFff,
-    #[token("@pp")]  DynamicPp,
-    #[token("@mp")]  DynamicMp,
-    #[token("@mf")]  DynamicMf,
-    #[token("@ff")]  DynamicFf,
-    #[token("@p")]   DynamicP,
-    #[token("@f")]   DynamicF,
+    #[token("@ppp")]
+    DynamicPpp,
+    #[token("@fff")]
+    DynamicFff,
+    #[token("@pp")]
+    DynamicPp,
+    #[token("@mp")]
+    DynamicMp,
+    #[token("@mf")]
+    DynamicMf,
+    #[token("@ff")]
+    DynamicFf,
+    #[token("@p")]
+    DynamicP,
+    #[token("@f")]
+    DynamicF,
 
     // --- Routed track prefixes (@HH, @HF, ...) ---
-    #[token("@BD2")] RouteBD2,
-    #[token("@RC2")] RouteRC2,
-    #[token("@T4")]  RouteT4,
-    #[token("@T3")]  RouteT3,
-    #[token("@T2")]  RouteT2,
-    #[token("@T1")]  RouteT1,
-    #[token("@SPL")] RouteSPL,
-    #[token("@CHN")] RouteCHN,
-    #[token("@HH")]  RouteHH,
-    #[token("@HF")]  RouteHF,
-    #[token("@SD")]  RouteSD,
-    #[token("@BD")]  RouteBD,
-    #[token("@RC")]  RouteRC,
-    #[token("@C2")]  RouteC2,
-    #[token("@C")]   RouteC,
-    #[token("@ST")]  RouteST,
-    #[token("@CB")]  RouteCB,
-    #[token("@WB")]  RouteWB,
-    #[token("@CL")]  RouteCL,
+    #[token("@BD2")]
+    RouteBD2,
+    #[token("@RC2")]
+    RouteRC2,
+    #[token("@T4")]
+    RouteT4,
+    #[token("@T3")]
+    RouteT3,
+    #[token("@T2")]
+    RouteT2,
+    #[token("@T1")]
+    RouteT1,
+    #[token("@SPL")]
+    RouteSPL,
+    #[token("@CHN")]
+    RouteCHN,
+    #[token("@HH")]
+    RouteHH,
+    #[token("@HF")]
+    RouteHF,
+    #[token("@SD")]
+    RouteSD,
+    #[token("@BD")]
+    RouteBD,
+    #[token("@RC")]
+    RouteRC,
+    #[token("@C2")]
+    RouteC2,
+    #[token("@C")]
+    RouteC,
+    #[token("@ST")]
+    RouteST,
+    #[token("@CB")]
+    RouteCB,
+    #[token("@WB")]
+    RouteWB,
+    #[token("@CL")]
+    RouteCL,
 
     // --- Summon prefixes (HH:, HF:, ...) ---
-    #[token("BD2:")] SummonBD2,
-    #[token("RC2:")] SummonRC2,
-    #[token("T4:")]  SummonT4,
-    #[token("T3:")]  SummonT3,
-    #[token("T2:")]  SummonT2,
-    #[token("T1:")]  SummonT1,
-    #[token("SPL:")] SummonSPL,
-    #[token("CHN:")] SummonCHN,
-    #[token("HH:")]  SummonHH,
-    #[token("HF:")]  SummonHF,
-    #[token("SD:")]  SummonSD,
-    #[token("BD:")]  SummonBD,
-    #[token("RC:")]  SummonRC,
-    #[token("C2:")]  SummonC2,
-    #[token("C:")]   SummonC,
-    #[token("ST:")]  SummonST,
-    #[token("CB:")]  SummonCB,
-    #[token("WB:")]  SummonWB,
-    #[token("CL:")]  SummonCL,
+    #[token("BD2:")]
+    SummonBD2,
+    #[token("RC2:")]
+    SummonRC2,
+    #[token("T4:")]
+    SummonT4,
+    #[token("T3:")]
+    SummonT3,
+    #[token("T2:")]
+    SummonT2,
+    #[token("T1:")]
+    SummonT1,
+    #[token("SPL:")]
+    SummonSPL,
+    #[token("CHN:")]
+    SummonCHN,
+    #[token("HH:")]
+    SummonHH,
+    #[token("HF:")]
+    SummonHF,
+    #[token("SD:")]
+    SummonSD,
+    #[token("BD:")]
+    SummonBD,
+    #[token("RC:")]
+    SummonRC,
+    #[token("C2:")]
+    SummonC2,
+    #[token("C:")]
+    SummonC,
+    #[token("ST:")]
+    SummonST,
+    #[token("CB:")]
+    SummonCB,
+    #[token("WB:")]
+    SummonWB,
+    #[token("CL:")]
+    SummonCL,
 
     // --- Header keywords ---
-    #[token("divisions")] KwDivisions,
-    #[token("subtitle")]  KwSubtitle,
-    #[token("composer")]  KwComposer,
-    #[token("grouping")]  KwGrouping,
-    #[token("tempo")]     KwTempo,
-    #[token("title")]     KwTitle,
-    #[token("time")]      KwTime,
-    #[token("note")]      KwNote,
+    #[token("divisions")]
+    KwDivisions,
+    #[token("subtitle")]
+    KwSubtitle,
+    #[token("composer")]
+    KwComposer,
+    #[token("grouping")]
+    KwGrouping,
+    #[token("tempo")]
+    KwTempo,
+    #[token("title")]
+    KwTitle,
+    #[token("time")]
+    KwTime,
+    #[token("note")]
+    KwNote,
 
     // --- Modifier keywords ---
-    #[token("half-open")] ModHalfOpen,
-    #[token("accent")]    ModAccent,
-    #[token("choke")]     ModChoke,
-    #[token("close")]     ModClose,
-    #[token("cross")]     ModCross,
-    #[token("ghost")]     ModGhost,
-    #[token("flam")]      ModFlam,
-    #[token("drag")]      ModDrag,
-    #[token("roll")]      ModRoll,
-    #[token("dead")]      ModDead,
-    #[token("open")]      ModOpen,
-    #[token("bell")]      ModBell,
-    #[token("rim")]       ModRim,
+    #[token("half-open")]
+    ModHalfOpen,
+    #[token("accent")]
+    ModAccent,
+    #[token("choke")]
+    ModChoke,
+    #[token("close")]
+    ModClose,
+    #[token("cross")]
+    ModCross,
+    #[token("ghost")]
+    ModGhost,
+    #[token("flam")]
+    ModFlam,
+    #[token("drag")]
+    ModDrag,
+    #[token("roll")]
+    ModRoll,
+    #[token("dead")]
+    ModDead,
+    #[token("open")]
+    ModOpen,
+    #[token("bell")]
+    ModBell,
+    #[token("rim")]
+    ModRim,
 
     // --- Glyph tokens (longest-first for prefix disambiguation) ---
     // 3-char glyphs
-    #[token("BD2")] GlyphBD2,
-    #[token("RC2")] GlyphRC2,
-    #[token("SPL")] GlyphSPL,
-    #[token("CHN")] GlyphCHN,
-    #[token("spl")] Glyphspl,
-    #[token("chn")] Glyphchn,
+    #[token("BD2")]
+    GlyphBD2,
+    #[token("RC2")]
+    GlyphRC2,
+    #[token("SPL")]
+    GlyphSPL,
+    #[token("CHN")]
+    GlyphCHN,
+    #[token("spl")]
+    Glyphspl,
+    #[token("chn")]
+    Glyphchn,
     // 2-char glyphs (tracks T1-T4, C2, B2, R2, c2, b2, r2, t1-t4)
-    #[token("T4")] GlyphT4,
-    #[token("T3")] GlyphT3,
-    #[token("T2")] GlyphT2,
-    #[token("T1")] GlyphT1,
-    #[token("t4")] Glypht4,
-    #[token("t3")] Glypht3,
-    #[token("t2")] Glypht2,
-    #[token("t1")] Glypht1,
-    #[token("C2")] GlyphC2,
-    #[token("c2")] Glyphc2,
-    #[token("B2")] GlyphB2,
-    #[token("b2")] Glyphb2,
-    #[token("R2")] GlyphR2,
-    #[token("r2")] Glyphr2,
-    #[token("HH")] GlyphHH,
-    #[token("HF")] GlyphHF,
-    #[token("SD")] GlyphSD,
-    #[token("BD")] GlyphBD,
-    #[token("RC")] GlyphRC,
-    #[token("ST")] GlyphST,
-    #[token("CB")] GlyphCB,
-    #[token("WB")] GlyphWB,
-    #[token("CL")] GlyphCL,
-    #[token("cb")] Glyphcb,
-    #[token("wb")] Glyphwb,
-    #[token("cl")] Glyphcl,
+    #[token("T4")]
+    GlyphT4,
+    #[token("T3")]
+    GlyphT3,
+    #[token("T2")]
+    GlyphT2,
+    #[token("T1")]
+    GlyphT1,
+    #[token("t4")]
+    Glypht4,
+    #[token("t3")]
+    Glypht3,
+    #[token("t2")]
+    Glypht2,
+    #[token("t1")]
+    Glypht1,
+    #[token("C2")]
+    GlyphC2,
+    #[token("c2")]
+    Glyphc2,
+    #[token("B2")]
+    GlyphB2,
+    #[token("b2")]
+    Glyphb2,
+    #[token("R2")]
+    GlyphR2,
+    #[token("r2")]
+    Glyphr2,
+    #[token("HH")]
+    GlyphHH,
+    #[token("HF")]
+    GlyphHF,
+    #[token("SD")]
+    GlyphSD,
+    #[token("BD")]
+    GlyphBD,
+    #[token("RC")]
+    GlyphRC,
+    #[token("ST")]
+    GlyphST,
+    #[token("CB")]
+    GlyphCB,
+    #[token("WB")]
+    GlyphWB,
+    #[token("CL")]
+    GlyphCL,
+    #[token("cb")]
+    Glyphcb,
+    #[token("wb")]
+    Glyphwb,
+    #[token("cl")]
+    Glyphcl,
     // 1-char glyphs
-    #[token("x")] Glyphx,   #[token("X")] GlyphX,
-    #[token("d")] Glyphd,   #[token("D")] GlyphD,
-    #[token("s")] Glyphs,   #[token("S")] GlyphS,
-    #[token("b")] Glyphb,   #[token("B")] GlyphB,
-    #[token("r")] Glyphr,   #[token("R")] GlyphR,
-    #[token("c")] Glyphc,   #[token("C")] GlyphC,
-    #[token("o")] Glypho,   #[token("O")] GlyphO,
-    #[token("g")] Glyphg,   #[token("G")] GlyphG,
-    #[token("p")] Glyphp,   #[token("P")] GlyphP,
-    #[token("L")] GlyphL,
+    #[token("x")]
+    Glyphx,
+    #[token("X")]
+    GlyphX,
+    #[token("d")]
+    Glyphd,
+    #[token("D")]
+    GlyphD,
+    #[token("s")]
+    Glyphs,
+    #[token("S")]
+    GlyphS,
+    #[token("b")]
+    Glyphb,
+    #[token("B")]
+    GlyphB,
+    #[token("r")]
+    Glyphr,
+    #[token("R")]
+    GlyphR,
+    #[token("c")]
+    Glyphc,
+    #[token("C")]
+    GlyphC,
+    #[token("o")]
+    Glypho,
+    #[token("O")]
+    GlyphO,
+    #[token("g")]
+    Glyphg,
+    #[token("G")]
+    GlyphG,
+    #[token("p")]
+    Glyphp,
+    #[token("P")]
+    GlyphP,
+    #[token("L")]
+    GlyphL,
 
     // --- Barline tokens (longest first) ---
-    #[token("|:.")] VoltaRepeatStart,
-    #[token("||.")] DoubleVoltaTerminator,
-    #[token("|:")]  RepeatStart,
-    #[token(":|")]  RepeatEnd,
-    #[token("||")]  DoubleBarline,
-    #[token("|.")]  VoltaTerminator,
-    #[token("|")]   Barline,
+    #[token("|:.")]
+    VoltaRepeatStart,
+    #[token("||.")]
+    DoubleVoltaTerminator,
+    #[token("|:")]
+    RepeatStart,
+    #[token(":|")]
+    RepeatEnd,
+    #[token("||")]
+    DoubleBarline,
+    #[token("|.")]
+    VoltaTerminator,
+    #[token("|")]
+    Barline,
 
     // --- Single-character tokens ---
-    #[token("{")] LBrace,
-    #[token("}")] RBrace,
-    #[token("[")] LBracket,
-    #[token("]")] RBracket,
-    #[token("+")] Plus,
-    #[token(":")] Colon,
-    #[token("/")] Slash,
-    #[token(".")] Dot,
-    #[token("*")] Star,
-    #[token("-")] Rest,
-    #[token(",")] Comma,
-    #[token("<")] CrescendoStart,
-    #[token(">")] DecrescendoStart,
-    #[token("!")] HairpinEnd,
+    #[token("{")]
+    LBrace,
+    #[token("}")]
+    RBrace,
+    #[token("[")]
+    LBracket,
+    #[token("]")]
+    RBracket,
+    #[token("+")]
+    Plus,
+    #[token(":")]
+    Colon,
+    #[token("/")]
+    Slash,
+    #[token(".")]
+    Dot,
+    #[token("*")]
+    Star,
+    #[token("-")]
+    Rest,
+    #[token(",")]
+    Comma,
+    #[token("<")]
+    CrescendoStart,
+    #[token(">")]
+    DecrescendoStart,
+    #[token("!")]
+    HairpinEnd,
 
     // Synthetic: parser-generated free text (not derived by Logos)
     #[logos(skip)]
@@ -261,23 +419,23 @@ impl Token {
         match self {
             Token::RouteBD2 | Token::SummonBD2 => Some("BD2"),
             Token::RouteRC2 | Token::SummonRC2 => Some("RC2"),
-            Token::RouteT4  | Token::SummonT4  => Some("T4"),
-            Token::RouteT3  | Token::SummonT3  => Some("T3"),
-            Token::RouteT2  | Token::SummonT2  => Some("T2"),
-            Token::RouteT1  | Token::SummonT1  => Some("T1"),
+            Token::RouteT4 | Token::SummonT4 => Some("T4"),
+            Token::RouteT3 | Token::SummonT3 => Some("T3"),
+            Token::RouteT2 | Token::SummonT2 => Some("T2"),
+            Token::RouteT1 | Token::SummonT1 => Some("T1"),
             Token::RouteSPL | Token::SummonSPL => Some("SPL"),
             Token::RouteCHN | Token::SummonCHN => Some("CHN"),
-            Token::RouteHH  | Token::SummonHH  => Some("HH"),
-            Token::RouteHF  | Token::SummonHF  => Some("HF"),
-            Token::RouteSD  | Token::SummonSD  => Some("SD"),
-            Token::RouteBD  | Token::SummonBD  => Some("BD"),
-            Token::RouteRC  | Token::SummonRC  => Some("RC"),
-            Token::RouteC2  | Token::SummonC2  => Some("C2"),
-            Token::RouteC   | Token::SummonC   => Some("C"),
-            Token::RouteST  | Token::SummonST  => Some("ST"),
-            Token::RouteCB  | Token::SummonCB  => Some("CB"),
-            Token::RouteWB  | Token::SummonWB  => Some("WB"),
-            Token::RouteCL  | Token::SummonCL  => Some("CL"),
+            Token::RouteHH | Token::SummonHH => Some("HH"),
+            Token::RouteHF | Token::SummonHF => Some("HF"),
+            Token::RouteSD | Token::SummonSD => Some("SD"),
+            Token::RouteBD | Token::SummonBD => Some("BD"),
+            Token::RouteRC | Token::SummonRC => Some("RC"),
+            Token::RouteC2 | Token::SummonC2 => Some("C2"),
+            Token::RouteC | Token::SummonC => Some("C"),
+            Token::RouteST | Token::SummonST => Some("ST"),
+            Token::RouteCB | Token::SummonCB => Some("CB"),
+            Token::RouteWB | Token::SummonWB => Some("WB"),
+            Token::RouteCL | Token::SummonCL => Some("CL"),
             _ => None,
         }
     }
@@ -322,10 +480,7 @@ mod tests {
 
     #[test]
     fn test_newline_and_space() {
-        assert_eq!(
-            tokenize_ok("\n "),
-            vec![Token::Newline, Token::Space]
-        );
+        assert_eq!(tokenize_ok("\n "), vec![Token::Newline, Token::Space]);
     }
 
     #[test]
@@ -338,10 +493,7 @@ mod tests {
 
     #[test]
     fn test_bare_comment() {
-        assert_eq!(
-            tokenize_ok("#"),
-            vec![Token::Comment]
-        );
+        assert_eq!(tokenize_ok("#"), vec![Token::Comment]);
     }
 
     #[test]
@@ -371,8 +523,10 @@ mod tests {
         // --1-- should not be a multi-rest; it becomes individual tokens.
         // The parser's try_scan_multi_rest rejects bare `1` (requires 1\d+ for `1`).
         let tokens = tokenize_ok("--1--");
-        assert!(!tokens.iter().any(|t| matches!(t, Token::MultiRest(_))),
-            "--1-- should not tokenize as MultiRest");
+        assert!(
+            !tokens.iter().any(|t| matches!(t, Token::MultiRest(_))),
+            "--1-- should not tokenize as MultiRest"
+        );
     }
 
     #[test]
@@ -508,37 +662,42 @@ mod tests {
         // "tempo 120\n" — keyword + integer + newline
         assert_eq!(
             tokenize_ok("tempo 120\n"),
-            vec![Token::KwTempo, Token::Space, Token::Integer(120), Token::Newline]
+            vec![
+                Token::KwTempo,
+                Token::Space,
+                Token::Integer(120),
+                Token::Newline
+            ]
         );
     }
 
     #[test]
     fn test_track_measure_line() {
         let tokens = tokenize_ok("HH | x - x - |\n");
-        assert_eq!(tokens, vec![
-            Token::GlyphHH,
-            Token::Space,
-            Token::Barline,
-            Token::Space,
-            Token::Glyphx,
-            Token::Space,
-            Token::Rest,
-            Token::Space,
-            Token::Glyphx,
-            Token::Space,
-            Token::Rest,
-            Token::Space,
-            Token::Barline,
-            Token::Newline,
-        ]);
+        assert_eq!(
+            tokens,
+            vec![
+                Token::GlyphHH,
+                Token::Space,
+                Token::Barline,
+                Token::Space,
+                Token::Glyphx,
+                Token::Space,
+                Token::Rest,
+                Token::Space,
+                Token::Glyphx,
+                Token::Space,
+                Token::Rest,
+                Token::Space,
+                Token::Barline,
+                Token::Newline,
+            ]
+        );
     }
 
     #[test]
     fn test_modifier_with_colon() {
-        assert_eq!(
-            tokenize_ok(":accent"),
-            vec![Token::Colon, Token::ModAccent]
-        );
+        assert_eq!(tokenize_ok(":accent"), vec![Token::Colon, Token::ModAccent]);
     }
 
     #[test]

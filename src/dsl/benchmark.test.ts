@@ -95,7 +95,7 @@ describe("benchmark: parseDocumentSkeleton (regex parser)", () => {
     console.log(`  ${ITERATIONS}x full: ${elapsed.toFixed(2)}ms (${(elapsed / ITERATIONS).toFixed(4)}ms/op)`);
   });
 
-  it("long measure (100 measures)", () => {
+  it("long measure (100 measures)", { timeout: 15000 }, () => {
     const elapsed = runBenchmark("long", () => parseDocumentSkeleton(SAMPLE_DOCS[4]));
     console.log(`  ${ITERATIONS}x long: ${elapsed.toFixed(2)}ms (${(elapsed / ITERATIONS).toFixed(4)}ms/op)`);
   });

@@ -3208,6 +3208,106 @@ mod tests {
             stems[0].anchor_item_id.is_some(),
             "shared stem should anchor to a notehead"
         );
+
+        let stem = match &stems[0].primitive {
+            ScenePrimitive::LineSegment(line) => line,
+            _ => panic!("stem should be a line"),
+        };
+        let note_ys = noteheads
+            .iter()
+            .filter_map(|item| item_bounds(item).map(|(_, y, _, _)| y))
+            .collect::<Vec<_>>();
+        let lowest_note_y = note_ys
+            .into_iter()
+            .max_by(|a, b| a.partial_cmp(b).unwrap())
+            .expect("expected noteheads");
+        assert!(
+            stem.y2_pt >= lowest_note_y - 2.0,
+            "shared up-stem should extend through the lower notehead: stem_bottom={:.2} lowest_note_y={lowest_note_y:.2}",
+            stem.y2_pt
+        );
+    }
+
+    #[test]
+    fn test_same_position_same_voice_hits_share_single_stem_without_horizontal_split() {
+        let measure = RenderMeasure {
+            index: 0,
+            global_index: 0,
+            paragraph_index: 0,
+            measure_in_paragraph: 0,
+            source_line: 1,
+            events: vec![
+                RenderEvent {
+                    track: "SD".into(),
+                    track_family: "drum".into(),
+                    start: Fraction {
+                        numerator: 0,
+                        denominator: 1,
+                    },
+                    duration: Fraction {
+                        numerator: 1,
+                        denominator: 8,
+                    },
+                    kind: EventKind::Hit,
+                    glyph: "d".into(),
+                    modifiers: vec![],
+                    modifier: None,
+                    voice: 1,
+                    beam: "none".into(),
+                    tuplet: None,
+                },
+                RenderEvent {
+                    track: "SD".into(),
+                    track_family: "drum".into(),
+                    start: Fraction {
+                        numerator: 0,
+                        denominator: 1,
+                    },
+                    duration: Fraction {
+                        numerator: 1,
+                        denominator: 8,
+                    },
+                    kind: EventKind::Hit,
+                    glyph: "d".into(),
+                    modifiers: vec![],
+                    modifier: None,
+                    voice: 1,
+                    beam: "none".into(),
+                    tuplet: None,
+                },
+            ],
+            barline: Some("regular".into()),
+            closing_barline: Some("final".into()),
+            start_nav: None,
+            end_nav: None,
+            volta_indices: None,
+            hairpins: vec![],
+            dynamics: vec![],
+            measure_repeat_slashes: None,
+            multi_rest_count: None,
+            note_value: 8,
+            volta_terminator: false,
+        };
+        let scene = build_layout_scene(
+            &simple_layout_score(vec![measure]),
+            &LayoutOptions::default(),
+        );
+        let noteheads = items_by_role(&scene, "notehead");
+        let stems = items_by_role(&scene, "stem");
+        let xs = noteheads
+            .iter()
+            .filter_map(|item| match &item.primitive {
+                ScenePrimitive::TextRun(text) => Some(text.x_pt),
+                _ => None,
+            })
+            .collect::<Vec<_>>();
+
+        assert_eq!(noteheads.len(), 2);
+        assert_eq!(stems.len(), 1);
+        assert!(
+            (xs[0] - xs[1]).abs() < 0.01,
+            "same-position hits should not split horizontally: {xs:?}"
+        );
     }
 
     #[test]
@@ -3418,8 +3518,8 @@ mod tests {
             .iter()
             .filter_map(|item| match &item.primitive {
                 ScenePrimitive::TextRun(text) => {
-                    let (_, y, _, _) = item_bounds(item)?;
-                    Some((text.x_pt, y))
+                    let bounds = item_bounds(item)?;
+                    Some((text.x_pt, bounds.1, bounds.0 + bounds.2))
                 }
                 _ => None,
             })
@@ -3431,6 +3531,149 @@ mod tests {
         assert!(
             upper_x > lower_x + 6.0,
             "adjacent same-voice chord noteheads should stagger with the higher note on the right: upper_x={upper_x:.2} lower_x={lower_x:.2}"
+        );
+
+        let stem = stems[0];
+        let stem_x = match &stem.primitive {
+            ScenePrimitive::LineSegment(line) => line.x1_pt,
+            _ => panic!("stem should be line"),
+        };
+        assert!(
+            (stem_x - positioned[0].0).abs() < 0.01,
+            "staggered seconds should place the shared stem at the center boundary: stem_x={stem_x:.2} upper_left={:.2} lower_right={:.2}",
+            positioned[0].0,
+            positioned[1].2
+        );
+    }
+
+    #[test]
+    fn test_beamed_shared_stem_chord_tail_stops_at_beam() {
+        let measure = RenderMeasure {
+            index: 0,
+            global_index: 0,
+            paragraph_index: 0,
+            measure_in_paragraph: 0,
+            source_line: 1,
+            events: vec![
+                RenderEvent {
+                    track: "SD".into(),
+                    track_family: "drum".into(),
+                    start: Fraction {
+                        numerator: 0,
+                        denominator: 1,
+                    },
+                    duration: Fraction {
+                        numerator: 1,
+                        denominator: 8,
+                    },
+                    kind: EventKind::Hit,
+                    glyph: "d".into(),
+                    modifiers: vec![],
+                    modifier: None,
+                    voice: 1,
+                    beam: "begin".into(),
+                    tuplet: None,
+                },
+                RenderEvent {
+                    track: "SD".into(),
+                    track_family: "drum".into(),
+                    start: Fraction {
+                        numerator: 0,
+                        denominator: 1,
+                    },
+                    duration: Fraction {
+                        numerator: 1,
+                        denominator: 8,
+                    },
+                    kind: EventKind::Hit,
+                    glyph: "d".into(),
+                    modifiers: vec![],
+                    modifier: None,
+                    voice: 1,
+                    beam: "begin".into(),
+                    tuplet: None,
+                },
+                RenderEvent {
+                    track: "SD".into(),
+                    track_family: "drum".into(),
+                    start: Fraction {
+                        numerator: 1,
+                        denominator: 8,
+                    },
+                    duration: Fraction {
+                        numerator: 1,
+                        denominator: 8,
+                    },
+                    kind: EventKind::Hit,
+                    glyph: "d".into(),
+                    modifiers: vec![],
+                    modifier: None,
+                    voice: 1,
+                    beam: "end".into(),
+                    tuplet: None,
+                },
+                RenderEvent {
+                    track: "SD".into(),
+                    track_family: "drum".into(),
+                    start: Fraction {
+                        numerator: 1,
+                        denominator: 8,
+                    },
+                    duration: Fraction {
+                        numerator: 1,
+                        denominator: 8,
+                    },
+                    kind: EventKind::Hit,
+                    glyph: "d".into(),
+                    modifiers: vec![],
+                    modifier: None,
+                    voice: 1,
+                    beam: "end".into(),
+                    tuplet: None,
+                },
+            ],
+            barline: Some("regular".into()),
+            closing_barline: Some("final".into()),
+            start_nav: None,
+            end_nav: None,
+            volta_indices: None,
+            hairpins: vec![],
+            dynamics: vec![],
+            measure_repeat_slashes: None,
+            multi_rest_count: None,
+            note_value: 8,
+            volta_terminator: false,
+        };
+        let scene = build_layout_scene(
+            &simple_layout_score(vec![measure]),
+            &LayoutOptions::default(),
+        );
+        let stems = items_by_role(&scene, "stem");
+        let beam = items_by_role(&scene, "beam")
+            .into_iter()
+            .next()
+            .expect("expected beam");
+
+        assert_eq!(stems.len(), 2, "two beamed chord slots should produce two shared stems");
+        let right_stem = stems
+            .iter()
+            .filter_map(|item| match &item.primitive {
+                ScenePrimitive::LineSegment(line) => Some((line.x1_pt, line.y1_pt)),
+                _ => None,
+            })
+            .max_by(|a, b| a.0.partial_cmp(&b.0).unwrap())
+            .expect("expected right stem");
+        let beam_path = match &beam.primitive {
+            ScenePrimitive::Path(path) => path.d.as_str(),
+            _ => panic!("beam should be path"),
+        };
+        let tokens = beam_path.split_whitespace().collect::<Vec<_>>();
+        let beam_end_y: f32 = tokens[5].parse().expect("beam end y");
+
+        assert!(
+            (right_stem.1 - beam_end_y).abs() < 0.01,
+            "tail shared stem should stop at beam: stem_tip_y={:.2} beam_end_y={beam_end_y:.2}",
+            right_stem.1
         );
     }
 
@@ -3857,6 +4100,27 @@ struct PreparedClusterNote<'a> {
     note_role: GlyphRole,
     glyph_metric: CanonicalGlyphMetric,
     x_offset: f32,
+}
+
+#[derive(Clone, Copy)]
+struct StemLayout {
+    stem_x: f32,
+    stem_attach_y: f32,
+    stem_body_min_y: f32,
+    stem_body_max_y: f32,
+    anchor_note_id: Option<usize>,
+}
+
+struct HitClusterPlan {
+    measure_id: String,
+    event_x: f32,
+    voice: u8,
+    beam_group: Option<u32>,
+    beam_level: u8,
+    needs_stem: bool,
+    stem_up: bool,
+    stem_len_pt: f32,
+    note_placements: Vec<NotePlacement>,
 }
 
 /// Build systems from a NormalizedScore.
@@ -6364,6 +6628,7 @@ fn render_slot_group(sink: &mut SceneEmitSink<'_>, input: RenderSlotGroupInput<'
 
     let mut note_anchors_by_voice: std::collections::BTreeMap<u8, Vec<NotePlacement>> =
         std::collections::BTreeMap::new();
+    let mut hit_cluster_plans = Vec::new();
 
     for voice in input
         .slot_group
@@ -6388,7 +6653,7 @@ fn render_slot_group(sink: &mut SceneEmitSink<'_>, input: RenderSlotGroupInput<'
             } else {
                 0.0
             };
-            let placements = render_hit_cluster(
+            let cluster_plan = render_hit_cluster(
                 sink,
                 RenderHitClusterInput {
                     measure_id: input.measure_id,
@@ -6397,11 +6662,11 @@ fn render_slot_group(sink: &mut SceneEmitSink<'_>, input: RenderSlotGroupInput<'
                     staff_top: input.staff_top,
                     voice_hits: &voice_hits,
                     beam_group: input.beam_groups_by_voice.get(&voice).copied(),
-                    beam_anchors: input.beam_anchors,
                     stem_len_pt: input.stem_len_pt,
                 },
             );
-            note_anchors_by_voice.insert(voice, placements);
+            note_anchors_by_voice.insert(voice, cluster_plan.note_placements.clone());
+            hit_cluster_plans.push(cluster_plan);
         }
 
         for rest in input.slot_group.iter().filter(|slot_event| {
@@ -6429,6 +6694,10 @@ fn render_slot_group(sink: &mut SceneEmitSink<'_>, input: RenderSlotGroupInput<'
                 fill: "#333",
             });
         }
+    }
+
+    for cluster_plan in hit_cluster_plans {
+        render_hit_cluster_stem_and_accents(sink, cluster_plan, input.beam_anchors);
     }
 
     let default_anchor = note_anchors_by_voice.values().find_map(|placements| {
@@ -6522,21 +6791,20 @@ fn beam_groups_for_slot(
     result
 }
 
-struct RenderHitClusterInput<'a, 'b> {
+struct RenderHitClusterInput<'a> {
     measure_id: &'a str,
     event_x: f32,
     voice_shift: f32,
     staff_top: f32,
     voice_hits: &'a [&'a SlotEvent<'a>],
     beam_group: Option<u32>,
-    beam_anchors: &'b mut Vec<BeamAnchor>,
     stem_len_pt: f32,
 }
 
 fn render_hit_cluster(
     sink: &mut SceneEmitSink<'_>,
-    input: RenderHitClusterInput<'_, '_>,
-) -> Vec<NotePlacement> {
+    input: RenderHitClusterInput<'_>,
+) -> HitClusterPlan {
     let note_font_size = 30.0_f32;
     let stem_up = input
         .voice_hits
@@ -6630,104 +6898,227 @@ fn render_hit_cluster(
         });
     }
 
-    let mut accent_reference_y = None;
-    if let Some(first_hit) = input.voice_hits.first() {
-        let needs_stem =
-            first_hit.event.duration.denominator >= 4 || first_hit.event.tuplet.is_some();
-        if needs_stem {
-            let smufl_ss = note_font_size / 4.0;
-            let attach_note = if stem_up {
-                note_placements.iter().min_by(|a, b| {
-                    a.note_y
-                        .partial_cmp(&b.note_y)
+    let first_hit = input
+        .voice_hits
+        .first()
+        .expect("voice hit cluster should contain at least one hit");
+    let needs_stem =
+        first_hit.event.duration.denominator >= 4 || first_hit.event.tuplet.is_some();
+    let beam_level = if first_hit.event.duration.denominator >= 32 {
+        3
+    } else if first_hit.event.duration.denominator >= 16 {
+        2
+    } else if first_hit.event.duration.denominator >= 8 {
+        1
+    } else {
+        0
+    };
+
+    HitClusterPlan {
+        measure_id: input.measure_id.to_string(),
+        event_x: input.event_x,
+        voice: first_hit.event.voice,
+        beam_group: input.beam_group,
+        beam_level,
+        needs_stem,
+        stem_up,
+        stem_len_pt: input.stem_len_pt,
+        note_placements,
+    }
+}
+
+fn shared_stem_layout(
+    note_placements: &[NotePlacement],
+    default_attach_note: &NotePlacement,
+    stem_up: bool,
+    stem_anchor: GlyphPoint,
+    smufl_ss: f32,
+) -> StemLayout {
+    if let Some(stem_x) = centered_stem_x_for_displaced_chord(note_placements) {
+        if stem_up {
+            if let Some((anchor_note_index, anchor_note)) = note_placements
+                .iter()
+                .enumerate()
+                .filter(|(_, note)| note.note_x + 0.001 < stem_x)
+                .max_by(|(_, left), (_, right)| {
+                    left.note_y
+                        .partial_cmp(&right.note_y)
                         .unwrap_or(std::cmp::Ordering::Equal)
                 })
-            } else {
-                note_placements.iter().max_by(|a, b| {
-                    a.note_y
-                        .partial_cmp(&b.note_y)
-                        .unwrap_or(std::cmp::Ordering::Equal)
-                })
+            {
+                let (stem_body_min_y, stem_body_max_y) =
+                    chord_stem_body_range(note_placements, stem_up, smufl_ss);
+                return StemLayout {
+                    stem_x,
+                    stem_attach_y: anchor_note.note_y - stem_anchor.y_ss * smufl_ss,
+                    stem_body_min_y,
+                    stem_body_max_y,
+                    anchor_note_id: Some(anchor_note_index),
+                };
+            }
+        } else if let Some((anchor_note_index, anchor_note)) = note_placements
+            .iter()
+            .enumerate()
+            .filter(|(_, note)| note.note_x + 0.001 >= stem_x)
+            .min_by(|(_, left), (_, right)| {
+                left.note_y
+                    .partial_cmp(&right.note_y)
+                    .unwrap_or(std::cmp::Ordering::Equal)
+            })
+        {
+            let (stem_body_min_y, stem_body_max_y) =
+                chord_stem_body_range(note_placements, stem_up, smufl_ss);
+            return StemLayout {
+                stem_x,
+                stem_attach_y: anchor_note.note_y - stem_anchor.y_ss * smufl_ss,
+                stem_body_min_y,
+                stem_body_max_y,
+                anchor_note_id: Some(anchor_note_index),
             };
-            if let Some(attach_note) = attach_note {
-                let fallback_anchor = if stem_up {
-                    GlyphPoint {
-                        x_ss: 1.18,
-                        y_ss: 0.168,
-                    }
-                } else {
-                    GlyphPoint {
-                        x_ss: 0.0,
-                        y_ss: -0.168,
-                    }
-                };
-                let stem_anchor = if stem_up {
-                    attach_note.stem_up_anchor_ss
-                } else {
-                    attach_note.stem_down_anchor_ss
+        }
+    }
+
+    let anchor_note_index = note_placements
+        .iter()
+        .position(|note| std::ptr::eq(note, default_attach_note));
+    let (stem_body_min_y, stem_body_max_y) =
+        chord_stem_body_range(note_placements, stem_up, smufl_ss);
+    StemLayout {
+        stem_x: default_attach_note.note_x + stem_anchor.x_ss * smufl_ss,
+        stem_attach_y: default_attach_note.note_y - stem_anchor.y_ss * smufl_ss,
+        stem_body_min_y,
+        stem_body_max_y,
+        anchor_note_id: anchor_note_index,
+    }
+}
+
+fn chord_stem_body_range(
+    note_placements: &[NotePlacement],
+    stem_up: bool,
+    smufl_ss: f32,
+) -> (f32, f32) {
+    let mut min_y = f32::INFINITY;
+    let mut max_y = f32::NEG_INFINITY;
+    for note in note_placements {
+        let anchor = if stem_up {
+            note.stem_up_anchor_ss.unwrap_or(GlyphPoint {
+                x_ss: 1.18,
+                y_ss: 0.168,
+            })
+        } else {
+            note.stem_down_anchor_ss.unwrap_or(GlyphPoint {
+                x_ss: 0.0,
+                y_ss: -0.168,
+            })
+        };
+        let y = note.note_y - anchor.y_ss * smufl_ss;
+        min_y = min_y.min(y);
+        max_y = max_y.max(y);
+    }
+    (min_y, max_y)
+}
+
+fn render_hit_cluster_stem_and_accents(
+    sink: &mut SceneEmitSink<'_>,
+    cluster_plan: HitClusterPlan,
+    beam_anchors: &mut Vec<BeamAnchor>,
+) {
+    let mut accent_reference_y = None;
+    if cluster_plan.needs_stem {
+        let smufl_ss = 30.0_f32 / 4.0;
+        let attach_note = if cluster_plan.stem_up {
+            cluster_plan.note_placements.iter().min_by(|a, b| {
+                a.note_y
+                    .partial_cmp(&b.note_y)
+                    .unwrap_or(std::cmp::Ordering::Equal)
+            })
+        } else {
+            cluster_plan.note_placements.iter().max_by(|a, b| {
+                a.note_y
+                    .partial_cmp(&b.note_y)
+                    .unwrap_or(std::cmp::Ordering::Equal)
+            })
+        };
+        if let Some(attach_note) = attach_note {
+            let fallback_anchor = if cluster_plan.stem_up {
+                GlyphPoint {
+                    x_ss: 1.18,
+                    y_ss: 0.168,
                 }
-                .unwrap_or(fallback_anchor);
-                let stem_attach_x = attach_note.note_x + stem_anchor.x_ss * smufl_ss;
-                let stem_attach_y = attach_note.note_y - stem_anchor.y_ss * smufl_ss;
-                let stem_x = stem_attach_x;
-                let stem_y1 = if stem_up {
-                    stem_attach_y - input.stem_len_pt
-                } else {
-                    stem_attach_y
-                };
-                let stem_y2 = if stem_up {
-                    stem_attach_y
-                } else {
-                    stem_attach_y + input.stem_len_pt
-                };
-                accent_reference_y = Some(if stem_up { stem_y1 } else { stem_y2 });
-                let stem_id = sink.push_line_item(LineItemSpec {
-                    measure_id: Some(input.measure_id),
-                    role: "stem",
-                    x1: stem_x,
-                    y1: stem_y1,
-                    x2: stem_x,
-                    y2: stem_y2,
-                    stroke: "#333",
-                    stroke_width: 1.5,
-                    stroke_line_cap: None,
-                });
+            } else {
+                GlyphPoint {
+                    x_ss: 0.0,
+                    y_ss: -0.168,
+                }
+            };
+            let stem_anchor = if cluster_plan.stem_up {
+                attach_note.stem_up_anchor_ss
+            } else {
+                attach_note.stem_down_anchor_ss
+            }
+            .unwrap_or(fallback_anchor);
+            let stem_layout = shared_stem_layout(
+                &cluster_plan.note_placements,
+                attach_note,
+                cluster_plan.stem_up,
+                stem_anchor,
+                smufl_ss,
+            );
+            let stem_attach_y = stem_layout.stem_attach_y;
+            let stem_x = stem_layout.stem_x;
+            let stem_y1 = if cluster_plan.stem_up {
+                stem_attach_y - cluster_plan.stem_len_pt
+            } else {
+                stem_layout.stem_body_min_y
+            };
+            let stem_y2 = if cluster_plan.stem_up {
+                stem_layout.stem_body_max_y
+            } else {
+                stem_attach_y + cluster_plan.stem_len_pt
+            };
+            accent_reference_y = Some(if cluster_plan.stem_up { stem_y1 } else { stem_y2 });
+            let stem_id = sink.push_line_item(LineItemSpec {
+                measure_id: Some(cluster_plan.measure_id.as_str()),
+                role: "stem",
+                x1: stem_x,
+                y1: stem_y1,
+                x2: stem_x,
+                y2: stem_y2,
+                stroke: "#333",
+                stroke_width: 1.5,
+                stroke_line_cap: None,
+            });
+            if let Some(anchor_note_index) = stem_layout.anchor_note_id {
                 if let Some(item) = sink.last_item_mut() {
-                    item.anchor_item_id = Some(attach_note.note_id.clone());
+                    item.anchor_item_id =
+                        Some(cluster_plan.note_placements[anchor_note_index].note_id.clone());
                 }
-                let beam_level = if first_hit.event.duration.denominator >= 32 {
-                    3
-                } else if first_hit.event.duration.denominator >= 16 {
-                    2
-                } else if first_hit.event.duration.denominator >= 8 {
-                    1
-                } else {
-                    0
-                };
-                if let Some(group) = input.beam_group.filter(|_| beam_level > 0) {
-                    input.beam_anchors.push(BeamAnchor {
-                        x: input.event_x,
-                        stem_x,
-                        stem_tip_y: if stem_up { stem_y1 } else { stem_y2 },
-                        voice: first_hit.event.voice,
-                        group,
-                        level: beam_level,
-                        up: stem_up,
-                        stem_item_id: stem_id,
-                    });
-                }
+            }
+            if let Some(group) = cluster_plan.beam_group.filter(|_| cluster_plan.beam_level > 0) {
+                beam_anchors.push(BeamAnchor {
+                    x: cluster_plan.event_x,
+                    stem_x,
+                    stem_tip_y: if cluster_plan.stem_up { stem_y1 } else { stem_y2 },
+                    voice: cluster_plan.voice,
+                    group,
+                    level: cluster_plan.beam_level,
+                    up: cluster_plan.stem_up,
+                    stem_item_id: stem_id,
+                });
             }
         }
     }
 
-    let fallback_accent_y = if stem_up {
-        note_placements
+    let fallback_accent_y = if cluster_plan.stem_up {
+        cluster_plan
+            .note_placements
             .iter()
             .map(|placement| placement.note_y)
             .fold(f32::INFINITY, f32::min)
             - 18.0
     } else {
-        note_placements
+        cluster_plan
+            .note_placements
             .iter()
             .map(|placement| placement.note_y)
             .fold(f32::NEG_INFINITY, f32::max)
@@ -6735,13 +7126,28 @@ fn render_hit_cluster(
     };
     render_accent_glyphs(
         sink,
-        input.measure_id,
-        &note_placements,
-        stem_up,
+        cluster_plan.measure_id.as_str(),
+        &cluster_plan.note_placements,
+        cluster_plan.stem_up,
         accent_reference_y.unwrap_or(fallback_accent_y),
     );
+}
 
-    note_placements
+fn centered_stem_x_for_displaced_chord(note_placements: &[NotePlacement]) -> Option<f32> {
+    let min_x = note_placements
+        .iter()
+        .map(|note| note.note_x)
+        .fold(f32::INFINITY, f32::min);
+    let max_x = note_placements
+        .iter()
+        .map(|note| note.note_x)
+        .fold(f32::NEG_INFINITY, f32::max);
+
+    if max_x - min_x > 0.01 {
+        Some(max_x)
+    } else {
+        None
+    }
 }
 
 fn displace_overlapping_same_voice_noteheads(
@@ -6933,17 +7339,17 @@ fn render_beam_groups(
         let beam_slope = best_beam_slope(first.stem_x, primary_y, last.stem_x, raw_end_y);
         let end_y = primary_y + beam_slope * (last.stem_x - first.stem_x);
 
-        // Stretch intermediate stems to reach the beam line
-        if group.len() > 2 {
+        // After the final beam slope is chosen, every non-leading stem must terminate on that beam.
+        if group.len() > 1 {
             let x1 = first.stem_x;
             let xn = last.stem_x;
             let dx = xn - x1;
             let dy = end_y - primary_y;
-            for anchor in &group[1..group.len() - 1] {
+            for anchor in &group[1..] {
                 let t = if dx.abs() > 0.001 {
                     (anchor.stem_x - x1) / dx
                 } else {
-                    0.5
+                    1.0
                 };
                 let target_tip_y = primary_y + dy * t;
                 adjust_stem_tip(sink.items, &anchor.stem_item_id, target_tip_y, anchor.up);

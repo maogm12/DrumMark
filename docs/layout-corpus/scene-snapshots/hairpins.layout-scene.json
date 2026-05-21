@@ -257,22 +257,6 @@
         {
           "id": "system-0-item-14",
           "measureId": "measure-0",
-          "anchorItemId": "system-0-item-13",
-          "role": "stem",
-          "kind": "lineSegment",
-          "zIndex": 0,
-          "primitive": {
-            "x1Pt": 165.1750030517578,
-            "y1Pt": 200.75,
-            "x2Pt": 165.1750030517578,
-            "y2Pt": 231.75,
-            "stroke": "#333",
-            "strokeWidth": 1.5
-          }
-        },
-        {
-          "id": "system-0-item-15",
-          "measureId": "measure-0",
           "role": "notehead",
           "kind": "textRun",
           "zIndex": 0,
@@ -287,9 +271,25 @@
           }
         },
         {
+          "id": "system-0-item-15",
+          "measureId": "measure-0",
+          "anchorItemId": "system-0-item-13",
+          "role": "stem",
+          "kind": "lineSegment",
+          "zIndex": 0,
+          "primitive": {
+            "x1Pt": 165.1750030517578,
+            "y1Pt": 200.75,
+            "x2Pt": 165.1750030517578,
+            "y2Pt": 231.75,
+            "stroke": "#333",
+            "strokeWidth": 1.5
+          }
+        },
+        {
           "id": "system-0-item-16",
           "measureId": "measure-0",
-          "anchorItemId": "system-0-item-15",
+          "anchorItemId": "system-0-item-14",
           "role": "stem",
           "kind": "lineSegment",
           "zIndex": 0,
@@ -321,22 +321,6 @@
         {
           "id": "system-0-item-18",
           "measureId": "measure-0",
-          "anchorItemId": "system-0-item-17",
-          "role": "stem",
-          "kind": "lineSegment",
-          "zIndex": 0,
-          "primitive": {
-            "x1Pt": 204.50833129882812,
-            "y1Pt": 200.75,
-            "x2Pt": 204.50833129882812,
-            "y2Pt": 231.75,
-            "stroke": "#333",
-            "strokeWidth": 1.5
-          }
-        },
-        {
-          "id": "system-0-item-19",
-          "measureId": "measure-0",
           "role": "rest",
           "kind": "glyphRun",
           "zIndex": 0,
@@ -349,6 +333,22 @@
             "fontFamily": "Bravura",
             "fontSizePt": 30,
             "fill": "#333"
+          }
+        },
+        {
+          "id": "system-0-item-19",
+          "measureId": "measure-0",
+          "anchorItemId": "system-0-item-17",
+          "role": "stem",
+          "kind": "lineSegment",
+          "zIndex": 0,
+          "primitive": {
+            "x1Pt": 204.50833129882812,
+            "y1Pt": 200.75,
+            "x2Pt": 204.50833129882812,
+            "y2Pt": 231.75,
+            "stroke": "#333",
+            "strokeWidth": 1.5
           }
         },
         {
@@ -394,7 +394,7 @@
             "x1Pt": 239.8416748046875,
             "y1Pt": 200.75,
             "x2Pt": 239.8416748046875,
-            "y2Pt": 231.75,
+            "y2Pt": 254.3000030517578,
             "stroke": "#333",
             "strokeWidth": 1.5
           }
@@ -418,22 +418,6 @@
         {
           "id": "system-0-item-24",
           "measureId": "measure-0",
-          "anchorItemId": "system-0-item-23",
-          "role": "stem",
-          "kind": "lineSegment",
-          "zIndex": 0,
-          "primitive": {
-            "x1Pt": 275.17498779296875,
-            "y1Pt": 200.75,
-            "x2Pt": 275.17498779296875,
-            "y2Pt": 231.75,
-            "stroke": "#333",
-            "strokeWidth": 1.5
-          }
-        },
-        {
-          "id": "system-0-item-25",
-          "measureId": "measure-0",
           "role": "rest",
           "kind": "glyphRun",
           "zIndex": 0,
@@ -446,6 +430,22 @@
             "fontFamily": "Bravura",
             "fontSizePt": 30,
             "fill": "#333"
+          }
+        },
+        {
+          "id": "system-0-item-25",
+          "measureId": "measure-0",
+          "anchorItemId": "system-0-item-23",
+          "role": "stem",
+          "kind": "lineSegment",
+          "zIndex": 0,
+          "primitive": {
+            "x1Pt": 275.17498779296875,
+            "y1Pt": 200.75,
+            "x2Pt": 275.17498779296875,
+            "y2Pt": 231.75,
+            "stroke": "#333",
+            "strokeWidth": 1.5
           }
         },
         {
@@ -583,7 +583,7 @@
         {
           "id": "system-0-item-34",
           "measureId": "measure-0",
-          "anchorItemId": "system-0-item-14",
+          "anchorItemId": "system-0-item-15",
           "role": "beam",
           "kind": "path",
           "zIndex": 0,
@@ -679,22 +679,6 @@
         {
           "id": "system-0-item-40",
           "measureId": "measure-1",
-          "anchorItemId": "system-0-item-39",
-          "role": "stem",
-          "kind": "lineSegment",
-          "zIndex": 0,
-          "primitive": {
-            "x1Pt": 475.8416748046875,
-            "y1Pt": 200.75,
-            "x2Pt": 475.8416748046875,
-            "y2Pt": 231.75,
-            "stroke": "#333",
-            "strokeWidth": 1.5
-          }
-        },
-        {
-          "id": "system-0-item-41",
-          "measureId": "measure-1",
           "role": "notehead",
           "kind": "textRun",
           "zIndex": 0,
@@ -709,9 +693,25 @@
           }
         },
         {
+          "id": "system-0-item-41",
+          "measureId": "measure-1",
+          "anchorItemId": "system-0-item-39",
+          "role": "stem",
+          "kind": "lineSegment",
+          "zIndex": 0,
+          "primitive": {
+            "x1Pt": 475.8416748046875,
+            "y1Pt": 200.75,
+            "x2Pt": 475.8416748046875,
+            "y2Pt": 231.75,
+            "stroke": "#333",
+            "strokeWidth": 1.5
+          }
+        },
+        {
           "id": "system-0-item-42",
           "measureId": "measure-1",
-          "anchorItemId": "system-0-item-41",
+          "anchorItemId": "system-0-item-40",
           "role": "stem",
           "kind": "lineSegment",
           "zIndex": 0,
@@ -743,22 +743,6 @@
         {
           "id": "system-0-item-44",
           "measureId": "measure-1",
-          "anchorItemId": "system-0-item-43",
-          "role": "stem",
-          "kind": "lineSegment",
-          "zIndex": 0,
-          "primitive": {
-            "x1Pt": 515.175048828125,
-            "y1Pt": 200.75,
-            "x2Pt": 515.175048828125,
-            "y2Pt": 231.75,
-            "stroke": "#333",
-            "strokeWidth": 1.5
-          }
-        },
-        {
-          "id": "system-0-item-45",
-          "measureId": "measure-1",
           "role": "rest",
           "kind": "glyphRun",
           "zIndex": 0,
@@ -771,6 +755,22 @@
             "fontFamily": "Bravura",
             "fontSizePt": 30,
             "fill": "#333"
+          }
+        },
+        {
+          "id": "system-0-item-45",
+          "measureId": "measure-1",
+          "anchorItemId": "system-0-item-43",
+          "role": "stem",
+          "kind": "lineSegment",
+          "zIndex": 0,
+          "primitive": {
+            "x1Pt": 515.175048828125,
+            "y1Pt": 200.75,
+            "x2Pt": 515.175048828125,
+            "y2Pt": 231.75,
+            "stroke": "#333",
+            "strokeWidth": 1.5
           }
         },
         {
@@ -816,7 +816,7 @@
             "x1Pt": 550.5083618164062,
             "y1Pt": 200.75,
             "x2Pt": 550.5083618164062,
-            "y2Pt": 231.75,
+            "y2Pt": 254.3000030517578,
             "stroke": "#333",
             "strokeWidth": 1.5
           }
@@ -840,22 +840,6 @@
         {
           "id": "system-0-item-50",
           "measureId": "measure-1",
-          "anchorItemId": "system-0-item-49",
-          "role": "stem",
-          "kind": "lineSegment",
-          "zIndex": 0,
-          "primitive": {
-            "x1Pt": 581.8416748046875,
-            "y1Pt": 200.75,
-            "x2Pt": 581.8416748046875,
-            "y2Pt": 231.75,
-            "stroke": "#333",
-            "strokeWidth": 1.5
-          }
-        },
-        {
-          "id": "system-0-item-51",
-          "measureId": "measure-1",
           "role": "notehead",
           "kind": "textRun",
           "zIndex": 0,
@@ -870,9 +854,25 @@
           }
         },
         {
+          "id": "system-0-item-51",
+          "measureId": "measure-1",
+          "anchorItemId": "system-0-item-49",
+          "role": "stem",
+          "kind": "lineSegment",
+          "zIndex": 0,
+          "primitive": {
+            "x1Pt": 581.8416748046875,
+            "y1Pt": 200.75,
+            "x2Pt": 581.8416748046875,
+            "y2Pt": 231.75,
+            "stroke": "#333",
+            "strokeWidth": 1.5
+          }
+        },
+        {
           "id": "system-0-item-52",
           "measureId": "measure-1",
-          "anchorItemId": "system-0-item-51",
+          "anchorItemId": "system-0-item-50",
           "role": "stem",
           "kind": "lineSegment",
           "zIndex": 0,
@@ -904,22 +904,6 @@
         {
           "id": "system-0-item-54",
           "measureId": "measure-1",
-          "anchorItemId": "system-0-item-53",
-          "role": "stem",
-          "kind": "lineSegment",
-          "zIndex": 0,
-          "primitive": {
-            "x1Pt": 621.175048828125,
-            "y1Pt": 200.75,
-            "x2Pt": 621.175048828125,
-            "y2Pt": 231.75,
-            "stroke": "#333",
-            "strokeWidth": 1.5
-          }
-        },
-        {
-          "id": "system-0-item-55",
-          "measureId": "measure-1",
           "role": "rest",
           "kind": "glyphRun",
           "zIndex": 0,
@@ -932,6 +916,22 @@
             "fontFamily": "Bravura",
             "fontSizePt": 30,
             "fill": "#333"
+          }
+        },
+        {
+          "id": "system-0-item-55",
+          "measureId": "measure-1",
+          "anchorItemId": "system-0-item-53",
+          "role": "stem",
+          "kind": "lineSegment",
+          "zIndex": 0,
+          "primitive": {
+            "x1Pt": 621.175048828125,
+            "y1Pt": 200.75,
+            "x2Pt": 621.175048828125,
+            "y2Pt": 231.75,
+            "stroke": "#333",
+            "strokeWidth": 1.5
           }
         },
         {
@@ -1001,22 +1001,6 @@
         {
           "id": "system-0-item-60",
           "measureId": "measure-1",
-          "anchorItemId": "system-0-item-58",
-          "role": "stem",
-          "kind": "lineSegment",
-          "zIndex": 0,
-          "primitive": {
-            "x1Pt": 687.8417358398438,
-            "y1Pt": 200.75,
-            "x2Pt": 687.8417358398438,
-            "y2Pt": 231.75,
-            "stroke": "#333",
-            "strokeWidth": 1.5
-          }
-        },
-        {
-          "id": "system-0-item-61",
-          "measureId": "measure-1",
           "role": "notehead",
           "kind": "textRun",
           "zIndex": 0,
@@ -1031,9 +1015,25 @@
           }
         },
         {
+          "id": "system-0-item-61",
+          "measureId": "measure-1",
+          "anchorItemId": "system-0-item-58",
+          "role": "stem",
+          "kind": "lineSegment",
+          "zIndex": 0,
+          "primitive": {
+            "x1Pt": 687.8417358398438,
+            "y1Pt": 200.75,
+            "x2Pt": 687.8417358398438,
+            "y2Pt": 254.3000030517578,
+            "stroke": "#333",
+            "strokeWidth": 1.5
+          }
+        },
+        {
           "id": "system-0-item-62",
           "measureId": "measure-1",
-          "anchorItemId": "system-0-item-61",
+          "anchorItemId": "system-0-item-60",
           "role": "stem",
           "kind": "lineSegment",
           "zIndex": 0,
@@ -1065,22 +1065,6 @@
         {
           "id": "system-0-item-64",
           "measureId": "measure-1",
-          "anchorItemId": "system-0-item-63",
-          "role": "stem",
-          "kind": "lineSegment",
-          "zIndex": 0,
-          "primitive": {
-            "x1Pt": 727.175048828125,
-            "y1Pt": 200.75,
-            "x2Pt": 727.175048828125,
-            "y2Pt": 231.75,
-            "stroke": "#333",
-            "strokeWidth": 1.5
-          }
-        },
-        {
-          "id": "system-0-item-65",
-          "measureId": "measure-1",
           "role": "rest",
           "kind": "glyphRun",
           "zIndex": 0,
@@ -1096,9 +1080,25 @@
           }
         },
         {
+          "id": "system-0-item-65",
+          "measureId": "measure-1",
+          "anchorItemId": "system-0-item-63",
+          "role": "stem",
+          "kind": "lineSegment",
+          "zIndex": 0,
+          "primitive": {
+            "x1Pt": 727.175048828125,
+            "y1Pt": 200.75,
+            "x2Pt": 727.175048828125,
+            "y2Pt": 231.75,
+            "stroke": "#333",
+            "strokeWidth": 1.5
+          }
+        },
+        {
           "id": "system-0-item-66",
           "measureId": "measure-1",
-          "anchorItemId": "system-0-item-40",
+          "anchorItemId": "system-0-item-41",
           "role": "beam",
           "kind": "path",
           "zIndex": 0,
@@ -1110,7 +1110,7 @@
         {
           "id": "system-0-item-67",
           "measureId": "measure-1",
-          "anchorItemId": "system-0-item-54",
+          "anchorItemId": "system-0-item-55",
           "role": "beam",
           "kind": "path",
           "zIndex": 0,

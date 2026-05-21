@@ -60,6 +60,25 @@ describe("SVG scene adapter", () => {
               anchorItemId: "item-2",
               primitive: { xPt: 50, yPt: 20, text: ">", fontFamily: "Bravura", fontSizePt: 12, fill: "#333", textAnchor: "middle" },
             },
+            {
+              id: "item-4",
+              measureId: "measure-0",
+              measureLocalFraction: { numerator: 1, denominator: 2 },
+              role: "dynamic",
+              kind: "textRun",
+              zIndex: 1,
+              primitive: {
+                xPt: 30,
+                yPt: 60,
+                text: "ff",
+                fontFamily: "Academico",
+                fontSizePt: 13,
+                fill: "#333",
+                textAnchor: "middle",
+                fontStyle: "italic",
+                accessibleLabel: "dynamic ff",
+              },
+            },
           ],
           composites: [
             {
@@ -89,6 +108,9 @@ describe("SVG scene adapter", () => {
     expect(svg).toContain('data-role="repeat-span-line"');
     expect(svg).toContain('data-role="volta-line"');
     expect(svg).toContain('data-anchor-item-id="item-2"');
+    expect(svg).toContain('<text data-role="dynamic" data-measure-id="measure-0" data-measure-local-fraction="1/2" aria-label="dynamic ff"');
+    expect(svg).toContain('font-style="italic"');
+    expect(svg).toContain(">ff</text>");
   });
 
   it("renders every scene page through the page-aware adapter", () => {

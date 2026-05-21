@@ -2379,3 +2379,136 @@ A native binary is available at `cargo run -- <file> --format json`. The binary 
 - Compiled WASM: ~101KB uncompressed, ~34KB gzipped
 - JS glue: ~11KB
 - No `serde` / `serde_json` dependency
+
+## Addendum 2026-05-20: Explicit Dynamic Marks
+
+### Syntax
+
+Dynamic marks use short `@<level>` directives:
+
+```drummark
+@ppp @pp @p @mp @mf @f @ff @fff
+```
+
+Bare `p` remains governed by ordinary playable note-token rules.
+
+Examples:
+
+```drummark
+SD | @p d - d - @mp d - d - |
+SD | @p d d < d d @f |
+SD | @ff d d > d d @mp |
+```
+
+### Directive Boundaries
+
+Dynamic directives are exact whole-token `@...` forms. A supported dynamic spelling is accepted only when followed by end of input, whitespace, comment start, a legal measure/group delimiter, or another delimiter that is legal in the current grammar context.
+
+Normative behavior:
+
+| Input | Result |
+|-------|--------|
+| `@f` | dynamic `f` |
+| `@f}` | dynamic `f`, then `}` |
+| `@f|` | dynamic `f`, then barline |
+| `@ffx` | parse error |
+| `@ffff` | parse error |
+| `@f:accent` | parse error |
+
+Dynamic marks join the closed `@...` family with current routed block directives and current navigation directives. There is no generic `@Identifier`.
+
+### Timing
+
+Dynamic marks are zero-duration measure expressions anchored to exact measure-local musical fractions.
+
+- At measure start, a dynamic anchors to `0/1`.
+- After duration-consuming content, it anchors to the current accumulated position.
+- After all duration-consuming content, it anchors to `1/1`.
+- Dynamics may share a position with notes, rests, sticking, hairpins, barline-edge navigation, and navigation marks.
+
+Adjacent routed blocks at the same surrounding position are simultaneous branches, not sequential cursor advances. Dynamics inside each routed block anchor from the shared outer start plus that block's internal scaled position, and the surrounding cursor advances by the routed-block cluster's maximum rendered duration.
+
+Dynamic marks inside rhythmic groups resolve through recursive container scaling. Dynamic marks are not legal inside combined-hit operands. A group remains invalid if, after filtering zero-duration tokens such as hairpins and dynamics, it contains no duration-consuming item.
+
+### Duplicate and Conflict Rules
+
+Dynamics are score-level expression marks, not track-local note modifiers.
+
+Dynamic comparison is by logical measure index and exact measure-local fraction before repeat playback expansion:
+
+- same-position same-level declarations deduplicate to one dynamic mark
+- same-position different-level declarations are a hard normalization error
+- deduplication is global across track lines, routed blocks, rhythmic groups, and repeated same-track declarations
+
+Normalized dynamic arrays are sorted by `at` ascending.
+
+### IR and Render Contract
+
+The Rust parser/core model includes:
+
+```rust
+pub enum MeasureExpr {
+    Dynamic(DynamicLevel),
+    // existing variants...
+}
+
+pub enum DynamicLevel {
+    Ppp,
+    Pp,
+    P,
+    Mp,
+    Mf,
+    F,
+    Ff,
+    Fff,
+}
+
+pub struct DynamicIntent {
+    pub level: DynamicLevel,
+    pub at: Fraction,
+}
+```
+
+`NormalizedMeasure` gains an always-present `dynamics: Vec<DynamicIntent>` field. TypeScript and WASM serialized forms mirror this with lowercase canonical levels:
+
+```typescript
+export type DynamicLevel = "ppp" | "pp" | "p" | "mp" | "mf" | "f" | "ff" | "fff";
+
+export type DynamicIntent = {
+  level: DynamicLevel;
+  at: Fraction;
+};
+```
+
+`RenderScore` extends each render measure with explicit dynamic data. `drummark-layout` owns its own public render-facing `DynamicLevel` and `DynamicMark` types, and core maps normalized dynamic levels into layout dynamic levels during render-score construction. Serialized JSON/WASM objects use lowercase canonical strings and explicit `dynamics` arrays. Adding render-measure dynamics requires a `RENDER_SCORE_VERSION` bump.
+
+### Layout
+
+Dynamic marks render below the staff as semantic `dynamic` scene items. Initial rendering uses `ScenePrimitive::TextRun` with canonical italic dynamic text. The item preserves the owning measure and measure-local fraction anchor in metadata and exposes the accessibility label `dynamic <level>`.
+
+Horizontal placement centers the dynamic text box on the resolved anchor X. At measure start/end, the box may shift inward only enough to avoid crossing the visible measure boundary plus canonical edge padding; the musical anchor remains unchanged.
+
+Lower-staff vertical priority from top to bottom is:
+
+1. lower-side note modifiers and articulations
+2. hairpins
+3. dynamics
+
+Layout seeds the lower skyline with noteheads, stems, beams, rests, and lower-side modifiers/articulations; then places and reserves hairpins; then places and reserves dynamics. Dynamics do not push hairpins in the same layout pass.
+
+### MusicXML
+
+Dynamic marks export as below-staff MusicXML direction dynamics:
+
+```xml
+<direction placement="below">
+  <direction-type>
+    <dynamics>
+      <f/>
+    </dynamics>
+  </direction-type>
+  <offset>...</offset>
+</direction>
+```
+
+The element inside `<dynamics>` is the canonical dynamic level. Mid-measure and end-measure dynamics use `<offset>` relative to measure start. Start-of-measure dynamics may omit `<offset>` or emit zero consistently with the existing direction export style. Score-level dynamics export once per percussion part, not once per track or voice.

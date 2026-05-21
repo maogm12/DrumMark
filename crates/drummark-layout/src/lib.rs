@@ -1,7 +1,7 @@
 use js_sys::{Array, Object};
 use wasm_bindgen::prelude::*;
 
-pub const RENDER_SCORE_VERSION: &str = "1";
+pub const RENDER_SCORE_VERSION: &str = "2";
 pub const LAYOUT_SCENE_VERSION: &str = "1";
 pub const CANONICAL_METRICS_VERSION: &str = "2026-05-13";
 const BASE_FONT_SIZE_PT: f32 = 30.0;
@@ -58,10 +58,44 @@ pub struct RenderMeasure {
     pub end_nav: Option<NavJump>,
     pub volta_indices: Option<Vec<u32>>,
     pub hairpins: Vec<HairpinSpan>,
+    pub dynamics: Vec<DynamicMark>,
     pub measure_repeat_slashes: Option<u32>,
     pub multi_rest_count: Option<u32>,
     pub note_value: u32,
     pub volta_terminator: bool,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct DynamicMark {
+    pub level: DynamicLevel,
+    pub at: Fraction,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum DynamicLevel {
+    Ppp,
+    Pp,
+    P,
+    Mp,
+    Mf,
+    F,
+    Ff,
+    Fff,
+}
+
+impl DynamicLevel {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            DynamicLevel::Ppp => "ppp",
+            DynamicLevel::Pp => "pp",
+            DynamicLevel::P => "p",
+            DynamicLevel::Mp => "mp",
+            DynamicLevel::Mf => "mf",
+            DynamicLevel::F => "f",
+            DynamicLevel::Ff => "ff",
+            DynamicLevel::Fff => "fff",
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -182,6 +216,7 @@ pub enum TextRole {
     Sticking,
     CountLabel,
     MeasureNumber,
+    Dynamic,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -340,6 +375,7 @@ pub struct SceneItem {
     pub id: String,
     pub measure_id: Option<String>,
     pub anchor_item_id: Option<String>,
+    pub measure_local_fraction: Option<Fraction>,
     pub role: String,
     pub kind: SceneItemKind,
     pub z_index: i32,
@@ -379,6 +415,8 @@ pub struct TextRun {
     pub fill: String,
     pub text_anchor: Option<String>,
     pub font_weight: Option<String>,
+    pub font_style: Option<String>,
+    pub accessible_label: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -654,6 +692,7 @@ struct WireSceneItem {
     id: String,
     measure_id: Option<String>,
     anchor_item_id: Option<String>,
+    measure_local_fraction: Option<Fraction>,
     role: String,
     kind: &'static str,
     z_index: i32,
@@ -682,6 +721,8 @@ enum WireScenePrimitive {
         fill: String,
         text_anchor: Option<String>,
         font_weight: Option<String>,
+        font_style: Option<String>,
+        accessible_label: Option<String>,
     },
     LineSegment {
         x1_pt: f32,
@@ -997,6 +1038,15 @@ pub fn canonical_text_metric(role: TextRole) -> CanonicalTextMetric {
             ascent_pt: 8.0,
             descent_pt: 2.0,
         },
+        TextRole::Dynamic => CanonicalTextMetric {
+            role,
+            font_family: "Academico",
+            font_size_pt: 13.0,
+            line_height_pt: 15.0,
+            average_advance_pt: 6.0,
+            ascent_pt: 10.0,
+            descent_pt: 3.0,
+        },
     }
 }
 
@@ -1147,6 +1197,7 @@ fn text_role_name(role: TextRole) -> &'static str {
         TextRole::Sticking => "sticking",
         TextRole::CountLabel => "countLabel",
         TextRole::MeasureNumber => "measureNumber",
+        TextRole::Dynamic => "dynamic",
     }
 }
 
@@ -1639,6 +1690,7 @@ mod tests {
                         start_measure_index: 0,
                         end_measure_index: 3,
                     }],
+                    dynamics: vec![],
                     measure_repeat_slashes: None,
                     multi_rest_count: None,
                     note_value: 8,
@@ -1696,6 +1748,7 @@ mod tests {
                     end_nav: None,
                     volta_indices: Some(vec![1]),
                     hairpins: vec![],
+                    dynamics: vec![],
                     measure_repeat_slashes: None,
                     multi_rest_count: None,
                     note_value: 8,
@@ -1732,6 +1785,7 @@ mod tests {
                     end_nav: None,
                     volta_indices: Some(vec![1]),
                     hairpins: vec![],
+                    dynamics: vec![],
                     measure_repeat_slashes: None,
                     multi_rest_count: None,
                     note_value: 8,
@@ -1768,6 +1822,7 @@ mod tests {
                     end_nav: Some(NavJump::DSalCoda),
                     volta_indices: Some(vec![1]),
                     hairpins: vec![],
+                    dynamics: vec![],
                     measure_repeat_slashes: None,
                     multi_rest_count: None,
                     note_value: 8,
@@ -1819,6 +1874,7 @@ mod tests {
             end_nav: None,
             volta_indices: None,
             hairpins: vec![],
+            dynamics: vec![],
             measure_repeat_slashes: None,
             multi_rest_count: None,
             note_value: 8,
@@ -1983,6 +2039,67 @@ mod tests {
         let baseline_y = hairpin_center_y(&baseline.pages[0]);
         assert!((hairpin_center_y(&below.pages[0]) - baseline_y - 10.0).abs() < 0.01);
         assert!((hairpin_center_y(&above.pages[0]) - baseline_y + 5.0).abs() < 0.01);
+    }
+
+    #[test]
+    fn test_dynamic_marks_render_below_hairpins_as_text_runs() {
+        let mut measure = regular_measure(0, 0, 4);
+        measure.hairpins = vec![HairpinSpan {
+            kind: HairpinKind::Crescendo,
+            start: Fraction {
+                numerator: 0,
+                denominator: 1,
+            },
+            end: Fraction {
+                numerator: 1,
+                denominator: 1,
+            },
+            start_measure_index: 0,
+            end_measure_index: 0,
+        }];
+        measure.dynamics = vec![DynamicMark {
+            level: DynamicLevel::P,
+            at: Fraction {
+                numerator: 1,
+                denominator: 2,
+            },
+        }];
+
+        let scene = build_layout_scene(
+            &simple_layout_score(vec![measure]),
+            &LayoutOptions::default(),
+        );
+        let dynamic = items_by_role(&scene, "dynamic")
+            .into_iter()
+            .next()
+            .expect("expected dynamic item");
+        let ScenePrimitive::TextRun(text) = &dynamic.primitive else {
+            panic!("dynamic should be text");
+        };
+        assert_eq!(text.text, "p");
+        assert_eq!(text.text_role, TextRole::Dynamic);
+        assert_eq!(text.text_anchor.as_deref(), Some("middle"));
+        assert_eq!(text.font_style.as_deref(), Some("italic"));
+        assert_eq!(text.accessible_label.as_deref(), Some("dynamic p"));
+        assert_eq!(
+            dynamic.measure_local_fraction,
+            Some(Fraction {
+                numerator: 1,
+                denominator: 2
+            })
+        );
+
+        let hairpin_bottom = scene.pages[0]
+            .items
+            .iter()
+            .find(|item| item.role == "hairpin-bottom")
+            .expect("expected hairpin bottom");
+        let (_, hairpin_y, _, hairpin_h) = item_bounds(hairpin_bottom).unwrap();
+        let (_, dynamic_y, _, _) = item_bounds(dynamic).unwrap();
+        assert!(
+            dynamic_y >= hairpin_y + hairpin_h + 4.0,
+            "dynamic should sit below hairpin"
+        );
     }
 
     #[test]
@@ -2246,6 +2363,7 @@ mod tests {
                 end_nav: None,
                 volta_indices: None,
                 hairpins: vec![],
+                dynamics: vec![],
                 measure_repeat_slashes: None,
                 multi_rest_count: None,
                 note_value: 8,
@@ -2601,6 +2719,7 @@ mod tests {
             end_nav: None,
             volta_indices: None,
             hairpins: vec![],
+            dynamics: vec![],
             measure_repeat_slashes: None,
             multi_rest_count: None,
             note_value: 8,
@@ -2634,9 +2753,7 @@ mod tests {
             .filter(|item| {
                 item.role == "notehead" && item.measure_id.as_deref() == Some("measure-0")
             })
-            .filter_map(|item| {
-                item_bounds(item).map(|(x, _, width, _)| x + width * 0.5)
-            })
+            .filter_map(|item| item_bounds(item).map(|(x, _, width, _)| x + width * 0.5))
             .collect::<Vec<_>>();
         note_centers.sort_by(|a, b| a.partial_cmp(b).unwrap());
         let inner_left = measure_box.x_pt + measure_left_pad(0, true, Some("regular"));
@@ -2779,6 +2896,7 @@ mod tests {
             end_nav: None,
             volta_indices: None,
             hairpins: vec![],
+            dynamics: vec![],
             measure_repeat_slashes: None,
             multi_rest_count: None,
             note_value: 8,
@@ -3066,6 +3184,7 @@ mod tests {
             end_nav: None,
             volta_indices: None,
             hairpins: vec![],
+            dynamics: vec![],
             measure_repeat_slashes: None,
             multi_rest_count: None,
             note_value: 8,
@@ -3163,6 +3282,7 @@ mod tests {
             end_nav: None,
             volta_indices: None,
             hairpins: vec![],
+            dynamics: vec![],
             measure_repeat_slashes: None,
             multi_rest_count: None,
             note_value: 8,
@@ -3273,6 +3393,7 @@ mod tests {
             end_nav: None,
             volta_indices: None,
             hairpins: vec![],
+            dynamics: vec![],
             measure_repeat_slashes: None,
             multi_rest_count: None,
             note_value: 8,
@@ -4976,6 +5097,7 @@ pub fn build_layout_scene(score: &RenderScore, opts: &LayoutOptions) -> LayoutSc
         &expanded.measures,
         opts.hairpin_offset_y,
     );
+    render_dynamic_marks(&mut sink, &page.measures, &expanded.measures, &score.header);
     for nav_spec in &deferred_navs {
         render_nav_markers(&mut sink, &mut page.composites, nav_spec);
     }
@@ -7334,6 +7456,80 @@ fn render_hairpin_fragments(
     }
 }
 
+fn render_dynamic_marks(
+    sink: &mut SceneEmitSink<'_>,
+    page_measures: &[SceneMeasure],
+    measures: &[DisplayMeasure<'_>],
+    header: &RenderHeader,
+) {
+    const LOWER_EXPRESSION_GAP_PT: f32 = 4.0;
+    const DYNAMIC_EDGE_PADDING_PT: f32 = 3.0;
+    const DYNAMIC_TEXT_PADDING_X_PT: f32 = 1.5;
+    const DYNAMIC_TEXT_PADDING_Y_PT: f32 = 1.0;
+
+    let metric = canonical_text_metric(TextRole::Dynamic);
+    for display_measure in measures {
+        if display_measure.measure.dynamics.is_empty() {
+            continue;
+        }
+        let Some(scene_measure) = page_measures
+            .iter()
+            .find(|measure| measure.global_index == display_measure.global_index)
+        else {
+            continue;
+        };
+        for dynamic in &display_measure.measure.dynamics {
+            let text = dynamic.level.as_str().to_string();
+            let text_width = canonical_text_width(TextRole::Dynamic, &text);
+            let anchor_x = dynamic_anchor_x(scene_measure, header, dynamic.at);
+            let left_bound = scene_measure.x_pt + DYNAMIC_EDGE_PADDING_PT;
+            let right_bound = scene_measure.x_pt + scene_measure.width_pt - DYNAMIC_EDGE_PADDING_PT;
+            let half_width = text_width * 0.5;
+            let min_x = left_bound + half_width;
+            let max_x = right_bound - half_width;
+            let x = if min_x <= max_x {
+                anchor_x.clamp(min_x, max_x)
+            } else {
+                (left_bound + right_bound) * 0.5
+            };
+            let occupied_bottom = bottom_skyline_sample_including_hairpins(
+                sink.items,
+                &[scene_measure],
+                x - half_width - DYNAMIC_TEXT_PADDING_X_PT,
+                x + half_width + DYNAMIC_TEXT_PADDING_X_PT,
+                scene_measure.y_pt + scene_measure.height_pt,
+            );
+            let baseline_y = occupied_bottom
+                + LOWER_EXPRESSION_GAP_PT
+                + DYNAMIC_TEXT_PADDING_Y_PT
+                + metric.ascent_pt;
+            let item_id = sink.push_text_item(TextItemSpec {
+                measure_id: Some(scene_measure.id.as_str()),
+                role: "dynamic",
+                x,
+                y: baseline_y,
+                text_role: TextRole::Dynamic,
+                text,
+                font_family: metric.font_family,
+                font_size_pt: metric.font_size_pt,
+                fill: "#333",
+                text_anchor: Some("middle"),
+                font_weight: None,
+            });
+            if let Some(item) = sink.last_item_mut() {
+                if item.id == item_id {
+                    item.measure_local_fraction = Some(dynamic.at);
+                }
+            }
+        }
+    }
+}
+
+fn dynamic_anchor_x(measure: &SceneMeasure, _header: &RenderHeader, fraction: Fraction) -> f32 {
+    let progress = fraction_to_f32(fraction).clamp(0.0, 1.0);
+    measure.x_pt + 14.0 + progress * (measure.width_pt - 28.0).max(1.0)
+}
+
 fn hairpin_open_height_at_progress(kind: HairpinKind, progress: f32, max_height: f32) -> f32 {
     let clamped = progress.clamp(0.0, 1.0);
     match kind {
@@ -7376,6 +7572,56 @@ fn bottom_skyline_sample(
             let in_system_band = item.measure_id.is_none()
                 && item_y >= system_top - 20.0
                 && item_y <= system_bottom + 60.0;
+            if !in_block_measure && !in_system_band {
+                continue;
+            }
+            let item_right = item_x + item_width;
+            if item_x < right && item_right > left {
+                bottom = bottom.max(item_y + item_height);
+            }
+        }
+    }
+    if bottom.is_finite() {
+        bottom
+    } else {
+        fallback_bottom
+    }
+}
+
+fn bottom_skyline_sample_including_hairpins(
+    items: &[SceneItem],
+    block_measures: &[&SceneMeasure],
+    x1: f32,
+    x2: f32,
+    fallback_bottom: f32,
+) -> f32 {
+    let left = x1.min(x2);
+    let right = x1.max(x2);
+    let measure_ids = block_measures
+        .iter()
+        .map(|measure| measure.id.as_str())
+        .collect::<std::collections::HashSet<_>>();
+    let system_top = block_measures
+        .iter()
+        .map(|measure| measure.y_pt)
+        .fold(f32::INFINITY, f32::min);
+    let system_bottom = block_measures
+        .iter()
+        .map(|measure| measure.y_pt + measure.height_pt)
+        .fold(f32::NEG_INFINITY, f32::max);
+    let mut bottom = f32::NEG_INFINITY;
+    for item in items {
+        if item.role == "dynamic" {
+            continue;
+        }
+        let in_block_measure = item
+            .measure_id
+            .as_deref()
+            .is_some_and(|measure_id| measure_ids.contains(measure_id));
+        if let Some((item_x, item_y, item_width, item_height)) = item_bounds(item) {
+            let in_system_band = item.measure_id.is_none()
+                && item_y >= system_top - 20.0
+                && item_y <= system_bottom + 80.0;
             if !in_block_measure && !in_system_band {
                 continue;
             }
@@ -7840,6 +8086,7 @@ impl<'a> SceneEmitSink<'a> {
             id,
             measure_id: spec.measure_id.map(ToString::to_string),
             anchor_item_id: None,
+            measure_local_fraction: None,
             role: spec.role.to_string(),
             kind: SceneItemKind::Rect,
             z_index: 0,
@@ -7857,10 +8104,21 @@ impl<'a> SceneEmitSink<'a> {
 
     fn push_text_item(&mut self, spec: TextItemSpec<'_>) -> String {
         let id = self.next_id();
+        let font_style = if spec.text_role == TextRole::Dynamic {
+            Some("italic".to_string())
+        } else {
+            None
+        };
+        let accessible_label = if spec.text_role == TextRole::Dynamic {
+            Some(format!("dynamic {}", spec.text))
+        } else {
+            None
+        };
         self.items.push(SceneItem {
             id: id.clone(),
             measure_id: spec.measure_id.map(ToString::to_string),
             anchor_item_id: None,
+            measure_local_fraction: None,
             role: spec.role.to_string(),
             kind: SceneItemKind::TextRun,
             z_index: 0,
@@ -7874,6 +8132,8 @@ impl<'a> SceneEmitSink<'a> {
                 fill: spec.fill.to_string(),
                 text_anchor: spec.text_anchor.map(ToString::to_string),
                 font_weight: spec.font_weight.map(ToString::to_string),
+                font_style,
+                accessible_label,
             }),
         });
         id
@@ -7885,6 +8145,7 @@ impl<'a> SceneEmitSink<'a> {
             id: id.clone(),
             measure_id: spec.measure_id.map(ToString::to_string),
             anchor_item_id: None,
+            measure_local_fraction: None,
             role: spec.role.to_string(),
             kind: SceneItemKind::LineSegment,
             z_index: 0,
@@ -7907,6 +8168,7 @@ impl<'a> SceneEmitSink<'a> {
             id: id.clone(),
             measure_id: spec.measure_id.map(ToString::to_string),
             anchor_item_id: None,
+            measure_local_fraction: None,
             role: spec.role.to_string(),
             kind: SceneItemKind::Path,
             z_index: 0,
@@ -7927,6 +8189,7 @@ impl<'a> SceneEmitSink<'a> {
             id: id.clone(),
             measure_id: spec.measure_id.map(ToString::to_string),
             anchor_item_id: None,
+            measure_local_fraction: None,
             role: spec.role.to_string(),
             kind: SceneItemKind::GlyphRun,
             z_index: 0,
@@ -8065,6 +8328,7 @@ fn to_wire_scene(scene: &LayoutScene) -> WireLayoutScene {
                         id: item.id.clone(),
                         measure_id: item.measure_id.clone(),
                         anchor_item_id: item.anchor_item_id.clone(),
+                        measure_local_fraction: item.measure_local_fraction,
                         role: item.role.clone(),
                         kind: scene_item_kind_name(item.kind),
                         z_index: item.z_index,
@@ -8089,6 +8353,8 @@ fn to_wire_scene(scene: &LayoutScene) -> WireLayoutScene {
                                 fill: text.fill.clone(),
                                 text_anchor: text.text_anchor.clone(),
                                 font_weight: text.font_weight.clone(),
+                                font_style: text.font_style.clone(),
+                                accessible_label: text.accessible_label.clone(),
                             },
                             ScenePrimitive::LineSegment(line) => WireScenePrimitive::LineSegment {
                                 x1_pt: line.x1_pt,
@@ -8183,11 +8449,17 @@ pub fn layout_scene_snapshot(scene: &LayoutScene) -> String {
             ));
         }
         for item in &page.items {
+            let measure_fraction = item
+                .measure_local_fraction
+                .map(|fraction| format!("{}/{}", fraction.numerator, fraction.denominator))
+                .map(|value| format!(" measureLocalFraction={}", value))
+                .unwrap_or_default();
             out.push_str(&format!(
-                "  item id={} measureId={} anchorItemId={} role={} kind={} zIndex={}",
+                "  item id={} measureId={} anchorItemId={}{} role={} kind={} zIndex={}",
                 item.id,
                 item.measure_id.as_deref().unwrap_or("-"),
                 item.anchor_item_id.as_deref().unwrap_or("-"),
+                measure_fraction,
                 item.role,
                 item.kind,
                 item.z_index
@@ -8225,9 +8497,22 @@ pub fn layout_scene_snapshot(scene: &LayoutScene) -> String {
                     fill,
                     text_anchor,
                     font_weight,
+                    font_style,
+                    accessible_label,
                 } => {
+                    let mut style_attrs = format!(
+                        "textAnchor={} fontWeight={}",
+                        text_anchor.as_deref().unwrap_or("-"),
+                        font_weight.as_deref().unwrap_or("-")
+                    );
+                    if let Some(font_style) = font_style {
+                        style_attrs.push_str(&format!(" fontStyle={}", font_style));
+                    }
+                    if let Some(accessible_label) = accessible_label {
+                        style_attrs.push_str(&format!(" accessibleLabel={}", accessible_label));
+                    }
                     out.push_str(&format!(
-                        " primitive={{textRole={} text={:?} xPt={:.3} yPt={:.3} fontFamily={} fontSizePt={:.3} fill={} textAnchor={} fontWeight={}}}",
+                        " primitive={{textRole={} text={:?} xPt={:.3} yPt={:.3} fontFamily={} fontSizePt={:.3} fill={} {}}}",
                         text_role,
                         text,
                         x_pt,
@@ -8235,8 +8520,7 @@ pub fn layout_scene_snapshot(scene: &LayoutScene) -> String {
                         font_family,
                         font_size_pt,
                         fill,
-                        text_anchor.as_deref().unwrap_or("-"),
-                        font_weight.as_deref().unwrap_or("-")
+                        style_attrs
                     ));
                 }
                 WireScenePrimitive::LineSegment {
@@ -8494,6 +8778,27 @@ pub fn layout_scene_to_js(scene: &LayoutScene) -> JsValue {
                 )
                 .unwrap();
             }
+            if let Some(fraction) = item.measure_local_fraction {
+                let fraction_obj = Object::new();
+                js_sys::Reflect::set(
+                    &fraction_obj,
+                    &JsValue::from_str("numerator"),
+                    &JsValue::from_f64(fraction.numerator as f64),
+                )
+                .unwrap();
+                js_sys::Reflect::set(
+                    &fraction_obj,
+                    &JsValue::from_str("denominator"),
+                    &JsValue::from_f64(fraction.denominator as f64),
+                )
+                .unwrap();
+                js_sys::Reflect::set(
+                    &item_obj,
+                    &JsValue::from_str("measureLocalFraction"),
+                    &fraction_obj.into(),
+                )
+                .unwrap();
+            }
             js_sys::Reflect::set(
                 &item_obj,
                 &JsValue::from_str("role"),
@@ -8585,6 +8890,8 @@ pub fn layout_scene_to_js(scene: &LayoutScene) -> JsValue {
                     fill,
                     text_anchor,
                     font_weight,
+                    font_style,
+                    accessible_label,
                 } => {
                     js_sys::Reflect::set(
                         &primitive,
@@ -8641,6 +8948,22 @@ pub fn layout_scene_to_js(scene: &LayoutScene) -> JsValue {
                             &primitive,
                             &JsValue::from_str("fontWeight"),
                             &JsValue::from_str(&font_weight),
+                        )
+                        .unwrap();
+                    }
+                    if let Some(font_style) = font_style {
+                        js_sys::Reflect::set(
+                            &primitive,
+                            &JsValue::from_str("fontStyle"),
+                            &JsValue::from_str(&font_style),
+                        )
+                        .unwrap();
+                    }
+                    if let Some(accessible_label) = accessible_label {
+                        js_sys::Reflect::set(
+                            &primitive,
+                            &JsValue::from_str("accessibleLabel"),
+                            &JsValue::from_str(&accessible_label),
                         )
                         .unwrap();
                     }
@@ -8941,6 +9264,7 @@ fn test_place_notes() {
         end_nav: None,
         volta_indices: None,
         hairpins: vec![],
+        dynamics: vec![],
         measure_repeat_slashes: None,
         multi_rest_count: None,
         note_value: 8,
@@ -9013,6 +9337,7 @@ fn test_barlines() {
         end_nav: None,
         volta_indices: None,
         hairpins: vec![],
+        dynamics: vec![],
         measure_repeat_slashes: None,
         multi_rest_count: None,
         note_value: 8,
@@ -9074,6 +9399,7 @@ fn test_contract_scene_smoke() {
             end_nav: None,
             volta_indices: None,
             hairpins: vec![],
+            dynamics: vec![],
             measure_repeat_slashes: None,
             multi_rest_count: None,
             note_value: 8,
@@ -9190,6 +9516,7 @@ fn test_scene_item_bounds_cover_emitted_primitive_kinds() {
         id: "text".into(),
         measure_id: None,
         anchor_item_id: None,
+        measure_local_fraction: None,
         role: "title".into(),
         kind: SceneItemKind::TextRun,
         z_index: 0,
@@ -9203,6 +9530,8 @@ fn test_scene_item_bounds_cover_emitted_primitive_kinds() {
             fill: "#333".into(),
             text_anchor: Some("middle".into()),
             font_weight: None,
+            font_style: None,
+            accessible_label: None,
         }),
     };
     let text_bounds = scene_item_bounds(&text).unwrap();
@@ -9214,6 +9543,7 @@ fn test_scene_item_bounds_cover_emitted_primitive_kinds() {
         id: "glyph".into(),
         measure_id: None,
         anchor_item_id: None,
+        measure_local_fraction: None,
         role: "notehead".into(),
         kind: SceneItemKind::GlyphRun,
         z_index: 0,
@@ -9237,6 +9567,7 @@ fn test_scene_item_bounds_cover_emitted_primitive_kinds() {
         id: "line".into(),
         measure_id: None,
         anchor_item_id: None,
+        measure_local_fraction: None,
         role: "staff-line".into(),
         kind: SceneItemKind::LineSegment,
         z_index: 0,
@@ -9264,6 +9595,7 @@ fn test_scene_item_bounds_cover_emitted_primitive_kinds() {
         id: "rect".into(),
         measure_id: None,
         anchor_item_id: None,
+        measure_local_fraction: None,
         role: "beam".into(),
         kind: SceneItemKind::Rect,
         z_index: 0,
@@ -9291,6 +9623,7 @@ fn test_scene_item_bounds_cover_emitted_primitive_kinds() {
         id: "polyline".into(),
         measure_id: None,
         anchor_item_id: None,
+        measure_local_fraction: None,
         role: "shape".into(),
         kind: SceneItemKind::Polyline,
         z_index: 0,
@@ -9312,6 +9645,7 @@ fn test_scene_item_bounds_cover_emitted_primitive_kinds() {
         id: "path".into(),
         measure_id: None,
         anchor_item_id: None,
+        measure_local_fraction: None,
         role: "beam".into(),
         kind: SceneItemKind::Path,
         z_index: 0,
@@ -9336,6 +9670,7 @@ fn test_scene_item_bounds_cover_emitted_primitive_kinds() {
         id: "empty".into(),
         measure_id: None,
         anchor_item_id: None,
+        measure_local_fraction: None,
         role: "shape".into(),
         kind: SceneItemKind::Polyline,
         z_index: 0,
@@ -9495,6 +9830,7 @@ fn test_final_scene_validator_checks_ids_and_page_local_references() {
                 id: "item-0".into(),
                 measure_id: Some("measure-0".into()),
                 anchor_item_id: None,
+                measure_local_fraction: None,
                 role: "staff-line".into(),
                 kind: SceneItemKind::LineSegment,
                 z_index: 0,
@@ -9591,6 +9927,7 @@ fn test_final_scene_validator_suppresses_only_named_overflow_system_bounds() {
                     id: "system-0-item-0".into(),
                     measure_id: Some("measure-0".into()),
                     anchor_item_id: None,
+                    measure_local_fraction: None,
                     role: "staff-line".into(),
                     kind: SceneItemKind::LineSegment,
                     z_index: 0,
@@ -9608,6 +9945,7 @@ fn test_final_scene_validator_suppresses_only_named_overflow_system_bounds() {
                     id: "system-1-item-0".into(),
                     measure_id: Some("measure-1".into()),
                     anchor_item_id: None,
+                    measure_local_fraction: None,
                     role: "staff-line".into(),
                     kind: SceneItemKind::LineSegment,
                     z_index: 0,
@@ -9672,6 +10010,7 @@ fn test_system_box_orchestrator_outputs_multiple_pages_for_long_scores() {
             end_nav: None,
             volta_indices: None,
             hairpins: vec![],
+            dynamics: vec![],
             measure_repeat_slashes: None,
             multi_rest_count: None,
             note_value: 4,
@@ -9741,6 +10080,7 @@ fn test_volta_composites_are_emitted() {
                 end_nav: None,
                 volta_indices: Some(vec![1]),
                 hairpins: vec![],
+                dynamics: vec![],
                 measure_repeat_slashes: None,
                 multi_rest_count: None,
                 note_value: 8,
@@ -9759,6 +10099,7 @@ fn test_volta_composites_are_emitted() {
                 end_nav: None,
                 volta_indices: Some(vec![1]),
                 hairpins: vec![],
+                dynamics: vec![],
                 measure_repeat_slashes: None,
                 multi_rest_count: None,
                 note_value: 8,
@@ -9820,6 +10161,7 @@ fn test_adjacent_voltas_share_y_and_positive_offset_moves_up() {
         end_nav: None,
         volta_indices: Some(vec![volta]),
         hairpins: vec![],
+        dynamics: vec![],
         measure_repeat_slashes: None,
         multi_rest_count: None,
         note_value: 4,
@@ -9926,6 +10268,7 @@ fn test_two_bar_measure_repeat_expands_into_two_display_measures() {
                 end_nav: None,
                 volta_indices: None,
                 hairpins: vec![],
+                dynamics: vec![],
                 measure_repeat_slashes: None,
                 multi_rest_count: None,
                 note_value: 8,
@@ -9944,6 +10287,7 @@ fn test_two_bar_measure_repeat_expands_into_two_display_measures() {
                 end_nav: None,
                 volta_indices: None,
                 hairpins: vec![],
+                dynamics: vec![],
                 measure_repeat_slashes: Some(2),
                 multi_rest_count: None,
                 note_value: 8,
@@ -10027,6 +10371,7 @@ fn test_structural_composites_are_emitted() {
                     start_measure_index: 0,
                     end_measure_index: 1,
                 }],
+                dynamics: vec![],
                 measure_repeat_slashes: Some(2),
                 multi_rest_count: None,
                 note_value: 8,
@@ -10045,6 +10390,7 @@ fn test_structural_composites_are_emitted() {
                 end_nav: None,
                 volta_indices: None,
                 hairpins: vec![],
+                dynamics: vec![],
                 measure_repeat_slashes: None,
                 multi_rest_count: Some(4),
                 note_value: 8,
@@ -10125,6 +10471,7 @@ fn test_system_boundaries_align_with_staff_edges() {
             end_nav: None,
             volta_indices: None,
             hairpins: vec![],
+            dynamics: vec![],
             measure_repeat_slashes: None,
             multi_rest_count: None,
             note_value: 8,
@@ -10211,6 +10558,7 @@ fn test_first_measure_repeat_start_sits_after_system_preamble() {
             end_nav: None,
             volta_indices: None,
             hairpins: vec![],
+            dynamics: vec![],
             measure_repeat_slashes: None,
             multi_rest_count: None,
             note_value: 8,
@@ -10297,6 +10645,7 @@ fn test_adjacent_repeat_end_start_uses_smufl_right_left_glyph() {
             end_nav: None,
             volta_indices: None,
             hairpins: vec![],
+            dynamics: vec![],
             measure_repeat_slashes: None,
             multi_rest_count: None,
             note_value: 4,
@@ -10387,6 +10736,7 @@ fn test_later_system_uses_smaller_start_zone_than_first_system() {
             end_nav: None,
             volta_indices: None,
             hairpins: vec![],
+            dynamics: vec![],
             measure_repeat_slashes: None,
             multi_rest_count: None,
             note_value: 8,
@@ -10475,6 +10825,7 @@ fn test_later_system_measure_number_uses_absolute_measure_index() {
                 end_nav: None,
                 volta_indices: None,
                 hairpins: vec![],
+                dynamics: vec![],
                 measure_repeat_slashes: None,
                 multi_rest_count: None,
                 note_value: 8,
@@ -10493,6 +10844,7 @@ fn test_later_system_measure_number_uses_absolute_measure_index() {
                 end_nav: None,
                 volta_indices: None,
                 hairpins: vec![],
+                dynamics: vec![],
                 measure_repeat_slashes: None,
                 multi_rest_count: None,
                 note_value: 8,
@@ -10565,6 +10917,7 @@ fn test_down_stem_keeps_notehead_on_right_and_flag_on_stem_right_side() {
             end_nav: None,
             volta_indices: None,
             hairpins: vec![],
+            dynamics: vec![],
             measure_repeat_slashes: None,
             multi_rest_count: None,
             note_value: 8,
@@ -10665,6 +11018,7 @@ fn test_crash_maps_to_top_ledger_line() {
             end_nav: None,
             volta_indices: None,
             hairpins: vec![],
+            dynamics: vec![],
             measure_repeat_slashes: None,
             multi_rest_count: None,
             note_value: 8,
@@ -10757,6 +11111,7 @@ fn test_bottom_ledger_lines_render_for_notes_below_staff() {
             end_nav: None,
             volta_indices: None,
             hairpins: vec![],
+            dynamics: vec![],
             measure_repeat_slashes: None,
             multi_rest_count: None,
             note_value: 8,

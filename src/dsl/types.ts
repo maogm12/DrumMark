@@ -45,6 +45,10 @@ export const MODIFIERS = [
 
 export type Modifier = (typeof MODIFIERS)[number];
 
+export const DYNAMIC_LEVELS = ["ppp", "pp", "p", "mp", "mf", "f", "ff", "fff"] as const;
+
+export type DynamicLevel = (typeof DYNAMIC_LEVELS)[number];
+
 export type RepeatEnd = {
   kind: "repeat_end";
   times: number;
@@ -109,7 +113,8 @@ export type TokenGlyph =
   | { kind: "braced"; track: string; items: TokenGlyph[] }
   | { kind: "crescendo_start" }
   | { kind: "decrescendo_start" }
-  | { kind: "hairpin_end" };
+  | { kind: "hairpin_end" }
+  | { kind: "dynamic"; level: DynamicLevel };
 
 export type MeasureToken = TokenGlyph;
 
@@ -349,6 +354,11 @@ export type HairpinIntent = {
   endMeasureIndex: number;
 };
 
+export type DynamicIntent = {
+  level: DynamicLevel;
+  at: Fraction;
+};
+
 export type NormalizedEvent = {
   track: TrackName;
   paragraphIndex: number;
@@ -383,6 +393,7 @@ export type NormalizedMeasure = {
   multiRest?: MultiRestIntent;
   multiRestCount?: number;
   hairpins?: HairpinIntent[];
+  dynamics: DynamicIntent[];
   noteValue: number;
 };
 

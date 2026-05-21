@@ -169,6 +169,14 @@ fn normalize_to_js(score: &normalize::NormalizedScore) -> JsValue {
             }
             set(&mo, "hairpins", &ha.into());
         }
+        let da = Array::new();
+        for dynamic in &m.dynamics {
+            let obj = Object::new();
+            set(&obj, "level", &JsValue::from_str(dynamic.level.as_str()));
+            set(&obj, "at", &frac_js(dynamic.at));
+            da.push(&obj.into());
+        }
+        set(&mo, "dynamics", &da.into());
         // Events
         let eva = Array::new();
         for ev in &m.events {
@@ -302,6 +310,14 @@ fn render_score_to_js(score: &drummark_layout::RenderScore) -> JsValue {
             hairpins.push(&hairpin_obj.into());
         }
         set(&entry, "hairpins", &hairpins.into());
+        let dynamics = Array::new();
+        for dynamic in &measure.dynamics {
+            let dynamic_obj = Object::new();
+            set(&dynamic_obj, "level", &JsValue::from_str(dynamic.level.as_str()));
+            set(&dynamic_obj, "at", &render_fraction_js(dynamic.at));
+            dynamics.push(&dynamic_obj.into());
+        }
+        set(&entry, "dynamics", &dynamics.into());
         if let Some(count) = measure.measure_repeat_slashes {
             set(&entry, "measureRepeatSlashes", &JsValue::from_f64(count as f64));
         }

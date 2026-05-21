@@ -72,8 +72,36 @@ pub enum MeasureExpr {
     Crescendo,
     Decrescendo,
     HairpinEnd,
+    Dynamic(DynamicLevel),
     NavMarker(String),
     NavJump(String),
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum DynamicLevel {
+    Ppp,
+    Pp,
+    P,
+    Mp,
+    Mf,
+    F,
+    Ff,
+    Fff,
+}
+
+impl DynamicLevel {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            DynamicLevel::Ppp => "ppp",
+            DynamicLevel::Pp => "pp",
+            DynamicLevel::P => "p",
+            DynamicLevel::Mp => "mp",
+            DynamicLevel::Mf => "mf",
+            DynamicLevel::F => "f",
+            DynamicLevel::Ff => "ff",
+            DynamicLevel::Fff => "fff",
+        }
+    }
 }
 
 #[derive(Debug, Clone)]

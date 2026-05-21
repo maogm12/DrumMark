@@ -168,6 +168,35 @@ HH | < d d d d | d d d d | d < d d ! |`);
     expect(xml).toContain('<offset>12</offset>');
   });
 
+  it("exports explicit dynamics as below-staff MusicXML directions with offsets", () => {
+    const score = buildNormalizedScore(`time 4/4
+divisions 4
+note 1/4
+
+HH | @p x @mp x x x @ff |`);
+
+    expect(score.errors).toEqual([]);
+
+    const xml = buildMusicXml(score);
+    expect(xml).toContain('<direction placement="below"><direction-type><dynamics><p/></dynamics></direction-type><offset>0</offset></direction>');
+    expect(xml).toContain('<direction placement="below"><direction-type><dynamics><mp/></dynamics></direction-type><offset>4</offset></direction>');
+    expect(xml).toContain('<direction placement="below"><direction-type><dynamics><ff/></dynamics></direction-type><offset>16</offset></direction>');
+  });
+
+  it("exports score-level dynamics once for two-voice drum measures", () => {
+    const score = buildNormalizedScore(`time 4/4
+divisions 4
+note 1/4
+
+HH | @f x x x x |
+SD | @f - s - s |`);
+
+    expect(score.errors).toEqual([]);
+
+    const xml = buildMusicXml(score);
+    expect(xml.match(/<dynamics><f\/><\/dynamics>/g)).toHaveLength(1);
+  });
+
   it("stops a volta at `|.` without exporting a final bar-style unless the score actually ends there", () => {
     const score = buildNormalizedScore(`time 4/4
 divisions 4

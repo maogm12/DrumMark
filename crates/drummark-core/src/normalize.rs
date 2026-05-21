@@ -4,7 +4,8 @@ use crate::validate::{validate_modifier_legality, validate_grouping};
 use crate::hairpin::{HairpinState, HairpinIntent, collect_track_hairpins, close_dangling_hairpin};
 use crate::nav::{StartNav, EndNav, Anchor, BarlineType};
 use crate::volta::{VoltaMeasure, propagate_voltas};
-use crate::event::{NormalizedEvent, TokenGlyph, token_to_events, scan_hairpin_tokens};
+use crate::event::{NormalizedEvent, TokenGlyph, token_to_events, scan_hairpin_tokens, scan_dynamic_tokens};
+use crate::ast::DynamicLevel;
 use crate::ast::{Document, Barline, MeasureExpr, TrackLine, HeaderSection, SourceLocation};
 use std::collections::{HashMap, HashSet};
 
@@ -130,10 +131,17 @@ pub struct NormalizedMeasure {
     pub end_nav: Option<EndNav>,
     pub volta: Option<Vec<u32>>,
     pub hairpins: Vec<HairpinIntent>,
+    pub dynamics: Vec<DynamicIntent>,
     pub measure_repeat_slashes: Option<u32>,
     pub multi_rest_count: Option<u32>,
     pub note_value: u32,
     pub volta_terminator: bool,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct DynamicIntent {
+    pub level: DynamicLevel,
+    pub at: Fraction,
 }
 
 #[derive(Debug, Clone)]
@@ -215,6 +223,7 @@ fn to_token_glyph(expr: &MeasureExpr) -> TokenGlyph {
         MeasureExpr::Crescendo => TokenGlyph::Crescendo,
         MeasureExpr::Decrescendo => TokenGlyph::Decrescendo,
         MeasureExpr::HairpinEnd => TokenGlyph::HairpinEnd,
+        MeasureExpr::Dynamic(level) => TokenGlyph::Dynamic(level.clone()),
         MeasureExpr::MeasureRepeat(_count) => TokenGlyph::Basic {
             value: "-".to_string(), dots: 0, halves: 0, stars: 0,
             modifiers: vec![], track_override: None,
@@ -334,6 +343,7 @@ pub fn normalize_document(doc: &Document) -> NormalizedScore {
         for m_idx in 0..measure_count {
             let mut measure_events: Vec<NormalizedEvent> = Vec::new();
             let mut measure_hairpins: Vec<HairpinIntent> = Vec::new();
+            let mut dynamic_candidates: Vec<DynamicIntent> = Vec::new();
             let mut barline: Option<String> = None;
             let mut closing_barline: Option<String> = None;
             let mut repeat_start = false;
@@ -513,7 +523,25 @@ pub fn normalize_document(doc: &Document) -> NormalizedScore {
                     .or_default();
                 let track_hairpins = collect_track_hairpins(&hairpin_scan_time, global_index as usize, state);
                 measure_hairpins.extend(track_hairpins);
+
+                if !is_padded {
+                    dynamic_candidates.extend(
+                        scan_dynamic_tokens(&tokens, divisions)
+                            .into_iter()
+                            .map(|candidate| DynamicIntent {
+                                level: candidate.level,
+                                at: candidate.at,
+                            }),
+                    );
+                }
             }
+
+            let measure_dynamics = merge_measure_dynamics(
+                dynamic_candidates,
+                &mut errors,
+                global_index,
+                1,
+            );
 
             // End-nav barline forcing
             if let Some(ref en) = end_nav {
@@ -546,6 +574,7 @@ pub fn normalize_document(doc: &Document) -> NormalizedScore {
                 end_nav,
                 volta: volta_indices,
                 hairpins: measure_hairpins,
+                dynamics: measure_dynamics,
                 measure_repeat_slashes,
                 multi_rest_count,
                 note_value: para_note_value,
@@ -686,9 +715,96 @@ fn token_weight(token: &TokenGlyph) -> Fraction {
             items.iter().map(token_weight)
                 .fold(Fraction::zero(), |a, b| a.add(b))
         }
-        TokenGlyph::Crescendo | TokenGlyph::Decrescendo | TokenGlyph::HairpinEnd => {
+        TokenGlyph::Crescendo | TokenGlyph::Decrescendo | TokenGlyph::HairpinEnd | TokenGlyph::Dynamic(_) => {
             Fraction::zero()
         }
+    }
+}
+
+fn merge_measure_dynamics(
+    mut candidates: Vec<DynamicIntent>,
+    errors: &mut Vec<String>,
+    global_index: u32,
+    _source_line: u32,
+) -> Vec<DynamicIntent> {
+    candidates.sort_by(|a, b| a.at.compare(b.at));
+    let mut merged: Vec<DynamicIntent> = Vec::new();
+
+    for candidate in candidates {
+        if let Some(existing) = merged.iter().find(|item| item.at == candidate.at) {
+            if existing.level != candidate.level {
+                errors.push(format!(
+                    "Conflicting dynamic marks at bar {} position {}/{}",
+                    global_index + 1,
+                    candidate.at.numerator,
+                    candidate.at.denominator
+                ));
+            }
+            continue;
+        }
+        merged.push(candidate);
+    }
+
+    merged
+}
+
+#[cfg(test)]
+mod dynamic_test {
+    use crate::ast::DynamicLevel;
+    use crate::fraction::Fraction;
+    use crate::parser;
+    use crate::normalize;
+
+    #[test]
+    fn normalizes_and_sorts_explicit_dynamics() {
+        let p = parser::Parser::new("time 4/4\ndivisions 4\ngrouping 2+2\nSD | @p d d @f d d @ff |\n");
+        let doc = p.parse().unwrap();
+        let score = normalize::normalize_document(&doc);
+
+        assert_eq!(score.errors, Vec::<String>::new());
+        assert_eq!(score.measures[0].dynamics.len(), 3);
+        assert_eq!(score.measures[0].dynamics[0].level, DynamicLevel::P);
+        assert_eq!(score.measures[0].dynamics[0].at, Fraction::zero());
+        assert_eq!(score.measures[0].dynamics[1].level, DynamicLevel::F);
+        assert_eq!(score.measures[0].dynamics[1].at, Fraction::new(1, 2));
+        assert_eq!(score.measures[0].dynamics[2].level, DynamicLevel::Ff);
+        assert_eq!(score.measures[0].dynamics[2].at, Fraction::one());
+    }
+
+    #[test]
+    fn deduplicates_same_level_and_rejects_conflicts() {
+        let same = parser::Parser::new("time 4/4\ndivisions 4\ngrouping 2+2\nHH | @p x x x x |\nSD | @p d d d d |\n")
+            .parse()
+            .unwrap();
+        let same_score = normalize::normalize_document(&same);
+        assert_eq!(same_score.errors, Vec::<String>::new());
+        assert_eq!(same_score.measures[0].dynamics.len(), 1);
+        assert_eq!(same_score.measures[0].dynamics[0].level, DynamicLevel::P);
+
+        let conflict = parser::Parser::new("time 4/4\ndivisions 4\ngrouping 2+2\nHH | @p x x x x |\nSD | @f d d d d |\n")
+            .parse()
+            .unwrap();
+        let conflict_score = normalize::normalize_document(&conflict);
+        assert!(conflict_score
+            .errors
+            .iter()
+            .any(|message| message.contains("Conflicting dynamic marks at bar 1 position 0/1")));
+    }
+
+    #[test]
+    fn normalizes_routed_and_group_dynamic_positions() {
+        let p = parser::Parser::new("time 5/4\ndivisions 5\ngrouping 2+3\n| @SD { @p d d } @BD { @p b b } @mp d [2: @f d d] |\n");
+        let doc = p.parse().unwrap();
+        let score = normalize::normalize_document(&doc);
+
+        assert_eq!(score.errors, Vec::<String>::new());
+        assert_eq!(score.measures[0].dynamics.len(), 3);
+        assert_eq!(score.measures[0].dynamics[0].level, DynamicLevel::P);
+        assert_eq!(score.measures[0].dynamics[0].at, Fraction::zero());
+        assert_eq!(score.measures[0].dynamics[1].level, DynamicLevel::Mp);
+        assert_eq!(score.measures[0].dynamics[1].at, Fraction::new(2, 5));
+        assert_eq!(score.measures[0].dynamics[2].level, DynamicLevel::F);
+        assert_eq!(score.measures[0].dynamics[2].at, Fraction::new(3, 5));
     }
 }
 
@@ -778,6 +894,7 @@ mod volta_test {
                 end_nav: None,
                 volta: None,
                 hairpins: vec![],
+                dynamics: vec![],
                 measure_repeat_slashes: None,
                 multi_rest_count: None,
                 note_value: 8,
@@ -796,6 +913,7 @@ mod volta_test {
                 end_nav: None,
                 volta: None,
                 hairpins: vec![],
+                dynamics: vec![],
                 measure_repeat_slashes: None,
                 multi_rest_count: None,
                 note_value: 8,
@@ -814,6 +932,7 @@ mod volta_test {
                 end_nav: None,
                 volta: None,
                 hairpins: vec![],
+                dynamics: vec![],
                 measure_repeat_slashes: None,
                 multi_rest_count: None,
                 note_value: 8,

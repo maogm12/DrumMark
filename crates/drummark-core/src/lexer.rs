@@ -43,6 +43,16 @@ pub enum Token {
     #[token("@dc")]           NavDC,
     #[token("@ds")]           NavDS,
 
+    // --- Dynamic marks (longest first for prefix disambiguation) ---
+    #[token("@ppp")] DynamicPpp,
+    #[token("@fff")] DynamicFff,
+    #[token("@pp")]  DynamicPp,
+    #[token("@mp")]  DynamicMp,
+    #[token("@mf")]  DynamicMf,
+    #[token("@ff")]  DynamicFf,
+    #[token("@p")]   DynamicP,
+    #[token("@f")]   DynamicF,
+
     // --- Routed track prefixes (@HH, @HF, ...) ---
     #[token("@BD2")] RouteBD2,
     #[token("@RC2")] RouteRC2,
@@ -387,6 +397,18 @@ mod tests {
         assert_eq!(tokenize_ok("@segno"), vec![Token::NavSegno]);
         assert_eq!(tokenize_ok("@dc-al-fine"), vec![Token::NavDCalFine]);
         assert_eq!(tokenize_ok("@to-coda"), vec![Token::NavToCoda]);
+    }
+
+    #[test]
+    fn test_dynamic_marks() {
+        assert_eq!(tokenize_ok("@ppp"), vec![Token::DynamicPpp]);
+        assert_eq!(tokenize_ok("@pp"), vec![Token::DynamicPp]);
+        assert_eq!(tokenize_ok("@p"), vec![Token::DynamicP]);
+        assert_eq!(tokenize_ok("@mp"), vec![Token::DynamicMp]);
+        assert_eq!(tokenize_ok("@mf"), vec![Token::DynamicMf]);
+        assert_eq!(tokenize_ok("@f"), vec![Token::DynamicF]);
+        assert_eq!(tokenize_ok("@ff"), vec![Token::DynamicFf]);
+        assert_eq!(tokenize_ok("@fff"), vec![Token::DynamicFff]);
     }
 
     #[test]

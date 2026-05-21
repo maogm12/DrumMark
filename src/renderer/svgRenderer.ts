@@ -68,6 +68,7 @@ type SceneItem = {
   id: string;
   measureId?: string;
   anchorItemId?: string;
+  measureLocalFraction?: { numerator: number; denominator: number };
   role: string;
   kind: "glyphRun" | "lineSegment" | "path" | "polyline" | "rect" | "textRun";
   zIndex: number;
@@ -158,6 +159,9 @@ function renderScenePageToSvg(page: ScenePage, options?: RenderOptions): string 
     const roleAttr = ` data-role="${esc(item.role)}"`;
     const measureAttr = item.measureId ? ` data-measure-id="${esc(item.measureId)}"` : "";
     const anchorAttr = item.anchorItemId ? ` data-anchor-item-id="${esc(item.anchorItemId)}"` : "";
+    const measureFractionAttr = item.measureLocalFraction
+      ? ` data-measure-local-fraction="${item.measureLocalFraction.numerator}/${item.measureLocalFraction.denominator}"`
+      : "";
     switch (item.kind) {
       case "glyphRun": {
         const p = item.primitive as {
@@ -169,7 +173,7 @@ function renderScenePageToSvg(page: ScenePage, options?: RenderOptions): string 
           fill?: string;
         };
         const glyph = p.codepoint ? String.fromCodePoint(p.codepoint) : "";
-        svg += `<text${roleAttr}${measureAttr}${anchorAttr} x="${p.xPt}" y="${p.yPt}" font-family="${p.fontFamily || "Bravura"}" font-size="${p.fontSizePt || 12}pt" fill="${p.fill || "#333"}">${esc(glyph)}</text>`;
+        svg += `<text${roleAttr}${measureAttr}${anchorAttr}${measureFractionAttr} x="${p.xPt}" y="${p.yPt}" font-family="${p.fontFamily || "Bravura"}" font-size="${p.fontSizePt || 12}pt" fill="${p.fill || "#333"}">${esc(glyph)}</text>`;
         break;
       }
       case "lineSegment": {
@@ -183,7 +187,7 @@ function renderScenePageToSvg(page: ScenePage, options?: RenderOptions): string 
           strokeLineCap?: string;
         };
         const capAttr = p.strokeLineCap ? ` stroke-linecap="${p.strokeLineCap}"` : "";
-        svg += `<line${roleAttr}${measureAttr}${anchorAttr} x1="${p.x1Pt}" y1="${p.y1Pt}" x2="${p.x2Pt}" y2="${p.y2Pt}" stroke="${p.stroke || "#333"}" stroke-width="${p.strokeWidth || 1}"${capAttr}/>`;
+        svg += `<line${roleAttr}${measureAttr}${anchorAttr}${measureFractionAttr} x1="${p.x1Pt}" y1="${p.y1Pt}" x2="${p.x2Pt}" y2="${p.y2Pt}" stroke="${p.stroke || "#333"}" stroke-width="${p.strokeWidth || 1}"${capAttr}/>`;
         break;
       }
       case "rect": {
@@ -197,7 +201,7 @@ function renderScenePageToSvg(page: ScenePage, options?: RenderOptions): string 
           strokeWidth?: number;
         };
         const stroke = p.stroke ? ` stroke="${p.stroke}" stroke-width="${p.strokeWidth || 1}"` : "";
-        svg += `<rect${roleAttr}${measureAttr}${anchorAttr} x="${p.xPt}" y="${p.yPt}" width="${p.widthPt}" height="${p.heightPt}" fill="${p.fill || "none"}"${stroke}/>`;
+        svg += `<rect${roleAttr}${measureAttr}${anchorAttr}${measureFractionAttr} x="${p.xPt}" y="${p.yPt}" width="${p.widthPt}" height="${p.heightPt}" fill="${p.fill || "none"}"${stroke}/>`;
         break;
       }
       case "path": {
@@ -208,7 +212,7 @@ function renderScenePageToSvg(page: ScenePage, options?: RenderOptions): string 
           strokeWidth?: number;
         };
         const stroke = p.stroke ? ` stroke="${p.stroke}" stroke-width="${p.strokeWidth || 1}"` : "";
-        svg += `<path${roleAttr}${measureAttr}${anchorAttr} d="${esc(p.d)}" fill="${p.fill || "none"}"${stroke}/>`;
+        svg += `<path${roleAttr}${measureAttr}${anchorAttr}${measureFractionAttr} d="${esc(p.d)}" fill="${p.fill || "none"}"${stroke}/>`;
         break;
       }
       case "polyline": {
@@ -216,7 +220,7 @@ function renderScenePageToSvg(page: ScenePage, options?: RenderOptions): string 
           pointsPt: Array<[number, number]>;
         };
         const points = (p.pointsPt || []).map(([x, y]) => `${x},${y}`).join(" ");
-        svg += `<polyline${roleAttr}${measureAttr}${anchorAttr} points="${points}" fill="none" stroke="#333" stroke-width="1"/>`;
+        svg += `<polyline${roleAttr}${measureAttr}${anchorAttr}${measureFractionAttr} points="${points}" fill="none" stroke="#333" stroke-width="1"/>`;
         break;
       }
       case "textRun": {
@@ -229,10 +233,14 @@ function renderScenePageToSvg(page: ScenePage, options?: RenderOptions): string 
           fill?: string;
           textAnchor?: string;
           fontWeight?: string;
+          fontStyle?: string;
+          accessibleLabel?: string;
         };
         const anchor = p.textAnchor ? ` text-anchor="${p.textAnchor}"` : "";
         const weight = p.fontWeight ? ` font-weight="${p.fontWeight}"` : "";
-        svg += `<text${roleAttr}${measureAttr}${anchorAttr} x="${p.xPt}" y="${p.yPt}" font-family="${p.fontFamily || "Bravura"}" font-size="${p.fontSizePt || 12}pt" fill="${p.fill || "#333"}"${anchor}${weight}>${esc(p.text)}</text>`;
+        const style = p.fontStyle ? ` font-style="${p.fontStyle}"` : "";
+        const aria = p.accessibleLabel ? ` aria-label="${esc(p.accessibleLabel)}"` : "";
+        svg += `<text${roleAttr}${measureAttr}${anchorAttr}${measureFractionAttr}${aria} x="${p.xPt}" y="${p.yPt}" font-family="${p.fontFamily || "Bravura"}" font-size="${p.fontSizePt || 12}pt" fill="${p.fill || "#333"}"${anchor}${weight}${style}>${esc(p.text)}</text>`;
         break;
       }
       default:

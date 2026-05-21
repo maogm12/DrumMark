@@ -1,6 +1,7 @@
 use crate::fraction::{Fraction, calculate_token_weight_as_fraction, fractions_equal};
 use crate::resolve::{resolve_token, voice_for_track};
 use crate::hairpin::HairpinKind;
+use crate::ast::DynamicLevel;
 
 // ── Normalized Event ─────────────────────────────────────────────
 
@@ -27,6 +28,12 @@ pub enum EventKind {
     Hit,
     Rest,
     Sticking,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct DynamicCandidate {
+    pub level: DynamicLevel,
+    pub at: Fraction,
 }
 
 // ── Internal Token Types (mirrors MeasureExpr from parser) ───────
@@ -57,6 +64,7 @@ pub enum TokenGlyph {
     Crescendo,
     Decrescendo,
     HairpinEnd,
+    Dynamic(DynamicLevel),
 }
 
 // ── Token → Event Expansion ─────────────────────────────────────
@@ -188,7 +196,7 @@ pub fn token_to_events(
             }
             events
         }
-        TokenGlyph::Crescendo | TokenGlyph::Decrescendo | TokenGlyph::HairpinEnd => {
+        TokenGlyph::Crescendo | TokenGlyph::Decrescendo | TokenGlyph::HairpinEnd | TokenGlyph::Dynamic(_) => {
             vec![]
         }
     }
@@ -213,7 +221,7 @@ fn item_weight(token: &TokenGlyph) -> Fraction {
                 .unwrap_or(Fraction::zero())
         }
         TokenGlyph::Braced { items, .. } => braced_total_weight(items),
-        TokenGlyph::Crescendo | TokenGlyph::Decrescendo | TokenGlyph::HairpinEnd => {
+        TokenGlyph::Crescendo | TokenGlyph::Decrescendo | TokenGlyph::HairpinEnd | TokenGlyph::Dynamic(_) => {
             Fraction::zero()
         }
     }
@@ -264,6 +272,7 @@ pub fn scan_hairpin_tokens(
             TokenGlyph::HairpinEnd => {
                 results.push((position, None, Some(())));
             }
+            TokenGlyph::Dynamic(_) => {}
             _ => {
                 let w = item_weight(token);
                 position = position.add(w);
@@ -272,4 +281,198 @@ pub fn scan_hairpin_tokens(
     }
 
     results
+}
+
+// ── Dynamic scanning ─────────────────────────────────────────────
+
+/// Scan a measure's tokens for score-level dynamic marks.
+///
+/// Returned positions are exact measure-local fractions where 0/1 is the
+/// measure start and 1/1 is the measure end under the supplied divisions.
+pub fn scan_dynamic_tokens(tokens: &[TokenGlyph], divisions: u32) -> Vec<DynamicCandidate> {
+    let mut results = Vec::new();
+    scan_dynamic_sequence(
+        tokens,
+        Fraction::zero(),
+        Fraction::new(divisions as u64, 1),
+        Fraction::new(divisions as u64, 1),
+        &mut results,
+    );
+    results
+}
+
+fn scan_dynamic_sequence(
+    tokens: &[TokenGlyph],
+    start: Fraction,
+    duration: Fraction,
+    measure_duration: Fraction,
+    results: &mut Vec<DynamicCandidate>,
+) {
+    let total_weight = sequence_total_weight(tokens);
+    if fractions_equal(total_weight, Fraction::zero()) {
+        for token in tokens {
+            if let TokenGlyph::Dynamic(level) = token {
+                results.push(DynamicCandidate {
+                    level: level.clone(),
+                    at: start.divide(measure_duration),
+                });
+            }
+        }
+        return;
+    }
+
+    let mut current_start = start;
+    let mut index = 0usize;
+    while index < tokens.len() {
+        if matches!(tokens[index], TokenGlyph::Braced { .. }) {
+            let cluster_start = index;
+            while index < tokens.len() && matches!(tokens[index], TokenGlyph::Braced { .. }) {
+                index += 1;
+            }
+            let cluster = &tokens[cluster_start..index];
+            let cluster_weight = cluster
+                .iter()
+                .map(item_weight)
+                .max_by(|a, b| a.compare(*b))
+                .unwrap_or(Fraction::zero());
+            let cluster_duration = duration.multiply(cluster_weight).divide(total_weight);
+            for token in cluster {
+                if let TokenGlyph::Braced { items, .. } = token {
+                    scan_dynamic_sequence(items, current_start, cluster_duration, measure_duration, results);
+                }
+            }
+            current_start = current_start.add(cluster_duration);
+            continue;
+        }
+
+        let token = &tokens[index];
+        match token {
+            TokenGlyph::Dynamic(level) => {
+                results.push(DynamicCandidate {
+                    level: level.clone(),
+                    at: current_start.divide(measure_duration),
+                });
+            }
+            TokenGlyph::Group { items, .. } => {
+                let item_duration = duration.multiply(item_weight(token)).divide(total_weight);
+                scan_dynamic_sequence(items, current_start, item_duration, measure_duration, results);
+                current_start = current_start.add(item_duration);
+            }
+            TokenGlyph::Braced { .. } => unreachable!("braced clusters are handled above"),
+            _ => {
+                let item_duration = duration.multiply(item_weight(token)).divide(total_weight);
+                current_start = current_start.add(item_duration);
+            }
+        }
+        index += 1;
+    }
+}
+
+fn sequence_total_weight(tokens: &[TokenGlyph]) -> Fraction {
+    let mut total = Fraction::zero();
+    let mut index = 0usize;
+    while index < tokens.len() {
+        if matches!(tokens[index], TokenGlyph::Braced { .. }) {
+            let mut cluster_weight = Fraction::zero();
+            while index < tokens.len() && matches!(tokens[index], TokenGlyph::Braced { .. }) {
+                let weight = item_weight(&tokens[index]);
+                if weight.compare(cluster_weight).is_gt() {
+                    cluster_weight = weight;
+                }
+                index += 1;
+            }
+            total = total.add(cluster_weight);
+        } else {
+            total = total.add(item_weight(&tokens[index]));
+            index += 1;
+        }
+    }
+    total
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn note() -> TokenGlyph {
+        TokenGlyph::Basic {
+            value: "d".to_string(),
+            dots: 0,
+            halves: 0,
+            stars: 0,
+            modifiers: vec![],
+            track_override: None,
+        }
+    }
+
+    fn dynamic(level: DynamicLevel) -> TokenGlyph {
+        TokenGlyph::Dynamic(level)
+    }
+
+    #[test]
+    fn scans_start_mid_and_end_dynamics() {
+        let dynamics = scan_dynamic_tokens(
+            &[
+                dynamic(DynamicLevel::P),
+                note(),
+                note(),
+                dynamic(DynamicLevel::F),
+                note(),
+                note(),
+                dynamic(DynamicLevel::Ff),
+            ],
+            4,
+        );
+
+        assert_eq!(dynamics[0].at, Fraction::zero());
+        assert_eq!(dynamics[1].at, Fraction::new(1, 2));
+        assert_eq!(dynamics[2].at, Fraction::one());
+    }
+
+    #[test]
+    fn scans_simultaneous_routed_block_cluster_and_advances_by_max_duration() {
+        let sd = TokenGlyph::Braced {
+            track: "SD".to_string(),
+            items: vec![dynamic(DynamicLevel::P), note(), note()],
+        };
+        let bd = TokenGlyph::Braced {
+            track: "BD".to_string(),
+            items: vec![dynamic(DynamicLevel::F), note(), note()],
+        };
+
+        let dynamics = scan_dynamic_tokens(
+            &[
+                sd,
+                bd,
+                dynamic(DynamicLevel::Mp),
+                note(),
+            ],
+            3,
+        );
+
+        assert_eq!(dynamics[0].at, Fraction::zero());
+        assert_eq!(dynamics[1].at, Fraction::zero());
+        assert_eq!(dynamics[2].at, Fraction::new(2, 3));
+    }
+
+    #[test]
+    fn scans_nested_group_dynamics_after_recursive_scaling() {
+        let nested = TokenGlyph::Group {
+            count: 2,
+            span: 2,
+            items: vec![dynamic(DynamicLevel::P), note(), note()],
+            modifiers: vec![],
+        };
+        let outer = TokenGlyph::Group {
+            count: 3,
+            span: 4,
+            items: vec![note(), nested, note()],
+            modifiers: vec![],
+        };
+
+        let dynamics = scan_dynamic_tokens(&[outer], 4);
+
+        assert_eq!(dynamics.len(), 1);
+        assert_eq!(dynamics[0].at, Fraction::new(1, 4));
+    }
 }

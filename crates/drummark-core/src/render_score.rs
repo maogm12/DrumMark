@@ -74,6 +74,14 @@ pub fn derive_render_score(score: &normalize::NormalizedScore) -> drummark_layou
                             end_measure_index: hairpin.end_measure_index as u32,
                         })
                         .collect(),
+                    dynamics: measure
+                        .dynamics
+                        .iter()
+                        .map(|dynamic| drummark_layout::DynamicMark {
+                            level: dynamic_level_to_render(&dynamic.level),
+                            at: render_fraction(dynamic.at),
+                        })
+                        .collect(),
                     measure_repeat_slashes: measure.measure_repeat_slashes,
                     multi_rest_count: measure.multi_rest_count,
                     note_value: measure.note_value,
@@ -91,6 +99,19 @@ pub fn derive_render_score(score: &normalize::NormalizedScore) -> drummark_layou
                 times: span.times,
             })
             .collect(),
+    }
+}
+
+fn dynamic_level_to_render(level: &crate::ast::DynamicLevel) -> drummark_layout::DynamicLevel {
+    match level {
+        crate::ast::DynamicLevel::Ppp => drummark_layout::DynamicLevel::Ppp,
+        crate::ast::DynamicLevel::Pp => drummark_layout::DynamicLevel::Pp,
+        crate::ast::DynamicLevel::P => drummark_layout::DynamicLevel::P,
+        crate::ast::DynamicLevel::Mp => drummark_layout::DynamicLevel::Mp,
+        crate::ast::DynamicLevel::Mf => drummark_layout::DynamicLevel::Mf,
+        crate::ast::DynamicLevel::F => drummark_layout::DynamicLevel::F,
+        crate::ast::DynamicLevel::Ff => drummark_layout::DynamicLevel::Ff,
+        crate::ast::DynamicLevel::Fff => drummark_layout::DynamicLevel::Fff,
     }
 }
 
@@ -405,7 +426,7 @@ mod tests {
 
     #[test]
     fn derives_render_score_from_normalized_score() {
-        let source = "title Smoke\ntime 4/4\nHH | x - x - |\nSD | - o - o |\n";
+        let source = "title Smoke\ntime 4/4\ndivisions 4\ngrouping 2+2\nHH | @p x x @ff x x |\nSD | - o - o |\n";
         let document = Parser::new(source).parse().expect("parse");
         let normalized = crate::normalize::normalize_document(&document);
         let render = derive_render_score(&normalized);
@@ -415,6 +436,11 @@ mod tests {
         assert_eq!(render.measures.len(), 1);
         assert_eq!(render.measures[0].source_line, normalized.measures[0].source_line);
         assert_eq!(render.measures[0].events[0].track_family, "cymbal");
+        assert_eq!(render.measures[0].dynamics.len(), 2);
+        assert_eq!(render.measures[0].dynamics[0].level, drummark_layout::DynamicLevel::P);
+        assert_eq!(render.measures[0].dynamics[0].at, drummark_layout::Fraction { numerator: 0, denominator: 1 });
+        assert_eq!(render.measures[0].dynamics[1].level, drummark_layout::DynamicLevel::Ff);
+        assert_eq!(render.measures[0].dynamics[1].at, drummark_layout::Fraction { numerator: 1, denominator: 2 });
     }
 
     #[test]
@@ -455,6 +481,7 @@ mod tests {
                     end: Fraction { numerator: 1, denominator: 1 },
                     end_measure_index: 8,
                 }],
+                dynamics: vec![],
                 measure_repeat_slashes: Some(1),
                 multi_rest_count: None,
                 note_value: 8,

@@ -1,3 +1,4 @@
+import { DYNAMIC_LEVELS, type DynamicLevel } from "../dsl/types";
 import type {
   DocumentSkeleton,
   TrackParagraph,
@@ -129,6 +130,7 @@ type WasmToken =
   | { kind: "crescendo" }
   | { kind: "decrescendo" }
   | { kind: "hairpinEnd" }
+  | { kind: "dynamic"; level: string }
   | { kind: "navMarker"; name: string }
   | { kind: "navJump"; name: string };
 
@@ -520,7 +522,7 @@ function adaptToken(token: WasmToken): TokenGlyph {
     }
     case "group": {
       const count = token.items.filter(
-        (item) => item.kind !== "crescendo" && item.kind !== "decrescendo" && item.kind !== "hairpinEnd",
+        (item) => item.kind !== "crescendo" && item.kind !== "decrescendo" && item.kind !== "hairpinEnd" && item.kind !== "dynamic",
       ).length;
       return {
         kind: "group",
@@ -548,6 +550,11 @@ function adaptToken(token: WasmToken): TokenGlyph {
       return { kind: "decrescendo_start" };
     case "hairpinEnd":
       return { kind: "hairpin_end" };
+    case "dynamic":
+      return {
+        kind: "dynamic",
+        level: DYNAMIC_LEVELS.includes(token.level as DynamicLevel) ? (token.level as DynamicLevel) : "mf",
+      };
     // Measure-repeat, multi-rest, inline-repeat, nav markers:
     // These are measure-level metadata, not tokens.
     // They get extracted in the measure loop above.
@@ -573,6 +580,8 @@ function tokenToString(t: WasmToken): string {
       return ">";
     case "hairpinEnd":
       return "!";
+    case "dynamic":
+      return `@${t.level}`;
     default:
       return "?";
   }

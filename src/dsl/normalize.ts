@@ -12,6 +12,7 @@ import {
 } from "./logic";
 import {
   type EndNav,
+  type DynamicIntent,
   type Fraction,
   type HairpinIntent,
   type NormalizedEvent,
@@ -559,6 +560,117 @@ function mergeMeasureHairpins(
   };
 }
 
+function sequenceTotalWeight(tokens: TokenGlyph[]): Fraction {
+  let total: Fraction = { numerator: 0, denominator: 1 };
+  let index = 0;
+  while (index < tokens.length) {
+    if (tokens[index]?.kind === "braced") {
+      let clusterWeight: Fraction = { numerator: 0, denominator: 1 };
+      while (tokens[index]?.kind === "braced") {
+        const weight = calculateTokenWeightAsFraction(tokens[index]!);
+        if (compareFractions(weight, clusterWeight) > 0) {
+          clusterWeight = weight;
+        }
+        index += 1;
+      }
+      total = addFractions(total, clusterWeight);
+    } else {
+      total = addFractions(total, calculateTokenWeightAsFraction(tokens[index]!));
+      index += 1;
+    }
+  }
+  return total;
+}
+
+function scanDynamicsFromTokens(tokens: TokenGlyph[], divisions: number): DynamicIntent[] {
+  const results: DynamicIntent[] = [];
+  const measureDuration: Fraction = { numerator: divisions, denominator: 1 };
+  scanDynamicSequence(tokens, { numerator: 0, denominator: 1 }, measureDuration, measureDuration, results);
+  return results;
+}
+
+function scanDynamicSequence(
+  tokens: TokenGlyph[],
+  start: Fraction,
+  duration: Fraction,
+  measureDuration: Fraction,
+  results: DynamicIntent[],
+): void {
+  const totalWeight = sequenceTotalWeight(tokens);
+  if (fractionsEqual(totalWeight, { numerator: 0, denominator: 1 })) {
+    for (const token of tokens) {
+      if (token.kind === "dynamic") {
+        results.push({ level: token.level, at: divideFractions(start, measureDuration) });
+      }
+    }
+    return;
+  }
+
+  let currentStart = start;
+  let index = 0;
+  while (index < tokens.length) {
+    const token = tokens[index]!;
+    if (token.kind === "braced") {
+      const cluster: Extract<TokenGlyph, { kind: "braced" }>[] = [];
+      while (tokens[index]?.kind === "braced") {
+        cluster.push(tokens[index] as Extract<TokenGlyph, { kind: "braced" }>);
+        index += 1;
+      }
+      const clusterWeight = cluster.reduce(
+        (max, item) => {
+          const weight = calculateTokenWeightAsFraction(item);
+          return compareFractions(weight, max) > 0 ? weight : max;
+        },
+        { numerator: 0, denominator: 1 } as Fraction,
+      );
+      const clusterDuration = multiplyFractions(duration, divideFractions(clusterWeight, totalWeight));
+      for (const item of cluster) {
+        scanDynamicSequence(item.items, currentStart, clusterDuration, measureDuration, results);
+      }
+      currentStart = addFractions(currentStart, clusterDuration);
+      continue;
+    }
+
+    if (token.kind === "dynamic") {
+      results.push({ level: token.level, at: divideFractions(currentStart, measureDuration) });
+      index += 1;
+      continue;
+    }
+
+    const tokenDuration = multiplyFractions(duration, divideFractions(calculateTokenWeightAsFraction(token), totalWeight));
+    if (token.kind === "group") {
+      scanDynamicSequence(token.items, currentStart, tokenDuration, measureDuration, results);
+    }
+    currentStart = addFractions(currentStart, tokenDuration);
+    index += 1;
+  }
+}
+
+function mergeMeasureDynamics(
+  globalMeasureIndex: number,
+  sourceLine: number,
+  candidates: DynamicIntent[],
+  errors: ScoreAst["errors"],
+): DynamicIntent[] {
+  const merged: DynamicIntent[] = [];
+  const sorted = [...candidates].sort((a, b) => compareFractions(a.at, b.at));
+  for (const candidate of sorted) {
+    const existing = merged.find((item) => fractionsEqual(item.at, candidate.at));
+    if (existing) {
+      if (existing.level !== candidate.level) {
+        errors.push({
+          line: sourceLine,
+          column: 1,
+          message: `Conflicting dynamic marks at bar ${globalMeasureIndex + 1} position ${fractionsKey(candidate.at)}`,
+        });
+      }
+      continue;
+    }
+    merged.push(candidate);
+  }
+  return merged;
+}
+
 function validateModifierLegality(
   token: TokenGlyph,
   contextTrack: TrackName | "ANONYMOUS",
@@ -618,6 +730,7 @@ export function normalizeScoreAst(ast: ScoreAst): NormalizedScore {
         .map((trackLine) => trackLine.measures[measureInParagraph])
         .filter((measure): measure is NonNullable<typeof measure> => measure !== undefined);
       const resolvedTrackNavs: Array<{ startNav?: StartNav; endNav?: EndNav; sourceLine: number }> = [];
+      const dynamicCandidates: DynamicIntent[] = [];
       for (const trackLine of paragraph.tracks) {
         const measure = trackLine.measures[measureInParagraph];
         if (!measure) continue;
@@ -663,6 +776,7 @@ export function normalizeScoreAst(ast: ScoreAst): NormalizedScore {
 
         const activeNoteValue = paragraph.noteValue;
         const divisions = (ast.headers.time.beats * activeNoteValue) / ast.headers.time.beatUnit;
+        dynamicCandidates.push(...scanDynamicsFromTokens(measure.tokens, divisions));
         const slotDuration = simplify({
           numerator: 1,
           denominator: activeNoteValue,
@@ -774,6 +888,7 @@ export function normalizeScoreAst(ast: ScoreAst): NormalizedScore {
 
       const mergedStartNav = resolvedTrackNavs.find((item) => item.startNav !== undefined)?.startNav;
       const mergedEndNav = resolvedTrackNavs.find((item) => item.endNav !== undefined)?.endNav;
+      const mergedDynamics = mergeMeasureDynamics(globalMeasureIndex, sourceLine, dynamicCandidates, ast.errors);
 
       if (
         mergedEndNav !== undefined &&
@@ -831,6 +946,7 @@ export function normalizeScoreAst(ast: ScoreAst): NormalizedScore {
         measureRepeat: measureMeta?.measureRepeat,
         multiRest: measureMeta?.multiRest,
         multiRestCount: measureMeta?.multiRestCount,
+        dynamics: mergedDynamics,
         noteValue: paragraph.noteValue,
       });
       voltaSeeds.push(measureMeta?.volta ? { indices: [...measureMeta.volta.indices] } : undefined);

@@ -166,3 +166,22 @@ When an older note conflicts with this file, treat this file plus the active spe
 - Recent Rust/LLVM wasm output can include `i32.trunc_sat_f32_s`, which requires Binaryen validation with `--enable-nontrapping-float-to-int`.
 - If `wasm-opt` is configured with only `--enable-bulk-memory`, GitHub Actions can fail during `wasm-pack build --target web crates/drummark-core` with `unexpected false: all used features should be allowed`.
 - The custom split-WASM build script invokes a standalone `wasm-bindgen` binary. Installing `wasm-pack` is not sufficient for CI; install `wasm-bindgen-cli` matching the locked `wasm-bindgen` crate version before `npm run build`.
+
+## 2026-05-20 Dynamic Marking Design Notes
+
+- DrumMark already specifies zero-duration hairpin tokens `<` and `>` as measure expressions, with normalization collecting `HairpinIntent` spans.
+- Explicit dynamic text such as `p`, `mp`, `pp`, `ff` should be modeled as zero-duration expression marks anchored to musical time, not as note articulation modifiers.
+- Dynamic marks should share the bottom-skyline layout lane with hairpins so `p < f` can express a crescendo from one explicit dynamic level to another.
+- Bare dynamic names are not viable syntax because `p` may be a playable note token. Dynamic syntax needs an explicit marker such as a directive or sigil to disambiguate expression text from note glyphs.
+
+## 2026-05-20 Dynamic Position Scanning
+
+- Dynamic marks are zero-duration tokens like hairpin starts/ends, but their scanner needs exact measure-local output rather than hairpin open/close state.
+- Adjacent routed blocks must be treated as simultaneous branches for dynamic anchors. The surrounding cursor advances by the maximum routed-block weight, not by summing each routed block sequentially.
+- Nested group dynamic positions can be resolved by recursively scaling child-local positions into the parent rendered duration until measure-local time is reached.
+
+## 2026-05-20 MusicXML Dynamic Directions
+
+- The active MusicXML exporter is `src/dsl/musicxml.ts`; CLI XML export flows through the TypeScript normalized score rather than a separate Rust XML writer.
+- Existing hairpin wedges are emitted as score-level `<direction>` elements with MusicXML `<offset>` values, so explicit dynamics should follow that direction-offset style instead of adding forward/backup cursor events.
+- `collectDivisions()` must include dynamic anchor denominators, otherwise dynamic offsets from nested groups or tuplets can become fractional even when notes alone do not require those divisions.

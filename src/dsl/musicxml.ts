@@ -19,7 +19,7 @@ import {
   type InstrumentSpec,
   type VoiceEntry,
 } from "./logic";
-import type { HairpinIntent } from "./types";
+import type { DynamicIntent, HairpinIntent } from "./types";
 
 type VoiceId = 1 | 2;
 
@@ -150,6 +150,17 @@ function hairpinDirectionsXml(
   });
 
   return fragments.join("");
+}
+
+function dynamicDirectionXml(dynamic: DynamicIntent, divisions: number): string {
+  const offset = fractionToDivisions(dynamic.at, divisions);
+  return `<direction placement="below"><direction-type><dynamics><${dynamic.level}/></dynamics></direction-type><offset>${offset}</offset></direction>`;
+}
+
+function dynamicDirectionsXml(exportMeasure: ExportMeasure, divisions: number): string {
+  return (exportMeasure.measure.dynamics ?? [])
+    .map((dynamic) => dynamicDirectionXml(dynamic, divisions))
+    .join("");
 }
 
 function leftBarlineXml(measure: NormalizedScore["measures"][number], previous?: NormalizedScore["measures"][number]): string {
@@ -344,6 +355,9 @@ function collectDivisions(score: NormalizedScore): number {
   let divisions = 1;
 
   for (const measure of score.measures) {
+    for (const dynamic of measure.dynamics) {
+      divisions = lcm(divisions, dynamic.at.denominator);
+    }
     for (const event of measure.events) {
       divisions = lcm(divisions, event.duration.denominator);
       divisions = lcm(divisions, event.start.denominator);
@@ -622,6 +636,7 @@ function measureXml(
   const markerDirection = startNavDirectionXml(measure.startNav);
   const jumpDirection = endNavDirectionXml(measure.endNav);
   const hairpinDirections = hairpinDirectionsXml(exportMeasures, exportMeasure.outputIndex, divisions);
+  const dynamicDirections = dynamicDirectionsXml(exportMeasure, divisions);
   const repeatStart = leftBarlineXml(measure, previousMeasure);
   const repeatEnd = rightBarlineXml(measure, nextMeasure);
   const print = exportMeasure.outputIndex === 0
@@ -797,6 +812,7 @@ function measureXml(
     markerDirection,
     jumpDirection,
     hairpinDirections,
+    dynamicDirections,
     ...content,
     repeatEnd,
     "</measure>",

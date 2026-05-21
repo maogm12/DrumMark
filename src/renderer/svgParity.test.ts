@@ -185,6 +185,38 @@ describe("SVG Renderer parity", () => {
     expect(countRole(svg, "hairpin-bottom")).toBe(1);
   });
 
+  it("renders explicit dynamics below hairpins with edge-shifted bounds", async () => {
+    const scene = await buildLayoutSceneFromSource("time 4/4\nnote 1/4\ngrouping 4\nHH | @p < x x x x @f |\n", { pageWidth: 360, staffScale: 1 });
+    const page = scene.pages[0];
+    const measure = page.measures[0];
+    const dynamics = page.items.filter((item: any) => item.role === "dynamic");
+    const hairpinBottom = page.items.find((item: any) => item.role === "hairpin-bottom");
+
+    expect(dynamics).toHaveLength(2);
+    expect(hairpinBottom).toBeTruthy();
+
+    const [startDynamic, endDynamic] = dynamics;
+    const startPrimitive = startDynamic.primitive as any;
+    const endPrimitive = endDynamic.primitive as any;
+    const hairpinPrimitive = (hairpinBottom as any).primitive;
+    expect(startPrimitive.text).toBe("p");
+    expect(startDynamic.measureLocalFraction).toEqual({ numerator: 0, denominator: 1 });
+    expect(startPrimitive.xPt).toBeGreaterThan(measure.xPt);
+    expect(endPrimitive.text).toBe("f");
+    expect(endDynamic.measureLocalFraction).toEqual({ numerator: 1, denominator: 1 });
+    expect(endPrimitive.xPt).toBeLessThan(measure.xPt + measure.widthPt);
+    expect(startPrimitive.yPt).toBeGreaterThan(hairpinPrimitive.y1Pt);
+    expect(endPrimitive.yPt).toBeGreaterThan(hairpinPrimitive.y1Pt);
+
+    const svg = renderSceneToSvg(scene, { staffScale: 1 });
+    expect(countRole(svg, "dynamic")).toBe(2);
+    expect(svg).toContain('aria-label="dynamic p"');
+    expect(svg).toContain('aria-label="dynamic f"');
+    expect(svg).toContain('data-measure-local-fraction="0/1"');
+    expect(svg).toContain('data-measure-local-fraction="1/1"');
+    expect(svg).toContain('font-style="italic"');
+  });
+
   it("renders rests by duration", async () => {
     const svg = await render(HEADER + "SD | --2-- |\n");
     expect(countRole(svg, "rest")).toBe(0);

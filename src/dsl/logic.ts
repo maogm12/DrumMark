@@ -155,6 +155,7 @@ export function calculateTokenWeightAsFraction(token: TokenGlyph): Fraction {
     token.kind === "crescendo_start"
     || token.kind === "decrescendo_start"
     || token.kind === "hairpin_end"
+    || token.kind === "dynamic"
   ) {
     return { numerator: 0, denominator: 1 };
   }

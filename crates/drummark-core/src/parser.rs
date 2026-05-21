@@ -234,6 +234,14 @@ impl<'a> Parser<'a> {
             Token::CrescendoStart => "<".to_string(),
             Token::DecrescendoStart => ">".to_string(),
             Token::HairpinEnd => "!".to_string(),
+            Token::DynamicPpp => "ppp".to_string(),
+            Token::DynamicPp => "pp".to_string(),
+            Token::DynamicP => "p".to_string(),
+            Token::DynamicMp => "mp".to_string(),
+            Token::DynamicMf => "mf".to_string(),
+            Token::DynamicF => "f".to_string(),
+            Token::DynamicFf => "ff".to_string(),
+            Token::DynamicFff => "fff".to_string(),
             Token::LBrace => "{".to_string(),
             Token::RBrace => "}".to_string(),
             Token::LBracket => "[".to_string(),
@@ -529,10 +537,16 @@ impl<'a> Parser<'a> {
                     }
                 }
                 Some(_) => {
-                    if let Ok(line) = self.parse_track_line() {
-                        flush_line!();
-                        current_line = Some(line);
-                        at_paragraph_start = false;
+                    match self.parse_track_line() {
+                        Ok(line) => {
+                            flush_line!();
+                            current_line = Some(line);
+                            at_paragraph_start = false;
+                        }
+                        Err(e) => {
+                            self.errors.push(e);
+                            self.consume_line_remainder();
+                        }
                     }
                 }
             }
@@ -694,6 +708,7 @@ impl<'a> Parser<'a> {
             Some(Token::CrescendoStart) => { self.next().ok(); Ok(MeasureExpr::Crescendo) }
             Some(Token::DecrescendoStart) => { self.next().ok(); Ok(MeasureExpr::Decrescendo) }
             Some(Token::HairpinEnd) => { self.next().ok(); Ok(MeasureExpr::HairpinEnd) }
+            Some(ref t) if t.dynamic_level().is_some() => self.parse_dynamic(),
             Some(Token::NavSegno) | Some(Token::NavCoda) => {
                 let t = self.next().unwrap();
                 let name = self.token_text(&t);
@@ -720,6 +735,27 @@ impl<'a> Parser<'a> {
             }
             None => Err(self.error_at(self.last_end, "unexpected end of input")),
         }
+    }
+
+    fn parse_dynamic(&mut self) -> Result<MeasureExpr, ParseError> {
+        let t = self.next()?;
+        let Some(level) = t.dynamic_level() else {
+            return Err(self.error_at(self.last_end, &format!("expected dynamic token, found {:?}", t)));
+        };
+        if let Some(next) = self.source[self.last_end..].chars().next() {
+            if !Self::is_dynamic_delimiter(next) {
+                return Err(self.error_at(self.last_end, "invalid dynamic directive boundary"));
+            }
+        }
+        Ok(MeasureExpr::Dynamic(level))
+    }
+
+    fn is_dynamic_delimiter(ch: char) -> bool {
+        ch.is_whitespace()
+            || matches!(
+                ch,
+                '#' | '|' | ':' | '[' | ']' | '{' | '}' | '(' | '+' | '\0'
+            )
     }
 
     fn parse_basic_or_combined(&mut self) -> Result<MeasureExpr, ParseError> {
@@ -1013,6 +1049,20 @@ impl Token {
             _ => "unknown",
         }
     }
+
+    fn dynamic_level(&self) -> Option<DynamicLevel> {
+        match self {
+            Token::DynamicPpp => Some(DynamicLevel::Ppp),
+            Token::DynamicPp => Some(DynamicLevel::Pp),
+            Token::DynamicP => Some(DynamicLevel::P),
+            Token::DynamicMp => Some(DynamicLevel::Mp),
+            Token::DynamicMf => Some(DynamicLevel::Mf),
+            Token::DynamicF => Some(DynamicLevel::F),
+            Token::DynamicFf => Some(DynamicLevel::Ff),
+            Token::DynamicFff => Some(DynamicLevel::Fff),
+            _ => None,
+        }
+    }
 }
 
 #[cfg(test)]
@@ -1217,6 +1267,49 @@ mod tests {
         assert!(matches!(m1[0], MeasureExpr::NavMarker(_)));
         let m2 = &doc.paragraphs[0].lines[0].measures[1].tokens;
         assert!(matches!(m2[0], MeasureExpr::NavJump(_)));
+    }
+
+    #[test]
+    fn test_dynamic_marks_parse_as_zero_duration_expressions() {
+        let doc = parse_ok("SD | @ppp @pp @p @mp @mf @f @ff @fff p |\n");
+        let tokens = &doc.paragraphs[0].lines[0].measures[0].tokens;
+        assert!(matches!(tokens[0], MeasureExpr::Dynamic(DynamicLevel::Ppp)));
+        assert!(matches!(tokens[1], MeasureExpr::Dynamic(DynamicLevel::Pp)));
+        assert!(matches!(tokens[2], MeasureExpr::Dynamic(DynamicLevel::P)));
+        assert!(matches!(tokens[3], MeasureExpr::Dynamic(DynamicLevel::Mp)));
+        assert!(matches!(tokens[4], MeasureExpr::Dynamic(DynamicLevel::Mf)));
+        assert!(matches!(tokens[5], MeasureExpr::Dynamic(DynamicLevel::F)));
+        assert!(matches!(tokens[6], MeasureExpr::Dynamic(DynamicLevel::Ff)));
+        assert!(matches!(tokens[7], MeasureExpr::Dynamic(DynamicLevel::Fff)));
+        assert!(matches!(tokens[8], MeasureExpr::BasicNote(ref note) if note.glyph == "p"));
+    }
+
+    #[test]
+    fn test_dynamic_directive_boundaries() {
+        parse_ok("SD | { @f} |\n");
+        parse_ok("SD | @f| d |\n");
+        parse_ok("SD | { @f } |\n");
+
+        for src in [
+            "SD | @ffff |\n",
+            "SD | @ffx |\n",
+            "SD | @sfz |\n",
+            "SD | @fp |\n",
+            "SD | @m |\n",
+            "SD | @pf |\n",
+            "SD | @f:accent |\n",
+        ] {
+            assert!(!parse_err(src).is_empty(), "expected parse error for {src:?}");
+        }
+    }
+
+    #[test]
+    fn test_dynamic_does_not_shadow_routes_or_navigation() {
+        let doc = parse_ok("HH | @SD { d } @C { x } @fine |\n");
+        let tokens = &doc.paragraphs[0].lines[0].measures[0].tokens;
+        assert!(matches!(tokens[0], MeasureExpr::RoutedBracedBlock { ref track, .. } if track == "SD"));
+        assert!(matches!(tokens[1], MeasureExpr::RoutedBracedBlock { ref track, .. } if track == "C"));
+        assert!(matches!(tokens[2], MeasureExpr::NavJump(ref name) if name == "fine"));
     }
 
     #[test]

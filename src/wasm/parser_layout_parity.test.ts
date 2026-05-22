@@ -143,4 +143,25 @@ describe("parser/layout wasm semantic parity", () => {
     expect(score.errors.length).toBeGreaterThan(0);
     await expect(buildLayoutSceneFromSource(source)).rejects.toThrow();
   });
+
+  it("keeps layout pages for recoverable bad measures", async () => {
+    const source = `time 4/4
+divisions 4
+
+HH | x x ? x | x x x x |
+SD | d d d d | d d d d |
+`;
+    const score = buildNormalizedScore(source);
+    const scene = await buildLayoutSceneFromSource(source, {
+      pageWidth: 612,
+      pageHeight: 792,
+      staffScale: 1,
+      showTitle: true,
+    });
+
+    expect(score.errors.length).toBeGreaterThan(0);
+    expect(score.measures).toHaveLength(2);
+    expect(scene.pages.length).toBeGreaterThan(0);
+    expect(sceneMeasures(scene)).toHaveLength(score.measures.length);
+  });
 });

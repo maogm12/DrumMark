@@ -255,3 +255,59 @@ VexFlow is no longer a supported product renderer, fallback path, dependency, or
 - Build configuration, TypeScript aliases, package metadata, generated chunks, and import-boundary checks contain no active VexFlow route.
 
 Historical VexFlow divergence notes may remain archived as migration evidence. They are not active contracts.
+
+## Addendum 2026-05-22: Collision-Aware Rest Placement
+
+The layout contract continues to anchor rests to their resolved rhythmic slot centers. This addendum changes only vertical rest placement.
+
+### Ownership
+
+Rest collision handling belongs to `drummark-layout` inside the repository-owned `RenderScore -> LayoutScene` pipeline. Platform adapters must not nudge rests to avoid notes, stems, beams, accents, or other rests.
+
+### Placement Rules
+
+- Rest X placement remains anchored to the resolved slot center.
+- Rest Y placement is solved from slot-local geometry using canonical candidate lanes rather than fixed per-voice constants.
+- Candidate lanes are defined against the rest glyph bbox center in staff-space units, not glyph origin.
+- The solver consumes finalized hit-cluster geometry:
+  - displaced notehead placements
+  - derived ledger-line geometry
+  - derived stem geometry
+  - derived accent geometry
+  - previously placed visible rests in the same slot
+
+### Beam Contract
+
+Phase-1 rest avoidance must protect a conservative local beam envelope.
+
+Minimum invariants:
+
+- For an isolated beamable note that would otherwise render with flags, the protected envelope must cover the local stem tip and the flag-side vertical reach that the renderer would occupy.
+- For a note participating in a multi-slot beam group, the protected envelope must at minimum cover the local stem tip plus the beam-side thickness budget used by `render_beam_groups()` for that slot's stem direction.
+- The envelope may over-approximate those local occupied regions, but it may not under-approximate them.
+
+This addendum does not require exact final cross-slot beam polygons to be known before rest solving. Continued-beam regressions remain mandatory verification because they are the highest-risk case in the current two-pass beam pipeline.
+
+### Multi-Rest Ordering In A Slot
+
+When more than one visible rest shares a slot, solve them in this deterministic order after `hide_voice2_rests` filtering:
+
+1. `voice` ascending
+2. `duration` descending
+3. `staff_y_for_track(track)` ascending
+4. `track` string ascending
+5. existing order in the already-sorted slot slice only as the final tie-break
+
+Later solved rests must treat earlier solved rests as occupied geometry.
+
+### Fallback And Diagnostics
+
+If every candidate lane collides, the resolver must choose a deterministic best-effort fallback and return structured diagnostic intent. The caller that assembles `LayoutScene.issues` owns whether and how that non-fatal layout diagnostic is emitted.
+
+### Semantic Preservation
+
+This addendum does not change existing rhythm semantics:
+
+- pure-rest slots remain deterministic even with no hit in the slot
+- whole-measure rests remain aligned to the first-beat grid
+- hidden voice-2 rests do not reserve layout space

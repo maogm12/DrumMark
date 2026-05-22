@@ -28,13 +28,17 @@ impl<'a> Parser<'a> {
         }
     }
 
-    pub fn parse(mut self) -> Result<Document, Vec<ParseError>> {
-        let doc = self.parse_document();
+    pub fn parse(self) -> Result<Document, Vec<ParseError>> {
+        let doc = self.parse_lossy();
         if doc.errors.is_empty() {
             Ok(doc)
         } else {
             Err(doc.errors)
         }
+    }
+
+    pub fn parse_lossy(mut self) -> Document {
+        self.parse_document()
     }
 
     // ── Token Access ──────────────────────────────────────────────
@@ -541,6 +545,18 @@ impl<'a> Parser<'a> {
         !matches!(self.peek_raw(), Some(Token::Newline) | None)
     }
 
+    fn recover_to_measure_boundary(&mut self) {
+        loop {
+            match self.peek() {
+                None | Some(Token::Newline) => break,
+                Some(ref t) if t.is_barline_like() => break,
+                Some(_) => {
+                    let _ = self.next();
+                }
+            }
+        }
+    }
+
     // ── Track Body ────────────────────────────────────────────────
 
     #[allow(unused_assignments)]
@@ -714,16 +730,43 @@ impl<'a> Parser<'a> {
         let barline = self.parse_barline()?;
         let barline_location = self.source_location(self.last_start);
         let mut tokens = Vec::new();
+        let mut recovered = false;
         loop {
             match self.peek() {
                 None | Some(Token::Newline) => break,
                 Some(ref t) if t.is_barline_like() => break,
                 Some(_) => {
-                    tokens.push(self.parse_measure_expr()?);
+                    match self.parse_measure_expr() {
+                        Ok(expr) => tokens.push(expr),
+                        Err(error) => {
+                            self.errors.push(error);
+                            tokens.clear();
+                            recovered = true;
+                            self.recover_to_measure_boundary();
+                            break;
+                        }
+                    }
                 }
             }
         }
-        // Capture distinct closing barlines after the measure payload.
+        let (closing_barline, closing_barline_location) = self.parse_closing_barline();
+        if tokens.is_empty()
+            && !recovered
+            && closing_barline.is_none()
+            && matches!(self.peek(), Some(Token::Newline) | None)
+        {
+            return Ok(None);
+        }
+        Ok(Some(MeasureSection {
+            barline,
+            barline_location,
+            tokens,
+            closing_barline,
+            closing_barline_location,
+        }))
+    }
+
+    fn parse_closing_barline(&mut self) -> (Option<Barline>, Option<SourceLocation>) {
         let mut closing_barline_location = None;
         let closing_barline = match self.peek() {
             Some(Token::RepeatEnd) => {
@@ -753,19 +796,7 @@ impl<'a> Parser<'a> {
             }
             _ => None,
         };
-        if tokens.is_empty()
-            && closing_barline.is_none()
-            && matches!(self.peek(), Some(Token::Newline) | None)
-        {
-            return Ok(None);
-        }
-        Ok(Some(MeasureSection {
-            barline,
-            barline_location,
-            tokens,
-            closing_barline,
-            closing_barline_location,
-        }))
+        (closing_barline, closing_barline_location)
     }
 
     fn parse_optional_track_name(&mut self) -> Option<String> {
@@ -1001,6 +1032,12 @@ impl<'a> Parser<'a> {
         loop {
             match self.peek() {
                 Some(Token::RBracket) => break,
+                Some(Token::Newline) => {
+                    return Err(self.error_at(self.last_end, "unclosed group bracket"));
+                }
+                Some(ref t) if t.is_barline_like() => {
+                    return Err(self.error_at(self.last_end, "unclosed group bracket"));
+                }
                 Some(_) => {
                     items.push(self.parse_measure_expr()?);
                 }
@@ -1052,6 +1089,10 @@ impl<'a> Parser<'a> {
                         self.next_raw().ok();
                     }
                 }
+                Some(Token::Newline) => return Err(self.error_at(self.last_end, "unclosed brace")),
+                Some(ref t) if t.is_barline_like() => {
+                    return Err(self.error_at(self.last_end, "unclosed brace"))
+                }
                 Some(_) => {
                     content.push(self.parse_measure_expr()?);
                 }
@@ -1080,6 +1121,10 @@ impl<'a> Parser<'a> {
                     if level > 0 {
                         self.next_raw().ok();
                     }
+                }
+                Some(Token::Newline) => return Err(self.error_at(self.last_end, "unclosed brace")),
+                Some(ref t) if t.is_barline_like() => {
+                    return Err(self.error_at(self.last_end, "unclosed brace"))
                 }
                 Some(_) => {
                     content.push(self.parse_measure_expr()?);
@@ -1327,6 +1372,10 @@ mod tests {
         Parser::new(src).parse().expect_err("parse should fail")
     }
 
+    fn parse_lossy(src: &str) -> Document {
+        Parser::new(src).parse_lossy()
+    }
+
     #[test]
     fn test_empty() {
         let doc = parse_ok("");
@@ -1364,6 +1413,26 @@ mod tests {
         assert_eq!(lines.len(), 2, "should have HH and SD lines");
         assert_eq!(lines[0].track.as_deref(), Some("HH"));
         assert_eq!(lines[1].track.as_deref(), Some("SD"));
+    }
+
+    #[test]
+    fn test_lossy_parse_recovers_after_bad_measure_token() {
+        let doc = parse_lossy("time 4/4\ndivisions 4\n\nHH | x x ? x | x x x x |\n");
+        let line = &doc.paragraphs[0].lines[0];
+        assert_eq!(doc.errors.len(), 1);
+        assert_eq!(line.measures.len(), 2);
+        assert!(line.measures[0].tokens.is_empty());
+        assert_eq!(line.measures[1].tokens.len(), 4);
+    }
+
+    #[test]
+    fn test_lossy_parse_keeps_following_measure_after_unclosed_group() {
+        let doc = parse_lossy("time 4/4\ndivisions 4\n\nHH | [x x - - | x x x x |\n");
+        let line = &doc.paragraphs[0].lines[0];
+        assert_eq!(doc.errors.len(), 1);
+        assert_eq!(line.measures.len(), 2);
+        assert!(line.measures[0].tokens.is_empty());
+        assert_eq!(line.measures[1].tokens.len(), 4);
     }
 
     #[test]

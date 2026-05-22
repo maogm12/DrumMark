@@ -69,4 +69,20 @@ HH | x - x - *0 |
       }),
     );
   });
+
+  it("recovers bad measures as empty placeholders so later measures still normalize", () => {
+    const score = buildNormalizedScoreWasm(`time 4/4
+divisions 4
+
+HH | x x ? x | x x x x |
+SD | d d d d | d d d d |
+`);
+
+    expect(score.errors.some((error) => /\?|unexpected|unclosed/i.test(error.message))).toBe(true);
+    expect(score.ast?.paragraphs).toHaveLength(1);
+    expect(score.ast?.paragraphs[0]?.measureCount).toBe(2);
+    expect(score.measures).toHaveLength(2);
+    expect(score.measures[0]?.events.length).toBeGreaterThan(0);
+    expect(score.measures[1]?.events.length).toBeGreaterThan(0);
+  });
 });

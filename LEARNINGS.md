@@ -214,3 +214,24 @@ When an older note conflicts with this file, treat this file plus the active spe
 - In `crates/drummark-layout/src/lib.rs`, rest X placement inside `render_slot_group()` needs the same visual-center basis as noteheads: SMuFL bbox center, not glyph advance width or a mixed width/bbox approximation.
 - For mixed rest+hit slots, the rest should inherit the slot's actual rendered hit center when one exists. Using the resting voice's default notehead metric (`HH` x-head vs `BD` black head) creates a visible horizontal offset even though both symbols belong to the same rhythmic slot.
 - The voice-local fallback center is still needed for pure-rest slots and whole-measure rests, but alternating two-voice patterns like `| x-x-x- | / | -b-b-b |` should sort to matching note/rest centers at every slot.
+
+## 2026-05-22 Rest Layout Planning
+
+- Rest event generation is already reasonably musical in `crates/drummark-core/src/render_score.rs`: measure gaps are split at grouping boundaries and then decomposed into primitive rest durations before reaching layout.
+- The remaining weakness is in `crates/drummark-layout/src/lib.rs`: `render_slot_group()` currently resolves rest X intelligently but still hardcodes rest Y to `staff_top + 20.0` for voice 1 and `staff_top + 30.0` for voice 2.
+- Because rest placement happens before any collision-aware lane selection, same-slot combinations like rest+notehead, rest+stem, rest+beam, and rest+accent can overlap even though the rhythmic slot center is correct.
+- A robust fix belongs in layout, not the SVG adapter: build slot-local obstacle geometry, choose from canonical rest lanes per voice, and preserve whole-measure rest alignment as a separate rule.
+
+## 2026-05-22 Rest Layout Implementation
+
+- The practical insertion point for smart rest placement is `crates/drummark-layout/src/lib.rs::render_slot_group()`, but reliable obstacle solving requires richer geometry from `render_hit_cluster()` than the old note-placement-only return value.
+- A workable phase-1 design is to keep final beam drawing in `render_beam_groups()` while giving rest solving a conservative local beam envelope derived from stem direction, beam level, and the same beam-thickness/secondary-gap constants used by the beam renderer.
+- Rest lane coordinates are easiest to make duration-agnostic if they are defined against each rest glyph's bbox center; the emitted glyph origin can then be reconstructed from canonical SMuFL bbox metrics.
+- Deterministic same-slot multi-rest behavior can be defined entirely from layout-visible fields (`voice`, `duration`, `staff_y_for_track(track)`, `track`, then existing slot-slice order) without introducing new upstream metadata.
+
+## 2026-05-22 Parser Measure Recovery For Preview Stability
+
+- The strict Rust entrypoint `Parser::parse()` is still useful for CLI/tests, but the WASM-facing preview path should use a lossy parse result so the editor can keep rendering valid later measures while surfacing parser errors.
+- Measure-level recovery must preserve measure count. Dropping a bad measure entirely causes paragraph-level track-count mismatches in `src/dsl/ast.ts`, which then discards the whole paragraph. Returning an empty placeholder measure avoids that cascade and lets normalization fill the slot with rests.
+- Recovery should stop at the next barline or newline without consuming it. If unterminated groups or braces eat the separator token during error handling, the next measure loses its opening boundary and the rest of the line becomes unrecoverable.
+- Layout still needs a hard-failure guard for fully unrenderable input: a scene that has `issues` but no measures on any page should still throw, otherwise malformed headers degrade into a blank preview instead of an actionable error.

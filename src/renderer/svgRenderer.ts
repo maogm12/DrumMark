@@ -119,7 +119,8 @@ export async function buildLayoutSceneFromSource(source: string, options?: Rende
   if (!scene || !Array.isArray(scene.pages)) {
     throw new Error("Layout scene export returned an invalid payload.");
   }
-  if (scene.pages.length === 0 && scene.issues?.length) {
+  const hasRenderableMeasures = scene.pages.some((page) => page.measures.length > 0);
+  if (!hasRenderableMeasures && scene.issues?.length) {
     throw new Error(scene.issues.join("\n"));
   }
   return scene;

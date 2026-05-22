@@ -29,10 +29,8 @@ pub mod volta;
 #[wasm_bindgen]
 pub fn parse(source: &str) -> JsValue {
     let parser = parser::Parser::new(source);
-    match parser.parse() {
-        Ok(document) => to_js::document_to_js(&document),
-        Err(errors) => to_js::errors_to_js(&errors),
-    }
+    let document = parser.parse_lossy();
+    to_js::document_to_js(&document)
 }
 
 /// Parse and normalize a DrumMark source string in one call.
@@ -41,10 +39,7 @@ pub fn parse(source: &str) -> JsValue {
 #[wasm_bindgen]
 pub fn build_normalized_score(source: &str) -> JsValue {
     let parser = parser::Parser::new(source);
-    let doc = match parser.parse() {
-        Ok(doc) => doc,
-        Err(errors) => return to_js::errors_to_js(&errors),
-    };
+    let doc = parser.parse_lossy();
     let score = normalize::normalize_document(&doc);
     normalize_to_js(&score)
 }
@@ -53,10 +48,7 @@ pub fn build_normalized_score(source: &str) -> JsValue {
 #[wasm_bindgen]
 pub fn build_render_score(source: &str) -> JsValue {
     let parser = parser::Parser::new(source);
-    let doc = match parser.parse() {
-        Ok(doc) => doc,
-        Err(errors) => return to_js::errors_to_js(&errors),
-    };
+    let doc = parser.parse_lossy();
     let score = normalize::normalize_document(&doc);
     let render_score = render_score::derive_render_score(&score);
     render_score_to_js(&render_score)
@@ -67,26 +59,7 @@ pub fn build_render_score(source: &str) -> JsValue {
 pub fn build_layout_scene(source: &str, options: JsValue) -> JsValue {
     let opts = parse_layout_options(&options);
     let parser = parser::Parser::new(source);
-    let doc = match parser.parse() {
-        Ok(doc) => doc,
-        Err(errors) => {
-            let scene = drummark_layout::LayoutScene {
-                version: drummark_layout::LAYOUT_SCENE_VERSION.to_string(),
-                metrics_version: drummark_layout::CANONICAL_METRICS_VERSION.to_string(),
-                pages: vec![],
-                issues: errors
-                    .iter()
-                    .map(|error| {
-                        format!(
-                            "Line {}, Col {}: {}",
-                            error.line, error.column, error.message
-                        )
-                    })
-                    .collect(),
-            };
-            return layout_scene_to_js(&scene);
-        }
-    };
+    let doc = parser.parse_lossy();
     let score = normalize::normalize_document(&doc);
     let render_score = render_score::derive_render_score(&score);
     let scene = drummark_layout::build_layout_scene(&render_score, &opts);

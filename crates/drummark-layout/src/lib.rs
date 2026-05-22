@@ -3150,6 +3150,415 @@ mod tests {
     }
 
     #[test]
+    fn test_same_slot_rest_avoids_notehead_and_stem_bounds() {
+        let measure = RenderMeasure {
+            index: 0,
+            global_index: 0,
+            paragraph_index: 0,
+            measure_in_paragraph: 0,
+            source_line: 1,
+            events: vec![
+                test_hit(
+                    "HH",
+                    Fraction {
+                        numerator: 0,
+                        denominator: 1,
+                    },
+                    Fraction {
+                        numerator: 1,
+                        denominator: 8,
+                    },
+                    1,
+                ),
+                test_rest(
+                    Fraction {
+                        numerator: 0,
+                        denominator: 1,
+                    },
+                    Fraction {
+                        numerator: 1,
+                        denominator: 4,
+                    },
+                    2,
+                ),
+                test_hit(
+                    "HH",
+                    Fraction {
+                        numerator: 1,
+                        denominator: 8,
+                    },
+                    Fraction {
+                        numerator: 1,
+                        denominator: 8,
+                    },
+                    1,
+                ),
+            ],
+            barline: Some("regular".into()),
+            closing_barline: Some("final".into()),
+            start_nav: None,
+            end_nav: None,
+            volta_indices: None,
+            hairpins: vec![],
+            dynamics: vec![],
+            measure_repeat_slashes: None,
+            multi_rest_count: None,
+            note_value: 8,
+            volta_terminator: false,
+        };
+        let scene = build_layout_scene(&simple_layout_score(vec![measure]), &LayoutOptions::default());
+        let items = scene.pages[0]
+            .items
+            .iter()
+            .filter(|item| item.measure_id.as_deref() == Some("measure-0"))
+            .collect::<Vec<_>>();
+        let rest = items.iter().find(|item| item.role == "rest").unwrap();
+        let notehead = items.iter().find(|item| item.role == "notehead").unwrap();
+        let stem = items.iter().find(|item| item.role == "stem").unwrap();
+        let rest_bounds = item_bounds(rest).unwrap();
+        let note_bounds = item_bounds(notehead).unwrap();
+        let stem_bounds = item_bounds(stem).unwrap();
+        assert!(
+            !rects_intersect(
+                rect_obstacle_from_bounds(rest_bounds),
+                rect_obstacle_from_bounds(note_bounds)
+            ),
+            "rest should not intersect same-slot notehead: rest={rest_bounds:?} note={note_bounds:?}"
+        );
+        assert!(
+            !rects_intersect(
+                rect_obstacle_from_bounds(rest_bounds),
+                rect_obstacle_from_bounds(stem_bounds)
+            ),
+            "rest should not intersect same-slot stem: rest={rest_bounds:?} stem={stem_bounds:?}"
+        );
+    }
+
+    #[test]
+    fn test_same_slot_rest_avoids_accent_bounds() {
+        let mut hit = test_hit(
+            "SD",
+            Fraction {
+                numerator: 0,
+                denominator: 1,
+            },
+            Fraction {
+                numerator: 1,
+                denominator: 4,
+            },
+            1,
+        );
+        hit.modifiers = vec!["accent".into()];
+        hit.modifier = Some("accent".into());
+        let measure = RenderMeasure {
+            index: 0,
+            global_index: 0,
+            paragraph_index: 0,
+            measure_in_paragraph: 0,
+            source_line: 1,
+            events: vec![
+                hit,
+                test_rest(
+                    Fraction {
+                        numerator: 0,
+                        denominator: 1,
+                    },
+                    Fraction {
+                        numerator: 1,
+                        denominator: 4,
+                    },
+                    2,
+                ),
+            ],
+            barline: Some("regular".into()),
+            closing_barline: Some("final".into()),
+            start_nav: None,
+            end_nav: None,
+            volta_indices: None,
+            hairpins: vec![],
+            dynamics: vec![],
+            measure_repeat_slashes: None,
+            multi_rest_count: None,
+            note_value: 8,
+            volta_terminator: false,
+        };
+        let scene = build_layout_scene(&simple_layout_score(vec![measure]), &LayoutOptions::default());
+        let items = scene.pages[0]
+            .items
+            .iter()
+            .filter(|item| item.measure_id.as_deref() == Some("measure-0"))
+            .collect::<Vec<_>>();
+        let rest = items.iter().find(|item| item.role == "rest").unwrap();
+        let accent = items.iter().find(|item| item.role == "accent").unwrap();
+        assert!(
+            !rects_intersect(
+                rect_obstacle_from_bounds(item_bounds(rest).unwrap()),
+                rect_obstacle_from_bounds(item_bounds(accent).unwrap())
+            ),
+            "rest should not intersect same-slot accent"
+        );
+    }
+
+    #[test]
+    fn test_dual_visible_rests_in_same_slot_resolve_to_distinct_vertical_lanes() {
+        let measure = RenderMeasure {
+            index: 0,
+            global_index: 0,
+            paragraph_index: 0,
+            measure_in_paragraph: 0,
+            source_line: 1,
+            events: vec![
+                test_rest(
+                    Fraction {
+                        numerator: 0,
+                        denominator: 1,
+                    },
+                    Fraction {
+                        numerator: 1,
+                        denominator: 4,
+                    },
+                    1,
+                ),
+                test_rest(
+                    Fraction {
+                        numerator: 0,
+                        denominator: 1,
+                    },
+                    Fraction {
+                        numerator: 1,
+                        denominator: 4,
+                    },
+                    2,
+                ),
+            ],
+            barline: Some("regular".into()),
+            closing_barline: Some("final".into()),
+            start_nav: None,
+            end_nav: None,
+            volta_indices: None,
+            hairpins: vec![],
+            dynamics: vec![],
+            measure_repeat_slashes: None,
+            multi_rest_count: None,
+            note_value: 4,
+            volta_terminator: false,
+        };
+        let scene = build_layout_scene(&simple_layout_score(vec![measure]), &LayoutOptions::default());
+        let rest_centers = scene.pages[0]
+            .items
+            .iter()
+            .filter(|item| item.role == "rest" && item.measure_id.as_deref() == Some("measure-0"))
+            .map(|item| {
+                let (_, y, _, h) = item_bounds(item).unwrap();
+                y + h * 0.5
+            })
+            .collect::<Vec<_>>();
+        assert_eq!(rest_centers.len(), 2);
+        assert!(
+            (rest_centers[0] - rest_centers[1]).abs() > 0.5,
+            "same-slot rests should occupy distinct vertical lanes: {rest_centers:?}"
+        );
+    }
+
+    #[test]
+    fn test_hide_voice2_rests_omits_secondary_voice_rests() {
+        let measure = RenderMeasure {
+            index: 0,
+            global_index: 0,
+            paragraph_index: 0,
+            measure_in_paragraph: 0,
+            source_line: 1,
+            events: vec![
+                test_rest(
+                    Fraction {
+                        numerator: 0,
+                        denominator: 1,
+                    },
+                    Fraction {
+                        numerator: 1,
+                        denominator: 4,
+                    },
+                    1,
+                ),
+                test_rest(
+                    Fraction {
+                        numerator: 0,
+                        denominator: 1,
+                    },
+                    Fraction {
+                        numerator: 1,
+                        denominator: 4,
+                    },
+                    2,
+                ),
+            ],
+            barline: Some("regular".into()),
+            closing_barline: Some("final".into()),
+            start_nav: None,
+            end_nav: None,
+            volta_indices: None,
+            hairpins: vec![],
+            dynamics: vec![],
+            measure_repeat_slashes: None,
+            multi_rest_count: None,
+            note_value: 4,
+            volta_terminator: false,
+        };
+        let score = simple_layout_score(vec![measure]);
+        let visible = build_layout_scene(
+            &score,
+            &LayoutOptions {
+                hide_voice2_rests: false,
+                ..LayoutOptions::default()
+            },
+        );
+        let hidden = build_layout_scene(
+            &score,
+            &LayoutOptions {
+                hide_voice2_rests: true,
+                ..LayoutOptions::default()
+            },
+        );
+        let visible_rests = visible.pages[0]
+            .items
+            .iter()
+            .filter(|item| item.role == "rest" && item.measure_id.as_deref() == Some("measure-0"))
+            .count();
+        let hidden_rests = hidden.pages[0]
+            .items
+            .iter()
+            .filter(|item| item.role == "rest" && item.measure_id.as_deref() == Some("measure-0"))
+            .count();
+        assert_eq!(visible_rests, 2);
+        assert_eq!(hidden_rests, 1);
+    }
+
+    #[test]
+    fn test_resolve_rest_placement_emits_fallback_diagnostic_when_all_lanes_collide() {
+        let event = test_rest(
+            Fraction {
+                numerator: 0,
+                denominator: 1,
+            },
+            Fraction {
+                numerator: 1,
+                denominator: 4,
+            },
+            1,
+        );
+        let slot = SlotEvent {
+            start: event.start,
+            event_x: 100.0,
+            event: &event,
+        };
+        let blocking = RectObstacle {
+            x1: -1000.0,
+            x2: 1000.0,
+            y1: -1000.0,
+            y2: 1000.0,
+        };
+        let (_, diagnostic) = resolve_rest_placement(
+            &slot,
+            100.0,
+            80.0,
+            rest_glyph_for_fraction(event.duration),
+            BASE_FONT_SIZE_PT,
+            &[blocking],
+            &[],
+        );
+        assert!(
+            diagnostic.is_some(),
+            "all-lane collision should return fallback diagnostic metadata"
+        );
+    }
+
+    #[test]
+    fn test_same_slot_rest_avoids_continued_beam_bounds() {
+        let measure = RenderMeasure {
+            index: 0,
+            global_index: 0,
+            paragraph_index: 0,
+            measure_in_paragraph: 0,
+            source_line: 1,
+            events: vec![
+                test_hit(
+                    "SD",
+                    Fraction {
+                        numerator: 0,
+                        denominator: 1,
+                    },
+                    Fraction {
+                        numerator: 1,
+                        denominator: 16,
+                    },
+                    2,
+                ),
+                test_rest(
+                    Fraction {
+                        numerator: 0,
+                        denominator: 1,
+                    },
+                    Fraction {
+                        numerator: 1,
+                        denominator: 4,
+                    },
+                    1,
+                ),
+                test_hit(
+                    "SD",
+                    Fraction {
+                        numerator: 1,
+                        denominator: 16,
+                    },
+                    Fraction {
+                        numerator: 1,
+                        denominator: 16,
+                    },
+                    2,
+                ),
+                test_hit(
+                    "SD",
+                    Fraction {
+                        numerator: 1,
+                        denominator: 8,
+                    },
+                    Fraction {
+                        numerator: 1,
+                        denominator: 16,
+                    },
+                    2,
+                ),
+            ],
+            barline: Some("regular".into()),
+            closing_barline: Some("final".into()),
+            start_nav: None,
+            end_nav: None,
+            volta_indices: None,
+            hairpins: vec![],
+            dynamics: vec![],
+            measure_repeat_slashes: None,
+            multi_rest_count: None,
+            note_value: 8,
+            volta_terminator: false,
+        };
+        let scene = build_layout_scene(&simple_layout_score(vec![measure]), &LayoutOptions::default());
+        let items = scene.pages[0]
+            .items
+            .iter()
+            .filter(|item| item.measure_id.as_deref() == Some("measure-0"))
+            .collect::<Vec<_>>();
+        let rest = items.iter().find(|item| item.role == "rest").unwrap();
+        let beam = items.iter().find(|item| item.role == "beam").unwrap();
+        assert!(
+            !rects_intersect(
+                rect_obstacle_from_bounds(item_bounds(rest).unwrap()),
+                rect_obstacle_from_bounds(item_bounds(beam).unwrap())
+            ),
+            "rest should not intersect continued beam bounds"
+        );
+    }
+
+    #[test]
     fn test_grouping_allocates_more_width_to_dense_first_half() {
         let measure = RenderMeasure {
             index: 0,
@@ -4624,6 +5033,7 @@ struct NotePlacement {
     note_y: f32,
     note_center_x: f32,
     has_accent: bool,
+    note_role: GlyphRole,
     stem_up_anchor_ss: Option<GlyphPoint>,
     stem_down_anchor_ss: Option<GlyphPoint>,
 }
@@ -4647,16 +5057,75 @@ struct StemLayout {
     anchor_note_id: Option<usize>,
 }
 
+#[derive(Clone, Copy, Debug)]
+struct LineObstacle {
+    x1: f32,
+    y1: f32,
+    x2: f32,
+    y2: f32,
+    stroke_width: f32,
+}
+
+#[derive(Clone, Debug)]
+struct GlyphObstacle {
+    x: f32,
+    y: f32,
+    glyph_role: GlyphRole,
+    font_size_pt: f32,
+    anchor_item_id: Option<String>,
+}
+
+#[derive(Clone, Copy, Debug)]
+struct RectObstacle {
+    x1: f32,
+    y1: f32,
+    x2: f32,
+    y2: f32,
+}
+
+#[derive(Clone, Debug)]
+struct BeamAnchorPlan {
+    x: f32,
+    stem_x: f32,
+    stem_tip_y: f32,
+    voice: u8,
+    group: u32,
+    level: u8,
+    up: bool,
+}
+
+#[derive(Clone, Debug)]
+struct StemRenderPlan {
+    x: f32,
+    y1: f32,
+    y2: f32,
+    anchor_note_id: Option<String>,
+    beam_anchor: Option<BeamAnchorPlan>,
+}
+
 struct HitClusterPlan {
     measure_id: String,
-    event_x: f32,
-    voice: u8,
-    beam_group: Option<u32>,
     beam_level: u8,
-    needs_stem: bool,
     stem_up: bool,
-    stem_len_pt: f32,
     note_placements: Vec<NotePlacement>,
+    ledger_lines: Vec<LineObstacle>,
+    stem_plan: Option<StemRenderPlan>,
+    accent_glyphs: Vec<GlyphObstacle>,
+}
+
+#[derive(Clone, Copy, Debug)]
+struct RestPlacement {
+    x: f32,
+    y: f32,
+    role: GlyphRole,
+    font_size_pt: f32,
+}
+
+#[derive(Clone, Copy, Debug)]
+struct RestPlacementDiagnostic {
+    voice: u8,
+    start: Fraction,
+    duration: Fraction,
 }
 
 /// Build systems from a NormalizedScore.
@@ -4804,9 +5273,63 @@ fn glyph_bbox_center_x_offset(metric: CanonicalGlyphMetric, font_size_pt: f32) -
     metric.bbox_center_x_ss() * (font_size_pt / 4.0) * SVG_POINT_TO_USER_UNIT
 }
 
+fn glyph_bbox_center_y_offset(metric: CanonicalGlyphMetric, font_size_pt: f32) -> f32 {
+    metric.bbox_center_y_ss() * (font_size_pt / 4.0) * SVG_POINT_TO_USER_UNIT
+}
+
 fn rendered_glyph_height(role: GlyphRole, font_size_pt: f32) -> f32 {
     let metric = canonical_glyph_metric(role);
     metric.bbox_height_ss() * (font_size_pt / 4.0) * SVG_POINT_TO_USER_UNIT
+}
+
+fn rect_obstacle_from_glyph(spec: GlyphObstacle) -> RectObstacle {
+    let metric = canonical_glyph_metric(spec.glyph_role);
+    let ss_to_pt = spec.font_size_pt / 4.0;
+    RectObstacle {
+        x1: spec.x + metric.bbox_sw_x_ss * ss_to_pt,
+        y1: spec.y - metric.bbox_ne_y_ss * ss_to_pt,
+        x2: spec.x + metric.bbox_ne_x_ss * ss_to_pt,
+        y2: spec.y - metric.bbox_sw_y_ss * ss_to_pt,
+    }
+}
+
+fn rect_obstacle_from_rest_placement(placement: RestPlacement) -> RectObstacle {
+    rect_obstacle_from_glyph(GlyphObstacle {
+        x: placement.x,
+        y: placement.y,
+        glyph_role: placement.role,
+        font_size_pt: placement.font_size_pt,
+        anchor_item_id: None,
+    })
+}
+
+fn rect_obstacle_from_line(line: LineObstacle) -> RectObstacle {
+    let pad = line.stroke_width * 0.5;
+    RectObstacle {
+        x1: line.x1.min(line.x2) - pad,
+        y1: line.y1.min(line.y2) - pad,
+        x2: line.x1.max(line.x2) + pad,
+        y2: line.y1.max(line.y2) + pad,
+    }
+}
+
+fn rects_intersect(a: RectObstacle, b: RectObstacle) -> bool {
+    a.x1 < b.x2 && a.x2 > b.x1 && a.y1 < b.y2 && a.y2 > b.y1
+}
+
+fn rect_overlap_area(a: RectObstacle, b: RectObstacle) -> f32 {
+    let overlap_x = (a.x2.min(b.x2) - a.x1.max(b.x1)).max(0.0);
+    let overlap_y = (a.y2.min(b.y2) - a.y1.max(b.y1)).max(0.0);
+    overlap_x * overlap_y
+}
+
+fn rect_obstacle_from_bounds(bounds: (f32, f32, f32, f32)) -> RectObstacle {
+    RectObstacle {
+        x1: bounds.0,
+        y1: bounds.1,
+        x2: bounds.0 + bounds.2,
+        y2: bounds.1 + bounds.3,
+    }
 }
 
 fn measure_left_pad(
@@ -5588,6 +6111,7 @@ pub fn build_layout_scene(score: &RenderScore, opts: &LayoutOptions) -> LayoutSc
         composites: Vec::new(),
     };
     let mut sink = SceneEmitSink::new(&mut page.items, &mut item_counter);
+    let mut layout_issues = Vec::new();
 
     let title_metric = canonical_text_metric(TextRole::Title);
     let subtitle_metric = canonical_text_metric(TextRole::Subtitle);
@@ -6019,6 +6543,7 @@ pub fn build_layout_scene(score: &RenderScore, opts: &LayoutOptions) -> LayoutSc
                         mapper: &mapper,
                         stem_len_pt: opts.stem_len_pt,
                         hide_voice2_rests: opts.hide_voice2_rests,
+                        issues: &mut layout_issues,
                     },
                 );
             }
@@ -6100,7 +6625,11 @@ pub fn build_layout_scene(score: &RenderScore, opts: &LayoutOptions) -> LayoutSc
             version: LAYOUT_SCENE_VERSION.to_string(),
             metrics_version: CANONICAL_METRICS_VERSION.to_string(),
             pages: Vec::new(),
-            issues: score.errors.clone(),
+            issues: {
+                let mut issues = score.errors.clone();
+                issues.extend(layout_issues);
+                issues
+            },
         },
         opts,
     )
@@ -7119,6 +7648,7 @@ struct RenderMeasureEventsInput<'a> {
     mapper: &'a SlotMapper,
     stem_len_pt: f32,
     hide_voice2_rests: bool,
+    issues: &'a mut Vec<String>,
 }
 
 fn render_measure_events(sink: &mut SceneEmitSink<'_>, input: RenderMeasureEventsInput<'_>) {
@@ -7176,6 +7706,7 @@ fn render_measure_events(sink: &mut SceneEmitSink<'_>, input: RenderMeasureEvent
                 beam_anchors: &mut beam_anchors,
                 stem_len_pt: input.stem_len_pt,
                 hide_voice2_rests: input.hide_voice2_rests,
+                issues: input.issues,
             },
         );
     }
@@ -7198,6 +7729,131 @@ struct RenderSlotGroupInput<'a, 'b> {
     beam_anchors: &'b mut Vec<BeamAnchor>,
     stem_len_pt: f32,
     hide_voice2_rests: bool,
+    issues: &'b mut Vec<String>,
+}
+
+const REST_LANES_VOICE_1_SS: [f32; 15] = [2.0, 1.5, 2.5, 1.0, 3.0, 0.5, 3.5, 0.0, 4.0, -0.5, 4.5, -1.0, 5.0, -1.5, 5.5];
+const REST_LANES_VOICE_2_SS: [f32; 15] = [3.0, 3.5, 2.5, 4.0, 2.0, 4.5, 1.5, 5.0, 1.0, 5.5, 0.5, 6.0, 0.0, 6.5, -0.5];
+const STAFF_SPACE_STEP_PT: f32 = 10.0;
+const STEM_STROKE_WIDTH_PT: f32 = 1.5;
+const BEAM_THICKNESS_PT: f32 = 4.0;
+const SECONDARY_BEAM_GAP_PT: f32 = 6.0;
+
+fn rest_lane_candidates_ss(voice: u8) -> &'static [f32] {
+    if voice == 2 {
+        &REST_LANES_VOICE_2_SS
+    } else {
+        &REST_LANES_VOICE_1_SS
+    }
+}
+
+fn rest_placement_for_lane(
+    rest_metric: CanonicalGlyphMetric,
+    center_x: f32,
+    lane_center_y: f32,
+    font_size_pt: f32,
+) -> RestPlacement {
+    RestPlacement {
+        x: center_x - glyph_bbox_center_x_offset(rest_metric, font_size_pt),
+        y: lane_center_y - glyph_bbox_center_y_offset(rest_metric, font_size_pt),
+        role: rest_metric.role,
+        font_size_pt,
+    }
+}
+
+fn notehead_obstacles(note_placements: &[NotePlacement]) -> Vec<RectObstacle> {
+    note_placements
+        .iter()
+        .map(|note| {
+            rect_obstacle_from_glyph(GlyphObstacle {
+                x: note.note_x,
+                y: note.note_y,
+                glyph_role: note.note_role,
+                font_size_pt: BASE_FONT_SIZE_PT,
+                anchor_item_id: None,
+            })
+        })
+        .collect()
+}
+
+fn ledger_line_obstacles(lines: &[LineObstacle]) -> Vec<RectObstacle> {
+    lines.iter().copied().map(rect_obstacle_from_line).collect()
+}
+
+fn stem_obstacle(stem_plan: &StemRenderPlan) -> RectObstacle {
+    rect_obstacle_from_line(LineObstacle {
+        x1: stem_plan.x,
+        y1: stem_plan.y1,
+        x2: stem_plan.x,
+        y2: stem_plan.y2,
+        stroke_width: STEM_STROKE_WIDTH_PT,
+    })
+}
+
+fn beam_envelope_obstacle(stem_plan: &StemRenderPlan, beam_level: u8, stem_up: bool) -> Option<RectObstacle> {
+    if beam_level == 0 {
+        return None;
+    }
+    let extra_span = BEAM_THICKNESS_PT + SECONDARY_BEAM_GAP_PT * beam_level.saturating_sub(1) as f32;
+    Some(if stem_up {
+        RectObstacle {
+            x1: stem_plan.x - 1.0,
+            x2: stem_plan.x + 12.0,
+            y1: stem_plan.y1,
+            y2: stem_plan.y1 + extra_span,
+        }
+    } else {
+        RectObstacle {
+            x1: stem_plan.x - 1.0,
+            x2: stem_plan.x + 12.0,
+            y1: stem_plan.y2 - extra_span,
+            y2: stem_plan.y2,
+        }
+    })
+}
+
+fn resolve_rest_placement(
+    rest: &SlotEvent<'_>,
+    center_x: f32,
+    staff_top: f32,
+    rest_metric: CanonicalGlyphMetric,
+    font_size_pt: f32,
+    obstacles: &[RectObstacle],
+    occupied_rests: &[RectObstacle],
+) -> (RestPlacement, Option<RestPlacementDiagnostic>) {
+    let mut best: Option<(RestPlacement, f32, usize)> = None;
+    for (lane_index, lane_ss) in rest_lane_candidates_ss(rest.event.voice).iter().copied().enumerate() {
+        let placement = rest_placement_for_lane(
+            rest_metric,
+            center_x,
+            staff_top + lane_ss * STAFF_SPACE_STEP_PT,
+            font_size_pt,
+        );
+        let rest_rect = rect_obstacle_from_rest_placement(placement);
+        let overlap = obstacles
+            .iter()
+            .chain(occupied_rests.iter())
+            .map(|obstacle| rect_overlap_area(rest_rect, *obstacle))
+            .sum::<f32>();
+        if overlap <= 0.001 {
+            return (placement, None);
+        }
+        match best {
+            Some((_, best_overlap, _best_lane)) if overlap > best_overlap + 0.001 => {}
+            Some((_, best_overlap, best_lane))
+                if (overlap - best_overlap).abs() <= 0.001 && lane_index >= best_lane => {}
+            _ => best = Some((placement, overlap, lane_index)),
+        }
+    }
+    let (placement, _, _) = best.expect("rest lanes should not be empty");
+    (
+        placement,
+        Some(RestPlacementDiagnostic {
+            voice: rest.event.voice,
+            start: rest.event.start,
+            duration: rest.event.duration,
+        }),
+    )
 }
 
 fn render_slot_group(sink: &mut SceneEmitSink<'_>, input: RenderSlotGroupInput<'_, '_>) {
@@ -7253,54 +7909,99 @@ fn render_slot_group(sink: &mut SceneEmitSink<'_>, input: RenderSlotGroupInput<'
         }
     }
 
+    let mut slot_obstacles = Vec::new();
+    for cluster_plan in &hit_cluster_plans {
+        slot_obstacles.extend(notehead_obstacles(&cluster_plan.note_placements));
+        slot_obstacles.extend(ledger_line_obstacles(&cluster_plan.ledger_lines));
+        if let Some(stem_plan) = cluster_plan.stem_plan.as_ref() {
+            slot_obstacles.push(stem_obstacle(stem_plan));
+            if let Some(beam_rect) =
+                beam_envelope_obstacle(stem_plan, cluster_plan.beam_level, cluster_plan.stem_up)
+            {
+                slot_obstacles.push(beam_rect);
+            }
+        }
+        slot_obstacles.extend(
+            cluster_plan
+                .accent_glyphs
+                .iter()
+                .cloned()
+                .map(rect_obstacle_from_glyph),
+        );
+    }
+
     let slot_hit_center_x = note_anchors_by_voice.values().find_map(|placements| {
         placements.first().map(|placement| placement.note_center_x)
     });
 
-    for rest in input
+    let mut visible_rests = input
         .slot_group
         .iter()
-        .filter(|slot_event| matches!(slot_event.event.kind, EventKind::Rest))
-    {
-        if input.hide_voice2_rests && rest.event.voice == 2 {
-            continue;
-        }
+        .enumerate()
+        .filter(|(_, slot_event)| matches!(slot_event.event.kind, EventKind::Rest))
+        .filter(|(_, slot_event)| !(input.hide_voice2_rests && slot_event.event.voice == 2))
+        .collect::<Vec<_>>();
+    visible_rests.sort_by(|left, right| {
+        left.1
+            .event
+            .voice
+            .cmp(&right.1.event.voice)
+            .then_with(|| compare_fractions(right.1.event.duration, left.1.event.duration))
+            .then_with(|| {
+                staff_y_for_track(&left.1.event.track)
+                    .partial_cmp(&staff_y_for_track(&right.1.event.track))
+                    .unwrap_or(std::cmp::Ordering::Equal)
+            })
+            .then_with(|| left.1.event.track.cmp(&right.1.event.track))
+            .then_with(|| left.0.cmp(&right.0))
+    });
+    let mut occupied_rest_rects = Vec::new();
+    for (_, rest) in visible_rests {
         let voice_shift = if hit_voice_count > 1 {
-            if rest.event.voice == 1 {
-                -4.0
-            } else {
-                4.0
-            }
+            if rest.event.voice == 1 { -4.0 } else { 4.0 }
         } else {
             0.0
         };
         let rest_metric = rest_glyph_for_fraction(rest.event.duration);
-        let rest_role = rest_metric.role;
         let rest_font_size = BASE_FONT_SIZE_PT;
         let reference_note_metric =
             notehead_glyph(&rest.event.track, &rest.event.modifiers, &rest.event.glyph);
-        let rest_center_offset = glyph_bbox_center_x_offset(rest_metric, rest_font_size);
         let note_center_x = slot_hit_center_x.unwrap_or_else(|| {
             input.event_x
                 - 7.0
                 + voice_shift
                 + glyph_bbox_center_x_offset(reference_note_metric, rest_font_size)
         });
-        let rest_y = if rest.event.voice == 2 {
-            input.staff_top + 30.0
-        } else {
-            input.staff_top + 20.0
-        };
+        let (placement, diagnostic) = resolve_rest_placement(
+            rest,
+            note_center_x,
+            input.staff_top,
+            rest_metric,
+            rest_font_size,
+            &slot_obstacles,
+            &occupied_rest_rects,
+        );
+        if let Some(diagnostic) = diagnostic {
+            input.issues.push(format!(
+                "LAYOUT_WARNING rest-placement voice={} start={}/{} duration={}/{}",
+                diagnostic.voice,
+                diagnostic.start.numerator,
+                diagnostic.start.denominator,
+                diagnostic.duration.numerator,
+                diagnostic.duration.denominator
+            ));
+        }
         sink.push_glyph_item(GlyphItemSpec {
             measure_id: Some(input.measure_id),
             role: "rest",
-            x: note_center_x - rest_center_offset,
-            y: rest_y,
-            glyph_role: rest_role,
+            x: placement.x,
+            y: placement.y,
+            glyph_role: placement.role,
             font_family: "Bravura",
-            font_size_pt: rest_font_size,
+            font_size_pt: placement.font_size_pt,
             fill: "#333",
         });
+        occupied_rest_rects.push(rect_obstacle_from_rest_placement(placement));
     }
 
     for cluster_plan in hit_cluster_plans {
@@ -7447,6 +8148,7 @@ fn render_hit_cluster(
     displace_overlapping_same_voice_noteheads(&mut placements, note_font_size);
 
     let mut note_placements = Vec::new();
+    let mut ledger_lines = Vec::new();
     for placement in &placements {
         let note_x = base_note_x + placement.x_offset;
         let note_glyph = char::from_u32(placement.glyph_metric.smufl_codepoint)
@@ -7469,14 +8171,22 @@ fn render_hit_cluster(
         let ledger_half_overhang_pt = 3.0_f32;
         for ledger_y_offset in ledger_line_offsets_for_staff_position(placement.staff_position_ss) {
             let ledger_y = input.staff_top + ledger_y_offset * 10.0;
+            let x2 = note_x
+                + canonical_glyph_metric(placement.note_role).width_ss() * note_font_size / 4.0
+                + ledger_half_overhang_pt;
+            ledger_lines.push(LineObstacle {
+                x1: note_x - ledger_half_overhang_pt,
+                y1: ledger_y,
+                x2,
+                y2: ledger_y,
+                stroke_width: 1.25,
+            });
             sink.push_line_item(LineItemSpec {
                 measure_id: Some(input.measure_id),
                 role: "ledger-line",
                 x1: note_x - ledger_half_overhang_pt,
                 y1: ledger_y,
-                x2: note_x
-                    + canonical_glyph_metric(placement.note_role).width_ss() * note_font_size / 4.0
-                    + ledger_half_overhang_pt,
+                x2,
                 y2: ledger_y,
                 stroke: "#333",
                 stroke_width: 1.25,
@@ -7499,6 +8209,7 @@ fn render_hit_cluster(
             note_y: actual_note_y,
             note_center_x,
             has_accent,
+            note_role: placement.note_role,
             stem_up_anchor_ss: placement.glyph_metric.stem_up_anchor_ss,
             stem_down_anchor_ss: placement.glyph_metric.stem_down_anchor_ss,
         });
@@ -7520,16 +8231,26 @@ fn render_hit_cluster(
         0
     };
 
+    let stem_plan = build_stem_render_plan(
+        &note_placements,
+        input.event_x,
+        first_hit.event.voice,
+        input.beam_group,
+        beam_level,
+        stem_up,
+        needs_stem,
+        input.stem_len_pt,
+    );
+    let accent_glyphs = build_accent_glyph_plans(&note_placements, stem_up, stem_plan.as_ref());
+
     HitClusterPlan {
         measure_id: input.measure_id.to_string(),
-        event_x: input.event_x,
-        voice: first_hit.event.voice,
-        beam_group: input.beam_group,
         beam_level,
-        needs_stem,
         stem_up,
-        stem_len_pt: input.stem_len_pt,
         note_placements,
+        ledger_lines,
+        stem_plan,
+        accent_glyphs,
     }
 }
 
@@ -7629,114 +8350,57 @@ fn render_hit_cluster_stem_and_accents(
     cluster_plan: HitClusterPlan,
     beam_anchors: &mut Vec<BeamAnchor>,
 ) {
-    let mut accent_reference_y = None;
-    if cluster_plan.needs_stem {
-        let smufl_ss = 30.0_f32 / 4.0;
-        let attach_note = if cluster_plan.stem_up {
-            cluster_plan.note_placements.iter().min_by(|a, b| {
-                a.note_y
-                    .partial_cmp(&b.note_y)
-                    .unwrap_or(std::cmp::Ordering::Equal)
-            })
-        } else {
-            cluster_plan.note_placements.iter().max_by(|a, b| {
-                a.note_y
-                    .partial_cmp(&b.note_y)
-                    .unwrap_or(std::cmp::Ordering::Equal)
-            })
-        };
-        if let Some(attach_note) = attach_note {
-            let fallback_anchor = if cluster_plan.stem_up {
-                GlyphPoint {
-                    x_ss: 1.18,
-                    y_ss: 0.168,
-                }
-            } else {
-                GlyphPoint {
-                    x_ss: 0.0,
-                    y_ss: -0.168,
-                }
-            };
-            let stem_anchor = if cluster_plan.stem_up {
-                attach_note.stem_up_anchor_ss
-            } else {
-                attach_note.stem_down_anchor_ss
-            }
-            .unwrap_or(fallback_anchor);
-            let stem_layout = shared_stem_layout(
-                &cluster_plan.note_placements,
-                attach_note,
-                cluster_plan.stem_up,
-                stem_anchor,
-                smufl_ss,
-            );
-            let stem_attach_y = stem_layout.stem_attach_y;
-            let stem_x = stem_layout.stem_x;
-            let stem_y1 = if cluster_plan.stem_up {
-                stem_attach_y - cluster_plan.stem_len_pt
-            } else {
-                stem_layout.stem_body_min_y
-            };
-            let stem_y2 = if cluster_plan.stem_up {
-                stem_layout.stem_body_max_y
-            } else {
-                stem_attach_y + cluster_plan.stem_len_pt
-            };
-            accent_reference_y = Some(if cluster_plan.stem_up { stem_y1 } else { stem_y2 });
-            let stem_id = sink.push_line_item(LineItemSpec {
-                measure_id: Some(cluster_plan.measure_id.as_str()),
-                role: "stem",
-                x1: stem_x,
-                y1: stem_y1,
-                x2: stem_x,
-                y2: stem_y2,
-                stroke: "#333",
-                stroke_width: 1.5,
-                stroke_line_cap: None,
-            });
-            if let Some(anchor_note_index) = stem_layout.anchor_note_id {
-                if let Some(item) = sink.last_item_mut() {
-                    item.anchor_item_id =
-                        Some(cluster_plan.note_placements[anchor_note_index].note_id.clone());
-                }
-            }
-            if let Some(group) = cluster_plan.beam_group.filter(|_| cluster_plan.beam_level > 0) {
-                beam_anchors.push(BeamAnchor {
-                    x: cluster_plan.event_x,
-                    stem_x,
-                    stem_tip_y: if cluster_plan.stem_up { stem_y1 } else { stem_y2 },
-                    voice: cluster_plan.voice,
-                    group,
-                    level: cluster_plan.beam_level,
-                    up: cluster_plan.stem_up,
-                    stem_item_id: stem_id,
-                });
+    let mut stem_item_id = None;
+    if let Some(stem_plan) = cluster_plan.stem_plan.as_ref() {
+        let stem_id = sink.push_line_item(LineItemSpec {
+            measure_id: Some(cluster_plan.measure_id.as_str()),
+            role: "stem",
+            x1: stem_plan.x,
+            y1: stem_plan.y1,
+            x2: stem_plan.x,
+            y2: stem_plan.y2,
+            stroke: "#333",
+            stroke_width: 1.5,
+            stroke_line_cap: None,
+        });
+        if let Some(anchor_note_id) = stem_plan.anchor_note_id.as_ref() {
+            if let Some(item) = sink.last_item_mut() {
+                item.anchor_item_id = Some(anchor_note_id.clone());
             }
         }
+        stem_item_id = Some(stem_id.clone());
+        if let Some(anchor_plan) = stem_plan.beam_anchor.as_ref() {
+            beam_anchors.push(BeamAnchor {
+                x: anchor_plan.x,
+                stem_x: anchor_plan.stem_x,
+                stem_tip_y: anchor_plan.stem_tip_y,
+                voice: anchor_plan.voice,
+                group: anchor_plan.group,
+                level: anchor_plan.level,
+                up: anchor_plan.up,
+                stem_item_id: stem_id,
+            });
+        }
     }
-
-    let fallback_accent_y = if cluster_plan.stem_up {
-        cluster_plan
-            .note_placements
-            .iter()
-            .map(|placement| placement.note_y)
-            .fold(f32::INFINITY, f32::min)
-            - 18.0
-    } else {
-        cluster_plan
-            .note_placements
-            .iter()
-            .map(|placement| placement.note_y)
-            .fold(f32::NEG_INFINITY, f32::max)
-            + 18.0
-    };
-    render_accent_glyphs(
-        sink,
-        cluster_plan.measure_id.as_str(),
-        &cluster_plan.note_placements,
-        cluster_plan.stem_up,
-        accent_reference_y.unwrap_or(fallback_accent_y),
-    );
+    for accent in &cluster_plan.accent_glyphs {
+        sink.push_glyph_item(GlyphItemSpec {
+            measure_id: Some(cluster_plan.measure_id.as_str()),
+            role: "accent",
+            x: accent.x,
+            y: accent.y,
+            glyph_role: accent.glyph_role,
+            font_family: "Bravura",
+            font_size_pt: accent.font_size_pt,
+            fill: "#333",
+        });
+        if let Some(item) = sink.last_item_mut() {
+            item.anchor_item_id = accent
+                .anchor_item_id
+                .clone()
+                .or_else(|| stem_item_id.clone())
+                .or_else(|| cluster_plan.note_placements.first().map(|note| note.note_id.clone()));
+        }
+    }
 }
 
 fn centered_stem_x_for_displaced_chord(note_placements: &[NotePlacement]) -> Option<f32> {
@@ -7796,13 +8460,92 @@ fn noteheads_overlap_on_adjacent_staff_positions(
     ((lower_staff_position_ss - upper_staff_position_ss).abs() - 0.5).abs() < 0.001
 }
 
-fn render_accent_glyphs(
-    sink: &mut SceneEmitSink<'_>,
-    measure_id: &str,
+fn build_stem_render_plan(
+    note_placements: &[NotePlacement],
+    event_x: f32,
+    voice: u8,
+    beam_group: Option<u32>,
+    beam_level: u8,
+    stem_up: bool,
+    needs_stem: bool,
+    stem_len_pt: f32,
+) -> Option<StemRenderPlan> {
+    if !needs_stem {
+        return None;
+    }
+    let smufl_ss = 30.0_f32 / 4.0;
+    let attach_note = if stem_up {
+        note_placements.iter().min_by(|a, b| {
+            a.note_y
+                .partial_cmp(&b.note_y)
+                .unwrap_or(std::cmp::Ordering::Equal)
+        })
+    } else {
+        note_placements.iter().max_by(|a, b| {
+            a.note_y
+                .partial_cmp(&b.note_y)
+                .unwrap_or(std::cmp::Ordering::Equal)
+        })
+    }?;
+    let fallback_anchor = if stem_up {
+        GlyphPoint {
+            x_ss: 1.18,
+            y_ss: 0.168,
+        }
+    } else {
+        GlyphPoint {
+            x_ss: 0.0,
+            y_ss: -0.168,
+        }
+    };
+    let stem_anchor = if stem_up {
+        attach_note.stem_up_anchor_ss
+    } else {
+        attach_note.stem_down_anchor_ss
+    }
+    .unwrap_or(fallback_anchor);
+    let stem_layout = shared_stem_layout(
+        note_placements,
+        attach_note,
+        stem_up,
+        stem_anchor,
+        smufl_ss,
+    );
+    let stem_attach_y = stem_layout.stem_attach_y;
+    let stem_y1 = if stem_up {
+        stem_attach_y - stem_len_pt
+    } else {
+        stem_layout.stem_body_min_y
+    };
+    let stem_y2 = if stem_up {
+        stem_layout.stem_body_max_y
+    } else {
+        stem_attach_y + stem_len_pt
+    };
+    Some(StemRenderPlan {
+        x: stem_layout.stem_x,
+        y1: stem_y1,
+        y2: stem_y2,
+        anchor_note_id: stem_layout
+            .anchor_note_id
+            .map(|index| note_placements[index].note_id.clone()),
+        beam_anchor: beam_group.filter(|_| beam_level > 0).map(|group| BeamAnchorPlan {
+            x: event_x,
+            stem_x: stem_layout.stem_x,
+            stem_tip_y: if stem_up { stem_y1 } else { stem_y2 },
+            voice,
+            group,
+            level: beam_level,
+            up: stem_up,
+        }),
+    })
+}
+
+fn build_accent_glyph_plans(
     note_placements: &[NotePlacement],
     stem_up: bool,
-    reference_y: f32,
-) {
+    stem_plan: Option<&StemRenderPlan>,
+) -> Vec<GlyphObstacle> {
     let accent_role = if stem_up {
         GlyphRole::ArticAccentAbove
     } else {
@@ -7811,30 +8554,38 @@ fn render_accent_glyphs(
     let accent_font_size = BASE_FONT_SIZE_PT;
     let accent_gap = 4.0_f32;
     let accent_width = rendered_glyph_width(accent_role, accent_font_size);
+    let fallback_reference_y = if stem_up {
+        note_placements
+            .iter()
+            .map(|placement| placement.note_y)
+            .fold(f32::INFINITY, f32::min)
+            - 18.0
+    } else {
+        note_placements
+            .iter()
+            .map(|placement| placement.note_y)
+            .fold(f32::NEG_INFINITY, f32::max)
+            + 18.0
+    };
+    let reference_y = stem_plan
+        .map(|plan| if stem_up { plan.y1 } else { plan.y2 })
+        .unwrap_or(fallback_reference_y);
     let accent_y = if stem_up {
         reference_y - accent_gap
     } else {
         reference_y + accent_gap
     };
-
-    for placement in note_placements
+    note_placements
         .iter()
         .filter(|placement| placement.has_accent)
-    {
-        sink.push_glyph_item(GlyphItemSpec {
-            measure_id: Some(measure_id),
-            role: "accent",
+        .map(|placement| GlyphObstacle {
             x: placement.note_center_x - accent_width * 0.5,
             y: accent_y,
             glyph_role: accent_role,
-            font_family: "Bravura",
             font_size_pt: accent_font_size,
-            fill: "#333",
-        });
-        if let Some(item) = sink.last_item_mut() {
-            item.anchor_item_id = Some(placement.note_id.clone());
-        }
-    }
+            anchor_item_id: Some(placement.note_id.clone()),
+        })
+        .collect()
 }
 
 fn glyph_role_for_codepoint(codepoint: u32) -> GlyphRole {

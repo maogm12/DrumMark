@@ -2633,6 +2633,28 @@ mod tests {
         text.y_pt
     }
 
+    fn item_visual_center_x(item: &SceneItem) -> f32 {
+        match &item.primitive {
+            ScenePrimitive::GlyphRun(glyph) => {
+                glyph.x_pt + glyph_bbox_center_x_offset(canonical_glyph_metric(glyph.glyph_role), glyph.font_size_pt)
+            }
+            ScenePrimitive::TextRun(text) => {
+                let glyph_role = text
+                    .text
+                    .chars()
+                    .next()
+                    .map(|ch| glyph_role_for_codepoint(ch as u32))
+                    .unwrap_or_else(|| panic!("expected SMuFL glyph text for role {}", item.role));
+                text.x_pt
+                    + glyph_bbox_center_x_offset(
+                        canonical_glyph_metric(glyph_role),
+                        text.font_size_pt,
+                    )
+            }
+            _ => panic!("expected glyph or text item for role {}", item.role),
+        }
+    }
+
     fn test_hit(track: &str, start: Fraction, duration: Fraction, voice: u8) -> RenderEvent {
         RenderEvent {
             track: track.into(),
@@ -2807,6 +2829,324 @@ mod tests {
             right_edge_gap - left_edge_gap < 8.0,
             "first/last quarter notes should have balanced edge gaps: left={left_edge_gap:.2} right={right_edge_gap:.2} centers={note_centers:?}"
         );
+    }
+
+    #[test]
+    fn test_silent_measure_rest_aligns_with_first_beat_grid() {
+        let silent_measure = RenderMeasure {
+            index: 0,
+            global_index: 0,
+            paragraph_index: 0,
+            measure_in_paragraph: 0,
+            source_line: 1,
+            events: vec![test_rest(
+                Fraction {
+                    numerator: 0,
+                    denominator: 1,
+                },
+                Fraction {
+                    numerator: 1,
+                    denominator: 1,
+                },
+                1,
+            )],
+            barline: Some("regular".into()),
+            closing_barline: Some("final".into()),
+            start_nav: None,
+            end_nav: None,
+            volta_indices: None,
+            hairpins: vec![],
+            dynamics: vec![],
+            measure_repeat_slashes: None,
+            multi_rest_count: None,
+            note_value: 4,
+            volta_terminator: false,
+        };
+        let note_measure = RenderMeasure {
+            index: 0,
+            global_index: 0,
+            paragraph_index: 0,
+            measure_in_paragraph: 0,
+            source_line: 1,
+            events: vec![
+                test_hit(
+                    "HH",
+                    Fraction {
+                        numerator: 0,
+                        denominator: 1,
+                    },
+                    Fraction {
+                        numerator: 1,
+                        denominator: 4,
+                    },
+                    1,
+                ),
+                test_rest(
+                    Fraction {
+                        numerator: 1,
+                        denominator: 4,
+                    },
+                    Fraction {
+                        numerator: 1,
+                        denominator: 2,
+                    },
+                    2,
+                ),
+                test_rest(
+                    Fraction {
+                        numerator: 3,
+                        denominator: 4,
+                    },
+                    Fraction {
+                        numerator: 1,
+                        denominator: 4,
+                    },
+                    2,
+                ),
+            ],
+            barline: Some("regular".into()),
+            closing_barline: Some("final".into()),
+            start_nav: None,
+            end_nav: None,
+            volta_indices: None,
+            hairpins: vec![],
+            dynamics: vec![],
+            measure_repeat_slashes: None,
+            multi_rest_count: None,
+            note_value: 4,
+            volta_terminator: false,
+        };
+
+        let mut silent_score = simple_layout_score(vec![silent_measure]);
+        silent_score.header.note_value = 4;
+        silent_score.header.divisions = 4;
+        silent_score.header.grouping = vec![4];
+        let silent_scene = build_layout_scene(&silent_score, &LayoutOptions::default());
+
+        let mut note_score = simple_layout_score(vec![note_measure]);
+        note_score.header.note_value = 4;
+        note_score.header.divisions = 4;
+        note_score.header.grouping = vec![4];
+        let note_scene = build_layout_scene(&note_score, &LayoutOptions::default());
+
+        let rest = silent_scene.pages[0]
+            .items
+            .iter()
+            .find(|item| item.role == "rest" && item.measure_id.as_deref() == Some("measure-0"))
+            .expect("expected whole-measure rest");
+        let note = note_scene.pages[0]
+            .items
+            .iter()
+            .find(|item| item.role == "notehead" && item.measure_id.as_deref() == Some("measure-0"))
+            .expect("expected first notehead");
+
+        let rest_x = item_visual_center_x(rest);
+        let note_x = item_visual_center_x(note);
+        assert!(
+            (rest_x - note_x).abs() < 0.75,
+            "whole-measure rest should align with the first beat grid: rest_x={rest_x:.2} note_x={note_x:.2}"
+        );
+    }
+
+    #[test]
+    fn test_alternating_two_voice_rests_share_slot_centers_with_opposite_voice_hits() {
+        let measure = RenderMeasure {
+            index: 0,
+            global_index: 0,
+            paragraph_index: 0,
+            measure_in_paragraph: 0,
+            source_line: 1,
+            events: vec![
+                test_hit(
+                    "HH",
+                    Fraction {
+                        numerator: 0,
+                        denominator: 1,
+                    },
+                    Fraction {
+                        numerator: 1,
+                        denominator: 8,
+                    },
+                    1,
+                ),
+                test_rest(
+                    Fraction {
+                        numerator: 1,
+                        denominator: 8,
+                    },
+                    Fraction {
+                        numerator: 1,
+                        denominator: 8,
+                    },
+                    1,
+                ),
+                test_hit(
+                    "HH",
+                    Fraction {
+                        numerator: 1,
+                        denominator: 4,
+                    },
+                    Fraction {
+                        numerator: 1,
+                        denominator: 8,
+                    },
+                    1,
+                ),
+                test_rest(
+                    Fraction {
+                        numerator: 3,
+                        denominator: 8,
+                    },
+                    Fraction {
+                        numerator: 1,
+                        denominator: 8,
+                    },
+                    1,
+                ),
+                test_hit(
+                    "HH",
+                    Fraction {
+                        numerator: 1,
+                        denominator: 2,
+                    },
+                    Fraction {
+                        numerator: 1,
+                        denominator: 8,
+                    },
+                    1,
+                ),
+                test_rest(
+                    Fraction {
+                        numerator: 5,
+                        denominator: 8,
+                    },
+                    Fraction {
+                        numerator: 1,
+                        denominator: 8,
+                    },
+                    1,
+                ),
+                test_rest(
+                    Fraction {
+                        numerator: 0,
+                        denominator: 1,
+                    },
+                    Fraction {
+                        numerator: 1,
+                        denominator: 8,
+                    },
+                    2,
+                ),
+                test_hit(
+                    "BD",
+                    Fraction {
+                        numerator: 1,
+                        denominator: 8,
+                    },
+                    Fraction {
+                        numerator: 1,
+                        denominator: 8,
+                    },
+                    2,
+                ),
+                test_rest(
+                    Fraction {
+                        numerator: 1,
+                        denominator: 4,
+                    },
+                    Fraction {
+                        numerator: 1,
+                        denominator: 8,
+                    },
+                    2,
+                ),
+                test_hit(
+                    "BD",
+                    Fraction {
+                        numerator: 3,
+                        denominator: 8,
+                    },
+                    Fraction {
+                        numerator: 1,
+                        denominator: 8,
+                    },
+                    2,
+                ),
+                test_rest(
+                    Fraction {
+                        numerator: 1,
+                        denominator: 2,
+                    },
+                    Fraction {
+                        numerator: 1,
+                        denominator: 8,
+                    },
+                    2,
+                ),
+                test_hit(
+                    "BD",
+                    Fraction {
+                        numerator: 5,
+                        denominator: 8,
+                    },
+                    Fraction {
+                        numerator: 1,
+                        denominator: 8,
+                    },
+                    2,
+                ),
+            ],
+            barline: Some("regular".into()),
+            closing_barline: Some("final".into()),
+            start_nav: None,
+            end_nav: None,
+            volta_indices: None,
+            hairpins: vec![],
+            dynamics: vec![],
+            measure_repeat_slashes: None,
+            multi_rest_count: None,
+            note_value: 8,
+            volta_terminator: false,
+        };
+
+        let mut score = simple_layout_score(vec![measure]);
+        score.header.time_beats = 6;
+        score.header.time_beat_unit = 8;
+        score.header.note_value = 8;
+        score.header.divisions = 6;
+        score.header.grouping = vec![3, 3];
+        let scene = build_layout_scene(&score, &LayoutOptions::default());
+
+        let role_measure = |role: &str| {
+            scene.pages[0]
+                .items
+                .iter()
+                .filter(|item| item.role == role && item.measure_id.as_deref() == Some("measure-0"))
+                .collect::<Vec<_>>()
+        };
+        let rests = role_measure("rest");
+        let notes = role_measure("notehead");
+        let mut rest_centers = rests
+            .iter()
+            .map(|item| item_visual_center_x(item))
+            .collect::<Vec<_>>();
+        let mut note_centers = notes
+            .iter()
+            .map(|item| item_visual_center_x(item))
+            .collect::<Vec<_>>();
+        rest_centers.sort_by(|a, b| a.partial_cmp(b).unwrap());
+        note_centers.sort_by(|a, b| a.partial_cmp(b).unwrap());
+
+        assert_eq!(rest_centers.len(), 6);
+        assert_eq!(note_centers.len(), 6);
+        for (index, (rest_center, note_center)) in
+            rest_centers.iter().zip(note_centers.iter()).enumerate()
+        {
+            assert!(
+                (rest_center - note_center).abs() < 0.75,
+                "rest/note pair {index} should share a slot center: rest={rest_center:.2} note={note_center:.2}"
+            );
+        }
     }
 
     #[test]
@@ -4460,6 +4800,10 @@ fn rendered_glyph_width(role: GlyphRole, font_size_pt: f32) -> f32 {
     canonical_glyph_metric(role).width_pt(font_size_pt) * SVG_POINT_TO_USER_UNIT
 }
 
+fn glyph_bbox_center_x_offset(metric: CanonicalGlyphMetric, font_size_pt: f32) -> f32 {
+    metric.bbox_center_x_ss() * (font_size_pt / 4.0) * SVG_POINT_TO_USER_UNIT
+}
+
 fn rendered_glyph_height(role: GlyphRole, font_size_pt: f32) -> f32 {
     let metric = canonical_glyph_metric(role);
     metric.bbox_height_ss() * (font_size_pt / 4.0) * SVG_POINT_TO_USER_UNIT
@@ -4553,6 +4897,55 @@ fn measure_fraction_for_beat_units(beat_units: u32, beat_unit: u32) -> Fraction 
     })
 }
 
+fn measure_fraction_for_division_slot(header: &RenderHeader, slot: u32) -> Fraction {
+    reduce_fraction(Fraction {
+        numerator: slot.saturating_mul(header.time_beats.max(1)),
+        denominator: header.divisions.max(1).saturating_mul(header.time_beat_unit.max(1)),
+    })
+}
+
+fn decompose_rest_fraction(duration: Fraction) -> Vec<Fraction> {
+    let primitives = [
+        Fraction {
+            numerator: 1,
+            denominator: 1,
+        },
+        Fraction {
+            numerator: 1,
+            denominator: 2,
+        },
+        Fraction {
+            numerator: 1,
+            denominator: 4,
+        },
+        Fraction {
+            numerator: 1,
+            denominator: 8,
+        },
+        Fraction {
+            numerator: 1,
+            denominator: 16,
+        },
+        Fraction {
+            numerator: 1,
+            denominator: 32,
+        },
+    ];
+
+    let mut result = Vec::new();
+    let mut remaining = reduce_fraction(duration);
+    for primitive in primitives {
+        while compare_fractions(remaining, primitive) != std::cmp::Ordering::Less {
+            result.push(primitive);
+            remaining = subtract_fractions(remaining, primitive);
+        }
+    }
+    if remaining.numerator > 0 {
+        result.push(remaining);
+    }
+    result
+}
+
 fn grouping_segment_index_for_fraction(header: &RenderHeader, fraction: Fraction) -> usize {
     let grouping = normalized_grouping(header);
     let mut boundary_units = 0_u32;
@@ -4623,6 +5016,23 @@ fn measure_geometry(
             }),
     );
     sort_and_dedup_fractions(&mut all_boundaries);
+    let only_rests = !measure.events.is_empty()
+        && measure
+            .events
+            .iter()
+            .all(|event| matches!(event.kind, EventKind::Rest));
+    if only_rests {
+        let first_slot = measure_fraction_for_division_slot(header, 1);
+        if compare_fractions(first_slot, measure_end) == std::cmp::Ordering::Less {
+            all_boundaries.push(first_slot);
+            let mut cursor = first_slot;
+            for primitive in decompose_rest_fraction(subtract_fractions(measure_end, first_slot)) {
+                cursor = add_fractions(cursor, primitive);
+                all_boundaries.push(cursor);
+            }
+        }
+        sort_and_dedup_fractions(&mut all_boundaries);
+    }
 
     for beat_units in grouping {
         let group_duration = measure_fraction_for_beat_units(beat_units.max(1), header.time_beat_unit);
@@ -6809,6 +7219,15 @@ fn render_slot_group(sink: &mut SceneEmitSink<'_>, input: RenderSlotGroupInput<'
         .map(|slot_event| slot_event.event.voice)
         .collect::<std::collections::BTreeSet<_>>()
     {
+        let voice_shift = if hit_voice_count > 1 {
+            if voice == 1 {
+                -4.0
+            } else {
+                4.0
+            }
+        } else {
+            0.0
+        };
         let voice_hits = input
             .slot_group
             .iter()
@@ -6817,15 +7236,6 @@ fn render_slot_group(sink: &mut SceneEmitSink<'_>, input: RenderSlotGroupInput<'
             })
             .collect::<Vec<_>>();
         if !voice_hits.is_empty() {
-            let voice_shift = if hit_voice_count > 1 {
-                if voice == 1 {
-                    -4.0
-                } else {
-                    4.0
-                }
-            } else {
-                0.0
-            };
             let cluster_plan = render_hit_cluster(
                 sink,
                 RenderHitClusterInput {
@@ -6841,32 +7251,56 @@ fn render_slot_group(sink: &mut SceneEmitSink<'_>, input: RenderSlotGroupInput<'
             note_anchors_by_voice.insert(voice, cluster_plan.note_placements.clone());
             hit_cluster_plans.push(cluster_plan);
         }
+    }
 
-        for rest in input.slot_group.iter().filter(|slot_event| {
-            slot_event.event.voice == voice && matches!(slot_event.event.kind, EventKind::Rest)
-        }) {
-            if input.hide_voice2_rests && rest.event.voice == 2 {
-                continue;
-            }
-            let rest_metric = rest_glyph_for_fraction(rest.event.duration);
-            let rest_role = rest_metric.role;
-            let rest_font_size = BASE_FONT_SIZE_PT;
-            let rest_y = if rest.event.voice == 2 {
-                input.staff_top + 30.0
-            } else {
-                input.staff_top + 20.0
-            };
-            sink.push_glyph_item(GlyphItemSpec {
-                measure_id: Some(input.measure_id),
-                role: "rest",
-                x: input.event_x,
-                y: rest_y,
-                glyph_role: rest_role,
-                font_family: "Bravura",
-                font_size_pt: rest_font_size,
-                fill: "#333",
-            });
+    let slot_hit_center_x = note_anchors_by_voice.values().find_map(|placements| {
+        placements.first().map(|placement| placement.note_center_x)
+    });
+
+    for rest in input
+        .slot_group
+        .iter()
+        .filter(|slot_event| matches!(slot_event.event.kind, EventKind::Rest))
+    {
+        if input.hide_voice2_rests && rest.event.voice == 2 {
+            continue;
         }
+        let voice_shift = if hit_voice_count > 1 {
+            if rest.event.voice == 1 {
+                -4.0
+            } else {
+                4.0
+            }
+        } else {
+            0.0
+        };
+        let rest_metric = rest_glyph_for_fraction(rest.event.duration);
+        let rest_role = rest_metric.role;
+        let rest_font_size = BASE_FONT_SIZE_PT;
+        let reference_note_metric =
+            notehead_glyph(&rest.event.track, &rest.event.modifiers, &rest.event.glyph);
+        let rest_center_offset = glyph_bbox_center_x_offset(rest_metric, rest_font_size);
+        let note_center_x = slot_hit_center_x.unwrap_or_else(|| {
+            input.event_x
+                - 7.0
+                + voice_shift
+                + glyph_bbox_center_x_offset(reference_note_metric, rest_font_size)
+        });
+        let rest_y = if rest.event.voice == 2 {
+            input.staff_top + 30.0
+        } else {
+            input.staff_top + 20.0
+        };
+        sink.push_glyph_item(GlyphItemSpec {
+            measure_id: Some(input.measure_id),
+            role: "rest",
+            x: note_center_x - rest_center_offset,
+            y: rest_y,
+            glyph_role: rest_role,
+            font_family: "Bravura",
+            font_size_pt: rest_font_size,
+            fill: "#333",
+        });
     }
 
     for cluster_plan in hit_cluster_plans {
@@ -7052,8 +7486,7 @@ fn render_hit_cluster(
                 item.anchor_item_id = Some(note_id.clone());
             }
         }
-        let note_center_x =
-            note_x + rendered_glyph_width(placement.note_role, note_font_size) * 0.5;
+        let note_center_x = note_x + glyph_bbox_center_x_offset(placement.glyph_metric, note_font_size);
         let has_accent = placement
             .slot_event
             .event

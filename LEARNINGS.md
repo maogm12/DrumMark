@@ -203,3 +203,14 @@ When an older note conflicts with this file, treat this file plus the active spe
 
 - `drummark-layout` must not quantize event starts to `header.divisions` when grouping same-time hits, assigning beam runs, or computing intra-group spacing. In meters like `6/8` with `note 1/8`, that quantization collapses distinct 16th-note starts (`1/2` and `9/16`) into one fake slot.
 - Group-local spacing should use exact start/end `Fraction` boundaries from the rendered events, then weight only the segments inside each declared grouping span. This preserves rhythmic subdivision without distorting neighboring eighth-note positions.
+
+## 2026-05-21 Active Voice Detection For Implicit Rests
+
+- `derive_render_score()` must infer active voices from actual non-sticking events in the score, not from the normalized track registry alone. Anonymous measures like `| b |` can otherwise mark voice 1 as active even though only voice 2 appears.
+- When active voices are inferred from track registry instead of events, the renderer can invent a phantom voice-1 whole rest and simultaneously miss the intended trailing voice-2 rests. This also breaks the `hideVoice2Rests` toggle because the visible rest is attached to the wrong voice.
+
+## 2026-05-21 Rest Slot Center Alignment
+
+- In `crates/drummark-layout/src/lib.rs`, rest X placement inside `render_slot_group()` needs the same visual-center basis as noteheads: SMuFL bbox center, not glyph advance width or a mixed width/bbox approximation.
+- For mixed rest+hit slots, the rest should inherit the slot's actual rendered hit center when one exists. Using the resting voice's default notehead metric (`HH` x-head vs `BD` black head) creates a visible horizontal offset even though both symbols belong to the same rhythmic slot.
+- The voice-local fallback center is still needed for pure-rest slots and whole-measure rests, but alternating two-voice patterns like `| x-x-x- | / | -b-b-b |` should sort to matching note/rest centers at every slot.

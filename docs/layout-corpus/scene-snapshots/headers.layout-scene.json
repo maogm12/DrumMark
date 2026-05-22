@@ -394,7 +394,7 @@
           "kind": "glyphRun",
           "zIndex": 0,
           "primitive": {
-            "xPt": 332.75,
+            "xPt": 326.6099853515625,
             "yPt": 304.5,
             "glyphRole": "restEighth",
             "glyphCount": 1,
@@ -619,7 +619,7 @@
           "kind": "glyphRun",
           "zIndex": 0,
           "primitive": {
-            "xPt": 629.4166870117188,
+            "xPt": 622.7966918945312,
             "yPt": 304.5,
             "glyphRole": "restQuarter",
             "glyphCount": 1,

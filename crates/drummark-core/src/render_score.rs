@@ -178,6 +178,28 @@ fn derive_implicit_rest_events(
         score.header.grouping.clone()
     };
 
+    let measure_events: Vec<&crate::event::NormalizedEvent> = measure
+        .events
+        .iter()
+        .filter(|event| event.kind != EventKind::Sticking)
+        .collect();
+    if measure_events.is_empty() {
+        let (track, track_family) = &default_voice_tracks[0];
+        return vec![drummark_layout::RenderEvent {
+            track: track.clone(),
+            track_family: track_family.clone(),
+            start: render_fraction(Fraction::zero()),
+            duration: render_fraction(measure_duration),
+            kind: drummark_layout::EventKind::Rest,
+            glyph: "-".to_string(),
+            modifiers: Vec::new(),
+            modifier: None,
+            voice: 1,
+            beam: "none".to_string(),
+            tuplet: None,
+        }];
+    }
+
     let mut rests = Vec::new();
     let active_voices = active_voices_for_score(score);
     for voice in [1_u8, 2_u8] {
@@ -254,10 +276,14 @@ fn derive_implicit_rest_events(
 
 fn active_voices_for_score(score: &normalize::NormalizedScore) -> Vec<u8> {
     let mut voices = Vec::new();
-    for track in &score.tracks {
-        let voice = crate::resolve::voice_for_track(&track.id);
-        if !voices.contains(&voice) {
-            voices.push(voice);
+    for measure in &score.measures {
+        for event in &measure.events {
+            if event.kind == EventKind::Sticking {
+                continue;
+            }
+            if !voices.contains(&event.voice) {
+                voices.push(event.voice);
+            }
         }
     }
     if voices.is_empty() {
@@ -645,5 +671,80 @@ mod tests {
                 numerator: 1,
                 denominator: 2
             }));
+    }
+
+    #[test]
+    fn anonymous_lower_voice_measure_derives_only_voice_two_rests() {
+        let source = "time 4/4\nnote 1/4\ngrouping 4\n| b |\n";
+        let document = Parser::new(source).parse().expect("parse");
+        let normalized = crate::normalize::normalize_document(&document);
+        let render = derive_render_score(&normalized);
+        let measure = &render.measures[0];
+
+        let voice_one_rests: Vec<_> = measure
+            .events
+            .iter()
+            .filter(|event| event.kind == drummark_layout::EventKind::Rest && event.voice == 1)
+            .collect();
+        let voice_two_rests: Vec<_> = measure
+            .events
+            .iter()
+            .filter(|event| event.kind == drummark_layout::EventKind::Rest && event.voice == 2)
+            .collect();
+
+        assert!(
+            voice_one_rests.is_empty(),
+            "anonymous lower-voice-only measures must not invent a whole-measure voice-1 rest"
+        );
+        assert_eq!(
+            voice_two_rests.len(),
+            2,
+            "the trailing 3/4 gap after `b` should decompose into half + quarter rests on voice 2"
+        );
+        assert!(voice_two_rests.iter().any(|event| event.start
+            == drummark_layout::Fraction {
+                numerator: 1,
+                denominator: 4
+            }
+            && event.duration
+                == drummark_layout::Fraction {
+                    numerator: 1,
+                    denominator: 2
+                }));
+        assert!(voice_two_rests.iter().any(|event| event.start
+            == drummark_layout::Fraction {
+                numerator: 3,
+                denominator: 4
+            }
+            && event.duration
+                == drummark_layout::Fraction {
+                    numerator: 1,
+                    denominator: 4
+                }));
+    }
+
+    #[test]
+    fn silent_measure_uses_only_voice_one_whole_rest_even_with_voice_two_elsewhere() {
+        let source = "time 4/4\nnote 1/4\ngrouping 4\nBD | b | - |\n";
+        let document = Parser::new(source).parse().expect("parse");
+        let normalized = crate::normalize::normalize_document(&document);
+        let render = derive_render_score(&normalized);
+        assert_eq!(render.measures.len(), 2);
+        let silent_measure = &render.measures[1];
+        let rest_events: Vec<_> = silent_measure
+            .events
+            .iter()
+            .filter(|event| event.kind == drummark_layout::EventKind::Rest)
+            .collect();
+
+        assert_eq!(rest_events.len(), 1);
+        assert_eq!(rest_events[0].voice, 1);
+        assert_eq!(
+            rest_events[0].duration,
+            drummark_layout::Fraction {
+                numerator: 1,
+                denominator: 1
+            }
+        );
     }
 }

@@ -9,7 +9,7 @@ use crate::nav::{Anchor, BarlineType, EndNav, StartNav};
 use crate::resolve::{get_track_family, TrackFamily};
 use crate::validate::{validate_grouping, validate_modifier_legality};
 use crate::volta::{propagate_voltas, VoltaMeasure};
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 
 // ── Inline-Repeat Expansion Helpers ────────────────────────────────
 
@@ -317,21 +317,83 @@ fn barline_type(bl: &Barline) -> Option<String> {
 }
 
 fn default_note_value(headers: &HeaderSection) -> u32 {
-    headers.note.map(|(_, d)| d).unwrap_or(8)
+    if let Some((_, denominator)) = headers.note {
+        return denominator;
+    }
+    if let (Some(divisions), Some((beats, beat_unit))) = (headers.divisions, headers.time) {
+        return divisions.saturating_mul(beat_unit) / beats.max(1);
+    }
+    16
+}
+
+fn default_grouping(time_beats: u32, time_beat_unit: u32) -> Vec<u32> {
+    match (time_beats, time_beat_unit) {
+        (2, 4) => vec![1, 1],
+        (3, 4) => vec![1, 1, 1],
+        (4, 4) => vec![2, 2],
+        (2, 2) => vec![1, 1],
+        (3, 8) => vec![1, 1, 1],
+        (6, 8) => vec![3, 3],
+        (9, 8) => vec![3, 3, 3],
+        (12, 8) => vec![3, 3, 3, 3],
+        _ => vec![time_beats],
+    }
+}
+
+fn basic_token_exceeds_exact_duration_range(dots: u32, stars: u32, halves: u32) -> bool {
+    let positive_binary_exponent = stars.saturating_sub(halves);
+    let negative_binary_exponent = halves.saturating_sub(stars);
+    let numerator_exponent = dots
+        .saturating_add(1)
+        .saturating_add(positive_binary_exponent);
+    let denominator_exponent = dots.saturating_add(negative_binary_exponent);
+
+    dots > 52 || numerator_exponent > 1023 || denominator_exponent > 1023
+}
+
+fn token_exceeds_exact_duration_range(token: &TokenGlyph) -> Option<String> {
+    match token {
+        TokenGlyph::Basic {
+            value,
+            dots,
+            stars,
+            halves,
+            ..
+        } if basic_token_exceeds_exact_duration_range(*dots, *stars, *halves) => {
+            Some(value.clone())
+        }
+        TokenGlyph::Combined { items } | TokenGlyph::Braced { items, .. } => {
+            items.iter().find_map(token_exceeds_exact_duration_range)
+        }
+        TokenGlyph::Group { items, .. } => items.iter().find_map(token_exceeds_exact_duration_range),
+        _ => None,
+    }
 }
 
 // ── Main Normalizer ─────────────────────────────────────────────
 
 pub fn normalize_document(doc: &Document) -> NormalizedScore {
-    let mut errors: Vec<String> = Vec::new();
+    let mut errors: Vec<String> = doc
+        .errors
+        .iter()
+        .map(|error| {
+            format!(
+                "Line {}, Col {}: {}",
+                error.line, error.column, error.message
+            )
+        })
+        .collect();
 
     // Extract header
     let hs = &doc.headers;
     let time_beats = hs.time.unwrap_or((4, 4)).0;
     let time_beat_unit = hs.time.unwrap_or((4, 4)).1;
-    let divisions = hs.divisions.unwrap_or(16);
     let note_value = default_note_value(hs);
-    let grouping = hs.grouping.clone().unwrap_or_else(|| vec![1]);
+    let divisions = time_beats.saturating_mul(note_value) / time_beat_unit.max(1);
+    let grouping = hs
+        .grouping
+        .clone()
+        .unwrap_or_else(|| default_grouping(time_beats, time_beat_unit));
 
     // Validate grouping
     if let Some(err) = validate_grouping(&grouping, time_beats, time_beat_unit, divisions) {
@@ -350,33 +412,7 @@ pub fn normalize_document(doc: &Document) -> NormalizedScore {
         grouping: grouping.clone(),
     };
 
-    // Collect all tracks
-    let mut track_set: HashSet<String> = HashSet::new();
-    for para in &doc.paragraphs {
-        for line in &para.lines {
-            if let Some(ref t) = line.track {
-                track_set.insert(t.clone());
-            }
-        }
-    }
-
-    let mut tracks: Vec<NormalizedTrack> = track_set
-        .iter()
-        .map(|id| {
-            let family = match get_track_family(id) {
-                TrackFamily::Cymbal => "cymbal",
-                TrackFamily::Drum => "drum",
-                TrackFamily::Pedal => "pedal",
-                TrackFamily::Percussion => "percussion",
-                TrackFamily::Auxiliary => "auxiliary",
-            };
-            NormalizedTrack {
-                id: id.clone(),
-                family: family.to_string(),
-            }
-        })
-        .collect();
-    tracks.sort_by(|a, b| a.id.cmp(&b.id));
+    let tracks: Vec<NormalizedTrack> = Vec::new();
 
     // ── Main Pass: walk paragraphs → measures → tracks → tokens ──
 
@@ -492,6 +528,14 @@ pub fn normalize_document(doc: &Document) -> NormalizedScore {
                     })
                     .map(to_token_glyph)
                     .collect();
+                if let Some(value) = tokens.iter().find_map(token_exceeds_exact_duration_range) {
+                    errors.push(format!(
+                        "Line {}: Token `{}` exceeds the exact duration range under current modifier counts",
+                        es.barline_location.line.max(1),
+                        value
+                    ));
+                    continue;
+                }
 
                 // Scan for measure-repeat, multi-rest, nav markers
                 // Skip metadata on padded sections to avoid repeating non-note data
@@ -711,6 +755,24 @@ pub fn normalize_document(doc: &Document) -> NormalizedScore {
         if last.barline.is_none() || last.barline.as_deref() == Some("regular") {
             last.barline = Some("final".to_string());
         }
+    }
+
+    let mut tracks = tracks;
+    for event in all_measures.iter().flat_map(|measure| measure.events.iter()) {
+        if tracks.iter().any(|track| track.id == event.track) {
+            continue;
+        }
+        let family = match get_track_family(&event.track) {
+            TrackFamily::Cymbal => "cymbal",
+            TrackFamily::Drum => "drum",
+            TrackFamily::Pedal => "pedal",
+            TrackFamily::Percussion => "percussion",
+            TrackFamily::Auxiliary => "auxiliary",
+        };
+        tracks.push(NormalizedTrack {
+            id: event.track.clone(),
+            family: family.to_string(),
+        });
     }
 
     NormalizedScore {

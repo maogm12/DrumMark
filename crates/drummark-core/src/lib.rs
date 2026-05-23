@@ -35,7 +35,7 @@ pub fn parse(source: &str) -> JsValue {
 
 /// Parse and normalize a DrumMark source string in one call.
 /// Returns the NormalizedScore as a JS object tree.
-#[cfg(all(feature = "parser-wasm", feature = "layout-wasm"))]
+#[cfg(feature = "parser-wasm")]
 #[wasm_bindgen]
 pub fn build_normalized_score(source: &str) -> JsValue {
     let parser = parser::Parser::new(source);
@@ -66,7 +66,7 @@ pub fn build_layout_scene(source: &str, options: JsValue) -> JsValue {
     layout_scene_to_js(&scene)
 }
 
-#[cfg(all(feature = "parser-wasm", feature = "layout-wasm"))]
+#[cfg(feature = "parser-wasm")]
 fn normalize_to_js(score: &normalize::NormalizedScore) -> JsValue {
     use js_sys::{Array, Object};
 
@@ -151,6 +151,7 @@ fn normalize_to_js(score: &normalize::NormalizedScore) -> JsValue {
             "measureInParagraph",
             &JsValue::from_f64(m.measure_in_paragraph as f64),
         );
+        set(&mo, "sourceLine", &JsValue::from_f64(m.source_line as f64));
         set(&mo, "noteValue", &JsValue::from_f64(m.note_value as f64));
         if let Some(ref b) = m.barline {
             set(&mo, "barline", &JsValue::from_str(b));
@@ -236,6 +237,9 @@ fn normalize_to_js(score: &normalize::NormalizedScore) -> JsValue {
             set(&evo, "start", &frac_js(ev.start));
             set(&evo, "duration", &frac_js(ev.duration));
             set(&evo, "voice", &JsValue::from_f64(ev.voice as f64));
+            if ev.dot_count > 0 {
+                set(&evo, "dotCount", &JsValue::from_f64(ev.dot_count as f64));
+            }
             if !ev.modifiers.is_empty() {
                 let ma_mod = Array::new();
                 for m in &ev.modifiers {
@@ -252,6 +256,24 @@ fn normalize_to_js(score: &normalize::NormalizedScore) -> JsValue {
         ma.push(&mo.into());
     }
     set(&obj, "measures", &ma.into());
+
+    let rsa = Array::new();
+    for span in &score.repeat_spans {
+        let ro = Object::new();
+        set(
+            &ro,
+            "startMeasure",
+            &JsValue::from_f64(span.start_measure as f64),
+        );
+        set(
+            &ro,
+            "endMeasure",
+            &JsValue::from_f64(span.end_measure as f64),
+        );
+        set(&ro, "times", &JsValue::from_f64(span.times as f64));
+        rsa.push(&ro.into());
+    }
+    set(&obj, "repeatSpans", &rsa.into());
 
     obj.into()
 }

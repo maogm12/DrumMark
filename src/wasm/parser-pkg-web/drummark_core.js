@@ -1,6 +1,19 @@
 /* @ts-self-types="./drummark_core.d.ts" */
 
 /**
+ * Parse and normalize a DrumMark source string in one call.
+ * Returns the NormalizedScore as a JS object tree.
+ * @param {string} source
+ * @returns {any}
+ */
+export function build_normalized_score(source) {
+    const ptr0 = passStringToWasm0(source, wasm.__wbindgen_export, wasm.__wbindgen_export2);
+    const len0 = WASM_VECTOR_LEN;
+    const ret = wasm.build_normalized_score(ptr0, len0);
+    return takeObject(ret);
+}
+
+/**
  * Parse a DrumMark source string and return the AST as a JS object.
  * @param {string} source
  * @returns {any}

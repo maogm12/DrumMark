@@ -235,3 +235,10 @@ When an older note conflicts with this file, treat this file plus the active spe
 - Measure-level recovery must preserve measure count. Dropping a bad measure entirely causes paragraph-level track-count mismatches in `src/dsl/ast.ts`, which then discards the whole paragraph. Returning an empty placeholder measure avoids that cascade and lets normalization fill the slot with rests.
 - Recovery should stop at the next barline or newline without consuming it. If unterminated groups or braces eat the separator token during error handling, the next measure loses its opening boundary and the rest of the line becomes unrecoverable.
 - Layout still needs a hard-failure guard for fully unrenderable input: a scene that has `issues` but no measures on any page should still throw, otherwise malformed headers degrade into a blank preview instead of an actionable error.
+
+## 2026-05-23 Rust Normalizer WASM Cutover
+
+- `crates/drummark-core` already had `build_normalized_score(source)` but it was not exported from the parser WASM packages; `scripts/build_wasm.mjs` explicitly required only `parse` for parser packages and forbade normalized/layout exports from layout packages.
+- Keeping `src/dsl/normalize.ts` as a TypeScript implementation after Rust normalizer migration lets TS-only semantics drift from the layout path. A safer bridge is a thin adapter that calls the parser WASM runtime's `build_normalized_score`, then adapts small JS shape differences for existing UI/MusicXML consumers.
+- Dotted rhythm rendering should not encode `"dot"` as a performance modifier. Rust `NormalizedEvent` and layout `RenderEvent` now carry a separate `dot_count`, leaving `modifiers` for articulations and notehead semantics.
+- Rust normalized output omits empty optional arrays by default, so JS adapters that feed legacy consumers need to normalize fields such as `event.modifiers` to `[]` while preserving intentionally absent measure fields like `hairpins`.

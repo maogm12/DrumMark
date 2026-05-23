@@ -369,6 +369,7 @@ export type NormalizedEvent = {
   kind: NormalizedEventKind;
   glyph: Exclude<BasicGlyph, "-">;
   modifiers: Modifier[];
+  dotCount?: number;
   modifier?: Modifier;
   tuplet?: TupletSpec;
   tie?: TieState;
@@ -435,6 +436,7 @@ export type NormalizedScore = {
   header: NormalizedHeader;
   tracks: NormalizedTrack[];
   ast: ScoreAst;
+  repeatSpans?: RepeatSpan[];
   measures: NormalizedMeasure[];
   errors: ParseError[];
 };

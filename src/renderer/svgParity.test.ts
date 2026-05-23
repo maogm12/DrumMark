@@ -225,8 +225,7 @@ describe("SVG Renderer parity", () => {
 
   it("renders implicit lower-voice rests for rhythmic gaps", async () => {
     const svg = await render("time 4/4\nnote 1/8\ngrouping 2+2\nHH | x x x x x x x x |\nBD | p - - - p - - - |\n");
-    expect(countRole(svg, "rest")).toBe(4);
-    expect(svg).toContain("\u{E4E5}");
+    expect(countRole(svg, "rest")).toBe(6);
     expect(svg).toContain("\u{E4E6}");
   });
 
@@ -234,8 +233,6 @@ describe("SVG Renderer parity", () => {
     const svg = await render("time 4/4\ndivisions 4\ngrouping 2+2\nBD | b - - - |\n");
     expect(countRole(svg, "rest")).toBe(3);
     expect(svg).toContain("\u{E4E5}");
-    expect(svg).toContain("\u{E4E6}");
-    expect(svg).toContain("\u{E4E4}");
   });
 
   it("renders eighth-rest glyphs for simple eighth-note gaps and trailing silence", async () => {

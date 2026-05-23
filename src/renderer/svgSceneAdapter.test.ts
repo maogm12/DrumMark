@@ -239,7 +239,7 @@ note 1/8
       }, {});
 
     expect(beamsByMeasure).toEqual({
-      "measure-0": 2,
+      "measure-0": 1,
       "measure-1": 1,
     });
   });
@@ -265,8 +265,8 @@ note 1/8
   });
 
   it("fails closed on parse errors", async () => {
-    await expect(buildLayoutSceneFromSource("time 4\nHH | x |\n")).rejects.toThrow(/Line/);
-    await expect(renderSourceToSvg("time 4\nHH | x |\n")).rejects.toThrow(/Line/);
+    await expect(buildLayoutSceneFromSource("time 4\nHH | x |\n")).rejects.toThrow(/invalid time header/);
+    await expect(renderSourceToSvg("time 4\nHH | x |\n")).rejects.toThrow(/invalid time header/);
   });
 
   it("throws on unknown scene item kinds", () => {

@@ -36,14 +36,12 @@ describe("cli runtime", () => {
   });
 
   it("formats warnings from normalized parser errors", async () => {
-    const { score } = await buildCliOutput(`time 4/4
-divisions 4
-
-HH | %% |`, "ast");
+    const { score } = await buildCliOutput(`time 4
+HH | x |`, "ast");
 
     expect(formatCliWarnings(score)).toEqual([
       "Parser warnings/errors:",
-      "Line 4, Col 1: Measure repeat at bar 1 does not have 2 preceding measure(s)",
+      "Line 1, Col 5: invalid time header; expected `time <int>/<int>`",
     ]);
   });
 

@@ -1,4 +1,8 @@
-import init, { initSync, parse as wasmParse } from "./parser-pkg-web/drummark_core";
+import init, {
+  initSync,
+  parse as wasmParse,
+  build_normalized_score as wasmBuildNormalizedScore,
+} from "./parser-pkg-web/drummark_core";
 import { setParserRuntime } from "./parser_runtime";
 
 let ready = false;
@@ -11,7 +15,10 @@ export async function initParserWasmBrowser(): Promise<void> {
     initPromise = init({ module_or_path: wasmUrl })
       .then(() => {
         ready = true;
-        setParserRuntime({ parse: wasmParse });
+        setParserRuntime({
+          parse: wasmParse,
+          buildNormalizedScore: wasmBuildNormalizedScore,
+        });
       })
       .catch((error) => {
         initPromise = null;
@@ -25,7 +32,10 @@ export function initParserWasmBrowserForTests(module: BufferSource | WebAssembly
   if (ready) return;
   initSync({ module });
   ready = true;
-  setParserRuntime({ parse: wasmParse });
+  setParserRuntime({
+    parse: wasmParse,
+    buildNormalizedScore: wasmBuildNormalizedScore,
+  });
 }
 
 export function isParserWasmBrowserReady(): boolean {
@@ -37,4 +47,11 @@ export function parseWithParserWasmBrowser(source: string): unknown {
     throw new Error("Parser WASM is not initialized.");
   }
   return wasmParse(source);
+}
+
+export function buildNormalizedScoreWithParserWasmBrowser(source: string): unknown {
+  if (!ready) {
+    throw new Error("Parser WASM is not initialized.");
+  }
+  return wasmBuildNormalizedScore(source);
 }

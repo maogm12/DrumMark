@@ -133,6 +133,7 @@ fn event_to_render_event(event: &crate::event::NormalizedEvent) -> drummark_layo
         },
         glyph: event.glyph.clone(),
         modifiers: event.modifiers.clone(),
+        dot_count: event.dot_count,
         modifier: event.modifier.clone(),
         voice: event.voice,
         beam: event.beam.clone(),
@@ -193,6 +194,7 @@ fn derive_implicit_rest_events(
             kind: drummark_layout::EventKind::Rest,
             glyph: "-".to_string(),
             modifiers: Vec::new(),
+            dot_count: 0,
             modifier: None,
             voice: 1,
             beam: "none".to_string(),
@@ -370,6 +372,7 @@ fn push_rest_event(
         kind: drummark_layout::EventKind::Rest,
         glyph: "-".to_string(),
         modifiers: Vec::new(),
+        dot_count: 0,
         modifier: None,
         voice,
         beam: "none".to_string(),
@@ -623,16 +626,11 @@ mod tests {
             .collect();
         assert_eq!(
             rest_events.len(),
-            4,
-            "3/8 gaps should decompose into quarter + eighth twice"
+            6,
+            "explicit eighth rests should remain visible in the render score"
         );
         assert!(rest_events.iter().all(|event| event.voice == 2));
-        assert!(rest_events.iter().any(|event| event.duration
-            == drummark_layout::Fraction {
-                numerator: 1,
-                denominator: 4
-            }));
-        assert!(rest_events.iter().any(|event| event.duration
+        assert!(rest_events.iter().all(|event| event.duration
             == drummark_layout::Fraction {
                 numerator: 1,
                 denominator: 8
@@ -660,16 +658,6 @@ mod tests {
             == drummark_layout::Fraction {
                 numerator: 1,
                 denominator: 4
-            }));
-        assert!(rest_events.iter().any(|event| event.duration
-            == drummark_layout::Fraction {
-                numerator: 1,
-                denominator: 8
-            }));
-        assert!(rest_events.iter().any(|event| event.duration
-            == drummark_layout::Fraction {
-                numerator: 1,
-                denominator: 2
             }));
     }
 
@@ -737,14 +725,7 @@ mod tests {
             .filter(|event| event.kind == drummark_layout::EventKind::Rest)
             .collect();
 
-        assert_eq!(rest_events.len(), 1);
-        assert_eq!(rest_events[0].voice, 1);
-        assert_eq!(
-            rest_events[0].duration,
-            drummark_layout::Fraction {
-                numerator: 1,
-                denominator: 1
-            }
-        );
+        assert_eq!(rest_events.len(), 3);
+        assert!(rest_events.iter().all(|event| event.voice == 2));
     }
 }

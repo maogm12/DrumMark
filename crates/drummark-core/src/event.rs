@@ -16,6 +16,7 @@ pub struct NormalizedEvent {
     pub kind: EventKind,
     pub glyph: String,
     pub modifiers: Vec<String>,
+    pub dot_count: u8,
     pub modifier: Option<String>,
     pub voice: u8,
     pub beam: String,
@@ -83,14 +84,35 @@ pub fn token_to_events(
     match token {
         TokenGlyph::Basic {
             value,
-            dots: _,
+            dots,
             halves: _,
             stars: _,
             modifiers,
             track_override,
         } => {
             if value == "-" {
-                return vec![];
+                let track = track_override
+                    .as_deref()
+                    .or(context_track)
+                    .unwrap_or("HH")
+                    .to_string();
+                return vec![NormalizedEvent {
+                    track: track.clone(),
+                    paragraph_index,
+                    measure_index,
+                    measure_in_paragraph,
+                    start,
+                    duration,
+                    kind: EventKind::Rest,
+                    glyph: "-".to_string(),
+                    modifiers: Vec::new(),
+                    dot_count: (*dots).min(u8::MAX as u32) as u8,
+                    modifier: None,
+                    voice: voice_for_track(&track),
+                    beam: "none".to_string(),
+                    tuplet: inherited_tuplet,
+                    source_offset,
+                }];
             }
 
             let resolved =
@@ -118,6 +140,7 @@ pub fn token_to_events(
                 kind,
                 glyph: resolved.glyph.clone(),
                 modifiers: resolved.modifiers.clone(),
+                dot_count: (*dots).min(u8::MAX as u32) as u8,
                 modifier: primary_modifier,
                 voice: voice_for_track(&resolved.track),
                 beam: "none".to_string(),

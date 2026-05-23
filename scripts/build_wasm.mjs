@@ -27,7 +27,7 @@ const packages = [
     target: "web",
     feature: "parser-wasm",
     outDir: resolve(repoRoot, "src/wasm/parser-pkg-web"),
-    requiredExports: ["parse"],
+    requiredExports: ["parse", "build_normalized_score"],
     forbiddenExports: ["build_layout_scene"],
   },
   {
@@ -35,7 +35,7 @@ const packages = [
     target: "nodejs",
     feature: "parser-wasm",
     outDir: resolve(repoRoot, "src/wasm/parser-pkg-node"),
-    requiredExports: ["parse"],
+    requiredExports: ["parse", "build_normalized_score"],
     forbiddenExports: ["build_layout_scene"],
   },
   {

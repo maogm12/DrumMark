@@ -3,6 +3,7 @@ import { setParserRuntime } from "./parser_runtime";
 
 type ParserWasmNodeModule = {
   parse(source: string): unknown;
+  build_normalized_score(source: string): unknown;
 };
 
 const require = createRequire(import.meta.url);
@@ -11,7 +12,10 @@ let parserModule: ParserWasmNodeModule | null = null;
 export async function initParserWasmNode(): Promise<void> {
   if (!parserModule) {
     parserModule = require("./parser-pkg-node/drummark_core.js") as ParserWasmNodeModule;
-    setParserRuntime({ parse: parserModule.parse });
+    setParserRuntime({
+      parse: parserModule.parse,
+      buildNormalizedScore: parserModule.build_normalized_score,
+    });
   }
 }
 
@@ -24,4 +28,11 @@ export function parseWithParserWasmNode(source: string): unknown {
     throw new Error("Parser WASM is not initialized.");
   }
   return parserModule.parse(source);
+}
+
+export function buildNormalizedScoreWithParserWasmNode(source: string): unknown {
+  if (!parserModule) {
+    throw new Error("Parser WASM is not initialized.");
+  }
+  return parserModule.build_normalized_score(source);
 }

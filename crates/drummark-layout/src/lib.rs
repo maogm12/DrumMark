@@ -149,6 +149,7 @@ pub struct RenderEvent {
     pub kind: EventKind,
     pub glyph: String,
     pub modifiers: Vec<String>,
+    pub dot_count: u8,
     pub modifier: Option<String>,
     pub voice: u8,
     pub beam: String,
@@ -245,6 +246,7 @@ pub enum GlyphRole {
     NavigationSegno,
     NavigationCoda,
     MetNoteQuarterUp,
+    AugmentationDot,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -994,6 +996,9 @@ pub fn canonical_glyph_metric(role: GlyphRole) -> CanonicalGlyphMetric {
         GlyphRole::MetNoteQuarterUp => {
             glyph_metric(role, 0xE1D5, [0.0, -0.564], [1.328, 2.752], None, None)
         }
+        GlyphRole::AugmentationDot => {
+            glyph_metric(role, 0xE1E7, [0.0, 0.0], [0.5, 0.5], None, None)
+        }
     }
 }
 
@@ -1225,6 +1230,7 @@ fn glyph_role_name(role: GlyphRole) -> &'static str {
         GlyphRole::NavigationSegno => "navigationSegno",
         GlyphRole::NavigationCoda => "navigationCoda",
         GlyphRole::MetNoteQuarterUp => "metNoteQuarterUp",
+        GlyphRole::AugmentationDot => "augmentationDot",
     }
 }
 
@@ -1709,6 +1715,7 @@ mod tests {
                         kind: EventKind::Hit,
                         glyph: "x".into(),
                         modifiers: vec![],
+                        dot_count: 0,
                         modifier: None,
                         voice: 1,
                         beam: "none".into(),
@@ -1759,6 +1766,7 @@ mod tests {
                             kind: EventKind::Hit,
                             glyph: "x".into(),
                             modifiers: vec![],
+                            dot_count: 0,
                             modifier: None,
                             voice: 1,
                             beam: "begin".into(),
@@ -1778,6 +1786,7 @@ mod tests {
                             kind: EventKind::Hit,
                             glyph: "d".into(),
                             modifiers: vec![],
+                            dot_count: 0,
                             modifier: None,
                             voice: 1,
                             beam: "end".into(),
@@ -1816,6 +1825,7 @@ mod tests {
                         kind: EventKind::Hit,
                         glyph: "x".into(),
                         modifiers: vec![],
+                        dot_count: 0,
                         modifier: None,
                         voice: 1,
                         beam: "none".into(),
@@ -1853,6 +1863,7 @@ mod tests {
                         kind: EventKind::Hit,
                         glyph: "d".into(),
                         modifiers: vec!["accent".into()],
+                        dot_count: 0,
                         modifier: Some("accent".into()),
                         voice: 1,
                         beam: "none".into(),
@@ -1896,6 +1907,7 @@ mod tests {
                 kind: EventKind::Hit,
                 glyph: "x".into(),
                 modifiers: vec![],
+                dot_count: 0,
                 modifier: None,
                 voice: 1,
                 beam: "none".into(),
@@ -2374,6 +2386,7 @@ mod tests {
                         kind: EventKind::Hit,
                         glyph: "x".into(),
                         modifiers: vec![],
+                        dot_count: 0,
                         modifier: None,
                         voice: 1,
                         beam: "none".into(),
@@ -2393,6 +2406,7 @@ mod tests {
                         kind: EventKind::Sticking,
                         glyph: "R".into(),
                         modifiers: vec![],
+                        dot_count: 0,
                         modifier: None,
                         voice: 1,
                         beam: "none".into(),
@@ -2668,6 +2682,7 @@ mod tests {
                 "d".into()
             },
             modifiers: vec![],
+            dot_count: 0,
             modifier: None,
             voice,
             beam: "none".into(),
@@ -2684,6 +2699,7 @@ mod tests {
             kind: EventKind::Rest,
             glyph: "r".into(),
             modifiers: vec![],
+            dot_count: 0,
             modifier: None,
             voice,
             beam: "none".into(),
@@ -2714,6 +2730,7 @@ mod tests {
                     kind: EventKind::Hit,
                     glyph: "x".into(),
                     modifiers: vec![],
+                    dot_count: 0,
                     modifier: None,
                     voice: 1,
                     beam: "none".into(),
@@ -2733,6 +2750,7 @@ mod tests {
                     kind: EventKind::Hit,
                     glyph: "x".into(),
                     modifiers: vec![],
+                    dot_count: 0,
                     modifier: None,
                     voice: 1,
                     beam: "none".into(),
@@ -2752,6 +2770,7 @@ mod tests {
                     kind: EventKind::Hit,
                     glyph: "x".into(),
                     modifiers: vec![],
+                    dot_count: 0,
                     modifier: None,
                     voice: 1,
                     beam: "none".into(),
@@ -2771,6 +2790,7 @@ mod tests {
                     kind: EventKind::Hit,
                     glyph: "x".into(),
                     modifiers: vec![],
+                    dot_count: 0,
                     modifier: None,
                     voice: 1,
                     beam: "none".into(),
@@ -3581,6 +3601,7 @@ mod tests {
                     kind: EventKind::Hit,
                     glyph: "x".into(),
                     modifiers: vec![],
+                    dot_count: 0,
                     modifier: None,
                     voice: 1,
                     beam: "none".into(),
@@ -3600,6 +3621,7 @@ mod tests {
                     kind: EventKind::Rest,
                     glyph: "r".into(),
                     modifiers: vec![],
+                    dot_count: 0,
                     modifier: None,
                     voice: 1,
                     beam: "none".into(),
@@ -3619,6 +3641,7 @@ mod tests {
                     kind: EventKind::Hit,
                     glyph: "x".into(),
                     modifiers: vec![],
+                    dot_count: 0,
                     modifier: None,
                     voice: 1,
                     beam: "none".into(),
@@ -3638,6 +3661,7 @@ mod tests {
                     kind: EventKind::Rest,
                     glyph: "r".into(),
                     modifiers: vec![],
+                    dot_count: 0,
                     modifier: None,
                     voice: 1,
                     beam: "none".into(),
@@ -3657,6 +3681,7 @@ mod tests {
                     kind: EventKind::Hit,
                     glyph: "x".into(),
                     modifiers: vec![],
+                    dot_count: 0,
                     modifier: None,
                     voice: 1,
                     beam: "none".into(),
@@ -3676,6 +3701,7 @@ mod tests {
                     kind: EventKind::Hit,
                     glyph: "x".into(),
                     modifiers: vec![],
+                    dot_count: 0,
                     modifier: None,
                     voice: 1,
                     beam: "none".into(),
@@ -4103,6 +4129,7 @@ mod tests {
                     kind: EventKind::Hit,
                     glyph: "x".into(),
                     modifiers: vec![],
+                    dot_count: 0,
                     modifier: None,
                     voice: 1,
                     beam: "begin".into(),
@@ -4122,6 +4149,7 @@ mod tests {
                     kind: EventKind::Hit,
                     glyph: "d".into(),
                     modifiers: vec![],
+                    dot_count: 0,
                     modifier: None,
                     voice: 1,
                     beam: "begin".into(),
@@ -4200,6 +4228,7 @@ mod tests {
                     kind: EventKind::Hit,
                     glyph: "d".into(),
                     modifiers: vec![],
+                    dot_count: 0,
                     modifier: None,
                     voice: 1,
                     beam: "none".into(),
@@ -4219,6 +4248,7 @@ mod tests {
                     kind: EventKind::Hit,
                     glyph: "d".into(),
                     modifiers: vec![],
+                    dot_count: 0,
                     modifier: None,
                     voice: 1,
                     beam: "none".into(),
@@ -4282,6 +4312,7 @@ mod tests {
                     kind: EventKind::Hit,
                     glyph: "x".into(),
                     modifiers: vec!["accent".into()],
+                    dot_count: 0,
                     modifier: Some("accent".into()),
                     voice: 1,
                     beam: "none".into(),
@@ -4301,6 +4332,7 @@ mod tests {
                     kind: EventKind::Hit,
                     glyph: "d".into(),
                     modifiers: vec!["accent".into()],
+                    dot_count: 0,
                     modifier: Some("accent".into()),
                     voice: 2,
                     beam: "none".into(),
@@ -4320,6 +4352,7 @@ mod tests {
                     kind: EventKind::Sticking,
                     glyph: "R".into(),
                     modifiers: vec![],
+                    dot_count: 0,
                     modifier: None,
                     voice: 1,
                     beam: "none".into(),
@@ -4412,6 +4445,7 @@ mod tests {
                     kind: EventKind::Hit,
                     glyph: "d".into(),
                     modifiers: vec![],
+                    dot_count: 0,
                     modifier: None,
                     voice: 1,
                     beam: "none".into(),
@@ -4431,6 +4465,7 @@ mod tests {
                     kind: EventKind::Hit,
                     glyph: "d".into(),
                     modifiers: vec![],
+                    dot_count: 0,
                     modifier: None,
                     voice: 1,
                     beam: "none".into(),
@@ -4518,6 +4553,7 @@ mod tests {
                     kind: EventKind::Hit,
                     glyph: "d".into(),
                     modifiers: vec![],
+                    dot_count: 0,
                     modifier: None,
                     voice: 1,
                     beam: "begin".into(),
@@ -4537,6 +4573,7 @@ mod tests {
                     kind: EventKind::Hit,
                     glyph: "d".into(),
                     modifiers: vec![],
+                    dot_count: 0,
                     modifier: None,
                     voice: 1,
                     beam: "begin".into(),
@@ -4556,6 +4593,7 @@ mod tests {
                     kind: EventKind::Hit,
                     glyph: "d".into(),
                     modifiers: vec![],
+                    dot_count: 0,
                     modifier: None,
                     voice: 1,
                     beam: "end".into(),
@@ -4575,6 +4613,7 @@ mod tests {
                     kind: EventKind::Hit,
                     glyph: "d".into(),
                     modifiers: vec![],
+                    dot_count: 0,
                     modifier: None,
                     voice: 1,
                     beam: "end".into(),
@@ -4649,6 +4688,7 @@ mod tests {
                     kind: EventKind::Hit,
                     glyph: "x".into(),
                     modifiers: vec!["accent".into()],
+                    dot_count: 0,
                     modifier: Some("accent".into()),
                     voice: 1,
                     beam: "none".into(),
@@ -4668,6 +4708,7 @@ mod tests {
                     kind: EventKind::Hit,
                     glyph: "x".into(),
                     modifiers: vec![],
+                    dot_count: 0,
                     modifier: None,
                     voice: 1,
                     beam: "none".into(),
@@ -5485,6 +5526,31 @@ fn grouping_segment_index_for_fraction(header: &RenderHeader, fraction: Fraction
 fn is_beamable_duration(duration: Fraction) -> bool {
     let divisor = gcd_u32(duration.numerator, duration.denominator).max(1);
     duration.denominator / divisor >= 8
+}
+
+/// Returns the denominator of the undotted base note value.
+/// e.g. dotted eighth (3/16) → undotted base (1/8) → denominator 8.
+fn undotted_base_denominator(duration: Fraction, dot_count: u8) -> u32 {
+    if dot_count == 0 {
+        return duration.denominator;
+    }
+    let dot_num = (1_u64 << (dot_count + 1)) - 1; // 2^(dots+1) - 1
+    let dot_denom = 1_u64 << dot_count; // 2^dots
+    // base = duration * dot_denom / dot_num
+    // base = (dur_num * dot_denom) / (dur_denom * dot_num)
+    let base_num = duration.numerator as u64 * dot_denom;
+    let base_denom = duration.denominator as u64 * dot_num;
+    let divisor = gcd_u64(base_num, base_denom).max(1);
+    (base_denom / divisor) as u32
+}
+
+fn gcd_u64(mut a: u64, mut b: u64) -> u64 {
+    while b != 0 {
+        let remainder = a % b;
+        a = b;
+        b = remainder;
+    }
+    a
 }
 
 fn gcd_u32(mut a: u32, mut b: u32) -> u32 {
@@ -8203,6 +8269,39 @@ fn render_hit_cluster(
             .modifiers
             .iter()
             .any(|modifier| modifier == "accent");
+        let dot_count = placement.slot_event.event.dot_count as usize;
+        if dot_count > 0 {
+            let dot_metric = canonical_glyph_metric(GlyphRole::AugmentationDot);
+            let dot_glyph = char::from_u32(dot_metric.smufl_codepoint)
+                .unwrap_or('?')
+                .to_string();
+            let dot_ss = placement.staff_position_ss;
+            let dot_y_ss = if dot_ss.fract().abs() < 0.01 {
+                dot_ss - 0.5
+            } else {
+                dot_ss
+            };
+            let dot_spacing_x = 5.0_f32;
+            for i in 0..dot_count {
+                let dot_x = note_x + (i as f32) * dot_spacing_x
+                    + canonical_glyph_metric(placement.note_role).width_ss() * note_font_size / 4.0
+                    + 8.0;
+                let dot_y = input.staff_top + dot_y_ss * 10.0;
+                sink.push_text_item(TextItemSpec {
+                    measure_id: Some(input.measure_id),
+                    role: "augmentation-dot",
+                    x: dot_x,
+                    y: dot_y,
+                    text_role: TextRole::Tempo,
+                    text: dot_glyph.clone(),
+                    font_family: "Bravura",
+                    font_size_pt: note_font_size,
+                    fill: "#333",
+                    text_anchor: None,
+                    font_weight: None,
+                });
+            }
+        }
         note_placements.push(NotePlacement {
             note_id: note_id.clone(),
             note_x,
@@ -8221,11 +8320,13 @@ fn render_hit_cluster(
         .expect("voice hit cluster should contain at least one hit");
     let needs_stem =
         first_hit.event.duration.denominator >= 4 || first_hit.event.tuplet.is_some();
-    let beam_level = if first_hit.event.duration.denominator >= 32 {
+    let dot_count = first_hit.event.dot_count;
+    let undotted_denom = undotted_base_denominator(first_hit.event.duration, dot_count);
+    let beam_level = if undotted_denom >= 32 {
         3
-    } else if first_hit.event.duration.denominator >= 16 {
+    } else if undotted_denom >= 16 {
         2
-    } else if first_hit.event.duration.denominator >= 8 {
+    } else if undotted_denom >= 8 {
         1
     } else {
         0
@@ -8849,11 +8950,9 @@ fn beam_line_segments_for_level(group: &[BeamAnchor], level: u8) -> Vec<BeamLine
                 active_start = Some(anchor.stem_x);
             } else {
                 // Isolated beamable note: draw a partial stub.
-                // Direction: if any PREVIOUS anchor has this beam level → left;
-                // otherwise (first in group) → right.
-                // This matches VexFlow's partial beam direction logic.
-                let has_prev_beam = group[..index].iter().any(|prev| prev.level >= level);
-                let direction: f32 = if has_prev_beam { -1.0 } else { 1.0 };
+                // Direction: extends toward previous note in the beam group
+                // (left if not first, right if first).
+                let direction: f32 = if index > 0 { -1.0 } else { 1.0 };
                 segments.push(BeamLineSegment {
                     start_x: anchor.stem_x,
                     end_x: anchor.stem_x + PARTIAL_BEAM_LENGTH_PT * direction,
@@ -11203,6 +11302,7 @@ fn test_place_notes() {
             kind: EventKind::Hit,
             glyph: "x".into(),
             modifiers: vec![],
+            dot_count: 0,
             modifier: None,
             voice: 1,
             beam: "none".into(),
@@ -11338,6 +11438,7 @@ fn test_contract_scene_smoke() {
                 kind: EventKind::Hit,
                 glyph: "x".into(),
                 modifiers: vec![],
+                dot_count: 0,
                 modifier: None,
                 voice: 1,
                 beam: "none".into(),
@@ -11941,6 +12042,7 @@ fn test_system_box_orchestrator_outputs_multiple_pages_for_long_scores() {
         kind: EventKind::Hit,
         glyph: "x".into(),
         modifiers: vec![],
+        dot_count: 0,
         modifier: None,
         voice: 1,
         beam: "none".into(),
@@ -12093,6 +12195,7 @@ fn test_adjacent_voltas_share_y_and_positive_offset_moves_up() {
         kind: EventKind::Hit,
         glyph: "x".into(),
         modifiers: vec![],
+        dot_count: 0,
         modifier: None,
         voice: 1,
         beam: "none".into(),
@@ -12410,6 +12513,7 @@ fn test_system_boundaries_align_with_staff_edges() {
                 kind: EventKind::Hit,
                 glyph: "x".into(),
                 modifiers: vec![],
+                dot_count: 0,
                 modifier: None,
                 voice: 1,
                 beam: "none".into(),
@@ -12497,6 +12601,7 @@ fn test_first_measure_repeat_start_sits_after_system_preamble() {
                 kind: EventKind::Hit,
                 glyph: "d".into(),
                 modifiers: vec![],
+                dot_count: 0,
                 modifier: None,
                 voice: 1,
                 beam: "none".into(),
@@ -12578,6 +12683,7 @@ fn edge_padding_measure(index: u32, event_count: u32) -> RenderMeasure {
             kind: EventKind::Hit,
             glyph: "x".into(),
             modifiers: vec![],
+            dot_count: 0,
             modifier: None,
             voice: 1,
             beam: "none".into(),
@@ -12735,6 +12841,7 @@ fn test_adjacent_repeat_end_start_uses_smufl_right_left_glyph() {
                 kind: EventKind::Hit,
                 glyph: "x".into(),
                 modifiers: vec![],
+                dot_count: 0,
                 modifier: None,
                 voice: 1,
                 beam: "none".into(),
@@ -12822,6 +12929,7 @@ fn test_later_system_uses_smaller_start_zone_than_first_system() {
                 kind: EventKind::Hit,
                 glyph: "x".into(),
                 modifiers: vec![],
+                dot_count: 0,
                 modifier: None,
                 voice: 1,
                 beam: "none".into(),
@@ -13007,6 +13115,7 @@ fn test_down_stem_keeps_notehead_on_right_and_flag_on_stem_right_side() {
                 kind: EventKind::Hit,
                 glyph: "d".into(),
                 modifiers: vec![],
+                dot_count: 0,
                 modifier: None,
                 voice: 2,
                 beam: "none".into(),
@@ -13108,6 +13217,7 @@ fn test_crash_maps_to_top_ledger_line() {
                 kind: EventKind::Hit,
                 glyph: "x".into(),
                 modifiers: vec![],
+                dot_count: 0,
                 modifier: None,
                 voice: 1,
                 beam: "none".into(),
@@ -13201,6 +13311,7 @@ fn test_bottom_ledger_lines_render_for_notes_below_staff() {
                 kind: EventKind::Hit,
                 glyph: "d".into(),
                 modifiers: vec![],
+                dot_count: 0,
                 modifier: None,
                 voice: 1,
                 beam: "none".into(),

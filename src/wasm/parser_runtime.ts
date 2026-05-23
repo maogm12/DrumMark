@@ -1,5 +1,6 @@
 type ParserRuntime = {
   parse(source: string): unknown;
+  buildNormalizedScore(source: string): unknown;
 };
 
 let runtime: ParserRuntime | null = null;
@@ -17,4 +18,11 @@ export function parseWithParserRuntime(source: string): unknown {
     throw new Error("WASM parser not ready. Call initWasm() first.");
   }
   return runtime.parse(source);
+}
+
+export function buildNormalizedScoreWithParserRuntime(source: string): unknown {
+  if (!runtime) {
+    throw new Error("WASM parser not ready. Call initWasm() first.");
+  }
+  return runtime.buildNormalizedScore(source);
 }

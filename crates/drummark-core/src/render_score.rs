@@ -126,6 +126,7 @@ fn event_to_render_event(event: &crate::event::NormalizedEvent) -> drummark_layo
             .to_string(),
         start: render_fraction(event.start),
         duration: render_fraction(event.duration),
+        visual_duration: render_fraction(event.visual_duration),
         kind: match event.kind {
             EventKind::Hit => drummark_layout::EventKind::Hit,
             EventKind::Rest => drummark_layout::EventKind::Rest,
@@ -191,6 +192,7 @@ fn derive_implicit_rest_events(
             track_family: track_family.clone(),
             start: render_fraction(Fraction::zero()),
             duration: render_fraction(measure_duration),
+            visual_duration: render_fraction(measure_duration),
             kind: drummark_layout::EventKind::Rest,
             glyph: "-".to_string(),
             modifiers: Vec::new(),
@@ -369,6 +371,7 @@ fn push_rest_event(
         track_family: track_family.to_string(),
         start: render_fraction(start),
         duration: render_fraction(duration),
+        visual_duration: render_fraction(duration),
         kind: drummark_layout::EventKind::Rest,
         glyph: "-".to_string(),
         modifiers: Vec::new(),

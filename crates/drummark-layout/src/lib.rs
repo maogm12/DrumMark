@@ -146,6 +146,7 @@ pub struct RenderEvent {
     pub track_family: String,
     pub start: Fraction,
     pub duration: Fraction,
+    pub visual_duration: Fraction,
     pub kind: EventKind,
     pub glyph: String,
     pub modifiers: Vec<String>,
@@ -1712,6 +1713,10 @@ mod tests {
                             numerator: 1,
                             denominator: 32,
                         },
+                        visual_duration: Fraction {
+                            numerator: 1,
+                            denominator: 32,
+                        },
                         kind: EventKind::Hit,
                         glyph: "x".into(),
                         modifiers: vec![],
@@ -1763,6 +1768,10 @@ mod tests {
                                 numerator: 1,
                                 denominator: 16,
                             },
+                            visual_duration: Fraction {
+                                numerator: 1,
+                                denominator: 16,
+                            },
                             kind: EventKind::Hit,
                             glyph: "x".into(),
                             modifiers: vec![],
@@ -1780,6 +1789,10 @@ mod tests {
                                 denominator: 16,
                             },
                             duration: Fraction {
+                                numerator: 1,
+                                denominator: 16,
+                            },
+                            visual_duration: Fraction {
                                 numerator: 1,
                                 denominator: 16,
                             },
@@ -1822,6 +1835,10 @@ mod tests {
                             numerator: 1,
                             denominator: 4,
                         },
+                        visual_duration: Fraction {
+                            numerator: 1,
+                            denominator: 4,
+                        },
                         kind: EventKind::Hit,
                         glyph: "x".into(),
                         modifiers: vec![],
@@ -1857,6 +1874,10 @@ mod tests {
                             denominator: 1,
                         },
                         duration: Fraction {
+                            numerator: 1,
+                            denominator: 4,
+                        },
+                        visual_duration: Fraction {
                             numerator: 1,
                             denominator: 4,
                         },
@@ -1901,6 +1922,10 @@ mod tests {
                     denominator: event_count.max(1),
                 },
                 duration: Fraction {
+                    numerator: 1,
+                    denominator: event_count.max(1) * 2,
+                },
+                visual_duration: Fraction {
                     numerator: 1,
                     denominator: event_count.max(1) * 2,
                 },
@@ -2383,6 +2408,10 @@ mod tests {
                             numerator: 1,
                             denominator: 8,
                         },
+                        visual_duration: Fraction {
+                            numerator: 1,
+                            denominator: 8,
+                        },
                         kind: EventKind::Hit,
                         glyph: "x".into(),
                         modifiers: vec![],
@@ -2400,6 +2429,10 @@ mod tests {
                             denominator: 1,
                         },
                         duration: Fraction {
+                            numerator: 1,
+                            denominator: 8,
+                        },
+                        visual_duration: Fraction {
                             numerator: 1,
                             denominator: 8,
                         },
@@ -2650,7 +2683,11 @@ mod tests {
     fn item_visual_center_x(item: &SceneItem) -> f32 {
         match &item.primitive {
             ScenePrimitive::GlyphRun(glyph) => {
-                glyph.x_pt + glyph_bbox_center_x_offset(canonical_glyph_metric(glyph.glyph_role), glyph.font_size_pt)
+                glyph.x_pt
+                    + glyph_bbox_center_x_offset(
+                        canonical_glyph_metric(glyph.glyph_role),
+                        glyph.font_size_pt,
+                    )
             }
             ScenePrimitive::TextRun(text) => {
                 let glyph_role = text
@@ -2675,6 +2712,7 @@ mod tests {
             track_family: track_family(track).into(),
             start,
             duration,
+            visual_duration: duration,
             kind: EventKind::Hit,
             glyph: if track_family(track) == "cymbal" {
                 "x".into()
@@ -2696,6 +2734,7 @@ mod tests {
             track_family: "cymbal".into(),
             start,
             duration,
+            visual_duration: duration,
             kind: EventKind::Rest,
             glyph: "r".into(),
             modifiers: vec![],
@@ -2727,6 +2766,10 @@ mod tests {
                         numerator: 1,
                         denominator: 4,
                     },
+                    visual_duration: Fraction {
+                        numerator: 1,
+                        denominator: 4,
+                    },
                     kind: EventKind::Hit,
                     glyph: "x".into(),
                     modifiers: vec![],
@@ -2744,6 +2787,10 @@ mod tests {
                         denominator: 4,
                     },
                     duration: Fraction {
+                        numerator: 1,
+                        denominator: 4,
+                    },
+                    visual_duration: Fraction {
                         numerator: 1,
                         denominator: 4,
                     },
@@ -2767,6 +2814,10 @@ mod tests {
                         numerator: 1,
                         denominator: 4,
                     },
+                    visual_duration: Fraction {
+                        numerator: 1,
+                        denominator: 4,
+                    },
                     kind: EventKind::Hit,
                     glyph: "x".into(),
                     modifiers: vec![],
@@ -2784,6 +2835,10 @@ mod tests {
                         denominator: 4,
                     },
                     duration: Fraction {
+                        numerator: 1,
+                        denominator: 4,
+                    },
+                    visual_duration: Fraction {
                         numerator: 1,
                         denominator: 4,
                     },
@@ -3226,7 +3281,10 @@ mod tests {
             note_value: 8,
             volta_terminator: false,
         };
-        let scene = build_layout_scene(&simple_layout_score(vec![measure]), &LayoutOptions::default());
+        let scene = build_layout_scene(
+            &simple_layout_score(vec![measure]),
+            &LayoutOptions::default(),
+        );
         let items = scene.pages[0]
             .items
             .iter()
@@ -3302,7 +3360,10 @@ mod tests {
             note_value: 8,
             volta_terminator: false,
         };
-        let scene = build_layout_scene(&simple_layout_score(vec![measure]), &LayoutOptions::default());
+        let scene = build_layout_scene(
+            &simple_layout_score(vec![measure]),
+            &LayoutOptions::default(),
+        );
         let items = scene.pages[0]
             .items
             .iter()
@@ -3363,7 +3424,10 @@ mod tests {
             note_value: 4,
             volta_terminator: false,
         };
-        let scene = build_layout_scene(&simple_layout_score(vec![measure]), &LayoutOptions::default());
+        let scene = build_layout_scene(
+            &simple_layout_score(vec![measure]),
+            &LayoutOptions::default(),
+        );
         let rest_centers = scene.pages[0]
             .items
             .iter()
@@ -3561,7 +3625,10 @@ mod tests {
             note_value: 8,
             volta_terminator: false,
         };
-        let scene = build_layout_scene(&simple_layout_score(vec![measure]), &LayoutOptions::default());
+        let scene = build_layout_scene(
+            &simple_layout_score(vec![measure]),
+            &LayoutOptions::default(),
+        );
         let items = scene.pages[0]
             .items
             .iter()
@@ -3598,6 +3665,10 @@ mod tests {
                         numerator: 1,
                         denominator: 4,
                     },
+                    visual_duration: Fraction {
+                        numerator: 1,
+                        denominator: 4,
+                    },
                     kind: EventKind::Hit,
                     glyph: "x".into(),
                     modifiers: vec![],
@@ -3615,6 +3686,10 @@ mod tests {
                         denominator: 8,
                     },
                     duration: Fraction {
+                        numerator: 1,
+                        denominator: 8,
+                    },
+                    visual_duration: Fraction {
                         numerator: 1,
                         denominator: 8,
                     },
@@ -3638,6 +3713,10 @@ mod tests {
                         numerator: 1,
                         denominator: 4,
                     },
+                    visual_duration: Fraction {
+                        numerator: 1,
+                        denominator: 4,
+                    },
                     kind: EventKind::Hit,
                     glyph: "x".into(),
                     modifiers: vec![],
@@ -3655,6 +3734,10 @@ mod tests {
                         denominator: 8,
                     },
                     duration: Fraction {
+                        numerator: 1,
+                        denominator: 8,
+                    },
+                    visual_duration: Fraction {
                         numerator: 1,
                         denominator: 8,
                     },
@@ -3678,6 +3761,10 @@ mod tests {
                         numerator: 1,
                         denominator: 4,
                     },
+                    visual_duration: Fraction {
+                        numerator: 1,
+                        denominator: 4,
+                    },
                     kind: EventKind::Hit,
                     glyph: "x".into(),
                     modifiers: vec![],
@@ -3695,6 +3782,10 @@ mod tests {
                         denominator: 4,
                     },
                     duration: Fraction {
+                        numerator: 1,
+                        denominator: 4,
+                    },
+                    visual_duration: Fraction {
                         numerator: 1,
                         denominator: 4,
                     },
@@ -3848,6 +3939,43 @@ mod tests {
         let scene = build_layout_scene(&score, &LayoutOptions::default());
         assert_eq!(items_by_role(&scene, "beam").len(), 2);
         assert_eq!(items_by_role(&scene, "flag").len(), 0);
+    }
+
+    #[test]
+    fn test_tuplet_quarter_visual_duration_draws_bracket_without_beam() {
+        let mut measure = regular_measure(0, 0, 0);
+        measure.events = [0_u32, 1, 2]
+            .into_iter()
+            .map(|index| {
+                let mut hit = test_hit(
+                    if index == 1 { "SD" } else { "T1" },
+                    Fraction {
+                        numerator: index,
+                        denominator: 12,
+                    },
+                    Fraction {
+                        numerator: 1,
+                        denominator: 12,
+                    },
+                    1,
+                );
+                hit.visual_duration = Fraction {
+                    numerator: 1,
+                    denominator: 4,
+                };
+                hit.tuplet = Some((3, 2));
+                hit
+            })
+            .collect();
+
+        let scene = build_layout_scene(
+            &simple_layout_score(vec![measure]),
+            &LayoutOptions::default(),
+        );
+        assert_eq!(items_by_role(&scene, "tuplet-label").len(), 1);
+        assert_eq!(items_by_role(&scene, "beam").len(), 0);
+        assert_eq!(items_by_role(&scene, "flag").len(), 0);
+        assert_eq!(items_by_role(&scene, "stem").len(), 3);
     }
 
     #[test]
@@ -4126,6 +4254,10 @@ mod tests {
                         numerator: 1,
                         denominator: 8,
                     },
+                    visual_duration: Fraction {
+                        numerator: 1,
+                        denominator: 8,
+                    },
                     kind: EventKind::Hit,
                     glyph: "x".into(),
                     modifiers: vec![],
@@ -4143,6 +4275,10 @@ mod tests {
                         denominator: 1,
                     },
                     duration: Fraction {
+                        numerator: 1,
+                        denominator: 8,
+                    },
+                    visual_duration: Fraction {
                         numerator: 1,
                         denominator: 8,
                     },
@@ -4225,6 +4361,10 @@ mod tests {
                         numerator: 1,
                         denominator: 8,
                     },
+                    visual_duration: Fraction {
+                        numerator: 1,
+                        denominator: 8,
+                    },
                     kind: EventKind::Hit,
                     glyph: "d".into(),
                     modifiers: vec![],
@@ -4242,6 +4382,10 @@ mod tests {
                         denominator: 1,
                     },
                     duration: Fraction {
+                        numerator: 1,
+                        denominator: 8,
+                    },
+                    visual_duration: Fraction {
                         numerator: 1,
                         denominator: 8,
                     },
@@ -4309,6 +4453,10 @@ mod tests {
                         numerator: 1,
                         denominator: 8,
                     },
+                    visual_duration: Fraction {
+                        numerator: 1,
+                        denominator: 8,
+                    },
                     kind: EventKind::Hit,
                     glyph: "x".into(),
                     modifiers: vec!["accent".into()],
@@ -4329,6 +4477,10 @@ mod tests {
                         numerator: 1,
                         denominator: 8,
                     },
+                    visual_duration: Fraction {
+                        numerator: 1,
+                        denominator: 8,
+                    },
                     kind: EventKind::Hit,
                     glyph: "d".into(),
                     modifiers: vec!["accent".into()],
@@ -4346,6 +4498,10 @@ mod tests {
                         denominator: 1,
                     },
                     duration: Fraction {
+                        numerator: 1,
+                        denominator: 8,
+                    },
+                    visual_duration: Fraction {
                         numerator: 1,
                         denominator: 8,
                     },
@@ -4442,6 +4598,10 @@ mod tests {
                         numerator: 1,
                         denominator: 8,
                     },
+                    visual_duration: Fraction {
+                        numerator: 1,
+                        denominator: 8,
+                    },
                     kind: EventKind::Hit,
                     glyph: "d".into(),
                     modifiers: vec![],
@@ -4459,6 +4619,10 @@ mod tests {
                         denominator: 1,
                     },
                     duration: Fraction {
+                        numerator: 1,
+                        denominator: 8,
+                    },
+                    visual_duration: Fraction {
                         numerator: 1,
                         denominator: 8,
                     },
@@ -4550,6 +4714,10 @@ mod tests {
                         numerator: 1,
                         denominator: 8,
                     },
+                    visual_duration: Fraction {
+                        numerator: 1,
+                        denominator: 8,
+                    },
                     kind: EventKind::Hit,
                     glyph: "d".into(),
                     modifiers: vec![],
@@ -4570,6 +4738,10 @@ mod tests {
                         numerator: 1,
                         denominator: 8,
                     },
+                    visual_duration: Fraction {
+                        numerator: 1,
+                        denominator: 8,
+                    },
                     kind: EventKind::Hit,
                     glyph: "d".into(),
                     modifiers: vec![],
@@ -4590,6 +4762,10 @@ mod tests {
                         numerator: 1,
                         denominator: 8,
                     },
+                    visual_duration: Fraction {
+                        numerator: 1,
+                        denominator: 8,
+                    },
                     kind: EventKind::Hit,
                     glyph: "d".into(),
                     modifiers: vec![],
@@ -4607,6 +4783,10 @@ mod tests {
                         denominator: 8,
                     },
                     duration: Fraction {
+                        numerator: 1,
+                        denominator: 8,
+                    },
+                    visual_duration: Fraction {
                         numerator: 1,
                         denominator: 8,
                     },
@@ -4642,7 +4822,11 @@ mod tests {
             .next()
             .expect("expected beam");
 
-        assert_eq!(stems.len(), 2, "two beamed chord slots should produce two shared stems");
+        assert_eq!(
+            stems.len(),
+            2,
+            "two beamed chord slots should produce two shared stems"
+        );
         let right_stem = stems
             .iter()
             .filter_map(|item| match &item.primitive {
@@ -4685,6 +4869,10 @@ mod tests {
                         numerator: 1,
                         denominator: 8,
                     },
+                    visual_duration: Fraction {
+                        numerator: 1,
+                        denominator: 8,
+                    },
                     kind: EventKind::Hit,
                     glyph: "x".into(),
                     modifiers: vec!["accent".into()],
@@ -4702,6 +4890,10 @@ mod tests {
                         denominator: 8,
                     },
                     duration: Fraction {
+                        numerator: 1,
+                        denominator: 8,
+                    },
+                    visual_duration: Fraction {
                         numerator: 1,
                         denominator: 8,
                     },
@@ -5464,7 +5656,10 @@ fn measure_fraction_for_beat_units(beat_units: u32, beat_unit: u32) -> Fraction 
 fn measure_fraction_for_division_slot(header: &RenderHeader, slot: u32) -> Fraction {
     reduce_fraction(Fraction {
         numerator: slot.saturating_mul(header.time_beats.max(1)),
-        denominator: header.divisions.max(1).saturating_mul(header.time_beat_unit.max(1)),
+        denominator: header
+            .divisions
+            .max(1)
+            .saturating_mul(header.time_beat_unit.max(1)),
     })
 }
 
@@ -5528,6 +5723,10 @@ fn is_beamable_duration(duration: Fraction) -> bool {
     duration.denominator / divisor >= 8
 }
 
+fn visual_duration(event: &RenderEvent) -> Fraction {
+    event.visual_duration
+}
+
 /// Returns the denominator of the undotted base note value.
 /// e.g. dotted eighth (3/16) → undotted base (1/8) → denominator 8.
 fn undotted_base_denominator(duration: Fraction, dot_count: u8) -> u32 {
@@ -5536,8 +5735,8 @@ fn undotted_base_denominator(duration: Fraction, dot_count: u8) -> u32 {
     }
     let dot_num = (1_u64 << (dot_count + 1)) - 1; // 2^(dots+1) - 1
     let dot_denom = 1_u64 << dot_count; // 2^dots
-    // base = duration * dot_denom / dot_num
-    // base = (dur_num * dot_denom) / (dur_denom * dot_num)
+                                        // base = duration * dot_denom / dot_num
+                                        // base = (dur_num * dot_denom) / (dur_denom * dot_num)
     let base_num = duration.numerator as u64 * dot_denom;
     let base_denom = duration.denominator as u64 * dot_num;
     let divisor = gcd_u64(base_num, base_denom).max(1);
@@ -5591,19 +5790,14 @@ fn measure_geometry(
     sort_and_dedup_fractions(&mut all_starts);
 
     let mut all_boundaries = all_starts.clone();
-    all_boundaries.extend(
-        measure
-            .events
-            .iter()
-            .map(|event| {
-                let end = add_fractions(event.start, event.duration);
-                if compare_fractions(end, measure_end) == std::cmp::Ordering::Greater {
-                    measure_end
-                } else {
-                    end
-                }
-            }),
-    );
+    all_boundaries.extend(measure.events.iter().map(|event| {
+        let end = add_fractions(event.start, event.duration);
+        if compare_fractions(end, measure_end) == std::cmp::Ordering::Greater {
+            measure_end
+        } else {
+            end
+        }
+    }));
     sort_and_dedup_fractions(&mut all_boundaries);
     let only_rests = !measure.events.is_empty()
         && measure
@@ -5624,7 +5818,8 @@ fn measure_geometry(
     }
 
     for beat_units in grouping {
-        let group_duration = measure_fraction_for_beat_units(beat_units.max(1), header.time_beat_unit);
+        let group_duration =
+            measure_fraction_for_beat_units(beat_units.max(1), header.time_beat_unit);
         let end_fraction = add_fractions(start_fraction, group_duration);
         let base_quarters = beat_units as f32 * 4.0 / header.time_beat_unit.max(1) as f32;
 
@@ -7777,6 +7972,7 @@ fn render_measure_events(sink: &mut SceneEmitSink<'_>, input: RenderMeasureEvent
         );
     }
 
+    render_tuplet_groups(sink, input.measure_id, &slot_events, input.staff_top);
     render_beam_groups(
         sink,
         input.measure_id,
@@ -7784,6 +7980,144 @@ fn render_measure_events(sink: &mut SceneEmitSink<'_>, input: RenderMeasureEvent
         input.geometry.measure_width,
         input.staff_bottom,
     );
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct TupletRunKey {
+    voice: u8,
+    count: u32,
+    span: u32,
+}
+
+#[derive(Clone, Copy, Debug)]
+struct TupletRun {
+    key: TupletRunKey,
+    end: Fraction,
+    start_x: f32,
+    end_x: f32,
+}
+
+fn render_tuplet_groups(
+    sink: &mut SceneEmitSink<'_>,
+    measure_id: &str,
+    slot_events: &[SlotEvent<'_>],
+    staff_top: f32,
+) {
+    let mut tuplet_events = slot_events
+        .iter()
+        .filter_map(|slot_event| {
+            let (count, span) = slot_event.event.tuplet?;
+            Some((
+                TupletRunKey {
+                    voice: slot_event.event.voice,
+                    count,
+                    span,
+                },
+                slot_event.start,
+                add_fractions(slot_event.event.start, slot_event.event.duration),
+                slot_event.event_x,
+            ))
+        })
+        .collect::<Vec<_>>();
+    tuplet_events.sort_by(|left, right| {
+        left.0
+            .voice
+            .cmp(&right.0.voice)
+            .then_with(|| compare_fractions(left.1, right.1))
+            .then_with(|| left.0.count.cmp(&right.0.count))
+            .then_with(|| left.0.span.cmp(&right.0.span))
+    });
+
+    let mut runs: Vec<TupletRun> = Vec::new();
+    for (key, start, end, x) in tuplet_events {
+        if key.count == key.span {
+            continue;
+        }
+        if let Some(last) = runs.last_mut() {
+            if last.key == key && compare_fractions(start, last.end) == std::cmp::Ordering::Equal {
+                last.end = end;
+                last.end_x = x;
+                continue;
+            }
+        }
+        runs.push(TupletRun {
+            key,
+            end,
+            start_x: x,
+            end_x: x,
+        });
+    }
+
+    for run in &runs {
+        let y = staff_top - 30.0 - (run.key.voice.saturating_sub(1) as f32 * 12.0);
+        let left = run.start_x - 8.0;
+        let right = run.end_x + 8.0;
+        let label = run.key.count.to_string();
+        let label_width = canonical_text_width(TextRole::CountLabel, &label);
+        let label_gap = (label_width + 8.0).max(16.0);
+        let center_x = (left + right) * 0.5;
+        let gap_left = center_x - label_gap * 0.5;
+        let gap_right = center_x + label_gap * 0.5;
+        sink.push_line_item(LineItemSpec {
+            measure_id: Some(measure_id),
+            role: "tuplet-bracket",
+            x1: left,
+            y1: y,
+            x2: gap_left.max(left),
+            y2: y,
+            stroke: "#333",
+            stroke_width: 1.0,
+            stroke_line_cap: Some("butt"),
+        });
+        sink.push_line_item(LineItemSpec {
+            measure_id: Some(measure_id),
+            role: "tuplet-bracket",
+            x1: gap_right.min(right),
+            y1: y,
+            x2: right,
+            y2: y,
+            stroke: "#333",
+            stroke_width: 1.0,
+            stroke_line_cap: Some("butt"),
+        });
+        sink.push_line_item(LineItemSpec {
+            measure_id: Some(measure_id),
+            role: "tuplet-hook",
+            x1: left,
+            y1: y,
+            x2: left,
+            y2: y + 5.0,
+            stroke: "#333",
+            stroke_width: 1.0,
+            stroke_line_cap: Some("butt"),
+        });
+        sink.push_line_item(LineItemSpec {
+            measure_id: Some(measure_id),
+            role: "tuplet-hook",
+            x1: right,
+            y1: y,
+            x2: right,
+            y2: y + 5.0,
+            stroke: "#333",
+            stroke_width: 1.0,
+            stroke_line_cap: Some("butt"),
+        });
+
+        let metric = canonical_text_metric(TextRole::CountLabel);
+        sink.push_text_item(TextItemSpec {
+            measure_id: Some(measure_id),
+            role: "tuplet-label",
+            x: center_x,
+            y: y + metric.ascent_pt * 0.35,
+            text_role: TextRole::CountLabel,
+            text: label.clone(),
+            font_family: "Academico",
+            font_size_pt: 12.0,
+            fill: "#333",
+            text_anchor: Some("middle"),
+            font_weight: Some("bold"),
+        });
+    }
 }
 
 struct RenderSlotGroupInput<'a, 'b> {
@@ -7798,8 +8132,12 @@ struct RenderSlotGroupInput<'a, 'b> {
     issues: &'b mut Vec<String>,
 }
 
-const REST_LANES_VOICE_1_SS: [f32; 15] = [2.0, 1.5, 2.5, 1.0, 3.0, 0.5, 3.5, 0.0, 4.0, -0.5, 4.5, -1.0, 5.0, -1.5, 5.5];
-const REST_LANES_VOICE_2_SS: [f32; 15] = [3.0, 3.5, 2.5, 4.0, 2.0, 4.5, 1.5, 5.0, 1.0, 5.5, 0.5, 6.0, 0.0, 6.5, -0.5];
+const REST_LANES_VOICE_1_SS: [f32; 15] = [
+    2.0, 1.5, 2.5, 1.0, 3.0, 0.5, 3.5, 0.0, 4.0, -0.5, 4.5, -1.0, 5.0, -1.5, 5.5,
+];
+const REST_LANES_VOICE_2_SS: [f32; 15] = [
+    3.0, 3.5, 2.5, 4.0, 2.0, 4.5, 1.5, 5.0, 1.0, 5.5, 0.5, 6.0, 0.0, 6.5, -0.5,
+];
 const STAFF_SPACE_STEP_PT: f32 = 10.0;
 const STEM_STROKE_WIDTH_PT: f32 = 1.5;
 const BEAM_THICKNESS_PT: f32 = 4.0;
@@ -7856,11 +8194,16 @@ fn stem_obstacle(stem_plan: &StemRenderPlan) -> RectObstacle {
     })
 }
 
-fn beam_envelope_obstacle(stem_plan: &StemRenderPlan, beam_level: u8, stem_up: bool) -> Option<RectObstacle> {
+fn beam_envelope_obstacle(
+    stem_plan: &StemRenderPlan,
+    beam_level: u8,
+    stem_up: bool,
+) -> Option<RectObstacle> {
     if beam_level == 0 {
         return None;
     }
-    let extra_span = BEAM_THICKNESS_PT + SECONDARY_BEAM_GAP_PT * beam_level.saturating_sub(1) as f32;
+    let extra_span =
+        BEAM_THICKNESS_PT + SECONDARY_BEAM_GAP_PT * beam_level.saturating_sub(1) as f32;
     Some(if stem_up {
         RectObstacle {
             x1: stem_plan.x - 1.0,
@@ -7888,7 +8231,11 @@ fn resolve_rest_placement(
     occupied_rests: &[RectObstacle],
 ) -> (RestPlacement, Option<RestPlacementDiagnostic>) {
     let mut best: Option<(RestPlacement, f32, usize)> = None;
-    for (lane_index, lane_ss) in rest_lane_candidates_ss(rest.event.voice).iter().copied().enumerate() {
+    for (lane_index, lane_ss) in rest_lane_candidates_ss(rest.event.voice)
+        .iter()
+        .copied()
+        .enumerate()
+    {
         let placement = rest_placement_for_lane(
             rest_metric,
             center_x,
@@ -7996,9 +8343,9 @@ fn render_slot_group(sink: &mut SceneEmitSink<'_>, input: RenderSlotGroupInput<'
         );
     }
 
-    let slot_hit_center_x = note_anchors_by_voice.values().find_map(|placements| {
-        placements.first().map(|placement| placement.note_center_x)
-    });
+    let slot_hit_center_x = note_anchors_by_voice
+        .values()
+        .find_map(|placements| placements.first().map(|placement| placement.note_center_x));
 
     let mut visible_rests = input
         .slot_group
@@ -8024,7 +8371,11 @@ fn render_slot_group(sink: &mut SceneEmitSink<'_>, input: RenderSlotGroupInput<'
     let mut occupied_rest_rects = Vec::new();
     for (_, rest) in visible_rests {
         let voice_shift = if hit_voice_count > 1 {
-            if rest.event.voice == 1 { -4.0 } else { 4.0 }
+            if rest.event.voice == 1 {
+                -4.0
+            } else {
+                4.0
+            }
         } else {
             0.0
         };
@@ -8033,8 +8384,7 @@ fn render_slot_group(sink: &mut SceneEmitSink<'_>, input: RenderSlotGroupInput<'
         let reference_note_metric =
             notehead_glyph(&rest.event.track, &rest.event.modifiers, &rest.event.glyph);
         let note_center_x = slot_hit_center_x.unwrap_or_else(|| {
-            input.event_x
-                - 7.0
+            input.event_x - 7.0
                 + voice_shift
                 + glyph_bbox_center_x_offset(reference_note_metric, rest_font_size)
         });
@@ -8142,7 +8492,7 @@ fn beam_groups_for_slot(
         let beamable_hit = voice_events
             .iter()
             .filter(|slot_event| matches!(slot_event.event.kind, EventKind::Hit))
-            .find(|slot_event| is_beamable_duration(slot_event.event.duration));
+            .find(|slot_event| is_beamable_duration(visual_duration(slot_event.event)));
 
         if has_rest || beamable_hit.is_none() {
             states_by_voice.remove(&voice);
@@ -8262,7 +8612,8 @@ fn render_hit_cluster(
                 item.anchor_item_id = Some(note_id.clone());
             }
         }
-        let note_center_x = note_x + glyph_bbox_center_x_offset(placement.glyph_metric, note_font_size);
+        let note_center_x =
+            note_x + glyph_bbox_center_x_offset(placement.glyph_metric, note_font_size);
         let has_accent = placement
             .slot_event
             .event
@@ -8283,7 +8634,8 @@ fn render_hit_cluster(
             };
             let dot_spacing_x = 5.0_f32;
             for i in 0..dot_count {
-                let dot_x = note_x + (i as f32) * dot_spacing_x
+                let dot_x = note_x
+                    + (i as f32) * dot_spacing_x
                     + canonical_glyph_metric(placement.note_role).width_ss() * note_font_size / 4.0
                     + 8.0;
                 let dot_y = input.staff_top + dot_y_ss * 10.0;
@@ -8318,10 +8670,10 @@ fn render_hit_cluster(
         .voice_hits
         .first()
         .expect("voice hit cluster should contain at least one hit");
-    let needs_stem =
-        first_hit.event.duration.denominator >= 4 || first_hit.event.tuplet.is_some();
+    let first_visual_duration = visual_duration(first_hit.event);
+    let needs_stem = first_visual_duration.denominator >= 4 || first_hit.event.tuplet.is_some();
     let dot_count = first_hit.event.dot_count;
-    let undotted_denom = undotted_base_denominator(first_hit.event.duration, dot_count);
+    let undotted_denom = undotted_base_denominator(first_visual_duration, dot_count);
     let beam_level = if undotted_denom >= 32 {
         3
     } else if undotted_denom >= 16 {
@@ -8499,7 +8851,12 @@ fn render_hit_cluster_stem_and_accents(
                 .anchor_item_id
                 .clone()
                 .or_else(|| stem_item_id.clone())
-                .or_else(|| cluster_plan.note_placements.first().map(|note| note.note_id.clone()));
+                .or_else(|| {
+                    cluster_plan
+                        .note_placements
+                        .first()
+                        .map(|note| note.note_id.clone())
+                });
         }
     }
 }
@@ -8605,13 +8962,8 @@ fn build_stem_render_plan(
         attach_note.stem_down_anchor_ss
     }
     .unwrap_or(fallback_anchor);
-    let stem_layout = shared_stem_layout(
-        note_placements,
-        attach_note,
-        stem_up,
-        stem_anchor,
-        smufl_ss,
-    );
+    let stem_layout =
+        shared_stem_layout(note_placements, attach_note, stem_up, stem_anchor, smufl_ss);
     let stem_attach_y = stem_layout.stem_attach_y;
     let stem_y1 = if stem_up {
         stem_attach_y - stem_len_pt
@@ -8630,15 +8982,17 @@ fn build_stem_render_plan(
         anchor_note_id: stem_layout
             .anchor_note_id
             .map(|index| note_placements[index].note_id.clone()),
-        beam_anchor: beam_group.filter(|_| beam_level > 0).map(|group| BeamAnchorPlan {
-            x: event_x,
-            stem_x: stem_layout.stem_x,
-            stem_tip_y: if stem_up { stem_y1 } else { stem_y2 },
-            voice,
-            group,
-            level: beam_level,
-            up: stem_up,
-        }),
+        beam_anchor: beam_group
+            .filter(|_| beam_level > 0)
+            .map(|group| BeamAnchorPlan {
+                x: event_x,
+                stem_x: stem_layout.stem_x,
+                stem_tip_y: if stem_up { stem_y1 } else { stem_y2 },
+                voice,
+                group,
+                level: beam_level,
+                up: stem_up,
+            }),
     })
 }
 
@@ -11299,6 +11653,10 @@ fn test_place_notes() {
                 numerator: 1,
                 denominator: 8,
             },
+            visual_duration: Fraction {
+                numerator: 1,
+                denominator: 8,
+            },
             kind: EventKind::Hit,
             glyph: "x".into(),
             modifiers: vec![],
@@ -11432,6 +11790,10 @@ fn test_contract_scene_smoke() {
                     denominator: 1,
                 },
                 duration: Fraction {
+                    numerator: 1,
+                    denominator: 8,
+                },
+                visual_duration: Fraction {
                     numerator: 1,
                     denominator: 8,
                 },
@@ -12039,6 +12401,10 @@ fn test_system_box_orchestrator_outputs_multiple_pages_for_long_scores() {
             numerator: 1,
             denominator: 4,
         },
+        visual_duration: Fraction {
+            numerator: 1,
+            denominator: 4,
+        },
         kind: EventKind::Hit,
         glyph: "x".into(),
         modifiers: vec![],
@@ -12189,6 +12555,10 @@ fn test_adjacent_voltas_share_y_and_positive_offset_moves_up() {
             denominator: 1,
         },
         duration: Fraction {
+            numerator: 1,
+            denominator: 4,
+        },
+        visual_duration: Fraction {
             numerator: 1,
             denominator: 4,
         },
@@ -12510,6 +12880,10 @@ fn test_system_boundaries_align_with_staff_edges() {
                     numerator: 1,
                     denominator: 4,
                 },
+                visual_duration: Fraction {
+                    numerator: 1,
+                    denominator: 4,
+                },
                 kind: EventKind::Hit,
                 glyph: "x".into(),
                 modifiers: vec![],
@@ -12598,6 +12972,10 @@ fn test_first_measure_repeat_start_sits_after_system_preamble() {
                     numerator: 1,
                     denominator: 4,
                 },
+                visual_duration: Fraction {
+                    numerator: 1,
+                    denominator: 4,
+                },
                 kind: EventKind::Hit,
                 glyph: "d".into(),
                 modifiers: vec![],
@@ -12677,6 +13055,10 @@ fn edge_padding_measure(index: u32, event_count: u32) -> RenderMeasure {
                 denominator: event_count.max(1),
             },
             duration: Fraction {
+                numerator: 1,
+                denominator: event_count.max(1),
+            },
+            visual_duration: Fraction {
                 numerator: 1,
                 denominator: event_count.max(1),
             },
@@ -12838,6 +13220,10 @@ fn test_adjacent_repeat_end_start_uses_smufl_right_left_glyph() {
                     numerator: 1,
                     denominator: 4,
                 },
+                visual_duration: Fraction {
+                    numerator: 1,
+                    denominator: 4,
+                },
                 kind: EventKind::Hit,
                 glyph: "x".into(),
                 modifiers: vec![],
@@ -12923,6 +13309,10 @@ fn test_later_system_uses_smaller_start_zone_than_first_system() {
                     denominator: 1,
                 },
                 duration: Fraction {
+                    numerator: 1,
+                    denominator: 4,
+                },
+                visual_duration: Fraction {
                     numerator: 1,
                     denominator: 4,
                 },
@@ -13112,6 +13502,10 @@ fn test_down_stem_keeps_notehead_on_right_and_flag_on_stem_right_side() {
                     numerator: 1,
                     denominator: 8,
                 },
+                visual_duration: Fraction {
+                    numerator: 1,
+                    denominator: 8,
+                },
                 kind: EventKind::Hit,
                 glyph: "d".into(),
                 modifiers: vec![],
@@ -13214,6 +13608,10 @@ fn test_crash_maps_to_top_ledger_line() {
                     numerator: 1,
                     denominator: 4,
                 },
+                visual_duration: Fraction {
+                    numerator: 1,
+                    denominator: 4,
+                },
                 kind: EventKind::Hit,
                 glyph: "x".into(),
                 modifiers: vec![],
@@ -13305,6 +13703,10 @@ fn test_bottom_ledger_lines_render_for_notes_below_staff() {
                     denominator: 1,
                 },
                 duration: Fraction {
+                    numerator: 1,
+                    denominator: 4,
+                },
+                visual_duration: Fraction {
                     numerator: 1,
                     denominator: 4,
                 },

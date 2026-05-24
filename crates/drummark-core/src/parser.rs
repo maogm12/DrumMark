@@ -1405,6 +1405,18 @@ mod tests {
     }
 
     #[test]
+    fn test_measure_edge_barlines_are_optional_for_preview_input() {
+        let doc = parse_ok("HH x - x - | x x x x\n");
+        let line = &doc.paragraphs[0].lines[0];
+        assert_eq!(line.track.as_deref(), Some("HH"));
+        assert_eq!(line.measures.len(), 2);
+        assert_eq!(line.measures[0].tokens.len(), 4);
+        assert_eq!(line.measures[1].tokens.len(), 4);
+        assert!(matches!(line.measures[0].barline, Barline::Regular));
+        assert!(line.measures[1].closing_barline.is_none());
+    }
+
+    #[test]
     fn test_multi_track() {
         let src = "time 4/4\nnote 1/8\ngrouping 2+2\nHH | x - x - |\nSD | --d- --d- |\n";
         let doc = parse_ok(src);

@@ -202,6 +202,7 @@ export type NormalizedEvent = {
   measureInParagraph: number;
   start: Fraction;
   duration: Fraction;
+  visualDuration?: Fraction;
   kind: NormalizedEventKind;
   glyph: Exclude<BasicGlyph, "-">;
   modifiers: Modifier[];

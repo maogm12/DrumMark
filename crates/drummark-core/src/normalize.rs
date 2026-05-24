@@ -450,12 +450,9 @@ pub fn normalize_document(doc: &Document) -> NormalizedScore {
 
             for (li, line) in para.lines.iter().enumerate() {
                 let expanded = &expanded_lines[li];
-                // Pad shorter tracks by repeating the last section
-                let (es, is_padded) = if m_idx < expanded.len() {
-                    (&expanded[m_idx], false)
-                } else if let Some(last) = expanded.last() {
-                    (last, true)
-                } else {
+                // Pad shorter tracks with empty measures. Repeating the last
+                // authored section would duplicate notes and navigation marks.
+                let Some(es) = expanded.get(m_idx) else {
                     continue;
                 };
                 let context_track = line.track.as_deref();
@@ -537,61 +534,58 @@ pub fn normalize_document(doc: &Document) -> NormalizedScore {
                     continue;
                 }
 
-                // Scan for measure-repeat, multi-rest, nav markers
-                // Skip metadata on padded sections to avoid repeating non-note data
-                if !is_padded {
-                    for tok in &es.tokens {
-                        match tok {
-                            MeasureExpr::MeasureRepeat(count) => {
-                                measure_repeat_slashes = Some(*count);
-                            }
-                            MeasureExpr::MultiRest(count) => {
-                                multi_rest_count = Some(*count);
-                            }
-                            MeasureExpr::NavMarker(name) => {
-                                start_nav = Some(match name.as_str() {
-                                    "segno" => StartNav::Segno {
-                                        anchor: Anchor::LeftEdge,
-                                    },
-                                    "coda" => StartNav::Coda {
-                                        anchor: Anchor::LeftEdge,
-                                    },
-                                    _ => continue,
-                                });
-                            }
-                            MeasureExpr::NavJump(name) => {
-                                end_nav = Some(match name.as_str() {
-                                    "fine" => EndNav::Fine {
-                                        anchor: Anchor::RightEdge,
-                                    },
-                                    "dc" => EndNav::DC {
-                                        anchor: Anchor::RightEdge,
-                                    },
-                                    "ds" => EndNav::DS {
-                                        anchor: Anchor::RightEdge,
-                                    },
-                                    "dc-al-fine" => EndNav::DCalFine {
-                                        anchor: Anchor::RightEdge,
-                                    },
-                                    "dc-al-coda" => EndNav::DCalCoda {
-                                        anchor: Anchor::RightEdge,
-                                    },
-                                    "ds-al-fine" => EndNav::DSalFine {
-                                        anchor: Anchor::RightEdge,
-                                    },
-                                    "ds-al-coda" => EndNav::DSalCoda {
-                                        anchor: Anchor::RightEdge,
-                                    },
-                                    "to-coda" => EndNav::ToCoda {
-                                        anchor: Anchor::RightEdge,
-                                    },
-                                    _ => continue,
-                                });
-                            }
-                            _ => {}
+                // Scan for measure-repeat, multi-rest, nav markers.
+                for tok in &es.tokens {
+                    match tok {
+                        MeasureExpr::MeasureRepeat(count) => {
+                            measure_repeat_slashes = Some(*count);
                         }
+                        MeasureExpr::MultiRest(count) => {
+                            multi_rest_count = Some(*count);
+                        }
+                        MeasureExpr::NavMarker(name) => {
+                            start_nav = Some(match name.as_str() {
+                                "segno" => StartNav::Segno {
+                                    anchor: Anchor::LeftEdge,
+                                },
+                                "coda" => StartNav::Coda {
+                                    anchor: Anchor::LeftEdge,
+                                },
+                                _ => continue,
+                            });
+                        }
+                        MeasureExpr::NavJump(name) => {
+                            end_nav = Some(match name.as_str() {
+                                "fine" => EndNav::Fine {
+                                    anchor: Anchor::RightEdge,
+                                },
+                                "dc" => EndNav::DC {
+                                    anchor: Anchor::RightEdge,
+                                },
+                                "ds" => EndNav::DS {
+                                    anchor: Anchor::RightEdge,
+                                },
+                                "dc-al-fine" => EndNav::DCalFine {
+                                    anchor: Anchor::RightEdge,
+                                },
+                                "dc-al-coda" => EndNav::DCalCoda {
+                                    anchor: Anchor::RightEdge,
+                                },
+                                "ds-al-fine" => EndNav::DSalFine {
+                                    anchor: Anchor::RightEdge,
+                                },
+                                "ds-al-coda" => EndNav::DSalCoda {
+                                    anchor: Anchor::RightEdge,
+                                },
+                                "to-coda" => EndNav::ToCoda {
+                                    anchor: Anchor::RightEdge,
+                                },
+                                _ => continue,
+                            });
+                        }
+                        _ => {}
                     }
-                } // !is_padded
+                }
 
                 // Convert tokens to events
                 let duration_per_quarter = Fraction::new(1, para_note_value as u64);
@@ -635,6 +629,7 @@ pub fn normalize_document(doc: &Document) -> NormalizedScore {
                         token,
                         token_start,
                         dur,
+                        duration_per_quarter,
                         context_track,
                         para_idx as u32,
                         global_index,
@@ -657,16 +652,14 @@ pub fn normalize_document(doc: &Document) -> NormalizedScore {
                     collect_track_hairpins(&hairpin_scan_time, global_index as usize, state);
                 measure_hairpins.extend(track_hairpins);
 
-                if !is_padded {
-                    dynamic_candidates.extend(
-                        scan_dynamic_tokens(&tokens, divisions)
-                            .into_iter()
-                            .map(|candidate| DynamicIntent {
-                                level: candidate.level,
-                                at: candidate.at,
-                            }),
-                    );
-                }
+                dynamic_candidates.extend(
+                    scan_dynamic_tokens(&tokens, divisions)
+                        .into_iter()
+                        .map(|candidate| DynamicIntent {
+                            level: candidate.level,
+                            at: candidate.at,
+                        }),
+                );
             }
 
             let measure_dynamics =
@@ -675,7 +668,10 @@ pub fn normalize_document(doc: &Document) -> NormalizedScore {
             // End-nav barline forcing
             if let Some(ref en) = end_nav {
                 match en.forced_barline() {
-                    BarlineType::Final => barline = Some("final".to_string()),
+                    BarlineType::Final => {
+                        barline = Some("final".to_string());
+                        closing_barline = Some("final".to_string());
+                    }
                     BarlineType::Double => barline = Some("double".to_string()),
                     _ => {}
                 }
@@ -754,6 +750,9 @@ pub fn normalize_document(doc: &Document) -> NormalizedScore {
     if let Some(last) = all_measures.last_mut() {
         if last.barline.is_none() || last.barline.as_deref() == Some("regular") {
             last.barline = Some("final".to_string());
+        }
+        if last.closing_barline.is_none() || last.closing_barline.as_deref() == Some("regular") {
+            last.closing_barline = Some("final".to_string());
         }
     }
 
@@ -1022,6 +1021,42 @@ mod volta_test {
         assert_eq!(score.measures.len(), 1);
         assert_eq!(score.measures[0].barline.as_deref(), Some("double"));
         assert_eq!(score.measures[0].closing_barline.as_deref(), Some("double"));
+    }
+
+    #[test]
+    fn test_fine_forces_terminal_closing_barline() {
+        let p = parser::Parser::new("time 4/4\nnote 1/8\ngrouping 2+2\nSD | d @fine ||\n");
+        let doc = p.parse().unwrap();
+        let score = normalize::normalize_document(&doc);
+        assert_eq!(score.measures.len(), 1);
+        assert_eq!(score.measures[0].barline.as_deref(), Some("final"));
+        assert_eq!(score.measures[0].closing_barline.as_deref(), Some("final"));
+    }
+
+    #[test]
+    fn test_last_measure_gets_terminal_closing_barline() {
+        let p = parser::Parser::new("time 4/4\nnote 1/8\ngrouping 2+2\nSD | d |\n");
+        let doc = p.parse().unwrap();
+        let score = normalize::normalize_document(&doc);
+        assert_eq!(score.measures.len(), 1);
+        assert_eq!(score.measures[0].barline.as_deref(), Some("final"));
+        assert_eq!(score.measures[0].closing_barline.as_deref(), Some("final"));
+    }
+
+    #[test]
+    fn test_shorter_track_pads_with_empty_measure_not_repeated_content() {
+        let p = parser::Parser::new(
+            "time 4/4\nnote 1/4\ngrouping 1+1+1+1\nSD | d d d d | d d d d\nBD | b b b b\n",
+        );
+        let doc = p.parse().unwrap();
+        let score = normalize::normalize_document(&doc);
+        assert_eq!(score.errors, Vec::<String>::new());
+        assert_eq!(score.measures.len(), 2);
+        assert!(score.measures[0].events.iter().any(|event| event.track == "BD"));
+        assert!(
+            !score.measures[1].events.iter().any(|event| event.track == "BD"),
+            "missing BD measure should become empty instead of repeating BD notes"
+        );
     }
 
     #[test]

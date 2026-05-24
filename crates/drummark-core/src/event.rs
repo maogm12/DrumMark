@@ -13,6 +13,7 @@ pub struct NormalizedEvent {
     pub measure_in_paragraph: u32,
     pub start: Fraction,
     pub duration: Fraction,
+    pub visual_duration: Fraction,
     pub kind: EventKind,
     pub glyph: String,
     pub modifiers: Vec<String>,
@@ -74,6 +75,7 @@ pub fn token_to_events(
     token: &TokenGlyph,
     start: Fraction,
     duration: Fraction,
+    base_duration: Fraction,
     context_track: Option<&str>,
     paragraph_index: u32,
     measure_index: u32,
@@ -85,8 +87,8 @@ pub fn token_to_events(
         TokenGlyph::Basic {
             value,
             dots,
-            halves: _,
-            stars: _,
+            halves,
+            stars,
             modifiers,
             track_override,
         } => {
@@ -103,6 +105,12 @@ pub fn token_to_events(
                     measure_in_paragraph,
                     start,
                     duration,
+                    visual_duration: visual_duration_for_basic(
+                        *dots,
+                        *stars,
+                        *halves,
+                        base_duration,
+                    ),
                     kind: EventKind::Rest,
                     glyph: "-".to_string(),
                     modifiers: Vec::new(),
@@ -137,6 +145,7 @@ pub fn token_to_events(
                 measure_in_paragraph,
                 start,
                 duration,
+                visual_duration: visual_duration_for_basic(*dots, *stars, *halves, base_duration),
                 kind,
                 glyph: resolved.glyph.clone(),
                 modifiers: resolved.modifiers.clone(),
@@ -156,6 +165,7 @@ pub fn token_to_events(
                     item,
                     start,
                     duration,
+                    base_duration,
                     context_track,
                     paragraph_index,
                     measure_index,
@@ -182,6 +192,7 @@ pub fn token_to_events(
                     item,
                     current_start,
                     item_duration,
+                    base_duration,
                     Some(track),
                     paragraph_index,
                     measure_index,
@@ -235,6 +246,7 @@ pub fn token_to_events(
                     &item,
                     current_start,
                     item_duration,
+                    base_duration,
                     context_track,
                     paragraph_index,
                     measure_index,
@@ -283,6 +295,17 @@ fn item_weight(token: &TokenGlyph) -> Fraction {
         | TokenGlyph::HairpinEnd
         | TokenGlyph::Dynamic(_) => Fraction::zero(),
     }
+}
+
+fn visual_duration_for_basic(
+    dots: u32,
+    stars: u32,
+    halves: u32,
+    base_duration: Fraction,
+) -> Fraction {
+    base_duration.multiply(calculate_token_weight_as_fraction(
+        dots, stars, halves, None,
+    ))
 }
 
 fn group_total_weight(items: &[TokenGlyph]) -> Fraction {

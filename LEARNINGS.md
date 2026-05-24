@@ -260,3 +260,15 @@ When an older note conflicts with this file, treat this file plus the active spe
 - A source-based MusicXML export still needs to surface normalization diagnostics, not only parser diagnostics. In this codebase `normalize_document()` stores both parser-derived and validation-derived messages in `score.errors`, so the WASM XML wrapper should serialize that combined list for CLI warnings.
 - Removing the score-based TypeScript MusicXML overload is safer than leaving a compatibility overload that always throws. Old callers should fail typechecking instead of compiling into a runtime error.
 - `hideVoice2Rests` remains an export contract even after moving MusicXML to Rust. The Rust exporter should turn hidden secondary voice rests into MusicXML `<forward>` duration advances so voice timing is preserved without visible rest notes.
+
+## 2026-05-23 Tuplet Visual Duration Rendering
+
+- Rust normalization's `NormalizedEvent.duration` is the actual performed duration after group compression, so a starred note inside `[span: ...]` can have an actual tuplet duration such as `1/12` while its notated value remains `1/4`.
+- Layout must use a separate visual duration for note shape, stems, flags, and beam eligibility. Inferring visual value from actual tuplet duration alone loses token-local modifiers like `*`.
+- Tuplet brackets belong in `drummark-layout` because they are score layout elements derived from `RenderScore -> LayoutScene`; SVG adapters should only translate the emitted `tuplet-*` scene items.
+
+## 2026-05-24 Optional Measure Edges And Terminal Barlines
+
+- The Rust parser already treats a non-barline token at measure start as an implicit regular left barline, which supports preview-friendly input like `HH x - x - | x x x x` without requiring a leading `|` or trailing `|`.
+- Paragraph track alignment belongs in `normalize_document()`: shorter lines should simply contribute no section for missing measure slots. Reusing the last authored `ExpandedSection` duplicates note, dynamic, repeat, and navigation metadata into measures the user did not write.
+- Layout chooses a measure's right-side barline from `closing_barline.or(barline)`. If `@fine` forces `barline = final` but an explicit trailing `||` leaves `closing_barline = double`, the rendered scene still draws a double barline. Fine and the score-final pass must set the right-edge `closing_barline` to `final` when the right edge should visually terminate.

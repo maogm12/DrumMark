@@ -284,7 +284,15 @@ fn normalize_to_js(score: &normalize::NormalizedScore) -> JsValue {
             );
             set(&evo, "start", &frac_js(ev.start));
             set(&evo, "duration", &frac_js(ev.duration));
+            set(&evo, "visualDuration", &frac_js(ev.visual_duration));
             set(&evo, "voice", &JsValue::from_f64(ev.voice as f64));
+            set(&evo, "beam", &JsValue::from_str(&ev.beam));
+            if let Some((count, span)) = ev.tuplet {
+                let tuplet = Object::new();
+                set(&tuplet, "actual", &JsValue::from_f64(count as f64));
+                set(&tuplet, "normal", &JsValue::from_f64(span as f64));
+                set(&evo, "tuplet", &tuplet.into());
+            }
             if ev.dot_count > 0 {
                 set(&evo, "dotCount", &JsValue::from_f64(ev.dot_count as f64));
             }
@@ -543,6 +551,11 @@ fn render_score_to_js(score: &drummark_layout::RenderScore) -> JsValue {
             set(&event_obj, "glyph", &JsValue::from_str(&event.glyph));
             set(&event_obj, "start", &render_fraction_js(event.start));
             set(&event_obj, "duration", &render_fraction_js(event.duration));
+            set(
+                &event_obj,
+                "visualDuration",
+                &render_fraction_js(event.visual_duration),
+            );
             set(&event_obj, "voice", &JsValue::from_f64(event.voice as f64));
             set(&event_obj, "beam", &JsValue::from_str(&event.beam));
             set(

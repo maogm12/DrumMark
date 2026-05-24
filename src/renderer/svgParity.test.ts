@@ -117,6 +117,14 @@ describe("SVG Renderer parity", () => {
     expect(countRole(svg, "double-barline-right")).toBe(1);
   });
 
+  it("renders Fine with a terminal final barline", async () => {
+    const svg = await render(HEADER + "SD | d @fine ||\n");
+    expect(countRole(svg, "final-barline-thin")).toBe(1);
+    expect(countRole(svg, "final-barline-thick")).toBe(1);
+    expect(countRole(svg, "double-barline-left")).toBe(0);
+    expect(countRole(svg, "double-barline-right")).toBe(0);
+  });
+
   it("renders repeat bars", async () => {
     const svg = await render(HEADER + "SD |: d :|\n");
     expect(countRole(svg, "repeat-start")).toBe(1);

@@ -272,3 +272,9 @@ When an older note conflicts with this file, treat this file plus the active spe
 - The Rust parser already treats a non-barline token at measure start as an implicit regular left barline, which supports preview-friendly input like `HH x - x - | x x x x` without requiring a leading `|` or trailing `|`.
 - Paragraph track alignment belongs in `normalize_document()`: shorter lines should simply contribute no section for missing measure slots. Reusing the last authored `ExpandedSection` duplicates note, dynamic, repeat, and navigation metadata into measures the user did not write.
 - Layout chooses a measure's right-side barline from `closing_barline.or(barline)`. If `@fine` forces `barline = final` but an explicit trailing `||` leaves `closing_barline = double`, the rendered scene still draws a double barline. Fine and the score-final pass must set the right-edge `closing_barline` to `final` when the right edge should visually terminate.
+
+## 2026-05-24 Parallel Tuplet Bracket Deduplication
+
+- Tuplet metadata is attached per `RenderEvent`, so parallel tracks with the same voice and same tuplet rhythm produce duplicate event-level `(actual, normal)` tuples at identical start/end fractions.
+- `drummark-layout::render_tuplet_groups()` is responsible for converting those event tuples into visible bracket runs. It should deduplicate identical `(voice, count, span, start, end)` entries before scanning contiguous runs; otherwise simultaneous same-voice tuplets can split the run scanner and emit duplicate brackets.
+- The deduplication belongs in layout, not the SVG adapter, because tuplet bracket grouping is score engraving derived from `RenderScore -> LayoutScene`.

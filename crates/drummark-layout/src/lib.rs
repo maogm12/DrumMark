@@ -3979,6 +3979,44 @@ mod tests {
     }
 
     #[test]
+    fn test_parallel_tuplets_share_one_bracket() {
+        let mut measure = regular_measure(0, 0, 0);
+        measure.events = ["SD", "T1"]
+            .into_iter()
+            .flat_map(|track| {
+                [0_u32, 1, 2].into_iter().map(move |index| {
+                    let mut hit = test_hit(
+                        track,
+                        Fraction {
+                            numerator: index,
+                            denominator: 12,
+                        },
+                        Fraction {
+                            numerator: 1,
+                            denominator: 12,
+                        },
+                        1,
+                    );
+                    hit.visual_duration = Fraction {
+                        numerator: 1,
+                        denominator: 8,
+                    };
+                    hit.tuplet = Some((3, 2));
+                    hit
+                })
+            })
+            .collect();
+
+        let scene = build_layout_scene(
+            &simple_layout_score(vec![measure]),
+            &LayoutOptions::default(),
+        );
+        assert_eq!(items_by_role(&scene, "tuplet-label").len(), 1);
+        assert_eq!(items_by_role(&scene, "tuplet-bracket").len(), 2);
+        assert_eq!(items_by_role(&scene, "tuplet-hook").len(), 2);
+    }
+
+    #[test]
     fn test_secondary_beams_break_around_eighth_notes() {
         let mut measure = regular_measure(0, 0, 0);
         measure.events = vec![
@@ -8024,8 +8062,14 @@ fn render_tuplet_groups(
             .voice
             .cmp(&right.0.voice)
             .then_with(|| compare_fractions(left.1, right.1))
+            .then_with(|| compare_fractions(left.2, right.2))
             .then_with(|| left.0.count.cmp(&right.0.count))
             .then_with(|| left.0.span.cmp(&right.0.span))
+    });
+    tuplet_events.dedup_by(|left, right| {
+        left.0 == right.0
+            && compare_fractions(left.1, right.1) == std::cmp::Ordering::Equal
+            && compare_fractions(left.2, right.2) == std::cmp::Ordering::Equal
     });
 
     let mut runs: Vec<TupletRun> = Vec::new();

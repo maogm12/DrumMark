@@ -2,6 +2,7 @@ import init, {
   initSync,
   parse as wasmParse,
   build_normalized_score as wasmBuildNormalizedScore,
+  build_music_xml as wasmBuildMusicXml,
 } from "./parser-pkg-web/drummark_core";
 import { setParserRuntime } from "./parser_runtime";
 
@@ -18,6 +19,7 @@ export async function initParserWasmBrowser(): Promise<void> {
         setParserRuntime({
           parse: wasmParse,
           buildNormalizedScore: wasmBuildNormalizedScore,
+          buildMusicXml: wasmBuildMusicXml,
         });
       })
       .catch((error) => {
@@ -35,6 +37,7 @@ export function initParserWasmBrowserForTests(module: BufferSource | WebAssembly
   setParserRuntime({
     parse: wasmParse,
     buildNormalizedScore: wasmBuildNormalizedScore,
+    buildMusicXml: wasmBuildMusicXml,
   });
 }
 
@@ -54,4 +57,11 @@ export function buildNormalizedScoreWithParserWasmBrowser(source: string): unkno
     throw new Error("Parser WASM is not initialized.");
   }
   return wasmBuildNormalizedScore(source);
+}
+
+export function buildMusicXmlWithParserWasmBrowser(source: string, hideVoice2Rests = false): unknown {
+  if (!ready) {
+    throw new Error("Parser WASM is not initialized.");
+  }
+  return wasmBuildMusicXml(source, hideVoice2Rests);
 }

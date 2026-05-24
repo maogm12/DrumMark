@@ -4,6 +4,7 @@ use wasm_bindgen::JsValue;
 
 pub fn document_to_js(doc: &Document) -> JsValue {
     let obj = Object::new();
+    set(&obj, "version", &JsValue::from_str("drummark-parser-ast/v1"));
     set(&obj, "headers", &headers_to_js(&doc.headers));
     set(&obj, "paragraphs", &paragraphs_to_js(&doc.paragraphs));
     set(&obj, "errors", &errors_to_js(&doc.errors));

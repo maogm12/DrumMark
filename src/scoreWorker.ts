@@ -36,12 +36,14 @@ type XmlResponse = {
 };
 
 let lastScore: ReturnType<typeof buildNormalizedScore> | null = null;
+let lastSource: string | null = null;
 
 function handleMessage(msg: ScoreWorkerRequest) {
   if (msg.type === "parse") {
     const { id, dsl, sourceRevision } = msg;
     const score = buildNormalizedScore(dsl);
     lastScore = score;
+    lastSource = dsl;
     const response: ParseResponse = {
       type: "parse",
       id,
@@ -52,13 +54,13 @@ function handleMessage(msg: ScoreWorkerRequest) {
     self.postMessage(response);
   } else if (msg.type === "generateXml") {
     const { id, hideVoice2Rests } = msg;
-    if (!lastScore) {
+    if (!lastScore || lastSource === null) {
       const response: XmlResponse = { type: "xml", id, xml: "" };
       self.postMessage(response);
       return;
     }
-    const xml = buildMusicXml(lastScore, hideVoice2Rests);
-    const response: XmlResponse = { type: "xml", id, xml };
+    const output = buildMusicXml(lastSource, hideVoice2Rests);
+    const response: XmlResponse = { type: "xml", id, xml: output.xml };
     self.postMessage(response);
   }
 }

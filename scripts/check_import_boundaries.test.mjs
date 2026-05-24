@@ -31,14 +31,14 @@ describe("import boundary scanner harness", () => {
   it("flags parser-facing imports of layout wrappers in fixtures", () => {
     const violations = scanImportBoundaries([
       {
-        path: "src/wasm/skeleton.ts",
+        path: "src/wasm/parser_runtime.ts",
         source: 'import { initLayoutWasmBrowser } from "./layout_wasm_browser";',
       },
     ], splitWasmImportRules);
 
     expect(violations).toEqual([
       expect.objectContaining({
-        file: "src/wasm/skeleton.ts",
+        file: "src/wasm/parser_runtime.ts",
         import: "./layout_wasm_browser",
         rule: "parser-facing code must not import layout wasm",
       }),

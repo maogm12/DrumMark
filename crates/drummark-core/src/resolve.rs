@@ -195,7 +195,16 @@ mod tests {
     fn test_fallback_track() {
         assert_eq!(resolve_fallback_track("s"), "SD");
         assert_eq!(resolve_fallback_track("b"), "BD");
+        assert_eq!(resolve_fallback_track("b2"), "BD2");
         assert_eq!(resolve_fallback_track("c"), "C");
+        assert_eq!(resolve_fallback_track("c2"), "C2");
+        assert_eq!(resolve_fallback_track("r2"), "RC2");
+        assert_eq!(resolve_fallback_track("t4"), "T4");
+        assert_eq!(resolve_fallback_track("spl"), "SPL");
+        assert_eq!(resolve_fallback_track("chn"), "CHN");
+        assert_eq!(resolve_fallback_track("cb"), "CB");
+        assert_eq!(resolve_fallback_track("wb"), "WB");
+        assert_eq!(resolve_fallback_track("cl"), "CL");
         assert_eq!(resolve_fallback_track("x"), "HH");
         assert_eq!(resolve_fallback_track("d"), "HH");
     }

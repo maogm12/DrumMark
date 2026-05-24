@@ -1,6 +1,18 @@
 /* @ts-self-types="./drummark_core.d.ts" */
 
 /**
+ * @param {string} source
+ * @param {boolean} hide_voice2_rests
+ * @returns {any}
+ */
+export function build_music_xml(source, hide_voice2_rests) {
+    const ptr0 = passStringToWasm0(source, wasm.__wbindgen_export, wasm.__wbindgen_export2);
+    const len0 = WASM_VECTOR_LEN;
+    const ret = wasm.build_music_xml(ptr0, len0, hide_voice2_rests);
+    return takeObject(ret);
+}
+
+/**
  * Parse and normalize a DrumMark source string in one call.
  * Returns the NormalizedScore as a JS object tree.
  * @param {string} source

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE score-partwise PUBLIC "-//Recordare//DTD MusicXML 3.1 Partwise//EN"
+"http://www.musicxml.org/dtds/partwise.dtd">
+<score-partwise version="3.1">
+  <work>
+    <work-title>Hairpins and Dynamics</work-title>
+  </work>
+  <credit page="1">
+    <credit-type>title</credit-type>
+    <credit-words justify="center" font-size="20" font-family="Charter, Bitstream Charter, Sitka Text, Cambria, Georgia, Times New Roman, PingFang SC, Microsoft YaHei, Noto Sans SC, sans-serif" font-weight="bold">Hairpins and Dynamics</credit-words>
+  </credit>
+<part-list>
+<score-part id="P1">
+<part-name>Drumset</part-name>
+<score-instrument id="P1-I1">
+<instrument-name>Drumset</instrument-name>
+</score-instrument>
+</score-part>
+</part-list>
+<part id="P1">
+<measure number="1"><print><measure-numbering>system</measure-numbering></print><attributes><divisions>4</divisions><key><fifths>0</fifths></key><time><beats>4</beats><beat-type>4</beat-type></time><staves>1</staves><clef number="1"><sign>percussion</sign><line>2</line></clef></attributes><direction placement="above"><direction-type><metronome><beat-unit>quarter</beat-unit><per-minute>120</per-minute></metronome></direction-type><sound tempo="120"/></direction><direction placement="below"><direction-type><wedge type="crescendo" number="1"/></direction-type><offset>0</offset></direction><direction placement="below"><direction-type><dynamics><p/></dynamics></direction-type><offset>0</offset></direction><direction placement="below"><direction-type><dynamics><mp/></dynamics></direction-type><offset>4</offset></direction><note><unpitched><display-step>G</display-step><display-octave>5</display-octave></unpitched><duration>4</duration><instrument id="P1-I1"/><voice>1</voice><type>quarter</type><stem>up</stem><notehead>x</notehead><staff>1</staff></note><note><unpitched><display-step>G</display-step><display-octave>5</display-octave></unpitched><duration>4</duration><instrument id="P1-I1"/><voice>1</voice><type>quarter</type><stem>up</stem><notehead>x</notehead><staff>1</staff></note><note><unpitched><display-step>G</display-step><display-octave>5</display-octave></unpitched><duration>4</duration><instrument id="P1-I1"/><voice>1</voice><type>quarter</type><stem>up</stem><notehead>x</notehead><staff>1</staff></note><note><chord/><unpitched><display-step>C</display-step><display-octave>5</display-octave></unpitched><duration>4</duration><instrument id="P1-I1"/><voice>1</voice><type>quarter</type><stem>up</stem><staff>1</staff></note><note><unpitched><display-step>G</display-step><display-octave>5</display-octave></unpitched><duration>4</duration><instrument id="P1-I1"/><voice>1</voice><type>quarter</type><stem>up</stem><notehead>x</notehead><staff>1</staff></note></measure><measure number="2"><direction placement="below"><direction-type><wedge type="stop" number="1"/></direction-type><offset>12</offset></direction><direction placement="below"><direction-type><dynamics><ff/></dynamics></direction-type><offset>12</offset></direction><note><unpitched><display-step>G</display-step><display-octave>5</display-octave></unpitched><duration>4</duration><instrument id="P1-I1"/><voice>1</voice><type>quarter</type><stem>up</stem><notehead>x</notehead><staff>1</staff></note><note><unpitched><display-step>G</display-step><display-octave>5</display-octave></unpitched><duration>4</duration><instrument id="P1-I1"/><voice>1</voice><type>quarter</type><stem>up</stem><notehead>x</notehead><staff>1</staff></note><note><chord/><unpitched><display-step>C</display-step><display-octave>5</display-octave></unpitched><duration>4</duration><instrument id="P1-I1"/><voice>1</voice><type>quarter</type><stem>up</stem><staff>1</staff></note><note><unpitched><display-step>G</display-step><display-octave>5</display-octave></unpitched><duration>4</duration><instrument id="P1-I1"/><voice>1</voice><type>quarter</type><stem>up</stem><notehead>x</notehead><staff>1</staff></note><note><unpitched><display-step>G</display-step><display-octave>5</display-octave></unpitched><duration>4</duration><instrument id="P1-I1"/><voice>1</voice><type>quarter</type><stem>up</stem><notehead>x</notehead><staff>1</staff></note><note><chord/><unpitched><display-step>C</display-step><display-octave>5</display-octave></unpitched><duration>4</duration><instrument id="P1-I1"/><voice>1</voice><type>quarter</type><stem>up</stem><staff>1</staff></note><barline location="right"><bar-style>light-heavy</bar-style></barline></measure>
+</part>
+</score-partwise>

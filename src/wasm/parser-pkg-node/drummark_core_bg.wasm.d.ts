@@ -1,6 +1,7 @@
 /* tslint:disable */
 /* eslint-disable */
 export const memory: WebAssembly.Memory;
+export const build_music_xml: (a: number, b: number, c: number) => number;
 export const build_normalized_score: (a: number, b: number) => number;
 export const parse: (a: number, b: number) => number;
 export const __wbindgen_export: (a: number, b: number) => number;

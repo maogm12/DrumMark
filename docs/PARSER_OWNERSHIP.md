@@ -87,3 +87,38 @@ This addendum defines the target state for the active implementation tasks. The 
   - `example_corpus_report.json` records the supported corpus and current WASM summaries
   - `divergence_ledger.md` records the accepted Lezer-bug exceptions
 - Lezer no longer participates in production parsing or correctness-test ownership. Any remaining Lezer references in the repository are historical proposal/archive material or editor-highlighting dependencies, not parser-runtime ownership.
+
+## Addendum 2026-05-23: Rust/WASM Owns Parser, Normalizer, and DSL Output Contracts
+
+Rust/WASM is the only authoritative implementation for parser and normalizer semantics. TypeScript does not own parser skeletons, AST construction, token resolution, duration math, validation, or normalized score behavior.
+
+The post-cleanup production parser flow is:
+
+```
+Source -> Rust parser WASM -> native parser AST JSON
+Source -> Rust parser + normalizer WASM -> NormalizedScore JSON
+```
+
+`--format ast` is a parser contract, not a normalized-score compatibility dump. It outputs a native Rust parser AST envelope with `version: "drummark-parser-ast/v1"` and `errors: ParseError[]`. It must not require `NormalizedScore.ast`, `src/wasm/skeleton.ts`, old `DocumentSkeleton` types, or TypeScript AST builders.
+
+MusicXML generation is Rust-owned. The exporter consumes Rust normalized semantics and is exposed to TypeScript as source-based WASM output:
+
+```ts
+type MusicXmlOutput = {
+  xml: string;
+  errors: ParseError[];
+};
+```
+
+TypeScript may contain WASM loaders, app adapters, renderer adapters, CLI glue, and output wrappers only when they consume Rust-owned parser or normalized contracts. It must not reimplement parser, AST, token-resolution, duration, or normalization semantics.
+
+The legacy TypeScript DSL files are removal targets:
+
+- `src/dsl/parser.ts`
+- `src/dsl/ast.ts`
+- `src/dsl/logic.ts`
+- `src/wasm/skeleton.ts`
+
+The public TypeScript DSL surface should expose normalized runtime contracts and WASM-backed functions only. Legacy exports such as `buildScoreAst`, `parseDocumentSkeleton`, `parseDocumentSkeletonFromWasmSync`, regex-backed normalizer parity functions, `DocumentSkeleton`, `TokenGlyph`, `ParsedMeasure`, and `ScoreAst` are not supported production APIs.
+
+Before deleting legacy tests, each old TypeScript parser/AST/logic/parity/benchmark test must be mapped to replacement Rust coverage, TypeScript WASM-boundary coverage, CLI coverage, MusicXML golden coverage, or an explicit obsolete-contract deletion rationale. MusicXML migration must use frozen golden outputs captured before the Rust exporter replacement so behavior drift is visible and reviewable.

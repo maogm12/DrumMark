@@ -1,6 +1,8 @@
 /* tslint:disable */
 /* eslint-disable */
 
+export function build_music_xml(source: string, hide_voice2_rests: boolean): any;
+
 /**
  * Parse and normalize a DrumMark source string in one call.
  * Returns the NormalizedScore as a JS object tree.
@@ -16,6 +18,7 @@ export type InitInput = RequestInfo | URL | Response | BufferSource | WebAssembl
 
 export interface InitOutput {
     readonly memory: WebAssembly.Memory;
+    readonly build_music_xml: (a: number, b: number, c: number) => number;
     readonly build_normalized_score: (a: number, b: number) => number;
     readonly parse: (a: number, b: number) => number;
     readonly __wbindgen_export: (a: number, b: number) => number;

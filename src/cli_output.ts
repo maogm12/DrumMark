@@ -1,13 +1,18 @@
-import type { NormalizedScore } from "./dsl/types";
+import type { NormalizedScore, ParseError } from "./dsl/types";
 
 export type CliOutputFormat = "ast" | "ir" | "svg" | "xml";
 
-export function formatScoreJson(score: NormalizedScore, format: "ast" | "ir"): string {
-  if (format === "ast") {
-    return JSON.stringify(score.ast, null, 2);
-  }
+export type ParserAstOutput = {
+  version: "drummark-parser-ast/v1";
+  headers: unknown;
+  paragraphs: unknown[];
+  errors: ParseError[];
+};
 
-  const output = { ...score };
-  delete (output as Partial<NormalizedScore>).ast;
-  return JSON.stringify(output, null, 2);
+export function formatParserAstJson(ast: ParserAstOutput): string {
+  return JSON.stringify(ast, null, 2);
+}
+
+export function formatIrJson(score: NormalizedScore): string {
+  return JSON.stringify(score, null, 2);
 }

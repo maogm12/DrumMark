@@ -27,7 +27,7 @@ const packages = [
     target: "web",
     feature: "parser-wasm",
     outDir: resolve(repoRoot, "src/wasm/parser-pkg-web"),
-    requiredExports: ["parse", "build_normalized_score"],
+    requiredExports: ["parse", "build_normalized_score", "build_music_xml"],
     forbiddenExports: ["build_layout_scene"],
   },
   {
@@ -35,7 +35,7 @@ const packages = [
     target: "nodejs",
     feature: "parser-wasm",
     outDir: resolve(repoRoot, "src/wasm/parser-pkg-node"),
-    requiredExports: ["parse", "build_normalized_score"],
+    requiredExports: ["parse", "build_normalized_score", "build_music_xml"],
     forbiddenExports: ["build_layout_scene"],
   },
   {
@@ -44,7 +44,7 @@ const packages = [
     feature: "layout-wasm",
     outDir: resolve(repoRoot, "src/wasm/layout-pkg-web"),
     requiredExports: ["build_layout_scene"],
-    forbiddenExports: ["parse", "build_normalized_score", "build_render_score"],
+    forbiddenExports: ["parse", "build_normalized_score", "build_music_xml", "build_render_score"],
   },
   {
     name: "layout-node",
@@ -52,7 +52,7 @@ const packages = [
     feature: "layout-wasm",
     outDir: resolve(repoRoot, "src/wasm/layout-pkg-node"),
     requiredExports: ["build_layout_scene"],
-    forbiddenExports: ["parse", "build_normalized_score", "build_render_score"],
+    forbiddenExports: ["parse", "build_normalized_score", "build_music_xml", "build_render_score"],
   },
 ];
 

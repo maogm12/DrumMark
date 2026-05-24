@@ -1,4 +1,11 @@
-import type { PreprocessedLine } from "./types";
+type PreprocessedLine = {
+  kind: "blank" | "comment" | "content";
+  lineNumber: number;
+  raw: string;
+  content: string;
+  comment?: string;
+  startOffset: number;
+};
 
 function splitComment(rawLine: string): { content: string; comment?: string } {
   const commentIndex = rawLine.indexOf("#");

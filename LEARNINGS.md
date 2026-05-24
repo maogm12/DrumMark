@@ -242,3 +242,21 @@ When an older note conflicts with this file, treat this file plus the active spe
 - Keeping `src/dsl/normalize.ts` as a TypeScript implementation after Rust normalizer migration lets TS-only semantics drift from the layout path. A safer bridge is a thin adapter that calls the parser WASM runtime's `build_normalized_score`, then adapts small JS shape differences for existing UI/MusicXML consumers.
 - Dotted rhythm rendering should not encode `"dot"` as a performance modifier. Rust `NormalizedEvent` and layout `RenderEvent` now carry a separate `dot_count`, leaving `modifiers` for articulations and notehead semantics.
 - Rust normalized output omits empty optional arrays by default, so JS adapters that feed legacy consumers need to normalize fields such as `event.modifiers` to `[]` while preserving intentionally absent measure fields like `hairpins`.
+
+## 2026-05-23 Rust MusicXML Export Cutover
+
+- The parser WASM package can carry output-format exports in addition to `parse` and `build_normalized_score`; `scripts/build_wasm.mjs` must list `build_music_xml` as required for parser packages and forbidden for layout packages to keep package boundaries explicit.
+- A source-based MusicXML WASM contract avoids keeping TypeScript `NormalizedScore` helper semantics alive. The wrapper shape is `{ xml, errors }`, where `errors` comes from the Rust parser diagnostics and CLI XML warnings can use it without running a separate TypeScript normalization path.
+- The old TypeScript MusicXML exporter depended on pre-explicit-rest assumptions and on adapter-shaped fields such as `hairpin.type`. The Rust exporter should read Rust `NormalizedScore` directly, including explicit rest events and `HairpinKind`, instead of preserving those compatibility artifacts.
+
+## 2026-05-23 Legacy TypeScript DSL Removal
+
+- After `src/wasm/skeleton.ts` is removed, parser-facing import-boundary tests should use `src/wasm/parser_runtime.ts` as the protected parser-side boundary because it is the remaining TypeScript glue that must not import layout WASM.
+- `NormalizedScore` should not carry parser-only compatibility data such as `score.ast`; UI status, export names, and CLI IR formatting can read the Rust normalized fields directly (`header`, `measures`, `repeatSpans`).
+- The native parser AST WASM contract intentionally exposes a loose JSON envelope (`version`, `headers`, `paragraphs`, `errors`) rather than old TypeScript skeleton types. Tests should assert stable envelope fields and representative native parser tokens without recreating the deleted `DocumentSkeleton` shape.
+
+## 2026-05-23 MusicXML Review Fixes
+
+- A source-based MusicXML export still needs to surface normalization diagnostics, not only parser diagnostics. In this codebase `normalize_document()` stores both parser-derived and validation-derived messages in `score.errors`, so the WASM XML wrapper should serialize that combined list for CLI warnings.
+- Removing the score-based TypeScript MusicXML overload is safer than leaving a compatibility overload that always throws. Old callers should fail typechecking instead of compiling into a runtime error.
+- `hideVoice2Rests` remains an export contract even after moving MusicXML to Rust. The Rust exporter should turn hidden secondary voice rests into MusicXML `<forward>` duration advances so voice timing is preserved without visible rest notes.

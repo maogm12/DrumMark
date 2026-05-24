@@ -14,6 +14,7 @@ pub mod event;
 pub mod fraction;
 pub mod hairpin;
 pub mod lexer;
+pub mod musicxml;
 pub mod nav;
 pub mod normalize;
 pub mod parser;
@@ -42,6 +43,53 @@ pub fn build_normalized_score(source: &str) -> JsValue {
     let doc = parser.parse_lossy();
     let score = normalize::normalize_document(&doc);
     normalize_to_js(&score)
+}
+
+#[cfg(feature = "parser-wasm")]
+#[wasm_bindgen]
+pub fn build_music_xml(source: &str, hide_voice2_rests: bool) -> JsValue {
+    use js_sys::{Array, Object};
+
+    let parser = parser::Parser::new(source);
+    let doc = parser.parse_lossy();
+    let score = normalize::normalize_document(&doc);
+    let output = Object::new();
+    set(
+        &output,
+        "xml",
+        &JsValue::from_str(&musicxml::build_music_xml(&score, hide_voice2_rests)),
+    );
+    let errors = Array::new();
+    for error in &score.errors {
+        errors.push(&normalized_error_to_js(error));
+    }
+    set(&output, "errors", &errors.into());
+    output.into()
+}
+
+#[cfg(feature = "parser-wasm")]
+fn normalized_error_to_js(message: &str) -> JsValue {
+    use js_sys::Object;
+
+    let obj = Object::new();
+    if let Some((line, column, text)) = parse_normalized_error(message) {
+        set(&obj, "line", &JsValue::from_f64(line as f64));
+        set(&obj, "column", &JsValue::from_f64(column as f64));
+        set(&obj, "message", &JsValue::from_str(text));
+    } else {
+        set(&obj, "line", &JsValue::from_f64(1.0));
+        set(&obj, "column", &JsValue::from_f64(1.0));
+        set(&obj, "message", &JsValue::from_str(message));
+    }
+    obj.into()
+}
+
+#[cfg(feature = "parser-wasm")]
+fn parse_normalized_error(message: &str) -> Option<(usize, usize, &str)> {
+    let rest = message.strip_prefix("Line ")?;
+    let (line_text, rest) = rest.split_once(", Col ")?;
+    let (column_text, text) = rest.split_once(": ")?;
+    Some((line_text.parse().ok()?, column_text.parse().ok()?, text))
 }
 
 #[cfg(all(feature = "parser-wasm", feature = "layout-wasm"))]

@@ -19029,9 +19029,11 @@
             "measureInParagraph": 1,
             "noteValue": 4,
             "barline": "repeat-end",
-            "volta": [
-              1
-            ],
+            "volta": {
+              "indices": [
+                1
+              ]
+            },
             "events": [
               {
                 "track": "SD",
@@ -19115,9 +19117,11 @@
             "measureInParagraph": 2,
             "noteValue": 4,
             "barline": "regular",
-            "volta": [
-              2
-            ],
+            "volta": {
+              "indices": [
+                2
+              ]
+            },
             "events": [
               {
                 "track": "SD",
@@ -19231,9 +19235,11 @@
             "measureInParagraph": 0,
             "noteValue": 4,
             "barline": "regular",
-            "volta": [
-              2
-            ],
+            "volta": {
+              "indices": [
+                2
+              ]
+            },
             "events": [
               {
                 "track": "SD",
@@ -19362,9 +19368,11 @@
             "measureInParagraph": 1,
             "noteValue": 4,
             "barline": "regular",
-            "volta": [
-              3
-            ],
+            "volta": {
+              "indices": [
+                3
+              ]
+            },
             "events": [
               {
                 "track": "SD",
@@ -41927,9 +41935,11 @@
             "measureInParagraph": 3,
             "noteValue": 8,
             "barline": "repeat-end",
-            "volta": [
-              1
-            ],
+            "volta": {
+              "indices": [
+                1
+              ]
+            },
             "events": [
               {
                 "track": "HH",
@@ -42240,9 +42250,11 @@
             "measureInParagraph": 4,
             "noteValue": 8,
             "barline": "double",
-            "volta": [
-              2
-            ],
+            "volta": {
+              "indices": [
+                2
+              ]
+            },
             "events": [
               {
                 "track": "HH",
@@ -43520,9 +43532,11 @@
             "measureInParagraph": 3,
             "noteValue": 8,
             "barline": "repeat-end",
-            "volta": [
-              1
-            ],
+            "volta": {
+              "indices": [
+                1
+              ]
+            },
             "events": [
               {
                 "track": "RC",
@@ -43876,9 +43890,11 @@
             "measureInParagraph": 0,
             "noteValue": 8,
             "barline": "repeat-end",
-            "volta": [
-              2
-            ],
+            "volta": {
+              "indices": [
+                2
+              ]
+            },
             "events": [
               {
                 "track": "RC",
@@ -44232,9 +44248,11 @@
             "measureInParagraph": 1,
             "noteValue": 8,
             "barline": "regular",
-            "volta": [
-              3
-            ],
+            "volta": {
+              "indices": [
+                3
+              ]
+            },
             "events": [
               {
                 "track": "RC",
@@ -47392,9 +47410,11 @@
             "measureInParagraph": 3,
             "noteValue": 8,
             "barline": "repeat-end",
-            "volta": [
-              1
-            ],
+            "volta": {
+              "indices": [
+                1
+              ]
+            },
             "events": [
               {
                 "track": "HH",
@@ -47750,9 +47770,11 @@
             "measureInParagraph": 0,
             "noteValue": 8,
             "barline": "repeat-end",
-            "volta": [
-              2
-            ],
+            "volta": {
+              "indices": [
+                2
+              ]
+            },
             "events": [
               {
                 "track": "HH",
@@ -48106,9 +48128,11 @@
             "measureInParagraph": 1,
             "noteValue": 8,
             "barline": "double",
-            "volta": [
-              3
-            ],
+            "volta": {
+              "indices": [
+                3
+              ]
+            },
             "events": [
               {
                 "track": "HH",
@@ -49465,9 +49489,11 @@
             "measureInParagraph": 3,
             "noteValue": 8,
             "barline": "repeat-end",
-            "volta": [
-              1
-            ],
+            "volta": {
+              "indices": [
+                1
+              ]
+            },
             "events": [
               {
                 "track": "RC",
@@ -49821,9 +49847,11 @@
             "measureInParagraph": 0,
             "noteValue": 8,
             "barline": "repeat-end",
-            "volta": [
-              2
-            ],
+            "volta": {
+              "indices": [
+                2
+              ]
+            },
             "events": [
               {
                 "track": "RC",
@@ -50177,9 +50205,11 @@
             "measureInParagraph": 1,
             "noteValue": 8,
             "barline": "regular",
-            "volta": [
-              3
-            ],
+            "volta": {
+              "indices": [
+                3
+              ]
+            },
             "events": [
               {
                 "track": "RC",
@@ -51352,11 +51382,13 @@
             "measureInParagraph": 1,
             "noteValue": 4,
             "barline": "regular",
-            "volta": [
-              1,
-              2,
-              3
-            ],
+            "volta": {
+              "indices": [
+                1,
+                2,
+                3
+              ]
+            },
             "events": [
               {
                 "track": "HH",
@@ -51545,11 +51577,13 @@
             "measureInParagraph": 2,
             "noteValue": 4,
             "barline": "regular",
-            "volta": [
-              1,
-              2,
-              3
-            ],
+            "volta": {
+              "indices": [
+                1,
+                2,
+                3
+              ]
+            },
             "events": [
               {
                 "track": "HH",
@@ -51738,11 +51772,13 @@
             "measureInParagraph": 3,
             "noteValue": 4,
             "barline": "repeat-end",
-            "volta": [
-              1,
-              2,
-              3
-            ],
+            "volta": {
+              "indices": [
+                1,
+                2,
+                3
+              ]
+            },
             "events": [
               {
                 "track": "HH",
@@ -51931,9 +51967,11 @@
             "measureInParagraph": 0,
             "noteValue": 8,
             "barline": "regular",
-            "volta": [
-              4
-            ],
+            "volta": {
+              "indices": [
+                4
+              ]
+            },
             "events": [
               {
                 "track": "HH",
@@ -52107,9 +52145,11 @@
             "measureInParagraph": 1,
             "noteValue": 8,
             "barline": "regular",
-            "volta": [
-              4
-            ],
+            "volta": {
+              "indices": [
+                4
+              ]
+            },
             "events": [
               {
                 "track": "HH",
@@ -52388,9 +52428,11 @@
             "measureInParagraph": 2,
             "noteValue": 8,
             "barline": "regular",
-            "volta": [
-              4
-            ],
+            "volta": {
+              "indices": [
+                4
+              ]
+            },
             "hairpins": [
               {
                 "kind": "crescendo",

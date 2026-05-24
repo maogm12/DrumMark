@@ -1,11 +1,12 @@
 import { buildMusicXml } from "./dsl/musicxml";
 import { buildNormalizedScore } from "./dsl/normalize";
-import type { NormalizedScore } from "./dsl/types";
+import type { NormalizedScore, ParseError } from "./dsl/types";
 import { renderSourceToSvgNode } from "./renderer/svgRendererNode";
 import { DEFAULT_RENDER_OPTIONS, type ScoreRenderOptions } from "./renderer/renderOptions";
-import { formatScoreJson, type CliOutputFormat } from "./cli_output";
+import { formatIrJson, formatParserAstJson, type CliOutputFormat, type ParserAstOutput } from "./cli_output";
 import { ensureCliRenderEnvironment } from "./cli_render_env";
 import { initParserWasmNode } from "./wasm/parser_wasm_node";
+import { parseWithParserRuntime } from "./wasm/parser_runtime";
 
 export type CliParams = {
   input: string;
@@ -50,11 +51,11 @@ export function resolveCliOutputPath(params: CliParams): string | null {
   return params.input.replace(/\.[^/.]+$/, "") + (params.format === "xml" ? ".xml" : ".svg");
 }
 
-export function formatCliWarnings(score: NormalizedScore): string[] {
-  if (score.errors.length === 0) return [];
+export function formatCliWarnings(errors: ParseError[]): string[] {
+  if (errors.length === 0) return [];
   return [
     "Parser warnings/errors:",
-    ...score.errors.map((error) => `Line ${error.line}, Col ${error.column}: ${error.message}`),
+    ...errors.map((error) => `Line ${error.line}, Col ${error.column}: ${error.message}`),
   ];
 }
 
@@ -62,18 +63,26 @@ export async function buildCliOutput(
   source: string,
   format: CliOutputFormat,
 ): Promise<{
-  score: NormalizedScore;
+  score: NormalizedScore | null;
+  errors: ParseError[];
   result: string;
 }> {
   await initParserWasmNode();
-  const score = buildNormalizedScore(source);
 
-  if (format === "ast" || format === "ir") {
-    return { score, result: formatScoreJson(score, format) };
+  if (format === "ast") {
+    const ast = parseWithParserRuntime(source) as ParserAstOutput;
+    return { score: null, errors: ast.errors, result: formatParserAstJson(ast) };
   }
 
   if (format === "xml") {
-    return { score, result: buildMusicXml(score) };
+    const output = buildMusicXml(source);
+    return { score: null, errors: output.errors, result: output.xml };
+  }
+
+  const score = buildNormalizedScore(source);
+
+  if (format === "ir") {
+    return { score, errors: score.errors, result: formatIrJson(score) };
   }
 
   ensureCliRenderEnvironment();
@@ -85,5 +94,5 @@ export async function buildCliOutput(
     leftMargin: CLI_RENDER_OPTIONS.pagePadding.left,
     rightMargin: CLI_RENDER_OPTIONS.pagePadding.right,
   });
-  return { score, result };
+  return { score, errors: score.errors, result };
 }

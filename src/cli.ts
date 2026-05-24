@@ -20,8 +20,8 @@ async function main() {
   await initParserWasmNode();
 
   const source = fs.readFileSync(path.resolve(params.input), "utf-8");
-  const { score, result } = await buildCliOutput(source, params.format);
-  const warnings = formatCliWarnings(score);
+  const { errors, result } = await buildCliOutput(source, params.format);
+  const warnings = formatCliWarnings(errors);
   for (const warning of warnings) {
     console.warn(warning);
   }

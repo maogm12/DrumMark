@@ -36,10 +36,10 @@ describe("cli runtime", () => {
   });
 
   it("formats warnings from normalized parser errors", async () => {
-    const { score } = await buildCliOutput(`time 4
+    const { errors } = await buildCliOutput(`time 4
 HH | x |`, "ast");
 
-    expect(formatCliWarnings(score)).toEqual([
+    expect(formatCliWarnings(errors)).toEqual([
       "Parser warnings/errors:",
       "Line 1, Col 5: invalid time header; expected `time <int>/<int>`",
     ]);
@@ -49,8 +49,10 @@ HH | x |`, "ast");
     const { result } = await buildCliOutput(SIMPLE_SOURCE, "ast");
     const parsed = JSON.parse(result);
 
-    expect(parsed.headers.title?.value).toBe("CLI Output");
+    expect(parsed.version).toBe("drummark-parser-ast/v1");
+    expect(parsed.headers.title).toBe("CLI Output");
     expect(parsed.paragraphs).toHaveLength(1);
+    expect(parsed.paragraphs[0].lines[0].measures).toHaveLength(1);
   });
 
   it("builds IR output", async () => {

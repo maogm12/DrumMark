@@ -1,4 +1,3 @@
-import { buildScoreAst } from "./ast";
 import type {
   EndNav,
   NormalizedMeasure,
@@ -49,6 +48,7 @@ function normalizeEndNav(value: unknown): EndNav | undefined {
 function adaptMeasure(raw: NormalizedMeasure & Record<string, unknown>): NormalizedMeasure {
   const measureRepeatSlashes = raw["measureRepeatSlashes"];
   const multiRestCount = raw["multiRestCount"];
+  const volta = raw.volta;
   const events = (raw.events ?? []).map((event) => ({
     ...event,
     modifiers: event.modifiers ?? [],
@@ -62,6 +62,7 @@ function adaptMeasure(raw: NormalizedMeasure & Record<string, unknown>): Normali
       typeof measureRepeatSlashes === "number"
         ? { slashes: measureRepeatSlashes }
         : raw.measureRepeat,
+    volta: Array.isArray(volta) ? { indices: volta as number[] } : raw.volta,
     multiRest:
       typeof multiRestCount === "number"
         ? { count: multiRestCount }
@@ -74,10 +75,8 @@ export function buildNormalizedScore(source: string): NormalizedScore {
   const raw = buildNormalizedScoreWithParserRuntime(source) as NormalizedScore & {
     errors?: Array<string | ParseError>;
   };
-  const ast = buildScoreAst(source);
   return {
     ...raw,
-    ast,
     repeatSpans: raw.repeatSpans ?? [],
     errors: (raw.errors ?? []).map((error) =>
       typeof error === "string" ? parseErrorMessage(error) : error,
@@ -89,9 +88,5 @@ export function buildNormalizedScore(source: string): NormalizedScore {
 }
 
 export function buildNormalizedScoreWasm(source: string): NormalizedScore {
-  return buildNormalizedScore(source);
-}
-
-export function buildNormalizedScoreFromRegex(source: string): NormalizedScore {
   return buildNormalizedScore(source);
 }

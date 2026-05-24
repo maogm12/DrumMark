@@ -61,7 +61,7 @@ export const productionSplitWasmImportRules = [
   },
   {
     name: "parser-facing production must not import layout wasm",
-    from: /(^|\/)src\/(?:wasm\/skeleton|scoreWorker|dsl\/).*\.tsx?$/,
+    from: /(^|\/)src\/(?:wasm\/parser_runtime|scoreWorker|dsl\/).*\.tsx?$/,
     forbidden: /(?:layout_wasm_|layout-pkg-)/,
   },
   {

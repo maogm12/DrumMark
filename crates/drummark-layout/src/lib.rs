@@ -8698,6 +8698,16 @@ fn render_hit_cluster(
                 });
             }
         }
+        render_grace_notes_for_hit(
+            sink,
+            input.measure_id,
+            placement.slot_event.event,
+            note_id.clone(),
+            note_x,
+            actual_note_y,
+            placement.note_role,
+            stem_up,
+        );
         note_placements.push(NotePlacement {
             note_id: note_id.clone(),
             note_x,
@@ -8902,6 +8912,151 @@ fn render_hit_cluster_stem_and_accents(
                         .map(|note| note.note_id.clone())
                 });
         }
+    }
+}
+
+fn render_grace_notes_for_hit(
+    sink: &mut SceneEmitSink<'_>,
+    measure_id: &str,
+    event: &RenderEvent,
+    anchor_note_id: String,
+    main_note_x: f32,
+    main_note_y: f32,
+    note_role: GlyphRole,
+    stem_up: bool,
+) {
+    let grace_count = if event.modifiers.iter().any(|modifier| modifier == "drag") {
+        2
+    } else if event.modifiers.iter().any(|modifier| modifier == "flam") {
+        1
+    } else {
+        return;
+    };
+    let grace_flag_role = if event.modifiers.iter().any(|modifier| modifier == "flam") {
+        Some(grace_flag_role_for_event(event, stem_up))
+    } else {
+        None
+    };
+
+    let grace_font_size = 16.0_f32;
+    let grace_spacing = 8.0_f32;
+    let grace_gap = 9.0_f32;
+    let note_metric = canonical_glyph_metric(note_role);
+    let note_glyph = char::from_u32(note_metric.smufl_codepoint)
+        .unwrap_or('?')
+        .to_string();
+    let total_grace_width = (grace_count as f32 - 1.0) * grace_spacing;
+    let first_grace_x = main_note_x - grace_gap - total_grace_width;
+    let stem_anchor = if stem_up {
+        note_metric.stem_up_anchor_ss.unwrap_or(GlyphPoint {
+            x_ss: 1.18,
+            y_ss: 0.168,
+        })
+    } else {
+        note_metric.stem_down_anchor_ss.unwrap_or(GlyphPoint {
+            x_ss: 0.0,
+            y_ss: -0.168,
+        })
+    };
+    let smufl_ss = grace_font_size / 4.0;
+
+    for index in 0..grace_count {
+        let grace_x = first_grace_x + index as f32 * grace_spacing;
+        let note_id = sink.push_text_item(TextItemSpec {
+            measure_id: Some(measure_id),
+            role: "grace-notehead",
+            x: grace_x,
+            y: main_note_y,
+            text_role: TextRole::Tempo,
+            text: note_glyph.clone(),
+            font_family: "Bravura",
+            font_size_pt: grace_font_size,
+            fill: "#333",
+            text_anchor: None,
+            font_weight: None,
+        });
+        if let Some(item) = sink.last_item_mut() {
+            item.anchor_item_id = Some(anchor_note_id.clone());
+        }
+
+        let stem_x = grace_x + stem_anchor.x_ss * smufl_ss;
+        let stem_attach_y = main_note_y - stem_anchor.y_ss * smufl_ss;
+        let (stem_y1, stem_y2) = if stem_up {
+            (stem_attach_y - 18.0, stem_attach_y)
+        } else {
+            (stem_attach_y, stem_attach_y + 18.0)
+        };
+        let stem_id = sink.push_line_item(LineItemSpec {
+            measure_id: Some(measure_id),
+            role: "grace-stem",
+            x1: stem_x,
+            y1: stem_y1,
+            x2: stem_x,
+            y2: stem_y2,
+            stroke: "#333",
+            stroke_width: 1.0,
+            stroke_line_cap: None,
+        });
+        if let Some(item) = sink.last_item_mut() {
+            item.anchor_item_id = Some(note_id.clone());
+        }
+
+        if let Some(flag_role) = grace_flag_role {
+            let flag_metric = canonical_glyph_metric(flag_role);
+            let flag_anchor =
+                flag_metric
+                    .stem_anchor_for_direction(stem_up)
+                    .unwrap_or(GlyphPoint {
+                        x_ss: 0.0,
+                        y_ss: 0.0,
+                    });
+            let stem_tip_y = if stem_up { stem_y1 } else { stem_y2 };
+            sink.push_glyph_item(GlyphItemSpec {
+                measure_id: Some(measure_id),
+                role: "grace-flag",
+                x: stem_x - flag_anchor.x_ss * smufl_ss,
+                y: stem_tip_y + flag_anchor.y_ss * smufl_ss,
+                glyph_role: flag_role,
+                font_family: "Bravura",
+                font_size_pt: grace_font_size,
+                fill: "#333",
+            });
+            if let Some(item) = sink.last_item_mut() {
+                item.anchor_item_id = Some(stem_id.clone());
+            }
+        }
+
+        let slash_mid_y = if stem_up {
+            stem_y1 + 9.0
+        } else {
+            stem_y2 - 9.0
+        };
+        sink.push_line_item(LineItemSpec {
+            measure_id: Some(measure_id),
+            role: "grace-slash",
+            x1: stem_x - 3.5,
+            y1: slash_mid_y + 4.0,
+            x2: stem_x + 4.5,
+            y2: slash_mid_y - 4.0,
+            stroke: "#333",
+            stroke_width: 1.0,
+            stroke_line_cap: Some("round"),
+        });
+        if let Some(item) = sink.last_item_mut() {
+            item.anchor_item_id = Some(stem_id);
+        }
+    }
+}
+
+fn grace_flag_role_for_event(event: &RenderEvent, stem_up: bool) -> GlyphRole {
+    let undotted_denom = undotted_base_denominator(visual_duration(event), event.dot_count);
+    match (stem_up, undotted_denom) {
+        (true, denom) if denom >= 32 => GlyphRole::Flag32ndUp,
+        (false, denom) if denom >= 32 => GlyphRole::Flag32ndDown,
+        (true, denom) if denom >= 16 => GlyphRole::Flag16thUp,
+        (false, denom) if denom >= 16 => GlyphRole::Flag16thDown,
+        (true, _) => GlyphRole::Flag8thUp,
+        (false, _) => GlyphRole::Flag8thDown,
     }
 }
 
@@ -13806,5 +13961,257 @@ fn test_bottom_ledger_lines_render_for_notes_below_staff() {
     assert!(ledger_ys
         .iter()
         .any(|y| (*y - (staff_top + 60.0)).abs() < 0.01));
+}
+
+#[test]
+fn test_flam_renders_grace_notehead_stem_and_slash() {
+    let score = RenderScore {
+        version: RENDER_SCORE_VERSION.to_string(),
+        header: RenderHeader {
+            tempo: 120,
+            time_beats: 4,
+            time_beat_unit: 4,
+            divisions: 16,
+            note_value: 8,
+            grouping: vec![1, 1, 1, 1],
+            title: None,
+            subtitle: None,
+            composer: None,
+        },
+        tracks: vec![RenderTrack {
+            id: "SD".into(),
+            family: "drum".into(),
+        }],
+        measures: vec![RenderMeasure {
+            index: 0,
+            global_index: 0,
+            paragraph_index: 0,
+            measure_in_paragraph: 0,
+            source_line: 1,
+            events: vec![RenderEvent {
+                track: "SD".into(),
+                track_family: "drum".into(),
+                start: Fraction {
+                    numerator: 0,
+                    denominator: 1,
+                },
+                duration: Fraction {
+                    numerator: 1,
+                    denominator: 8,
+                },
+                visual_duration: Fraction {
+                    numerator: 1,
+                    denominator: 8,
+                },
+                kind: EventKind::Hit,
+                glyph: "d".into(),
+                modifiers: vec!["flam".into()],
+                dot_count: 0,
+                modifier: Some("flam".into()),
+                voice: 1,
+                beam: "none".into(),
+                tuplet: None,
+            }],
+            barline: Some("final".into()),
+            closing_barline: Some("final".into()),
+            start_nav: None,
+            end_nav: None,
+            volta_indices: None,
+            hairpins: vec![],
+            dynamics: vec![],
+            measure_repeat_slashes: None,
+            multi_rest_count: None,
+            note_value: 8,
+            volta_terminator: false,
+        }],
+        errors: vec![],
+        repeat_spans: vec![],
+    };
+
+    let scene = build_layout_scene(&score, &LayoutOptions::default());
+    let count_role = |role: &str| {
+        scene.pages[0]
+            .items
+            .iter()
+            .filter(|item| item.role == role)
+            .count()
+    };
+    let main_note_x = scene.pages[0]
+        .items
+        .iter()
+        .find(|item| item.role == "notehead")
+        .and_then(|item| match &item.primitive {
+            ScenePrimitive::TextRun(text) => Some(text.x_pt),
+            _ => None,
+        })
+        .expect("expected main notehead");
+    let grace_note_x = scene.pages[0]
+        .items
+        .iter()
+        .find(|item| item.role == "grace-notehead")
+        .and_then(|item| match &item.primitive {
+            ScenePrimitive::TextRun(text) => Some(text.x_pt),
+            _ => None,
+        })
+        .expect("expected grace notehead");
+
+    assert_eq!(count_role("grace-notehead"), 1);
+    assert_eq!(count_role("grace-stem"), 1);
+    assert_eq!(count_role("grace-slash"), 1);
+    assert_eq!(count_role("grace-flag"), 1);
+    assert!(grace_note_x < main_note_x);
+}
+
+#[test]
+fn test_flam_defaults_grace_flag_to_eighth_note() {
+    let scene = build_layout_scene(
+        &grace_modifier_score(
+            "flam",
+            Fraction {
+                numerator: 1,
+                denominator: 4,
+            },
+        ),
+        &LayoutOptions::default(),
+    );
+    let flag_roles = scene.pages[0]
+        .items
+        .iter()
+        .filter(|item| item.role == "grace-flag")
+        .map(|item| match &item.primitive {
+            ScenePrimitive::GlyphRun(glyph) => glyph.glyph_role,
+            _ => panic!("grace flag should be a glyph"),
+        })
+        .collect::<Vec<_>>();
+
+    assert_eq!(flag_roles, vec![GlyphRole::Flag8thUp]);
+}
+
+#[test]
+fn test_flam_uses_matching_grace_flags_for_sixteenth_and_thirty_second_notes() {
+    let sixteenth = build_layout_scene(
+        &grace_modifier_score(
+            "flam",
+            Fraction {
+                numerator: 1,
+                denominator: 16,
+            },
+        ),
+        &LayoutOptions::default(),
+    );
+    let thirty_second = build_layout_scene(
+        &grace_modifier_score(
+            "flam",
+            Fraction {
+                numerator: 1,
+                denominator: 32,
+            },
+        ),
+        &LayoutOptions::default(),
+    );
+
+    assert!(sixteenth.pages[0].items.iter().any(|item| {
+        item.role == "grace-flag"
+            && matches!(
+                &item.primitive,
+                ScenePrimitive::GlyphRun(GlyphRun {
+                    glyph_role: GlyphRole::Flag16thUp,
+                    ..
+                })
+            )
+    }));
+    assert!(thirty_second.pages[0].items.iter().any(|item| {
+        item.role == "grace-flag"
+            && matches!(
+                &item.primitive,
+                ScenePrimitive::GlyphRun(GlyphRun {
+                    glyph_role: GlyphRole::Flag32ndUp,
+                    ..
+                })
+            )
+    }));
+}
+
+#[test]
+fn test_drag_does_not_receive_flam_grace_flag_rule() {
+    let scene = build_layout_scene(
+        &grace_modifier_score(
+            "drag",
+            Fraction {
+                numerator: 1,
+                denominator: 16,
+            },
+        ),
+        &LayoutOptions::default(),
+    );
+
+    assert_eq!(
+        scene.pages[0]
+            .items
+            .iter()
+            .filter(|item| item.role == "grace-flag")
+            .count(),
+        0
+    );
+}
+
+#[cfg(test)]
+fn grace_modifier_score(modifier: &str, visual_duration: Fraction) -> RenderScore {
+    RenderScore {
+        version: RENDER_SCORE_VERSION.to_string(),
+        header: RenderHeader {
+            tempo: 120,
+            time_beats: 4,
+            time_beat_unit: 4,
+            divisions: 16,
+            note_value: 8,
+            grouping: vec![1, 1, 1, 1],
+            title: None,
+            subtitle: None,
+            composer: None,
+        },
+        tracks: vec![RenderTrack {
+            id: "SD".into(),
+            family: "drum".into(),
+        }],
+        measures: vec![RenderMeasure {
+            index: 0,
+            global_index: 0,
+            paragraph_index: 0,
+            measure_in_paragraph: 0,
+            source_line: 1,
+            events: vec![RenderEvent {
+                track: "SD".into(),
+                track_family: "drum".into(),
+                start: Fraction {
+                    numerator: 0,
+                    denominator: 1,
+                },
+                duration: visual_duration,
+                visual_duration,
+                kind: EventKind::Hit,
+                glyph: "d".into(),
+                modifiers: vec![modifier.into()],
+                dot_count: 0,
+                modifier: Some(modifier.into()),
+                voice: 1,
+                beam: "none".into(),
+                tuplet: None,
+            }],
+            barline: Some("final".into()),
+            closing_barline: Some("final".into()),
+            start_nav: None,
+            end_nav: None,
+            volta_indices: None,
+            hairpins: vec![],
+            dynamics: vec![],
+            measure_repeat_slashes: None,
+            multi_rest_count: None,
+            note_value: 8,
+            volta_terminator: false,
+        }],
+        errors: vec![],
+        repeat_spans: vec![],
+    }
 }
 // PATCH_INSERT_FOR_GOLDEN_REGENERATION

@@ -278,3 +278,14 @@ When an older note conflicts with this file, treat this file plus the active spe
 - Tuplet metadata is attached per `RenderEvent`, so parallel tracks with the same voice and same tuplet rhythm produce duplicate event-level `(actual, normal)` tuples at identical start/end fractions.
 - `drummark-layout::render_tuplet_groups()` is responsible for converting those event tuples into visible bracket runs. It should deduplicate identical `(voice, count, span, start, end)` entries before scanning contiguous runs; otherwise simultaneous same-voice tuplets can split the run scanner and emit duplicate brackets.
 - The deduplication belongs in layout, not the SVG adapter, because tuplet bracket grouping is score engraving derived from `RenderScore -> LayoutScene`.
+
+## 2026-05-24 Flam Grace Note Rendering
+
+- Parser and normalization already preserve `flam`/`drag` in `RenderEvent.modifiers`; missing flam output was a layout rendering gap, not an AST or IR issue.
+- `crates/drummark-layout/src/lib.rs::render_hit_cluster()` is the right insertion point for grace notes because it has the resolved main notehead position, glyph role, stem direction, and scene sink needed to emit platform-neutral `LayoutScene` items.
+- Grace-note drawing should stay in `drummark-layout` as ordinary scene items (`grace-notehead`, `grace-stem`, `grace-slash`). SVG adapters should only translate those items and must not synthesize engraving behavior for modifiers.
+
+## 2026-05-24 Flam Grace Flag Duration Rule
+
+- The grace-note flag duration rule applies to `flam`, not `drag`: flam defaults to an eighth-note grace flag, but if the modified note's visual duration is a 16th or 32nd note, the flam grace flag uses the matching 16th or 32nd SMuFL flag.
+- The decision belongs in `drummark-layout` next to grace-note emission because it depends on `RenderEvent.visual_duration`, `dot_count`, and stem direction after note placement. The adapter should only render the emitted `grace-flag` glyph.

@@ -289,3 +289,10 @@ When an older note conflicts with this file, treat this file plus the active spe
 
 - The grace-note flag duration rule applies to `flam`, not `drag`: flam defaults to an eighth-note grace flag, but if the modified note's visual duration is a 16th or 32nd note, the flam grace flag uses the matching 16th or 32nd SMuFL flag.
 - The decision belongs in `drummark-layout` next to grace-note emission because it depends on `RenderEvent.visual_duration`, `dot_count`, and stem direction after note placement. The adapter should only render the emitted `grace-flag` glyph.
+
+## 2026-05-24 Layout Library Refactor Recon
+
+- `crates/drummark-layout/src/lib.rs` is a 14k-line mixed-responsibility module: public render/scene contracts, canonical metrics, pagination, scene emission, measure geometry, note/rest/stem/beam engraving, structural spans, bounds/stacking, JS serialization, and tests all share one compilation unit.
+- The safest first refactor candidates are pure or near-pure helpers with clear input/output contracts: fraction arithmetic, glyph/text metric lookup and role naming, scene bounds/path translation, pagination box placement, measure geometry, and beam math.
+- There is a parallel prototype API in the middle of `lib.rs` (`LayoutElement`, `System`, `build_systems`, `place_notes`, `place_barlines`, `stack_edge_elements`) that is public but not part of the main `build_layout_scene` path. Before moving code, decide whether this API is kept as a supported planning layer or quarantined as legacy/prototype code.
+- `cargo test -p drummark-layout` passes, but the library currently emits dead-code warnings for `rects_intersect` and `rect_obstacle_from_bounds`. `cargo clippy -p drummark-layout -- -W clippy::all` also reports `too_many_arguments` on `render_grace_notes_for_hit` and `build_stem_render_plan`, plus needless borrows of `sink.items` in navigation skyline calls.

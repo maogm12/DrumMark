@@ -6,6 +6,7 @@ import { resolveDocumentTheme, subscribeToThemeChanges, type AppTheme } from "./
 import { useAppSettings } from "./hooks/useAppSettings";
 import { SettingsPanel } from "./components/SettingsPanel";
 import { useT } from "./i18n/context";
+import { diagnosticRange } from "./editorDiagnostics";
 import * as Tabs from "@radix-ui/react-tabs";
 import * as Popover from "@radix-ui/react-popover";
 import type { MainTab } from "./hooks/useAppSettings";
@@ -224,7 +225,6 @@ function MoonIcon() {
   );
 }
 
-
 function DslEditor({ value, onChange, errors, theme }: { value: string; onChange: (value: string) => void; errors: ParseError[]; theme: AppTheme }) {
   const hostRef = useRef<HTMLDivElement | null>(null);
   const viewRef = useRef<any>(null);
@@ -285,12 +285,10 @@ function DslEditor({ value, onChange, errors, theme }: { value: string; onChange
           linterCompartmentRef.current.of(
             cmLint.linter((v: any) => {
               return errors.map((err) => {
-                const lineNum = Math.min(Math.max(1, err.line), v.state.doc.lines);
-                const line = v.state.doc.line(lineNum);
-                const pos = Math.min(line.from + Math.max(0, err.column - 1), line.to);
+                const range = diagnosticRange(v.state.doc, err);
                 return {
-                  from: pos,
-                  to: Math.min(pos + 1, line.to),
+                  from: range.from,
+                  to: range.to,
                   severity: "error" as const,
                   message: err.message,
                 };
@@ -336,12 +334,10 @@ function DslEditor({ value, onChange, errors, theme }: { value: string; onChange
       effects: compartment.reconfigure(
         modules.cmLint.linter((v: any) => {
           return errors.map((err) => {
-            const lineNum = Math.min(Math.max(1, err.line), v.state.doc.lines);
-            const line = v.state.doc.line(lineNum);
-            const pos = Math.min(line.from + Math.max(0, err.column - 1), line.to);
+            const range = diagnosticRange(v.state.doc, err);
             return {
-              from: pos,
-              to: Math.min(pos + 1, line.to),
+              from: range.from,
+              to: range.to,
               severity: "error" as const,
               message: err.message,
             };

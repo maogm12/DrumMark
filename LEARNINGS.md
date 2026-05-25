@@ -336,3 +336,33 @@ When an older note conflicts with this file, treat this file plus the active spe
 - `GlyphRun.y_pt` is a SMuFL baseline-style placement coordinate in layout geometry, not a bbox center. Bounds are computed as `top = y_pt - bbox_ne_y_ss * font_size/4` and `bottom = y_pt - bbox_sw_y_ss * font_size/4`.
 - Whole rest attachment should solve from the glyph top edge (`baseline = target_line + bbox_ne_y_ss * font_size/4`) because the rest hangs below the staff line. Half rest attachment should solve from the glyph bottom edge (`baseline = target_line + bbox_sw_y_ss * font_size/4`) because the rest sits on the staff line.
 - Regression tests for rest line attachment must include the rendered font size when converting glyph bbox coordinates back to staff spaces; comparing raw SMuFL staff-space bbox values directly to screen-space positions can mask vertical placement errors.
+
+## 2026-05-25 Ride Bell Noteheads
+
+- `r:bell` resolves through core as track `RC`, glyph `x`, modifier `bell`; the diamond visual shape is therefore a layout/export modifier rule, not a retained raw glyph rule.
+- `drummark-layout::notehead_glyph()` maps the `bell` modifier to SMuFL `NoteheadDiamond` (`U+E0B2`) before applying the default cymbal X notehead fallback.
+- MusicXML notehead export should mirror the same semantic rule for both ride tracks that validation allows (`RC` and `RC2`) by emitting `<notehead>diamond</notehead>` when the normalized event has modifier `bell`.
+
+## 2026-05-25 SMuFL Notehead Reference
+
+- The official SMuFL Noteheads table is cached locally at `docs/reference/smufl-noteheads.json`; check it before changing notehead codepoints.
+- `U+E0B2` is `noteheadCircleXHalf`, not a diamond notehead. Ride bell diamond noteheads should use `U+E0DB noteheadDiamondBlack`.
+
+## 2026-05-25 Rim And Ghost Noteheads
+
+- `rim` should use SMuFL `U+E0D0 noteheadSlashedBlack2`, not `U+E0CE`; `U+E0CE` is `noteheadParenthesis`.
+- `ghost` should render as Bravura `noteheadBlackParens`, whose recommended SMuFL ligature is `uniE0F5_uniE0A4_uniE0F6` and whose Bravura optional glyph codepoint is `U+F5D1`.
+
+## 2026-05-25 Drag Grace Notes
+
+- `drag` should render before the main note as two 16th grace notes with 16th flags and no slash. `flam` remains one grace note with the slash marker.
+- MusicXML export mirrors the same distinction: `drag` emits two `<grace/>` 16th notes, while `flam` uses `<grace slash="yes"/>`.
+
+## 2026-05-25 Ghost Notehead Ligature Correction
+
+- `U+F5D1` must not be used as the rendered ghost notehead codepoint; in the active Bravura font it resolves as a time-signature glyph, not `noteheadBlackParens`.
+- Render ghost noteheads with the SMuFL/Bravura ligature text `uniE0F5_uniE0A4_uniE0F6` while retaining black-notehead anchors and parenthesized-notehead bounds for layout.
+
+## 2026-05-25 Drag Grace Note Beams
+
+- `drag` grace notes should be rendered as two 16th grace noteheads connected by a small double beam, not as two independently flagged grace notes. The layout emits `grace-beam` and `grace-beam-secondary` path items for the pair.

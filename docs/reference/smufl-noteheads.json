@@ -1,0 +1,608 @@
+{
+  "source": "https://w3c-cg.github.io/smufl/latest/tables/noteheads.html",
+  "fetchedAt": "2026-05-25",
+  "note": "Generated from the official SMuFL Noteheads table. Use this local reference before changing notehead codepoints. Includes recommended notehead ligatures used by Bravura for parenthesized noteheads.",
+  "entries": [
+    {
+      "codepoint": "U+E0A0",
+      "hex": "0xE0A0",
+      "name": "noteheadDoubleWhole",
+      "description": "Double whole (breve) notehead"
+    },
+    {
+      "codepoint": "U+E0A1",
+      "hex": "0xE0A1",
+      "name": "noteheadDoubleWholeSquare",
+      "description": "Double whole (breve) notehead (square)"
+    },
+    {
+      "codepoint": "U+E0A2",
+      "hex": "0xE0A2",
+      "name": "noteheadWhole",
+      "description": "Whole (semibreve) notehead"
+    },
+    {
+      "codepoint": "U+E0A3",
+      "hex": "0xE0A3",
+      "name": "noteheadHalf",
+      "description": "Half (minim) notehead"
+    },
+    {
+      "codepoint": "U+E0A4",
+      "hex": "0xE0A4",
+      "name": "noteheadBlack",
+      "description": "Black notehead"
+    },
+    {
+      "codepoint": "U+E0A5",
+      "hex": "0xE0A5",
+      "name": "noteheadNull",
+      "description": "Null notehead"
+    },
+    {
+      "codepoint": "U+E0A6",
+      "hex": "0xE0A6",
+      "name": "noteheadXDoubleWhole",
+      "description": "X notehead double whole"
+    },
+    {
+      "codepoint": "U+E0A7",
+      "hex": "0xE0A7",
+      "name": "noteheadXWhole",
+      "description": "X notehead whole"
+    },
+    {
+      "codepoint": "U+E0A8",
+      "hex": "0xE0A8",
+      "name": "noteheadXHalf",
+      "description": "X notehead half"
+    },
+    {
+      "codepoint": "U+E0A9",
+      "hex": "0xE0A9",
+      "name": "noteheadXBlack",
+      "description": "X notehead black"
+    },
+    {
+      "codepoint": "U+E0AA",
+      "hex": "0xE0AA",
+      "name": "noteheadXOrnate",
+      "description": "Ornate X notehead"
+    },
+    {
+      "codepoint": "U+E0AB",
+      "hex": "0xE0AB",
+      "name": "noteheadXOrnateEllipse",
+      "description": "Ornate X notehead in ellipse"
+    },
+    {
+      "codepoint": "U+E0AC",
+      "hex": "0xE0AC",
+      "name": "noteheadPlusDoubleWhole",
+      "description": "Plus notehead double whole"
+    },
+    {
+      "codepoint": "U+E0AD",
+      "hex": "0xE0AD",
+      "name": "noteheadPlusWhole",
+      "description": "Plus notehead whole"
+    },
+    {
+      "codepoint": "U+E0AE",
+      "hex": "0xE0AE",
+      "name": "noteheadPlusHalf",
+      "description": "Plus notehead half"
+    },
+    {
+      "codepoint": "U+E0AF",
+      "hex": "0xE0AF",
+      "name": "noteheadPlusBlack",
+      "description": "Plus notehead black"
+    },
+    {
+      "codepoint": "U+E0B0",
+      "hex": "0xE0B0",
+      "name": "noteheadCircleXDoubleWhole",
+      "description": "Circle X double whole"
+    },
+    {
+      "codepoint": "U+E0B1",
+      "hex": "0xE0B1",
+      "name": "noteheadCircleXWhole",
+      "description": "Circle X whole"
+    },
+    {
+      "codepoint": "U+E0B2",
+      "hex": "0xE0B2",
+      "name": "noteheadCircleXHalf",
+      "description": "Circle X half"
+    },
+    {
+      "codepoint": "U+E0B3",
+      "hex": "0xE0B3",
+      "name": "noteheadCircleX",
+      "description": "Circle X notehead"
+    },
+    {
+      "codepoint": "U+E0B4",
+      "hex": "0xE0B4",
+      "name": "noteheadDoubleWholeWithX",
+      "description": "Double whole notehead with X"
+    },
+    {
+      "codepoint": "U+E0B5",
+      "hex": "0xE0B5",
+      "name": "noteheadWholeWithX",
+      "description": "Whole notehead with X"
+    },
+    {
+      "codepoint": "U+E0B6",
+      "hex": "0xE0B6",
+      "name": "noteheadHalfWithX",
+      "description": "Half notehead with X"
+    },
+    {
+      "codepoint": "U+E0B7",
+      "hex": "0xE0B7",
+      "name": "noteheadVoidWithX",
+      "description": "Void notehead with X"
+    },
+    {
+      "codepoint": "U+E0B8",
+      "hex": "0xE0B8",
+      "name": "noteheadSquareWhite",
+      "description": "Square notehead white"
+    },
+    {
+      "codepoint": "U+E0B9",
+      "hex": "0xE0B9",
+      "name": "noteheadSquareBlack",
+      "description": "Square notehead black"
+    },
+    {
+      "codepoint": "U+E0BA",
+      "hex": "0xE0BA",
+      "name": "noteheadTriangleUpDoubleWhole",
+      "description": "Triangle notehead up double whole"
+    },
+    {
+      "codepoint": "U+E0BB",
+      "hex": "0xE0BB",
+      "name": "noteheadTriangleUpWhole",
+      "description": "Triangle notehead up whole"
+    },
+    {
+      "codepoint": "U+E0BC",
+      "hex": "0xE0BC",
+      "name": "noteheadTriangleUpHalf",
+      "description": "Triangle notehead up half"
+    },
+    {
+      "codepoint": "U+E0BD",
+      "hex": "0xE0BD",
+      "name": "noteheadTriangleUpWhite",
+      "description": "Triangle notehead up white"
+    },
+    {
+      "codepoint": "U+E0BE",
+      "hex": "0xE0BE",
+      "name": "noteheadTriangleUpBlack",
+      "description": "Triangle notehead up black"
+    },
+    {
+      "codepoint": "U+E0BF",
+      "hex": "0xE0BF",
+      "name": "noteheadTriangleLeftWhite",
+      "description": "Triangle notehead left white"
+    },
+    {
+      "codepoint": "U+E0C0",
+      "hex": "0xE0C0",
+      "name": "noteheadTriangleLeftBlack",
+      "description": "Triangle notehead left black"
+    },
+    {
+      "codepoint": "U+E0C1",
+      "hex": "0xE0C1",
+      "name": "noteheadTriangleRightWhite",
+      "description": "Triangle notehead right white"
+    },
+    {
+      "codepoint": "U+E0C2",
+      "hex": "0xE0C2",
+      "name": "noteheadTriangleRightBlack",
+      "description": "Triangle notehead right black"
+    },
+    {
+      "codepoint": "U+E0C3",
+      "hex": "0xE0C3",
+      "name": "noteheadTriangleDownDoubleWhole",
+      "description": "Triangle notehead down double whole"
+    },
+    {
+      "codepoint": "U+E0C4",
+      "hex": "0xE0C4",
+      "name": "noteheadTriangleDownWhole",
+      "description": "Triangle notehead down whole"
+    },
+    {
+      "codepoint": "U+E0C5",
+      "hex": "0xE0C5",
+      "name": "noteheadTriangleDownHalf",
+      "description": "Triangle notehead down half"
+    },
+    {
+      "codepoint": "U+E0C6",
+      "hex": "0xE0C6",
+      "name": "noteheadTriangleDownWhite",
+      "description": "Triangle notehead down white"
+    },
+    {
+      "codepoint": "U+E0C7",
+      "hex": "0xE0C7",
+      "name": "noteheadTriangleDownBlack",
+      "description": "Triangle notehead down black"
+    },
+    {
+      "codepoint": "U+E0C8",
+      "hex": "0xE0C8",
+      "name": "noteheadTriangleUpRightWhite",
+      "description": "Triangle notehead up right white"
+    },
+    {
+      "codepoint": "U+E0C9",
+      "hex": "0xE0C9",
+      "name": "noteheadTriangleUpRightBlack",
+      "description": "Triangle notehead up right black"
+    },
+    {
+      "codepoint": "U+E0CA",
+      "hex": "0xE0CA",
+      "name": "noteheadMoonWhite",
+      "description": "Moon notehead white"
+    },
+    {
+      "codepoint": "U+E0CB",
+      "hex": "0xE0CB",
+      "name": "noteheadMoonBlack",
+      "description": "Moon notehead black"
+    },
+    {
+      "codepoint": "U+E0CC",
+      "hex": "0xE0CC",
+      "name": "noteheadTriangleRoundDownWhite",
+      "description": "Triangle-round notehead down white"
+    },
+    {
+      "codepoint": "U+E0CD",
+      "hex": "0xE0CD",
+      "name": "noteheadTriangleRoundDownBlack",
+      "description": "Triangle-round notehead down black"
+    },
+    {
+      "codepoint": "U+E0CE",
+      "hex": "0xE0CE",
+      "name": "noteheadParenthesis",
+      "description": "Parenthesis notehead"
+    },
+    {
+      "codepoint": "U+E0CF",
+      "hex": "0xE0CF",
+      "name": "noteheadSlashedBlack1",
+      "description": "Slashed black notehead (bottom left to top right)"
+    },
+    {
+      "codepoint": "U+E0D0",
+      "hex": "0xE0D0",
+      "name": "noteheadSlashedBlack2",
+      "description": "Slashed black notehead (top left to bottom right)"
+    },
+    {
+      "codepoint": "U+E0D1",
+      "hex": "0xE0D1",
+      "name": "noteheadSlashedHalf1",
+      "description": "Slashed half notehead (bottom left to top right)"
+    },
+    {
+      "codepoint": "U+E0D2",
+      "hex": "0xE0D2",
+      "name": "noteheadSlashedHalf2",
+      "description": "Slashed half notehead (top left to bottom right)"
+    },
+    {
+      "codepoint": "U+E0D3",
+      "hex": "0xE0D3",
+      "name": "noteheadSlashedWhole1",
+      "description": "Slashed whole notehead (bottom left to top right)"
+    },
+    {
+      "codepoint": "U+E0D4",
+      "hex": "0xE0D4",
+      "name": "noteheadSlashedWhole2",
+      "description": "Slashed whole notehead (top left to bottom right)"
+    },
+    {
+      "codepoint": "U+E0D5",
+      "hex": "0xE0D5",
+      "name": "noteheadSlashedDoubleWhole1",
+      "description": "Slashed double whole notehead (bottom left to top right)"
+    },
+    {
+      "codepoint": "U+E0D6",
+      "hex": "0xE0D6",
+      "name": "noteheadSlashedDoubleWhole2",
+      "description": "Slashed double whole notehead (top left to bottom right)"
+    },
+    {
+      "codepoint": "U+E0D7",
+      "hex": "0xE0D7",
+      "name": "noteheadDiamondDoubleWhole",
+      "description": "Diamond double whole notehead"
+    },
+    {
+      "codepoint": "U+E0D8",
+      "hex": "0xE0D8",
+      "name": "noteheadDiamondWhole",
+      "description": "Diamond whole notehead"
+    },
+    {
+      "codepoint": "U+E0D9",
+      "hex": "0xE0D9",
+      "name": "noteheadDiamondHalf",
+      "description": "Diamond half notehead"
+    },
+    {
+      "codepoint": "U+E0DA",
+      "hex": "0xE0DA",
+      "name": "noteheadDiamondHalfWide",
+      "description": "Diamond half notehead (wide)"
+    },
+    {
+      "codepoint": "U+E0DB",
+      "hex": "0xE0DB",
+      "name": "noteheadDiamondBlack",
+      "description": "Diamond black notehead"
+    },
+    {
+      "codepoint": "U+E0DC",
+      "hex": "0xE0DC",
+      "name": "noteheadDiamondBlackWide",
+      "description": "Diamond black notehead (wide)"
+    },
+    {
+      "codepoint": "U+E0DD",
+      "hex": "0xE0DD",
+      "name": "noteheadDiamondWhite",
+      "description": "Diamond white notehead"
+    },
+    {
+      "codepoint": "U+E0DE",
+      "hex": "0xE0DE",
+      "name": "noteheadDiamondWhiteWide",
+      "description": "Diamond white notehead (wide)"
+    },
+    {
+      "codepoint": "U+E0DF",
+      "hex": "0xE0DF",
+      "name": "noteheadDiamondDoubleWholeOld",
+      "description": "Diamond double whole notehead (old)"
+    },
+    {
+      "codepoint": "U+E0E0",
+      "hex": "0xE0E0",
+      "name": "noteheadDiamondWholeOld",
+      "description": "Diamond whole notehead (old)"
+    },
+    {
+      "codepoint": "U+E0E1",
+      "hex": "0xE0E1",
+      "name": "noteheadDiamondHalfOld",
+      "description": "Diamond half notehead (old)"
+    },
+    {
+      "codepoint": "U+E0E2",
+      "hex": "0xE0E2",
+      "name": "noteheadDiamondBlackOld",
+      "description": "Diamond black notehead (old)"
+    },
+    {
+      "codepoint": "U+E0E3",
+      "hex": "0xE0E3",
+      "name": "noteheadDiamondHalfFilled",
+      "description": "Half-filled diamond notehead"
+    },
+    {
+      "codepoint": "U+E0E4",
+      "hex": "0xE0E4",
+      "name": "noteheadCircledBlack",
+      "description": "Circled black notehead"
+    },
+    {
+      "codepoint": "U+E0E5",
+      "hex": "0xE0E5",
+      "name": "noteheadCircledHalf",
+      "description": "Circled half notehead"
+    },
+    {
+      "codepoint": "U+E0E6",
+      "hex": "0xE0E6",
+      "name": "noteheadCircledWhole",
+      "description": "Circled whole notehead"
+    },
+    {
+      "codepoint": "U+E0E7",
+      "hex": "0xE0E7",
+      "name": "noteheadCircledDoubleWhole",
+      "description": "Circled double whole notehead"
+    },
+    {
+      "codepoint": "U+E0E8",
+      "hex": "0xE0E8",
+      "name": "noteheadCircledBlackLarge",
+      "description": "Black notehead in large circle"
+    },
+    {
+      "codepoint": "U+E0E9",
+      "hex": "0xE0E9",
+      "name": "noteheadCircledHalfLarge",
+      "description": "Half notehead in large circle"
+    },
+    {
+      "codepoint": "U+E0EA",
+      "hex": "0xE0EA",
+      "name": "noteheadCircledWholeLarge",
+      "description": "Whole notehead in large circle"
+    },
+    {
+      "codepoint": "U+E0EB",
+      "hex": "0xE0EB",
+      "name": "noteheadCircledDoubleWholeLarge",
+      "description": "Double whole notehead in large circle"
+    },
+    {
+      "codepoint": "U+E0EC",
+      "hex": "0xE0EC",
+      "name": "noteheadCircledXLarge",
+      "description": "Cross notehead in large circle"
+    },
+    {
+      "codepoint": "U+E0ED",
+      "hex": "0xE0ED",
+      "name": "noteheadLargeArrowUpDoubleWhole",
+      "description": "Large arrow up (highest pitch) double whole notehead"
+    },
+    {
+      "codepoint": "U+E0EE",
+      "hex": "0xE0EE",
+      "name": "noteheadLargeArrowUpWhole",
+      "description": "Large arrow up (highest pitch) whole notehead"
+    },
+    {
+      "codepoint": "U+E0EF",
+      "hex": "0xE0EF",
+      "name": "noteheadLargeArrowUpHalf",
+      "description": "Large arrow up (highest pitch) half notehead"
+    },
+    {
+      "codepoint": "U+E0F0",
+      "hex": "0xE0F0",
+      "name": "noteheadLargeArrowUpBlack",
+      "description": "Large arrow up (highest pitch) black notehead"
+    },
+    {
+      "codepoint": "U+E0F1",
+      "hex": "0xE0F1",
+      "name": "noteheadLargeArrowDownDoubleWhole",
+      "description": "Large arrow down (lowest pitch) double whole notehead"
+    },
+    {
+      "codepoint": "U+E0F2",
+      "hex": "0xE0F2",
+      "name": "noteheadLargeArrowDownWhole",
+      "description": "Large arrow down (lowest pitch) whole notehead"
+    },
+    {
+      "codepoint": "U+E0F3",
+      "hex": "0xE0F3",
+      "name": "noteheadLargeArrowDownHalf",
+      "description": "Large arrow down (lowest pitch) half notehead"
+    },
+    {
+      "codepoint": "U+E0F4",
+      "hex": "0xE0F4",
+      "name": "noteheadLargeArrowDownBlack",
+      "description": "Large arrow down (lowest pitch) black notehead"
+    },
+    {
+      "codepoint": "U+E0F5",
+      "hex": "0xE0F5",
+      "name": "noteheadParenthesisLeft",
+      "description": "Opening parenthesis"
+    },
+    {
+      "codepoint": "U+E0F6",
+      "hex": "0xE0F6",
+      "name": "noteheadParenthesisRight",
+      "description": "Closing parenthesis"
+    },
+    {
+      "codepoint": "U+E0F7",
+      "hex": "0xE0F7",
+      "name": "noteheadCircleSlash",
+      "description": "Circle slash notehead"
+    },
+    {
+      "codepoint": "U+E0F8",
+      "hex": "0xE0F8",
+      "name": "noteheadHeavyX",
+      "description": "Heavy X notehead"
+    },
+    {
+      "codepoint": "U+E0F9",
+      "hex": "0xE0F9",
+      "name": "noteheadHeavyXHat",
+      "description": "Heavy X with hat notehead"
+    },
+    {
+      "codepoint": "U+E0FA",
+      "hex": "0xE0FA",
+      "name": "noteheadWholeFilled",
+      "description": "Filled whole (semibreve) notehead"
+    },
+    {
+      "codepoint": "U+E0FB",
+      "hex": "0xE0FB",
+      "name": "noteheadHalfFilled",
+      "description": "Filled half (minim) notehead"
+    },
+    {
+      "codepoint": "U+E0FC",
+      "hex": "0xE0FC",
+      "name": "noteheadDiamondOpen",
+      "description": "Open diamond notehead"
+    }
+  ],
+  "recommendedLigatures": [
+    {
+      "ligature": "uniE0F5_uniE0A4_uniE0F6",
+      "name": "noteheadBlackParens",
+      "description": "Parenthesised black notehead",
+      "note": "Render using the ligature text. Do not use U+F5D1 as a notehead codepoint.",
+      "componentGlyphs": [
+        "noteheadParenthesisLeft",
+        "noteheadBlack",
+        "noteheadParenthesisRight"
+      ]
+    },
+    {
+      "ligature": "uniE0F5_uniE0A3_uniE0F6",
+      "name": "noteheadHalfParens",
+      "description": "Parenthesised half notehead",
+      "componentGlyphs": [
+        "noteheadParenthesisLeft",
+        "noteheadHalf",
+        "noteheadParenthesisRight"
+      ]
+    },
+    {
+      "ligature": "uniE0F5_uniE0A2_uniE0F6",
+      "name": "noteheadWholeParens",
+      "description": "Parenthesised whole notehead",
+      "componentGlyphs": [
+        "noteheadParenthesisLeft",
+        "noteheadWhole",
+        "noteheadParenthesisRight"
+      ]
+    },
+    {
+      "ligature": "uniE0F5_uniE0A0_uniE0F6",
+      "name": "noteheadDoubleWholeParens",
+      "description": "Parenthesised double whole (breve) notehead",
+      "componentGlyphs": [
+        "noteheadParenthesisLeft",
+        "noteheadDoubleWhole",
+        "noteheadParenthesisRight"
+      ]
+    }
+  ]
+}

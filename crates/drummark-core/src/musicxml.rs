@@ -305,6 +305,10 @@ fn process_voice_entries(
                     if event.modifiers.iter().any(|m| m == "flam") {
                         result.push(grace_note_xml(event, voice, true));
                     }
+                    if event.modifiers.iter().any(|m| m == "drag") {
+                        result.push(grace_note_xml(event, voice, false));
+                        result.push(grace_note_xml(event, voice, false));
+                    }
                     result.push(note_xml(
                         event,
                         *duration,
@@ -506,7 +510,9 @@ fn notehead_value(event: &NormalizedEvent, instrument: InstrumentSpec) -> Option
     if event.track == "SD" && event.modifiers.iter().any(|m| m == "cross") {
         return Some("x");
     }
-    if event.track == "RC" && event.modifiers.iter().any(|m| m == "bell") {
+    if matches!(event.track.as_str(), "RC" | "RC2")
+        && event.modifiers.iter().any(|m| m == "bell")
+    {
         return Some("diamond");
     }
     if event.track == "HH" && event.modifiers.iter().any(|m| m == "open") {
@@ -922,6 +928,39 @@ mod tests {
         assert!(xml.contains("<score-partwise"));
         assert!(xml.contains("<work-title>Test</work-title>"));
         assert!(xml.contains("<notehead>x</notehead>"));
+    }
+
+    #[test]
+    fn exports_ride_bell_as_diamond_notehead() {
+        let doc = Parser::new(
+            "time 4/4\n\
+             note 1/4\n\
+             grouping 4\n\n\
+             RC | r:bell - - - |\n\
+             RC2 | r2:bell - - - |",
+        )
+        .parse_lossy();
+        let score = crate::normalize::normalize_document(&doc);
+        let xml = build_music_xml(&score, false);
+
+        assert_eq!(xml.matches("<notehead>diamond</notehead>").count(), 2);
+    }
+
+    #[test]
+    fn exports_drag_as_two_unslashed_sixteenth_grace_notes() {
+        let doc = Parser::new(
+            "time 4/4\n\
+             note 1/4\n\
+             grouping 4\n\n\
+             SD | d:drag - - - |",
+        )
+        .parse_lossy();
+        let score = crate::normalize::normalize_document(&doc);
+        let xml = build_music_xml(&score, false);
+
+        assert_eq!(xml.matches("<note><grace/>").count(), 2);
+        assert!(!xml.contains("<grace slash=\"yes\"/>"));
+        assert_eq!(xml.matches("<type>16th</type>").count(), 2);
     }
 
     #[test]

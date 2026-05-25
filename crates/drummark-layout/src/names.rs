@@ -19,6 +19,7 @@ pub fn glyph_role_name(role: GlyphRole) -> &'static str {
         GlyphRole::NoteheadDiamond => "noteheadDiamond",
         GlyphRole::NoteheadCircleX => "noteheadCircleX",
         GlyphRole::NoteheadRim => "noteheadRim",
+        GlyphRole::NoteheadBlackParens => "noteheadBlackParens",
         GlyphRole::Flag8thUp => "flag8thUp",
         GlyphRole::Flag8thDown => "flag8thDown",
         GlyphRole::Flag16thUp => "flag16thUp",

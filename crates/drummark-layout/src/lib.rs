@@ -113,6 +113,15 @@ mod tests {
         assert_eq!(g.smufl_codepoint, 0xE0A4); // drum → standard notehead
         let g = notehead_glyph("SD", &["cross".to_string()], "d");
         assert_eq!(g.smufl_codepoint, 0xE0A9); // cross mod → X notehead
+        let g = notehead_glyph("SD", &["rim".to_string()], "d");
+        assert_eq!(g.smufl_codepoint, 0xE0D0); // rim mod → slashed black notehead
+        let g = notehead_glyph("SD", &["ghost".to_string()], "d");
+        assert_eq!(g.role, GlyphRole::NoteheadBlackParens);
+        assert_eq!(g.smufl_codepoint, 0xE0A4); // ghost ligature uses black notehead as its base component
+        assert_eq!(g.smufl_ligature, Some("uniE0F5_uniE0A4_uniE0F6"));
+        assert_eq!(g.render_text(), "uniE0F5_uniE0A4_uniE0F6");
+        let g = notehead_glyph("RC", &["bell".to_string()], "x");
+        assert_eq!(g.smufl_codepoint, 0xE0DB); // ride bell → diamond black notehead
     }
 
     #[test]
@@ -6106,7 +6115,7 @@ fn test_flam_uses_matching_grace_flags_for_sixteenth_and_thirty_second_notes() {
 }
 
 #[test]
-fn test_drag_does_not_receive_flam_grace_flag_rule() {
+fn test_drag_renders_two_beamed_sixteenth_grace_notes_without_slashes() {
     let scene = build_layout_scene(
         &grace_modifier_score(
             "drag",
@@ -6122,9 +6131,49 @@ fn test_drag_does_not_receive_flam_grace_flag_rule() {
         scene.pages[0]
             .items
             .iter()
+            .filter(|item| item.role == "grace-notehead")
+            .count(),
+        2
+    );
+    assert_eq!(
+        scene.pages[0]
+            .items
+            .iter()
+            .filter(|item| item.role == "grace-stem")
+            .count(),
+        2
+    );
+    assert_eq!(
+        scene.pages[0]
+            .items
+            .iter()
+            .filter(|item| item.role == "grace-slash")
+            .count(),
+        0
+    );
+    assert_eq!(
+        scene.pages[0]
+            .items
+            .iter()
             .filter(|item| item.role == "grace-flag")
             .count(),
         0
+    );
+    assert_eq!(
+        scene.pages[0]
+            .items
+            .iter()
+            .filter(|item| item.role == "grace-beam")
+            .count(),
+        1
+    );
+    assert_eq!(
+        scene.pages[0]
+            .items
+            .iter()
+            .filter(|item| item.role == "grace-beam-secondary")
+            .count(),
+        1
     );
 }
 

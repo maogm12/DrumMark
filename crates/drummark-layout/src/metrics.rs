@@ -8,6 +8,7 @@ pub enum GlyphRole {
     NoteheadDiamond,
     NoteheadCircleX,
     NoteheadRim,
+    NoteheadBlackParens,
     Flag8thUp,
     Flag8thDown,
     Flag16thUp,
@@ -61,6 +62,7 @@ pub struct GlyphPoint {
 pub struct CanonicalGlyphMetric {
     pub role: GlyphRole,
     pub smufl_codepoint: u32,
+    pub smufl_ligature: Option<&'static str>,
     pub width_ss: f32,
     pub bbox_sw_x_ss: f32,
     pub bbox_sw_y_ss: f32,
@@ -111,6 +113,15 @@ impl CanonicalGlyphMetric {
         Self::ss_to_pt(self.bbox_center_y_ss(), font_size_pt)
     }
 
+    pub fn render_text(&self) -> String {
+        if let Some(ligature) = self.smufl_ligature {
+            return ligature.to_string();
+        }
+        char::from_u32(self.smufl_codepoint)
+            .unwrap_or('?')
+            .to_string()
+    }
+
     pub fn stem_anchor_for_direction(&self, stem_up: bool) -> Option<GlyphPoint> {
         if stem_up {
             self.stem_up_anchor_ss
@@ -144,6 +155,7 @@ pub enum FlagPathRole {
 fn glyph_metric(
     role: GlyphRole,
     smufl_codepoint: u32,
+    smufl_ligature: Option<&'static str>,
     bbox_sw: [f32; 2],
     bbox_ne: [f32; 2],
     stem_up_anchor: Option<[f32; 2]>,
@@ -152,6 +164,7 @@ fn glyph_metric(
     CanonicalGlyphMetric {
         role,
         smufl_codepoint,
+        smufl_ligature,
         width_ss: bbox_ne[0] - bbox_sw[0],
         bbox_sw_x_ss: bbox_sw[0],
         bbox_sw_y_ss: bbox_sw[1],
@@ -173,6 +186,7 @@ pub fn canonical_glyph_metric(role: GlyphRole) -> CanonicalGlyphMetric {
         GlyphRole::NoteheadBlack => glyph_metric(
             role,
             0xE0A4,
+            None,
             [0.0, -0.5],
             [1.18, 0.5],
             Some([1.49, 0.16]),
@@ -181,6 +195,7 @@ pub fn canonical_glyph_metric(role: GlyphRole) -> CanonicalGlyphMetric {
         GlyphRole::NoteheadX => glyph_metric(
             role,
             0xE0A9,
+            None,
             [0.0, -0.5],
             [1.16, 0.5],
             Some([1.49, 0.5]),
@@ -188,7 +203,8 @@ pub fn canonical_glyph_metric(role: GlyphRole) -> CanonicalGlyphMetric {
         ),
         GlyphRole::NoteheadDiamond => glyph_metric(
             role,
-            0xE0B2,
+            0xE0DB,
+            None,
             [0.0, -0.5],
             [1.0, 0.5],
             Some([1.0, 0.0]),
@@ -197,6 +213,7 @@ pub fn canonical_glyph_metric(role: GlyphRole) -> CanonicalGlyphMetric {
         GlyphRole::NoteheadCircleX => glyph_metric(
             role,
             0xE0B3,
+            None,
             [0.0, -0.5],
             [0.996, 0.5],
             Some([0.996, 0.0]),
@@ -204,15 +221,26 @@ pub fn canonical_glyph_metric(role: GlyphRole) -> CanonicalGlyphMetric {
         ),
         GlyphRole::NoteheadRim => glyph_metric(
             role,
-            0xE0CE,
+            0xE0D0,
+            None,
             [-0.32, -0.66],
             [1.5, 0.668],
             Some([1.18, 0.164]),
             Some([0.0, -0.172]),
         ),
+        GlyphRole::NoteheadBlackParens => glyph_metric(
+            role,
+            0xE0A4,
+            Some("uniE0F5_uniE0A4_uniE0F6"),
+            [0.0, -0.724],
+            [1.832, 0.724],
+            Some([1.49, 0.16]),
+            Some([0.1, -0.16]),
+        ),
         GlyphRole::Flag8thUp => glyph_metric(
             role,
             0xE240,
+            None,
             [0.0, -3.2407685],
             [1.056, 0.036],
             Some([0.0, -0.04]),
@@ -221,6 +249,7 @@ pub fn canonical_glyph_metric(role: GlyphRole) -> CanonicalGlyphMetric {
         GlyphRole::Flag8thDown => glyph_metric(
             role,
             0xE241,
+            None,
             [0.0, -0.056],
             [1.224, 3.2328966],
             None,
@@ -229,6 +258,7 @@ pub fn canonical_glyph_metric(role: GlyphRole) -> CanonicalGlyphMetric {
         GlyphRole::Flag16thUp => glyph_metric(
             role,
             0xE242,
+            None,
             [0.0, -3.252],
             [1.116, 0.008],
             Some([0.0, -0.088]),
@@ -237,6 +267,7 @@ pub fn canonical_glyph_metric(role: GlyphRole) -> CanonicalGlyphMetric {
         GlyphRole::Flag16thDown => glyph_metric(
             role,
             0xE243,
+            None,
             [0.0, -0.036],
             [1.1635807, 3.2480257],
             None,
@@ -245,6 +276,7 @@ pub fn canonical_glyph_metric(role: GlyphRole) -> CanonicalGlyphMetric {
         GlyphRole::Flag32ndUp => glyph_metric(
             role,
             0xE244,
+            None,
             [0.0, -3.248],
             [1.044, 0.596],
             Some([0.0, 0.376]),
@@ -253,69 +285,110 @@ pub fn canonical_glyph_metric(role: GlyphRole) -> CanonicalGlyphMetric {
         GlyphRole::Flag32ndDown => glyph_metric(
             role,
             0xE245,
+            None,
             [0.0, -0.688],
             [1.092, 3.248],
             None,
             Some([0.0, -0.448]),
         ),
         GlyphRole::PercussionClef => {
-            glyph_metric(role, 0xE069, [0.0, -1.0], [1.528, 1.0], None, None)
+            glyph_metric(role, 0xE069, None, [0.0, -1.0], [1.528, 1.0], None, None)
         }
         GlyphRole::TimeSignatureDigit => {
-            glyph_metric(role, 0xE080, [0.08, -1.0], [1.8, 1.004], None, None)
+            glyph_metric(role, 0xE080, None, [0.08, -1.0], [1.8, 1.004], None, None)
         }
         GlyphRole::RestWhole => {
-            glyph_metric(role, 0xE4E3, [0.0, -0.54], [1.128, 0.036], None, None)
+            glyph_metric(role, 0xE4E3, None, [0.0, -0.54], [1.128, 0.036], None, None)
         }
-        GlyphRole::RestHalf => {
-            glyph_metric(role, 0xE4E4, [0.0, -0.008], [1.128, 0.568], None, None)
-        }
+        GlyphRole::RestHalf => glyph_metric(
+            role,
+            0xE4E4,
+            None,
+            [0.0, -0.008],
+            [1.128, 0.568],
+            None,
+            None,
+        ),
         GlyphRole::RestQuarter => {
-            glyph_metric(role, 0xE4E5, [0.004, -1.5], [1.08, 1.492], None, None)
+            glyph_metric(role, 0xE4E5, None, [0.004, -1.5], [1.08, 1.492], None, None)
         }
-        GlyphRole::RestEighth => {
-            glyph_metric(role, 0xE4E6, [0.0, -1.004], [0.988, 0.696], None, None)
-        }
+        GlyphRole::RestEighth => glyph_metric(
+            role,
+            0xE4E6,
+            None,
+            [0.0, -1.004],
+            [0.988, 0.696],
+            None,
+            None,
+        ),
         GlyphRole::RestSixteenth => {
-            glyph_metric(role, 0xE4E7, [0.0, -2.0], [1.28, 0.716], None, None)
+            glyph_metric(role, 0xE4E7, None, [0.0, -2.0], [1.28, 0.716], None, None)
         }
         GlyphRole::RestThirtySecond => {
-            glyph_metric(role, 0xE4E8, [0.0, -2.0], [1.452, 1.704], None, None)
+            glyph_metric(role, 0xE4E8, None, [0.0, -2.0], [1.452, 1.704], None, None)
         }
-        GlyphRole::RepeatLeft => glyph_metric(role, 0xE040, [0.0, 0.0], [1.464, 4.0], None, None),
+        GlyphRole::RepeatLeft => {
+            glyph_metric(role, 0xE040, None, [0.0, 0.0], [1.464, 4.0], None, None)
+        }
         GlyphRole::RepeatRight => {
-            glyph_metric(role, 0xE041, [0.004, 0.0], [1.468, 4.0], None, None)
+            glyph_metric(role, 0xE041, None, [0.004, 0.0], [1.468, 4.0], None, None)
         }
         GlyphRole::RepeatRightLeft => {
-            glyph_metric(role, 0xE042, [0.004, 0.0], [2.432, 4.0], None, None)
+            glyph_metric(role, 0xE042, None, [0.004, 0.0], [2.432, 4.0], None, None)
         }
-        GlyphRole::RepeatDot => glyph_metric(role, 0xE044, [0.0, -0.2], [0.4, 0.2], None, None),
+        GlyphRole::RepeatDot => {
+            glyph_metric(role, 0xE044, None, [0.0, -0.2], [0.4, 0.2], None, None)
+        }
         GlyphRole::ArticAccentAbove => {
-            glyph_metric(role, 0xE4A0, [0.0, 0.004], [1.356, 0.98], None, None)
+            glyph_metric(role, 0xE4A0, None, [0.0, 0.004], [1.356, 0.98], None, None)
         }
         GlyphRole::ArticAccentBelow => {
-            glyph_metric(role, 0xE4A1, [0.0, -0.976], [1.356, 0.0], None, None)
+            glyph_metric(role, 0xE4A1, None, [0.0, -0.976], [1.356, 0.0], None, None)
         }
         GlyphRole::MeasureRepeatMark1Bar => {
-            glyph_metric(role, 0xE500, [0.0, -1.0], [2.128, 1.116], None, None)
+            glyph_metric(role, 0xE500, None, [0.0, -1.0], [2.128, 1.116], None, None)
         }
         GlyphRole::MeasureRepeatMark2Bars => {
-            glyph_metric(role, 0xE501, [0.0, -1.0], [3.048, 1.116], None, None)
+            glyph_metric(role, 0xE501, None, [0.0, -1.0], [3.048, 1.116], None, None)
         }
-        GlyphRole::MultiRestBar => {
-            glyph_metric(role, 0xE4EE, [0.0, -1.084], [3.128, 1.044], None, None)
-        }
-        GlyphRole::NavigationSegno => {
-            glyph_metric(role, 0xE047, [0.016, -0.108], [2.2, 3.036], None, None)
-        }
-        GlyphRole::NavigationCoda => {
-            glyph_metric(role, 0xE048, [-0.016, -0.632], [3.82, 3.592], None, None)
-        }
-        GlyphRole::MetNoteQuarterUp => {
-            glyph_metric(role, 0xE1D5, [0.0, -0.564], [1.328, 2.752], None, None)
-        }
+        GlyphRole::MultiRestBar => glyph_metric(
+            role,
+            0xE4EE,
+            None,
+            [0.0, -1.084],
+            [3.128, 1.044],
+            None,
+            None,
+        ),
+        GlyphRole::NavigationSegno => glyph_metric(
+            role,
+            0xE047,
+            None,
+            [0.016, -0.108],
+            [2.2, 3.036],
+            None,
+            None,
+        ),
+        GlyphRole::NavigationCoda => glyph_metric(
+            role,
+            0xE048,
+            None,
+            [-0.016, -0.632],
+            [3.82, 3.592],
+            None,
+            None,
+        ),
+        GlyphRole::MetNoteQuarterUp => glyph_metric(
+            role,
+            0xE1D5,
+            None,
+            [0.0, -0.564],
+            [1.328, 2.752],
+            None,
+            None,
+        ),
         GlyphRole::AugmentationDot => {
-            glyph_metric(role, 0xE1E7, [0.0, 0.0], [0.5, 0.5], None, None)
+            glyph_metric(role, 0xE1E7, None, [0.0, 0.0], [0.5, 0.5], None, None)
         }
     }
 }
@@ -512,6 +585,7 @@ pub fn canonical_flag_path(
 pub fn notehead_glyph(track: &str, modifiers: &[String], _glyph: &str) -> CanonicalGlyphMetric {
     for modifier in modifiers {
         match modifier.as_str() {
+            "ghost" => return canonical_glyph_metric(GlyphRole::NoteheadBlackParens),
             "open" => return canonical_glyph_metric(GlyphRole::NoteheadCircleX),
             "cross" => return canonical_glyph_metric(GlyphRole::NoteheadX),
             "bell" => return canonical_glyph_metric(GlyphRole::NoteheadDiamond),

@@ -15,7 +15,9 @@ use crate::planning::{
     is_beamable_duration, measure_geometry, rect_obstacle_from_rest_placement,
     rendered_glyph_width, undotted_base_denominator, visual_duration, MeasureGeometryInput,
 };
-use crate::scene_builder::{GlyphItemSpec, LineItemSpec, SceneEmitSink, TextItemSpec};
+use crate::scene_builder::{
+    GlyphItemSpec, LineItemSpec, PathItemSpec, SceneEmitSink, TextItemSpec,
+};
 use crate::BASE_FONT_SIZE_PT;
 
 use super::beams::{render_beam_groups, BeamAnchor};
@@ -666,7 +668,7 @@ pub(crate) fn render_hit_cluster(
                 slot_event,
                 staff_position_ss,
                 note_y_offset: staff_position_ss * 10.0,
-                note_role: glyph_role_for_codepoint(glyph_metric.smufl_codepoint),
+                note_role: glyph_metric.role,
                 glyph_metric,
                 x_offset: 0.0,
             }
@@ -683,9 +685,7 @@ pub(crate) fn render_hit_cluster(
     let mut ledger_lines = Vec::new();
     for placement in &placements {
         let note_x = base_note_x + placement.x_offset;
-        let note_glyph = char::from_u32(placement.glyph_metric.smufl_codepoint)
-            .unwrap_or('?')
-            .to_string();
+        let note_glyph = placement.glyph_metric.render_text();
         let actual_note_y = input.staff_top + placement.note_y_offset;
         let note_id = sink.push_text_item(TextItemSpec {
             measure_id: Some(input.measure_id),
@@ -1002,7 +1002,9 @@ pub(crate) fn render_grace_notes_for_hit(
     } else {
         return;
     };
-    let grace_flag_role = if event.modifiers.iter().any(|modifier| modifier == "flam") {
+    let has_flam = event.modifiers.iter().any(|modifier| modifier == "flam");
+    let has_drag = event.modifiers.iter().any(|modifier| modifier == "drag");
+    let grace_flag_role = if has_flam {
         Some(grace_flag_role_for_event(event, stem_up))
     } else {
         None
@@ -1012,9 +1014,7 @@ pub(crate) fn render_grace_notes_for_hit(
     let grace_spacing = 8.0_f32;
     let grace_gap = 9.0_f32;
     let note_metric = canonical_glyph_metric(note_role);
-    let note_glyph = char::from_u32(note_metric.smufl_codepoint)
-        .unwrap_or('?')
-        .to_string();
+    let note_glyph = note_metric.render_text();
     let total_grace_width = (grace_count as f32 - 1.0) * grace_spacing;
     let first_grace_x = main_note_x - grace_gap - total_grace_width;
     let stem_anchor = if stem_up {
@@ -1029,6 +1029,7 @@ pub(crate) fn render_grace_notes_for_hit(
         })
     };
     let smufl_ss = grace_font_size / 4.0;
+    let mut drag_beam_points = Vec::new();
 
     for index in 0..grace_count {
         let grace_x = first_grace_x + index as f32 * grace_spacing;
@@ -1066,6 +1067,13 @@ pub(crate) fn render_grace_notes_for_hit(
             stroke_line_cap: None,
         });
         sink.set_anchor_item_id(&stem_id, Some(note_id.clone()));
+        if has_drag {
+            drag_beam_points.push((
+                stem_x,
+                if stem_up { stem_y1 } else { stem_y2 },
+                stem_id.clone(),
+            ));
+        }
 
         if let Some(flag_role) = grace_flag_role {
             let flag_metric = canonical_glyph_metric(flag_role);
@@ -1090,24 +1098,73 @@ pub(crate) fn render_grace_notes_for_hit(
             sink.set_anchor_item_id(&flag_id, Some(stem_id.clone()));
         }
 
-        let slash_mid_y = if stem_up {
-            stem_y1 + 9.0
-        } else {
-            stem_y2 - 9.0
-        };
-        let slash_id = sink.push_line_item(LineItemSpec {
-            measure_id: Some(measure_id),
-            role: "grace-slash",
-            x1: stem_x - 3.5,
-            y1: slash_mid_y + 4.0,
-            x2: stem_x + 4.5,
-            y2: slash_mid_y - 4.0,
-            stroke: "#333",
-            stroke_width: 1.0,
-            stroke_line_cap: Some("round"),
-        });
-        sink.set_anchor_item_id(&slash_id, Some(stem_id));
+        if has_flam {
+            let slash_mid_y = if stem_up {
+                stem_y1 + 9.0
+            } else {
+                stem_y2 - 9.0
+            };
+            let slash_id = sink.push_line_item(LineItemSpec {
+                measure_id: Some(measure_id),
+                role: "grace-slash",
+                x1: stem_x - 3.5,
+                y1: slash_mid_y + 4.0,
+                x2: stem_x + 4.5,
+                y2: slash_mid_y - 4.0,
+                stroke: "#333",
+                stroke_width: 1.0,
+                stroke_line_cap: Some("round"),
+            });
+            sink.set_anchor_item_id(&slash_id, Some(stem_id));
+        }
     }
+
+    if drag_beam_points.len() >= 2 {
+        let (first_x, first_y, first_stem_id) = drag_beam_points[0].clone();
+        let (last_x, last_y, _) = drag_beam_points[drag_beam_points.len() - 1].clone();
+        let primary_id = sink.push_path_item(PathItemSpec {
+            measure_id: Some(measure_id),
+            role: "grace-beam",
+            d: grace_beam_path_d(first_x, first_y, last_x, last_y, stem_up),
+            fill: "#333",
+            stroke: None,
+            stroke_width: None,
+        });
+        sink.set_anchor_item_id(&primary_id, Some(first_stem_id.clone()));
+
+        let secondary_offset = if stem_up { 4.0 } else { -4.0 };
+        let secondary_id = sink.push_path_item(PathItemSpec {
+            measure_id: Some(measure_id),
+            role: "grace-beam-secondary",
+            d: grace_beam_path_d(
+                first_x,
+                first_y + secondary_offset,
+                last_x,
+                last_y + secondary_offset,
+                stem_up,
+            ),
+            fill: "#333",
+            stroke: None,
+            stroke_width: None,
+        });
+        sink.set_anchor_item_id(&secondary_id, Some(first_stem_id));
+    }
+}
+
+fn grace_beam_path_d(x1: f32, y1: f32, x2: f32, y2: f32, up: bool) -> String {
+    let thickness = 2.0_f32;
+    let offset = if up { thickness } else { -thickness };
+    format!(
+        "M {:.3} {:.3} L {:.3} {:.3} L {:.3} {:.3} L {:.3} {:.3} Z",
+        x1,
+        y1,
+        x2,
+        y2,
+        x2,
+        y2 + offset,
+        x1,
+        y1 + offset,
+    )
 }
 
 fn grace_flag_role_for_event(event: &RenderEvent, stem_up: bool) -> GlyphRole {
@@ -1305,12 +1362,13 @@ fn build_accent_glyph_plans(
         .collect()
 }
 
+#[allow(dead_code)]
 pub(crate) fn glyph_role_for_codepoint(codepoint: u32) -> GlyphRole {
     match codepoint {
         0xE0A9 => GlyphRole::NoteheadX,
-        0xE0B2 => GlyphRole::NoteheadDiamond,
+        0xE0DB => GlyphRole::NoteheadDiamond,
         0xE0B3 => GlyphRole::NoteheadCircleX,
-        0xE0CE => GlyphRole::NoteheadRim,
+        0xE0D0 => GlyphRole::NoteheadRim,
         _ => GlyphRole::NoteheadBlack,
     }
 }

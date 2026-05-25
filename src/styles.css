@@ -1218,6 +1218,31 @@ button {
   .editor-container .cm-line {
     font-size: 16px !important;
   }
+
+  .editor-container .cm-scroller {
+    overflow-x: auto !important;
+  }
+
+  .editor-container .cm-content {
+    width: max-content !important;
+    min-width: calc(100% - 49px) !important;
+    padding-right: 16px !important;
+    white-space: pre !important;
+  }
+
+  .editor-container .cm-line {
+    width: max-content !important;
+    min-width: 0 !important;
+  }
+
+  .editor-container .cm-line.cm-activeLine {
+    width: auto !important;
+    min-width: calc(100% + 16px) !important;
+  }
+
+  .cm-activeLine::before {
+    right: 0;
+  }
 }
 
 .staff-preview svg {
@@ -1463,6 +1488,7 @@ button {
   }
 
   .editor-pane {
+    max-width: none;
     background: var(--bg-elevated);
     border-right: none;
   }

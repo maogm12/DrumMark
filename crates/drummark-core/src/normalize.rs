@@ -975,6 +975,46 @@ mod dynamic_test {
 }
 
 #[cfg(test)]
+mod group_visual_test {
+    use crate::fraction::Fraction;
+    use crate::normalize;
+    use crate::parser;
+
+    #[test]
+    fn implicit_pair_group_emits_sixteenth_visual_durations() {
+        let doc = parser::Parser::new("time 6/8\nnote 1/8\nSD | [ss] s s s |\n")
+            .parse()
+            .unwrap();
+        let score = normalize::normalize_document(&doc);
+        assert_eq!(score.errors, Vec::<String>::new());
+        let hits: Vec<_> = score.measures[0]
+            .events
+            .iter()
+            .filter(|event| event.kind == crate::event::EventKind::Hit)
+            .collect();
+        assert_eq!(hits[0].visual_duration, Fraction::new(1, 16));
+        assert_eq!(hits[1].visual_duration, Fraction::new(1, 16));
+        assert_eq!(hits[2].visual_duration, Fraction::new(1, 8));
+    }
+
+    #[test]
+    fn dotted_rest_preserves_dot_count() {
+        let doc = parser::Parser::new("time 6/8\nnote 1/8\nHH | -*. |\n")
+            .parse()
+            .unwrap();
+        let score = normalize::normalize_document(&doc);
+        assert_eq!(score.errors, Vec::<String>::new());
+        let rest = score.measures[0]
+            .events
+            .iter()
+            .find(|event| event.kind == crate::event::EventKind::Rest)
+            .expect("expected rest");
+        assert_eq!(rest.dot_count, 1);
+        assert_eq!(rest.duration, Fraction::new(3, 8));
+    }
+}
+
+#[cfg(test)]
 mod volta_test {
     use crate::normalize;
     use crate::parser;

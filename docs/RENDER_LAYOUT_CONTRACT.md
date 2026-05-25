@@ -311,3 +311,67 @@ This addendum does not change existing rhythm semantics:
 - pure-rest slots remain deterministic even with no hit in the slot
 - whole-measure rests remain aligned to the first-beat grid
 - hidden voice-2 rests do not reserve layout space
+
+## Addendum 2026-05-24: Layout Library Modularization Contract
+
+The approved layout-library refactor is behavior-preserving. It changes Rust module ownership inside `drummark-layout`; it does not change `RenderScore`, `LayoutScene`, score geometry, emitted scene semantics, or adapter responsibilities.
+
+### Target Shape
+
+`crates/drummark-layout/src/lib.rs` becomes a crate root containing module declarations and public re-exports. `scene.rs` owns `build_layout_scene`.
+
+Required module ownership:
+
+- `contract.rs`: public layout input/output data types, version constants, and `Fraction`
+- `fraction.rs`: arithmetic and ordering helpers for `Fraction`
+- `instruments.rs`: track family and staff-position mapping
+- `metrics.rs`: glyph/text roles, canonical metric tables, notehead/rest/flag/text lookup, and metric-derived sizing
+- `options.rs`: `LayoutOptions` and `StaffSpace`
+- `roles.rs`: emitted `SceneItem.role` strings and role-class helpers
+- `names.rs`: enum-to-string names for wire and snapshot serialization
+- `scene_builder.rs`: deterministic item id state, primitive scene-item emission, read-only item access, and explicit item-id-targeted mutation helpers
+- `scene_geometry.rs`: scene primitive bounds, path bounds, item translation, and item-id bounding boxes
+- `collision.rs`: primitive collision obstacles and overlap scoring from resolved geometry
+- `display.rs`: display-measure expansion and repeat-display semantic rewrites
+- `planning.rs`: active system planning, measure widths, grouping helpers, padding, and measure-local fraction-to-x geometry
+- `compat_planning.rs`: existing public prototype planning API retained as a compatibility surface
+- `pagination.rs`: system-box pagination and page assembly
+- `validation.rs`: final layout-scene diagnostics
+- `wire.rs`: JavaScript wire conversion
+- `snapshot.rs`: layout-scene snapshot formatting
+
+Engraving modules:
+
+- `engraving/barlines.rs`: barline emission
+- `engraving/notes.rs`: slot groups, hit clusters, noteheads, rests, stems, accents, grace notes, ledger lines, rest-placement policy, and beam-anchor production
+- `engraving/beams.rs`: flags, beam grouping, beam slopes, beam paths, secondary beams, and item-id-targeted stem-tip adjustment
+- `engraving/tuplets.rs`: tuplet run grouping and bracket/label emission from explicit slot-event geometry
+
+Structural modules:
+
+- `structural/skyline.rs`: role-aware skyline sampling
+- `structural/spans.rs`: volta, hairpin, dynamic, navigation, repeat-span, and span-fragment emission
+- `structural/stacking.rs`: post-emission structural group stacking and translation
+
+### Invariants
+
+- Crate-root public API compatibility is preserved unless a later approved proposal deprecates an item.
+- Emitted role string values are behavior and must not change during modularization.
+- Wire and snapshot enum names come from `names.rs`, not from role helpers.
+- `SceneBuilder` owns one shared deterministic item counter for a scene. Extracted modules may not create independent counters for the same scene.
+- Target-state item mutation is by explicit item id or item-id list. `last_item_mut()` is temporary migration glue only unless a task explicitly justifies an immediately emitted-item configuration case.
+- Tuplets are positioned from resolved slot-event geometry before beam slope and stem-tip adjustment; beam slope changes do not retroactively reposition tuplets in this proposal.
+- Rest-placement policy stays with note engraving. `collision.rs` stays primitive and does not own musical rest policy.
+- Bounds consumers must choose documented strict or forgiving semantics before pagination, validation, skyline, or stacking extraction.
+- The TypeScript/SVG adapters remain thin consumers of `LayoutScene` and receive no layout ownership from this refactor.
+
+### Verification
+
+Implementation must preserve the approved task plan in `docs/proposals/ARCHITECTURE_tasks_layout_lib_modularization.md`. Final verification requires:
+
+- `cargo test -p drummark-layout`
+- `cargo clippy -p drummark-layout -- -W clippy::all` with no new warnings
+- CLI SVG smoke checks for `docs/examples/modifiers.drum`, `docs/examples/repeats.drum`, and `docs/examples/hairpins.drum`
+- `npm run wasm:build`, or a concrete implementation note explaining why no wasm-target verification was applicable
+- a public API smoke test for crate-root exports
+- a final visibility audit proving no unintended `pub` exports and no unjustified broad `pub(crate)` surface

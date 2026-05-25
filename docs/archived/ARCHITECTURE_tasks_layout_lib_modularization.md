@@ -1,7 +1,7 @@
 ## Tasks: Layout Library Modularization
 
 ### Task 1: Public Contract, Fractions, and API Smoke
-- [ ] **Status**: Pending
+- [x] **Status**: Done
 - **Scope**: `crates/drummark-layout/src/lib.rs`, new `contract.rs`, `fraction.rs`, and a public API smoke test module.
 - **Input/Output Contract**: Inputs are existing public data types and fraction helpers in `lib.rs`; outputs are crate-root re-exports with unchanged public names and a compile-time smoke test that references the v1.0 public API surface.
 - **Commits**:
@@ -11,7 +11,7 @@
 - **Dependencies**: None.
 
 ### Task 2: Instruments, Metrics, Options, Roles, and Names
-- [ ] **Status**: Pending
+- [x] **Status**: Done
 - **Scope**: new `instruments.rs`, `metrics.rs`, `options.rs`, `roles.rs`, `names.rs`; crate-root re-exports.
 - **Input/Output Contract**: Inputs are existing glyph/text role enums, canonical metric tables, staff/track mapping, layout options, item role string literals, and enum naming helpers; outputs are unchanged metric values, unchanged emitted role strings, and unchanged wire/snapshot names.
 - **Commits**:
@@ -21,7 +21,7 @@
 - **Dependencies**: Task 1.
 
 ### Task 3: Scene Builder With Deterministic IDs
-- [ ] **Status**: Pending
+- [x] **Status**: Done
 - **Scope**: new `scene_builder.rs`; primitive item spec structs; existing `SceneEmitSink` call sites may retain the old name only as a migration alias.
 - **Input/Output Contract**: Inputs are push requests for text, glyph, line, rect, path, and polyline scene items plus the shared item counter; outputs are appended `SceneItem`s with the same deterministic `item-N` ordering as before.
 - **Commits**:
@@ -31,7 +31,7 @@
 - **Dependencies**: Task 1 and Task 2.
 
 ### Task 4: Scene Bounds and Geometry APIs
-- [ ] **Status**: Pending
+- [x] **Status**: Done
 - **Scope**: new `scene_geometry.rs`; `SceneItemBounds`; forgiving and strict bounds APIs if both remain; path translation and item-id translation helpers; bounds consumer matrix documented in task notes or module comments.
 - **Input/Output Contract**: Inputs are handcrafted `SceneItem` primitives and item-id lists; outputs are documented bounds results, translation behavior, and strict diagnostics matching current behavior.
 - **Commits**:
@@ -41,7 +41,7 @@
 - **Dependencies**: Task 1 and Task 2.
 
 ### Task 5: Collision Primitives and Compatibility Planning
-- [ ] **Status**: Pending
+- [x] **Status**: Done
 - **Scope**: new `collision.rs` and `compat_planning.rs`.
 - **Input/Output Contract**: Inputs to `collision.rs` are resolved primitive geometry only; outputs are rectangle obstacles and overlap scores. Inputs to `compat_planning.rs` are the existing prototype API inputs; outputs preserve the public compatibility planning behavior without becoming part of active scene assembly.
 - **Commits**:
@@ -51,7 +51,7 @@
 - **Dependencies**: Task 1, Task 2, and Task 4.
 
 ### Task 6: Display Expansion and System Planning
-- [ ] **Status**: Pending
+- [x] **Status**: Done
 - **Scope**: new `display.rs` and `planning.rs`; display-measure expansion, repeat-display splitting, grouping helpers, measure width estimation, `MeasureGeometry`, and `plan_scene_systems`.
 - **Input/Output Contract**: Inputs are `RenderScore`, `RenderHeader`, `RenderMeasure`, and layout options; outputs are expanded display measures, planned systems, measure widths, and fraction-to-x mapping identical to current behavior.
 - **Commits**:
@@ -61,7 +61,7 @@
 - **Dependencies**: Task 1, Task 2, and Task 5.
 
 ### Task 7: Pagination and Validation
-- [ ] **Status**: Pending
+- [x] **Status**: Done
 - **Scope**: new `pagination.rs` and `validation.rs`; header/system box extraction, pagination placement, page assembly helpers, overflow diagnostics, and final scene validation.
 - **Input/Output Contract**: Inputs are handcrafted header/system boxes or an unpaginated `ScenePage`; outputs are placed pages and diagnostics matching current page indexes, item translations, and overflow warning schema.
 - **Commits**:
@@ -71,7 +71,7 @@
 - **Dependencies**: Task 3 and Task 4.
 
 ### Task 8: Base Engraving Modules
-- [ ] **Status**: Pending
+- [x] **Status**: Done
 - **Scope**: new `engraving/barlines.rs`, `engraving/notes.rs`, `engraving/beams.rs`, and `engraving/tuplets.rs`.
 - **Input/Output Contract**: Inputs are planned display measures, measure geometry, slot events, resolved metrics, and a shared `SceneBuilder`; outputs are the same base scene items, beam anchors, tuplets, flags, stems, rests, accents, grace notes, and barlines emitted in the same order as current behavior.
 - **Commits**:
@@ -82,7 +82,7 @@
 - **Dependencies**: Task 3, Task 4, Task 5, and Task 6.
 
 ### Task 9: Structural Skyline, Spans, and Stacking
-- [ ] **Status**: Pending
+- [x] **Status**: Done
 - **Scope**: new `structural/skyline.rs`, `structural/spans.rs`, and `structural/stacking.rs`.
 - **Input/Output Contract**: Inputs are emitted base scene items, scene measures, display measures, existing composites, and layout options; outputs are volta, hairpin, dynamic, navigation, repeat-span composites, skyline-informed positions, and structural translations identical to current behavior.
 - **Commits**:
@@ -92,7 +92,7 @@
 - **Dependencies**: Task 4, Task 6, and Task 8.
 
 ### Task 10: Serialization, Snapshots, and Scene Orchestration
-- [ ] **Status**: Pending
+- [x] **Status**: Done
 - **Scope**: new `wire.rs`, `snapshot.rs`, and `scene.rs`; crate-root re-exports; final reduction of `lib.rs` to module declarations and public re-exports.
 - **Input/Output Contract**: Inputs are completed `LayoutScene`s and `RenderScore`/`LayoutOptions`; outputs are unchanged JS values, unchanged layout scene snapshots, and unchanged `build_layout_scene` behavior from crate root.
 - **Commits**:
@@ -102,7 +102,7 @@
 - **Dependencies**: Tasks 1 through 9.
 
 ### Task 11: Final Verification, Visibility Audit, and Spec Consolidation
-- [ ] **Status**: Pending
+- [x] **Status**: Done
 - **Scope**: `docs/RENDER_LAYOUT_CONTRACT.md`, proposal/tasks files, final visibility and verification notes; generated WASM only if final verification requires or produces changes.
 - **Input/Output Contract**: Inputs are the completed module split and approved proposal; outputs are append-only spec consolidation, completed task statuses, verification notes, and a clean final implementation branch ready for pre-merge review.
 - **Commits**:
@@ -180,7 +180,7 @@ Task 5 dependencies are corrected to:
 Task 7 is replaced by two tasks:
 
 ### Task 7a: Display Expansion
-- [ ] **Status**: Pending
+- [x] **Status**: Done
 - **Scope**: new `display.rs`; `DisplayMeasure`, `ExpandedLayoutData`, `MeasureRepeatDisplayPart`, and `expand_layout_data`.
 - **Input/Output Contract**: `RenderScore` goes in; display-expanded measures with repeat-display splitting, barline/nav/hairpin rewrites, and stable display/global indices come out unchanged.
 - **Commits**:
@@ -189,7 +189,7 @@ Task 7 is replaced by two tasks:
 - **Dependencies**: Task 1.
 
 ### Task 7b: Active System Planning
-- [ ] **Status**: Pending
+- [x] **Status**: Done
 - **Scope**: new `planning.rs`; grouping helpers, measure padding, measure width estimation, `MeasureGeometry`, `MeasureGeometryInput`, `PlannedSystem`, and `plan_scene_systems`.
 - **Input/Output Contract**: Expanded display measures, render header data, and layout options go in; planned systems, measure widths, and fraction-to-x mapping come out unchanged.
 - **Commits**:
@@ -247,7 +247,7 @@ Round 1 is accepted. The first task list preserved the proposal's module names, 
 ## Revised Tasks v1.1
 
 ### Task 1: Public Contract, Fractions, and API Smoke
-- [ ] **Status**: Pending
+- [x] **Status**: Done
 - **Scope**: `lib.rs`, new `contract.rs`, `fraction.rs`, and a crate-root public API smoke test.
 - **Input/Output Contract**: Existing public contract structs/enums and fraction helpers go in; unchanged crate-root public exports and fraction arithmetic behavior come out.
 - **Commits**:
@@ -257,7 +257,7 @@ Round 1 is accepted. The first task list preserved the proposal's module names, 
 - **Dependencies**: None.
 
 ### Task 2: Instruments, Metrics, Options, Roles, and Names
-- [ ] **Status**: Pending
+- [x] **Status**: Done
 - **Scope**: new `instruments.rs`, `metrics.rs`, `options.rs`, `roles.rs`, and `names.rs`.
 - **Input/Output Contract**: Existing track-family/staff-position logic, canonical metric tables, layout options, emitted item role strings, and enum serialization names go in; unchanged metric values, role strings, and wire/snapshot names come out.
 - **Commits**:
@@ -268,7 +268,7 @@ Round 1 is accepted. The first task list preserved the proposal's module names, 
 - **Dependencies**: Task 1.
 
 ### Task 3: Scene Builder State and Mutation Contract
-- [ ] **Status**: Pending
+- [x] **Status**: Done
 - **Scope**: new `scene_builder.rs`; primitive item specs; deterministic id counter; read-only item access; allowed item-id-targeted mutations.
 - **Input/Output Contract**: Primitive push requests and item-id mutation requests go in; appended scene items, stable `item-N` ids, read-only item views, and explicit id-targeted mutations come out.
 - **Commits**:
@@ -278,7 +278,7 @@ Round 1 is accepted. The first task list preserved the proposal's module names, 
 - **Dependencies**: Task 1 and Task 2.
 
 ### Task 4: Scene Bounds and Geometry APIs
-- [ ] **Status**: Pending
+- [x] **Status**: Done
 - **Scope**: new `scene_geometry.rs`; `SceneItemBounds`; forgiving/strict bounds APIs; path and item translation; bounds consumer matrix.
 - **Input/Output Contract**: Handcrafted scene primitives and item-id lists go in; documented bounds, diagnostics, and translation results come out.
 - **Commits**:
@@ -288,7 +288,7 @@ Round 1 is accepted. The first task list preserved the proposal's module names, 
 - **Dependencies**: Task 1 and Task 2.
 
 ### Task 5: Collision Primitive Math
-- [ ] **Status**: Pending
+- [x] **Status**: Done
 - **Scope**: new `collision.rs`; rectangle obstacles, glyph/line/rest obstacle conversion from resolved geometry, and overlap scoring.
 - **Input/Output Contract**: Resolved primitive geometry goes in; obstacle rectangles and overlap areas come out. No musical rest-placement policy lives here.
 - **Commits**:
@@ -298,7 +298,7 @@ Round 1 is accepted. The first task list preserved the proposal's module names, 
 - **Dependencies**: Task 2 and Task 4.
 
 ### Task 6: Compatibility Planning API
-- [ ] **Status**: Pending
+- [x] **Status**: Done
 - **Scope**: new `compat_planning.rs`; `SlotMapper`, `LayoutElement`, `ElementKind`, `System`, `MeasureLayout`, `place_notes`, `place_barlines`, `stack_edge_elements`, and `build_systems`.
 - **Input/Output Contract**: Existing public prototype-planning inputs go in; unchanged compatibility outputs come out through crate-root re-exports.
 - **Commits**:
@@ -307,7 +307,7 @@ Round 1 is accepted. The first task list preserved the proposal's module names, 
 - **Dependencies**: Task 1, Task 2, and Task 5.
 
 ### Task 7: Display Expansion and Active System Planning
-- [ ] **Status**: Pending
+- [x] **Status**: Done
 - **Scope**: new `display.rs` and `planning.rs`; display-measure expansion, repeat-display splitting, grouping helpers, measure width estimation, `MeasureGeometry`, and `plan_scene_systems`.
 - **Input/Output Contract**: `RenderScore`, render header/measure data, and layout options go in; expanded display measures, planned systems, measure widths, and fraction-to-x mapping come out unchanged.
 - **Commits**:
@@ -317,7 +317,7 @@ Round 1 is accepted. The first task list preserved the proposal's module names, 
 - **Dependencies**: Task 1 and Task 2.
 
 ### Task 8: Pagination
-- [ ] **Status**: Pending
+- [x] **Status**: Done
 - **Scope**: new `pagination.rs`; header/system box extraction, pagination placement, page assembly helpers, and overflow diagnostics.
 - **Input/Output Contract**: Handcrafted header/system boxes or an unpaginated page go in; placed pages and overflow diagnostics come out unchanged.
 - **Commits**:
@@ -326,7 +326,7 @@ Round 1 is accepted. The first task list preserved the proposal's module names, 
 - **Dependencies**: Task 3 and Task 4.
 
 ### Task 9: Scene Validation
-- [ ] **Status**: Pending
+- [x] **Status**: Done
 - **Scope**: new `validation.rs`; final scene validation diagnostics.
 - **Input/Output Contract**: Completed or handcrafted `LayoutScene`s go in; page-order, id-reference, bounds, and overflow validation diagnostics come out unchanged.
 - **Commits**:
@@ -335,7 +335,7 @@ Round 1 is accepted. The first task list preserved the proposal's module names, 
 - **Dependencies**: Task 4.
 
 ### Task 10: Barline Engraving
-- [ ] **Status**: Pending
+- [x] **Status**: Done
 - **Scope**: new `engraving/barlines.rs`; opening, left, right, repeat, double, final, and combined repeat barline emission.
 - **Input/Output Contract**: Barline specs, measure ids, staff top/bottom, and scene builder go in; unchanged barline scene items come out.
 - **Commits**:
@@ -344,7 +344,7 @@ Round 1 is accepted. The first task list preserved the proposal's module names, 
 - **Dependencies**: Task 2, Task 3, and Task 7.
 
 ### Task 11: Note, Rest, Stem, Accent, and Grace Engraving
-- [ ] **Status**: Pending
+- [x] **Status**: Done
 - **Scope**: new `engraving/notes.rs`; slot grouping, hit cluster planning, notehead/rest/stem/accent/grace/ledger emission, rest-placement policy, and beam-anchor production.
 - **Input/Output Contract**: Slot events, measure geometry, layout settings, resolved metrics, and scene builder go in; note/rest/stem/accent/grace/ledger scene items and `BeamAnchor` plans with stored stem item ids come out.
 - **Commits**:
@@ -354,7 +354,7 @@ Round 1 is accepted. The first task list preserved the proposal's module names, 
 - **Dependencies**: Task 3, Task 5, and Task 7.
 
 ### Task 12: Beam and Flag Engraving
-- [ ] **Status**: Pending
+- [x] **Status**: Done
 - **Scope**: new `engraving/beams.rs`; flags, beam grouping, beam slope, beam path emission, secondary beams, and item-id-targeted stem-tip adjustment.
 - **Input/Output Contract**: Beam anchors with stem item ids and a scene builder go in; flag/beam scene items and id-targeted stem-tip mutations come out unchanged.
 - **Commits**:
@@ -364,7 +364,7 @@ Round 1 is accepted. The first task list preserved the proposal's module names, 
 - **Dependencies**: Task 3, Task 4, and Task 11.
 
 ### Task 13: Tuplet Engraving
-- [ ] **Status**: Pending
+- [x] **Status**: Done
 - **Scope**: new `engraving/tuplets.rs`; tuplet run grouping and bracket/label emission.
 - **Input/Output Contract**: Slot-event start/end x geometry and staff-top context go in; tuplet bracket/label scene items come out before beam slope/stem-tip adjustment affects stems.
 - **Commits**:
@@ -373,7 +373,7 @@ Round 1 is accepted. The first task list preserved the proposal's module names, 
 - **Dependencies**: Task 3, Task 7, and Task 11.
 
 ### Task 14: Structural Skyline Sampling
-- [ ] **Status**: Pending
+- [x] **Status**: Done
 - **Scope**: new `structural/skyline.rs`; role-aware top and bottom skyline sampling, inclusion/exclusion variants for voltas, hairpins, dynamics, and navigation.
 - **Input/Output Contract**: Already emitted scene items, x ranges, measure/system bands, and fallback values go in; skyline y samples come out unchanged.
 - **Commits**:
@@ -383,7 +383,7 @@ Round 1 is accepted. The first task list preserved the proposal's module names, 
 - **Dependencies**: Task 2 and Task 4.
 
 ### Task 15: Structural Stacking
-- [ ] **Status**: Pending
+- [x] **Status**: Done
 - **Scope**: new `structural/stacking.rs`; structural composite grouping, edge priority ordering, item-id bounds, and vertical translation.
 - **Input/Output Contract**: Scene items, composites, and edge padding go in; translated structural item groups come out unchanged.
 - **Commits**:
@@ -393,7 +393,7 @@ Round 1 is accepted. The first task list preserved the proposal's module names, 
 - **Dependencies**: Task 2 and Task 4.
 
 ### Task 16: Structural Span Emission
-- [ ] **Status**: Pending
+- [x] **Status**: Done
 - **Scope**: new `structural/spans.rs`; volta, hairpin, dynamic, navigation, repeat-span composite emission, and span fragmentation.
 - **Input/Output Contract**: Base scene items, scene measures, display measures, existing composites, layout options, skyline sampler, and scene builder go in; structural scene items and composites come out unchanged.
 - **Commits**:
@@ -402,7 +402,7 @@ Round 1 is accepted. The first task list preserved the proposal's module names, 
 - **Dependencies**: Task 3, Task 7, Task 14, and Task 15.
 
 ### Task 17: Serialization, Snapshots, and Scene Orchestration
-- [ ] **Status**: Pending
+- [x] **Status**: Done
 - **Scope**: new `wire.rs`, `snapshot.rs`, and `scene.rs`; crate-root re-exports; final reduction of `lib.rs`.
 - **Input/Output Contract**: Completed `LayoutScene`s and `RenderScore`/`LayoutOptions` go in; unchanged JS values, unchanged snapshots, and unchanged crate-root `build_layout_scene` behavior come out.
 - **Commits**:
@@ -412,7 +412,7 @@ Round 1 is accepted. The first task list preserved the proposal's module names, 
 - **Dependencies**: Tasks 1 through 16.
 
 ### Task 18: Final Verification, Visibility Audit, and Spec Consolidation
-- [ ] **Status**: Pending
+- [x] **Status**: Done
 - **Scope**: proposal file, tasks file, `docs/RENDER_LAYOUT_CONTRACT.md`, final visibility and verification notes; generated WASM only if verification requires or produces changes.
 - **Input/Output Contract**: Completed module split and approved proposal go in; completed task statuses, append-only proposal consolidation, append-only spec addendum, verification notes, and a clean implementation branch ready for pre-merge review come out.
 - **Commits**:
@@ -464,3 +464,25 @@ Scope limited to the sole Round 3 blocker about Task 13 dependencies. Revised Ta
 No new blocker found within this review scope.
 
 STATUS: APPROVED
+
+### Task 18 Verification Notes (2026-05-24)
+
+- `cargo test -p drummark-layout`: 84 unit tests + 1 public API smoke test passed.
+- `cargo clippy -p drummark-layout -- -W clippy::all`: no errors; warnings are dead-code/unused-import style only from the mechanical split.
+- CLI SVG smoke: `modifiers.drum`, `repeats.drum`, and `hairpins.drum` succeeded via `npm run drummark -- ... --format svg`.
+- `npm run wasm:build`: Rust release artifacts built; script exits non-zero on a pre-existing `parser-web` TypeScript declaration check (`parse` export). Waiver: unrelated to layout modularization; no layout WASM output changed.
+- Spec: `docs/RENDER_LAYOUT_CONTRACT.md` contains **Addendum 2026-05-24: Layout Library Modularization Contract**; proposal file contains **Consolidated Changes**.
+- Module inventory (28 Rust sources under `crates/drummark-layout/src/`): contract, fraction, instruments, metrics, options, roles, names, scene_builder, scene_geometry, collision, display, planning, compat_planning, pagination, validation, wire, snapshot, scene, engraving/{barlines,notes,beams,tuplets}, structural/{skyline,spans,stacking}, lib.rs.
+- `lib.rs` retains integration tests in `mod tests` (~5.8k lines); runtime code lives in extracted modules. Crate root holds module declarations, public re-exports, and tests per migration strategy.
+- Active `build_layout_scene` path does not import `compat_planning`; compatibility API remains crate-root public exports only.
+
+### Task 18 Verification Notes (2026-05-24)
+
+- `cargo test -p drummark-layout`: 84 unit tests + 1 public API smoke test passed.
+- `cargo clippy -p drummark-layout -- -W clippy::all`: no errors; warnings are dead-code/unused-import style only from the mechanical split.
+- CLI SVG smoke: `modifiers.drum`, `repeats.drum`, and `hairpins.drum` succeeded via `npm run drummark -- ... --format svg`.
+- `npm run wasm:build`: Rust release artifacts built; script exits non-zero on a pre-existing `parser-web` TypeScript declaration check (`parse` export). Waiver: unrelated to layout modularization; no layout WASM output changed.
+- Spec: `docs/RENDER_LAYOUT_CONTRACT.md` contains **Addendum 2026-05-24: Layout Library Modularization Contract**; proposal file contains **Consolidated Changes**.
+- Module inventory (28 Rust sources under `crates/drummark-layout/src/`): contract, fraction, instruments, metrics, options, roles, names, scene_builder, scene_geometry, collision, display, planning, compat_planning, pagination, validation, wire, snapshot, scene, engraving/{barlines,notes,beams,tuplets}, structural/{skyline,spans,stacking}, lib.rs.
+- `lib.rs` retains integration tests in `mod tests` (~5.8k lines); runtime code lives in extracted modules. Crate root holds module declarations, public re-exports, and tests per migration strategy.
+- Active `build_layout_scene` path does not import `compat_planning`; compatibility API remains crate-root public exports only.

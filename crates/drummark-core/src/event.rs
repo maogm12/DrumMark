@@ -2,6 +2,7 @@ use crate::ast::DynamicLevel;
 use crate::fraction::{calculate_token_weight_as_fraction, fractions_equal, Fraction};
 use crate::hairpin::HairpinKind;
 use crate::resolve::{resolve_token, voice_for_track};
+use std::cmp::Ordering;
 
 // ── Normalized Event ─────────────────────────────────────────────
 
@@ -105,11 +106,9 @@ pub fn token_to_events(
                     measure_in_paragraph,
                     start,
                     duration,
-                    visual_duration: visual_duration_for_basic(
-                        *dots,
-                        *stars,
-                        *halves,
-                        base_duration,
+                    visual_duration: effective_visual_duration(
+                        duration,
+                        visual_duration_for_basic(*dots, *stars, *halves, base_duration),
                     ),
                     kind: EventKind::Rest,
                     glyph: "-".to_string(),
@@ -145,7 +144,10 @@ pub fn token_to_events(
                 measure_in_paragraph,
                 start,
                 duration,
-                visual_duration: visual_duration_for_basic(*dots, *stars, *halves, base_duration),
+                visual_duration: effective_visual_duration(
+                    duration,
+                    visual_duration_for_basic(*dots, *stars, *halves, base_duration),
+                ),
                 kind,
                 glyph: resolved.glyph.clone(),
                 modifiers: resolved.modifiers.clone(),
@@ -306,6 +308,20 @@ fn visual_duration_for_basic(
     base_duration.multiply(calculate_token_weight_as_fraction(
         dots, stars, halves, None,
     ))
+}
+
+fn is_standard_undotted_note_duration(duration: Fraction) -> bool {
+    duration.numerator == 1 && duration.denominator.is_power_of_two()
+}
+
+/// When a token is squeezed into less time than its nominal note value (e.g. `[ss]`),
+/// show the smaller written note shape.
+fn effective_visual_duration(actual: Fraction, nominal: Fraction) -> Fraction {
+    if is_standard_undotted_note_duration(actual) && actual.compare(nominal) == Ordering::Less {
+        actual
+    } else {
+        nominal
+    }
 }
 
 fn group_total_weight(items: &[TokenGlyph]) -> Fraction {
@@ -502,6 +518,33 @@ mod tests {
 
     fn dynamic(level: DynamicLevel) -> TokenGlyph {
         TokenGlyph::Dynamic(level)
+    }
+
+    #[test]
+    fn compressed_group_uses_actual_duration_as_visual_shape() {
+        let group = TokenGlyph::Group {
+            count: 2,
+            span: 1,
+            items: vec![note(), note()],
+            modifiers: vec![],
+        };
+        let base = Fraction::new(1, 8);
+        let events = token_to_events(
+            &group,
+            Fraction::zero(),
+            Fraction::new(1, 8),
+            base,
+            Some("SD"),
+            0,
+            0,
+            0,
+            None,
+            0,
+        );
+        assert_eq!(events.len(), 2);
+        assert_eq!(events[0].visual_duration, Fraction::new(1, 16));
+        assert_eq!(events[1].visual_duration, Fraction::new(1, 16));
+        assert_eq!(events[0].tuplet, Some((2, 1)));
     }
 
     #[test]

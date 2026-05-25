@@ -535,3 +535,15 @@ The tuplets, beams, and skyline sequencing contract closes the most likely behav
 The bounds consumer matrix, named verification coverage, final `npm run wasm:build` requirement or concrete waiver, public API smoke test, and final visibility audit are strong enough acceptance gates for a mechanical modularization. The tasks-file reviewer should still insist that these become independent tasks with clear input/output fixtures, especially for bounds, scene-builder id determinism, compatibility API re-exports, and structural stacking. Those are task-planning constraints, not remaining proposal blockers.
 
 STATUS: APPROVED
+
+### Consolidated Changes
+
+The approved layout modularization refactor is a behavior-preserving split of `crates/drummark-layout/src/lib.rs` into responsibility-focused Rust modules while preserving the crate-root public API.
+
+The authoritative target state is Addendum v1.3. `lib.rs` becomes a crate root containing module declarations and public re-exports. `scene.rs` owns `build_layout_scene`. Public contract types and `Fraction` live in `contract.rs`; fraction arithmetic lives in `fraction.rs`; track/staff mapping lives in `instruments.rs`; canonical metrics live in `metrics.rs`; layout options live in `options.rs`; emitted scene roles live in `roles.rs`; wire/snapshot enum names live in `names.rs`.
+
+Scene infrastructure is split into `scene_builder.rs`, `scene_geometry.rs`, `collision.rs`, `display.rs`, `planning.rs`, `pagination.rs`, and `validation.rs`. The scene builder owns deterministic item ids and exposes only explicit read/mutation operations; stem-tip and structural translations target item ids, not "last emitted item" state. Bounds extraction must document strict versus forgiving consumers before pagination, skyline, stacking, or validation move.
+
+Engraving is split into independent modules: `engraving/barlines.rs`, `engraving/notes.rs`, `engraving/beams.rs`, and `engraving/tuplets.rs`. Tuplets consume explicit slot-event geometry and stay independent of active planning and post-beam stem-tip adjustment. Rest-placement policy remains in notes; primitive obstacle math remains in collision. Structural layout is split into `structural/skyline.rs`, `structural/spans.rs`, and `structural/stacking.rs`, with skyline and stacking testable from handcrafted scene items.
+
+The approved task plan is Revised Tasks v1.3 in `ARCHITECTURE_tasks_layout_lib_modularization.md`. Implementation proceeds task-by-task on a dedicated branch. Each completed task must update its task checkbox to Done after verification. Final acceptance requires named layout tests, CLI SVG smoke checks for modifiers/repeats/hairpins, `cargo clippy -p drummark-layout -- -W clippy::all` with no new warnings, `npm run wasm:build` or a concrete waiver, a visibility audit, and preservation of the crate-root public API smoke test.

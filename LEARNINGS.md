@@ -296,3 +296,9 @@ When an older note conflicts with this file, treat this file plus the active spe
 - The safest first refactor candidates are pure or near-pure helpers with clear input/output contracts: fraction arithmetic, glyph/text metric lookup and role naming, scene bounds/path translation, pagination box placement, measure geometry, and beam math.
 - There is a parallel prototype API in the middle of `lib.rs` (`LayoutElement`, `System`, `build_systems`, `place_notes`, `place_barlines`, `stack_edge_elements`) that is public but not part of the main `build_layout_scene` path. Before moving code, decide whether this API is kept as a supported planning layer or quarantined as legacy/prototype code.
 - `cargo test -p drummark-layout` passes, but the library currently emits dead-code warnings for `rects_intersect` and `rect_obstacle_from_bounds`. `cargo clippy -p drummark-layout -- -W clippy::all` also reports `too_many_arguments` on `render_grace_notes_for_hit` and `build_stem_render_plan`, plus needless borrows of `sink.items` in navigation skyline calls.
+
+## 2026-05-24 Ledger Line Centering
+
+- Notehead center calculations in `drummark-layout` use `glyph_bbox_center_x_offset`, which includes the SVG `pt -> user unit` conversion through `SVG_POINT_TO_USER_UNIT`.
+- Ledger line widths must use `rendered_glyph_width(...)` rather than `width_ss * font_size / 4.0`; otherwise the line is too short and its center shifts left of the rendered notehead center.
+- For `| c |`, the C crash resolves to an X notehead. With a 30pt notehead, the centered top ledger line should span the rendered notehead width plus equal overhang on both sides.

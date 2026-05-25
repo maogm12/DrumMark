@@ -56,6 +56,21 @@ C  | - - - - - - - c | - - - - - - - C |
 
 const pdfPageWidth = 612;
 const pdfPageHeight = 792;
+const editorWidthStorageKey = "drummark-editor-width";
+const editorMinWidth = 320;
+const editorDefaultWidth = 440;
+const editorPreviewReserveWidth = 360;
+
+function clampEditorWidth(width: number, viewportWidth = typeof window === "undefined" ? editorDefaultWidth + editorPreviewReserveWidth : window.innerWidth) {
+  const viewportMaxWidth = Math.max(editorMinWidth, viewportWidth - editorPreviewReserveWidth);
+  return Math.min(viewportMaxWidth, Math.max(editorMinWidth, width));
+}
+
+function readStoredEditorWidth() {
+  const saved = localStorage.getItem(editorWidthStorageKey);
+  const parsed = saved === null ? Number.NaN : Number.parseInt(saved, 10);
+  return clampEditorWidth(Number.isFinite(parsed) ? parsed : editorDefaultWidth);
+}
 
 function downloadBlob(filename: string, blob: Blob) {
   const url = URL.createObjectURL(blob);
@@ -639,10 +654,7 @@ export function App() {
     }
   }, [settings.activeTab]);
   
-  const [editorWidth, setEditorWidth] = useState(() => {
-    const saved = localStorage.getItem("drummark-editor-width");
-    return saved ? parseInt(saved, 10) : 600;
-  });
+  const [editorWidth, setEditorWidth] = useState(readStoredEditorWidth);
   const isResizingRef = useRef(false);
   const workerRef = useRef<Worker | null>(null);
   const requestIdRef = useRef(0);
@@ -765,8 +777,20 @@ export function App() {
   }, [dsl]);
 
   useEffect(() => {
-    localStorage.setItem("drummark-editor-width", String(editorWidth));
+    localStorage.setItem(editorWidthStorageKey, String(editorWidth));
   }, [editorWidth]);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setEditorWidth((width) => clampEditorWidth(width));
+    };
+
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => {
+      window.removeEventListener("resize", handleResize);
+    };
+  }, []);
 
   const handleMouseDown = useCallback(() => {
     isResizingRef.current = true;
@@ -786,12 +810,12 @@ export function App() {
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       if (!isResizingRef.current) return;
-      setEditorWidth(Math.max(320, Math.min(window.innerWidth - 320, e.clientX)));
+      setEditorWidth(clampEditorWidth(e.clientX));
     };
 
     const handleTouchMove = (e: TouchEvent) => {
       if (!isResizingRef.current) return;
-      setEditorWidth(Math.max(320, Math.min(window.innerWidth - 320, e.touches[0]!.clientX)));
+      setEditorWidth(clampEditorWidth(e.touches[0]!.clientX));
     };
 
     const handleMouseUp = () => {

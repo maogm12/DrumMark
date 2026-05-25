@@ -302,3 +302,9 @@ When an older note conflicts with this file, treat this file plus the active spe
 - Notehead center calculations in `drummark-layout` use `glyph_bbox_center_x_offset`, which includes the SVG `pt -> user unit` conversion through `SVG_POINT_TO_USER_UNIT`.
 - Ledger line widths must use `rendered_glyph_width(...)` rather than `width_ss * font_size / 4.0`; otherwise the line is too short and its center shifts left of the rendered notehead center.
 - For `| c |`, the C crash resolves to an X notehead. With a 30pt notehead, the centered top ledger line should span the rendered notehead width plus equal overhang on both sides.
+
+## 2026-05-24 Corpus Golden Refresh Workflow
+
+- Parser corpus summaries are regenerated with `npx tsx scripts/update_example_corpus_report.ts`; the script rewrites `docs/parser-cutover/example_corpus_report.json` from the current `buildNormalizedScore()` WASM-backed adapter.
+- Layout corpus reports and representative `LayoutScene` snapshots are regenerated with `npx tsx scripts/update_corpus_golden.ts`; this updates `docs/layout-corpus/corpus_gate_report.json` plus the checked-in scene snapshots used by `src/renderer/corpusGate.test.ts`.
+- After layout modularization, the stable corpus deltas are mostly fewer visible rest glyphs and more explicit beam/tuplet scene roles. `docs/examples/full-example.drum` also reflects the current normalizer behavior for `BD | ... *4 |`, where expanded repeat measures contain the repeated BD line rather than duplicating omitted sibling track lines.

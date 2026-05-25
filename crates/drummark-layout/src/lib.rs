@@ -163,6 +163,138 @@ mod tests {
         );
     }
 
+    fn rest_bounds_ss(y_pt: f32, font_size_pt: f32, staff_top: f32, role: GlyphRole) -> (f32, f32) {
+        let metric = canonical_glyph_metric(role);
+        let ss_to_pt = font_size_pt / 4.0;
+        let top_ss = (y_pt - metric.bbox_ne_y_ss * ss_to_pt - staff_top) / 10.0;
+        let bottom_ss = (y_pt - metric.bbox_sw_y_ss * ss_to_pt - staff_top) / 10.0;
+        (top_ss, bottom_ss)
+    }
+
+    fn staff_top_for_scene(scene: &LayoutScene) -> f32 {
+        scene.pages[0]
+            .items
+            .iter()
+            .find(|item| item.role == "staff-line")
+            .and_then(|item| match &item.primitive {
+                ScenePrimitive::LineSegment(line) => Some(line.y1_pt),
+                _ => None,
+            })
+            .expect("expected staff line")
+    }
+
+    #[test]
+    fn test_whole_and_half_rests_attach_to_standard_staff_lines() {
+        let whole_measure = RenderMeasure {
+            index: 0,
+            global_index: 0,
+            paragraph_index: 0,
+            measure_in_paragraph: 0,
+            source_line: 1,
+            events: vec![test_rest(
+                Fraction {
+                    numerator: 0,
+                    denominator: 1,
+                },
+                Fraction {
+                    numerator: 1,
+                    denominator: 1,
+                },
+                1,
+            )],
+            barline: Some("regular".into()),
+            closing_barline: Some("final".into()),
+            start_nav: None,
+            end_nav: None,
+            volta_indices: None,
+            hairpins: vec![],
+            dynamics: vec![],
+            measure_repeat_slashes: None,
+            multi_rest_count: None,
+            note_value: 1,
+            volta_terminator: false,
+        };
+        let half_measure = RenderMeasure {
+            index: 0,
+            global_index: 0,
+            paragraph_index: 0,
+            measure_in_paragraph: 0,
+            source_line: 1,
+            events: vec![test_rest(
+                Fraction {
+                    numerator: 0,
+                    denominator: 1,
+                },
+                Fraction {
+                    numerator: 1,
+                    denominator: 2,
+                },
+                1,
+            )],
+            barline: Some("regular".into()),
+            closing_barline: Some("final".into()),
+            start_nav: None,
+            end_nav: None,
+            volta_indices: None,
+            hairpins: vec![],
+            dynamics: vec![],
+            measure_repeat_slashes: None,
+            multi_rest_count: None,
+            note_value: 2,
+            volta_terminator: false,
+        };
+
+        let whole_scene = build_layout_scene(
+            &simple_layout_score(vec![whole_measure]),
+            &LayoutOptions::default(),
+        );
+        let half_scene = build_layout_scene(
+            &simple_layout_score(vec![half_measure]),
+            &LayoutOptions::default(),
+        );
+
+        let whole_staff_top = staff_top_for_scene(&whole_scene);
+        let half_staff_top = staff_top_for_scene(&half_scene);
+
+        let whole_rest = whole_scene.pages[0]
+            .items
+            .iter()
+            .find(|item| item.role == "rest")
+            .expect("expected whole rest");
+        let half_rest = half_scene.pages[0]
+            .items
+            .iter()
+            .find(|item| item.role == "rest")
+            .expect("expected half rest");
+
+        let (whole_y, whole_font_size) = match &whole_rest.primitive {
+            ScenePrimitive::GlyphRun(glyph) => (glyph.y_pt, glyph.font_size_pt),
+            _ => panic!("expected whole rest glyph"),
+        };
+        let (half_y, half_font_size) = match &half_rest.primitive {
+            ScenePrimitive::GlyphRun(glyph) => (glyph.y_pt, glyph.font_size_pt),
+            _ => panic!("expected half rest glyph"),
+        };
+
+        let (whole_top, _) = rest_bounds_ss(
+            whole_y,
+            whole_font_size,
+            whole_staff_top,
+            GlyphRole::RestWhole,
+        );
+        let (_, half_bottom) =
+            rest_bounds_ss(half_y, half_font_size, half_staff_top, GlyphRole::RestHalf);
+
+        assert!(
+            (whole_top - 1.0).abs() < 0.01,
+            "whole rest should hang from the second staff line: top={whole_top:.3}"
+        );
+        assert!(
+            (half_bottom - 2.0).abs() < 0.01,
+            "half rest should sit on the middle staff line: bottom={half_bottom:.3}"
+        );
+    }
+
     #[test]
     fn test_canonical_metrics_are_stable() {
         let glyph_once = canonical_glyph_metric(GlyphRole::NoteheadX);
@@ -3391,7 +3523,7 @@ mod tests {
         let mut xs = noteheads
             .iter()
             .filter_map(|item| match &item.primitive {
-                ScenePrimitive::TextRun(text) => Some(text.x_pt),
+                ScenePrimitive::TextRun(_) => Some(item_visual_center_x(item)),
                 _ => None,
             })
             .collect::<Vec<_>>();
@@ -3400,8 +3532,8 @@ mod tests {
         assert_eq!(noteheads.len(), 2);
         assert_eq!(stems.len(), 2, "opposing voices should keep separate stems");
         assert!(
-            xs[1] - xs[0] >= 6.0,
-            "opposing voices on the same slot should be horizontally separated: {xs:?}"
+            (xs[0] - xs[1]).abs() < 0.75,
+            "opposing voices on the same slot should share horizontal center alignment: {xs:?}"
         );
         assert!(
             accents.iter().all(|accent| accent.anchor_item_id.is_some()),

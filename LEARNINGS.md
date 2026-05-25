@@ -308,3 +308,31 @@ When an older note conflicts with this file, treat this file plus the active spe
 - Parser corpus summaries are regenerated with `npx tsx scripts/update_example_corpus_report.ts`; the script rewrites `docs/parser-cutover/example_corpus_report.json` from the current `buildNormalizedScore()` WASM-backed adapter.
 - Layout corpus reports and representative `LayoutScene` snapshots are regenerated with `npx tsx scripts/update_corpus_golden.ts`; this updates `docs/layout-corpus/corpus_gate_report.json` plus the checked-in scene snapshots used by `src/renderer/corpusGate.test.ts`.
 - After layout modularization, the stable corpus deltas are mostly fewer visible rest glyphs and more explicit beam/tuplet scene roles. `docs/examples/full-example.drum` also reflects the current normalizer behavior for `BD | ... *4 |`, where expanded repeat measures contain the repeated BD line rather than duplicating omitted sibling track lines.
+
+## 2026-05-25 Native CLI Export Recon
+
+- `crates/drummark-core` already exposes a native `drummark` bin, but `src/main.rs` is a narrow parser demo that prints a hand-written header/count JSON shape and only accepts `json`/`ast`; it does not use the Rust MusicXML exporter or layout engine.
+- The TypeScript CLI path (`src/cli_runtime.ts`) supports `ast`, `ir`, `xml`, and `svg`; XML is already backed by Rust `build_music_xml`, while SVG still goes through Node WASM layout plus the TypeScript SVG adapter.
+- `drummark-layout` owns the platform-neutral `LayoutScene` contract with primitives for glyph runs, text runs, lines, rects, polylines, and paths, so a native CLI exporter should translate those scene items directly and avoid adding engraving decisions outside layout.
+
+## 2026-05-25 Multi-Voice Slot Center Alignment
+
+- `render_slot_group()` in `crates/drummark-layout/src/engraving/notes.rs` previously applied a per-voice horizontal offset (`voice_shift`: voice 1 → −4 px, voice 2 → +4 px) whenever a slot contained hits in more than one voice. That split same-beat noteheads onto different rhythmic columns even though they share one `event_x`.
+- Opposing voices at the same slot should share one horizontal center (stem direction handles vertical separation). The `voice_shift` path was removed from both hit clusters and rest fallback centering.
+- Regression coverage lives in `test_two_voice_collision_case_preserves_attachment_anchors`, which now asserts visual center alignment instead of minimum horizontal separation.
+
+## 2026-05-25 WASM Feature Target Isolation
+
+- `scripts/build_wasm.mjs` previously reused one shared artifact path (`target/wasm32-unknown-unknown/release/drummark_core.wasm`) for both `parser-wasm` and `layout-wasm` builds. Cargo could leave a stale combined/default-feature binary in place, so `wasm-bindgen` sometimes generated parser package JS with only `build_layout_scene`.
+- Each WASM package now builds into its own `--target-dir` (`target/wasm-parser-wasm`, `target/wasm-layout-wasm`), preventing cross-feature artifact reuse. After changing layout or parser Rust code, run `npm run wasm:build` before using the browser dev server.
+
+## 2026-05-25 Whole And Half Rest Line Attachment
+
+- Collision-aware rest lanes reuse one bbox-center lane list whose default anchor (`2.0` ss) fits quarter/eighth rests but not whole/half rests. Whole and half glyphs have different vertical bbox geometry, so centering them on the middle lane leaves their bottom edges off the standard staff lines.
+- `preferred_rest_lane_ss()` now derives the first candidate lane from engraving attachment: whole rests hang from the second staff line (`ss=1.0`), half rests sit on the middle line (`ss=2.0`), using each glyph's bottom edge relative to its bbox center.
+
+## 2026-05-25 Whole And Half Rest Attachment Correction
+
+- `GlyphRun.y_pt` is a SMuFL baseline-style placement coordinate in layout geometry, not a bbox center. Bounds are computed as `top = y_pt - bbox_ne_y_ss * font_size/4` and `bottom = y_pt - bbox_sw_y_ss * font_size/4`.
+- Whole rest attachment should solve from the glyph top edge (`baseline = target_line + bbox_ne_y_ss * font_size/4`) because the rest hangs below the staff line. Half rest attachment should solve from the glyph bottom edge (`baseline = target_line + bbox_sw_y_ss * font_size/4`) because the rest sits on the staff line.
+- Regression tests for rest line attachment must include the rendered font size when converting glyph bbox coordinates back to staff spaces; comparing raw SMuFL staff-space bbox values directly to screen-space positions can mask vertical placement errors.

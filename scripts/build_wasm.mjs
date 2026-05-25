@@ -17,10 +17,6 @@ for (const dir of [
 
 const repoRoot = resolve(new URL("..", import.meta.url).pathname);
 const coreManifest = resolve(repoRoot, "crates/drummark-core/Cargo.toml");
-const wasmArtifact = resolve(
-  repoRoot,
-  "target/wasm32-unknown-unknown/release/drummark_core.wasm",
-);
 const packages = [
   {
     name: "parser-web",
@@ -161,6 +157,12 @@ if (parserTree?.includes("drummark-layout")) {
 const sizeReport = [];
 
 for (const pkg of packages) {
+  const targetDir = resolve(repoRoot, "target", `wasm-${pkg.feature}`);
+  const wasmArtifact = resolve(
+    targetDir,
+    "wasm32-unknown-unknown/release/drummark_core.wasm",
+  );
+
   rmSync(pkg.outDir, { force: true, recursive: true });
   mkdirSync(pkg.outDir, { recursive: true });
 
@@ -174,6 +176,8 @@ for (const pkg of packages) {
     "--no-default-features",
     "--features",
     pkg.feature,
+    "--target-dir",
+    targetDir,
   ], {
     RUSTC: rustcPath,
   });

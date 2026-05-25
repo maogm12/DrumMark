@@ -227,15 +227,45 @@ fn rest_lane_candidates_ss(voice: u8) -> &'static [f32] {
     }
 }
 
+/// Preferred lane for collision-free placement: standard engraving attaches whole
+/// rests to the second staff line and half rests to the middle line.
+fn preferred_rest_lane_ss(rest_metric: CanonicalGlyphMetric) -> f32 {
+    match rest_metric.role {
+        GlyphRole::RestWhole => 1.0,
+        GlyphRole::RestHalf => 2.0,
+        _ => 2.0,
+    }
+}
+
+fn rest_lane_candidates_for_rest(voice: u8, rest_metric: CanonicalGlyphMetric) -> Vec<f32> {
+    let preferred = preferred_rest_lane_ss(rest_metric);
+    let mut lanes = vec![preferred];
+    for lane_ss in rest_lane_candidates_ss(voice) {
+        if lanes
+            .iter()
+            .all(|existing| (existing - lane_ss).abs() > 0.001)
+        {
+            lanes.push(*lane_ss);
+        }
+    }
+    lanes
+}
+
 fn rest_placement_for_lane(
     rest_metric: CanonicalGlyphMetric,
     center_x: f32,
-    lane_center_y: f32,
+    lane_y: f32,
     font_size_pt: f32,
 ) -> RestPlacement {
+    let ss_to_pt = font_size_pt / 4.0;
+    let y = match rest_metric.role {
+        GlyphRole::RestWhole => lane_y + rest_metric.bbox_ne_y_ss * ss_to_pt,
+        GlyphRole::RestHalf => lane_y + rest_metric.bbox_sw_y_ss * ss_to_pt,
+        _ => lane_y - glyph_bbox_center_y_offset(rest_metric, font_size_pt),
+    };
     RestPlacement {
         x: center_x - glyph_bbox_center_x_offset(rest_metric, font_size_pt),
-        y: lane_center_y - glyph_bbox_center_y_offset(rest_metric, font_size_pt),
+        y,
         role: rest_metric.role,
         font_size_pt,
     }
@@ -307,9 +337,8 @@ pub(crate) fn resolve_rest_placement(
     occupied_rests: &[RectObstacle],
 ) -> (RestPlacement, Option<RestPlacementDiagnostic>) {
     let mut best: Option<(RestPlacement, f32, usize)> = None;
-    for (lane_index, lane_ss) in rest_lane_candidates_ss(rest.event.voice)
-        .iter()
-        .copied()
+    for (lane_index, lane_ss) in rest_lane_candidates_for_rest(rest.event.voice, rest_metric)
+        .into_iter()
         .enumerate()
     {
         let placement = rest_placement_for_lane(
@@ -353,14 +382,6 @@ fn rest_is_hidden_by_slot_context(rest: &SlotEvent<'_>, slot_group: &[SlotEvent<
 }
 
 pub(crate) fn render_slot_group(sink: &mut SceneEmitSink<'_>, input: RenderSlotGroupInput<'_, '_>) {
-    let hit_voice_count = input
-        .slot_group
-        .iter()
-        .filter(|slot_event| matches!(slot_event.event.kind, EventKind::Hit))
-        .map(|slot_event| slot_event.event.voice)
-        .collect::<std::collections::BTreeSet<_>>()
-        .len();
-
     let mut note_anchors_by_voice: std::collections::BTreeMap<u8, Vec<NotePlacement>> =
         std::collections::BTreeMap::new();
     let mut hit_cluster_plans = Vec::new();
@@ -371,15 +392,6 @@ pub(crate) fn render_slot_group(sink: &mut SceneEmitSink<'_>, input: RenderSlotG
         .map(|slot_event| slot_event.event.voice)
         .collect::<std::collections::BTreeSet<_>>()
     {
-        let voice_shift = if hit_voice_count > 1 {
-            if voice == 1 {
-                -4.0
-            } else {
-                4.0
-            }
-        } else {
-            0.0
-        };
         let voice_hits = input
             .slot_group
             .iter()
@@ -393,7 +405,6 @@ pub(crate) fn render_slot_group(sink: &mut SceneEmitSink<'_>, input: RenderSlotG
                 RenderHitClusterInput {
                     measure_id: input.measure_id,
                     event_x: input.event_x,
-                    voice_shift,
                     staff_top: input.staff_top,
                     voice_hits: &voice_hits,
                     beam_group: input.beam_groups_by_voice.get(&voice).copied(),
@@ -454,15 +465,6 @@ pub(crate) fn render_slot_group(sink: &mut SceneEmitSink<'_>, input: RenderSlotG
     });
     let mut occupied_rest_rects = Vec::new();
     for (_, rest) in visible_rests {
-        let voice_shift = if hit_voice_count > 1 {
-            if rest.event.voice == 1 {
-                -4.0
-            } else {
-                4.0
-            }
-        } else {
-            0.0
-        };
         let rest_dot_count = rest.event.dot_count as usize;
         let rest_shape_duration = if rest_dot_count > 0 {
             Fraction {
@@ -477,9 +479,7 @@ pub(crate) fn render_slot_group(sink: &mut SceneEmitSink<'_>, input: RenderSlotG
         let reference_note_metric =
             notehead_glyph(&rest.event.track, &rest.event.modifiers, &rest.event.glyph);
         let note_center_x = slot_hit_center_x.unwrap_or_else(|| {
-            input.event_x - 7.0
-                + voice_shift
-                + glyph_bbox_center_x_offset(reference_note_metric, rest_font_size)
+            input.event_x - 7.0 + glyph_bbox_center_x_offset(reference_note_metric, rest_font_size)
         });
         let (placement, diagnostic) = resolve_rest_placement(
             rest,
@@ -635,7 +635,6 @@ fn beam_groups_for_slot(
 pub(crate) struct RenderHitClusterInput<'a> {
     measure_id: &'a str,
     event_x: f32,
-    voice_shift: f32,
     staff_top: f32,
     voice_hits: &'a [&'a SlotEvent<'a>],
     beam_group: Option<u32>,
@@ -652,7 +651,7 @@ pub(crate) fn render_hit_cluster(
         .first()
         .map(|slot_event| slot_event.event.voice != 2)
         .unwrap_or(true);
-    let base_note_x = input.event_x - 7.0 + input.voice_shift;
+    let base_note_x = input.event_x - 7.0;
     let mut placements = input
         .voice_hits
         .iter()

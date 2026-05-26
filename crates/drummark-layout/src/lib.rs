@@ -42,6 +42,9 @@ pub use instruments::*;
 pub use metrics::*;
 #[allow(unused_imports)] // `wire` pulls these in via `super::*`.
 use names::*;
+pub use names::{
+    composite_kind_name, fragment_kind_name, glyph_role_name, scene_item_kind_name, text_role_name,
+};
 pub use options::*;
 #[allow(unused_imports)] // `scene` and integration tests.
 pub(crate) use pagination::{
@@ -118,8 +121,8 @@ mod tests {
         let g = notehead_glyph("SD", &["ghost".to_string()], "d");
         assert_eq!(g.role, GlyphRole::NoteheadBlackParens);
         assert_eq!(g.smufl_codepoint, 0xE0A4); // ghost ligature uses black notehead as its base component
-        assert_eq!(g.smufl_ligature, Some("uniE0F5_uniE0A4_uniE0F6"));
-        assert_eq!(g.render_text(), "uniE0F5_uniE0A4_uniE0F6");
+        assert_eq!(g.smufl_ligature, Some(&[0xE0F5, 0xE0A4, 0xE0F6][..]));
+        assert_eq!(g.render_text(), "\u{E0F5}\u{E0A4}\u{E0F6}");
         let g = notehead_glyph("RC", &["bell".to_string()], "x");
         assert_eq!(g.smufl_codepoint, 0xE0DB); // ride bell → diamond black notehead
     }

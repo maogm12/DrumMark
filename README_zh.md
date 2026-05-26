@@ -54,8 +54,21 @@ BD |  p - - - p - - - | p - p - - - p -        |
 
 - **Frontend:** React + TypeScript + Vite
 - **Editor:** CodeMirror 6 (定制语法高亮)
-- **Rendering:** VexFlow 5
-- **PDF Export:** pdf-lib + SVG Rasterization
+- **Rendering:** Rust layout engine (`RenderScore -> LayoutScene`) + SVG adapter
+- **Native CLI:** Rust binary，可导出 MusicXML、SVG、PDF 和调试 JSON
+- **PDF Export:** 原生 PDF 生成，带 Bravura/fallback 字体覆盖检查和 font subset
+
+### Native CLI
+
+```bash
+npm run drummark:native -- docs/examples/overview.drum --format musicxml
+npm run drummark:native -- docs/examples/overview.drum --format svg --output /tmp/overview.svg
+npm run drummark:native -- docs/examples/overview.drum --format pdf --output /tmp/overview.pdf
+```
+
+支持格式：`musicxml`, `svg`, `pdf`, `ast`, `ir`, `scene`。其中 `ast`、`ir`、`scene` 是开发/调试用 JSON，schema 不承诺稳定。Native CLI 不支持 `--format xml`，也没有 page 参数；SVG/PDF 一律导出完整乐谱。
+
+PDF 默认使用 `public/fonts/bravura.otf`，也可以用 `--font <PATH>` 指定。Bravura 覆盖的字符使用 Bravura；缺失字符使用 `--fallback-font <PATH>` 或已记录的平台 fallback。显式传入的字体路径是严格模式：路径无效会直接失败，不静默替换。
 
 ---
 

@@ -337,6 +337,11 @@ When an older note conflicts with this file, treat this file plus the active spe
 - Whole rest attachment should solve from the glyph top edge (`baseline = target_line + bbox_ne_y_ss * font_size/4`) because the rest hangs below the staff line. Half rest attachment should solve from the glyph bottom edge (`baseline = target_line + bbox_sw_y_ss * font_size/4`) because the rest sits on the staff line.
 - Regression tests for rest line attachment must include the rendered font size when converting glyph bbox coordinates back to staff spaces; comparing raw SMuFL staff-space bbox values directly to screen-space positions can mask vertical placement errors.
 
+## 2026-05-25 Native CLI Font Asset Recon
+
+- The checked-in Bravura asset path is `public/fonts/bravura.otf` with a lowercase filename, plus `public/fonts/bravura.woff2` and `public/fonts/bravura_metadata.json`.
+- No CJK/Hei font is checked into `public/fonts`. On this macOS environment, a plausible system CJK sans/Hei candidate exists at `/System/Library/Fonts/STHeiti Medium.ttc`, but native PDF export should still support an explicit `--cjk-font <PATH>` because CI and packaged installs may not have that platform font.
+
 ## 2026-05-25 Ride Bell Noteheads
 
 - `r:bell` resolves through core as track `RC`, glyph `x`, modifier `bell`; the diamond visual shape is therefore a layout/export modifier rule, not a retained raw glyph rule.
@@ -366,3 +371,10 @@ When an older note conflicts with this file, treat this file plus the active spe
 ## 2026-05-25 Drag Grace Note Beams
 
 - `drag` grace notes should be rendered as two 16th grace noteheads connected by a small double beam, not as two independently flagged grace notes. The layout emits `grace-beam` and `grace-beam-secondary` path items for the pair.
+
+## 2026-05-25 Native CLI PDF Font Subsetting
+
+- `printpdf 0.9.1` exposes `PdfSaveOptions { subset_fonts: true }`, but its serialization path currently disables the actual subsetting branch with `if false && do_subset`; using that option alone embeds full font programs.
+- `allsorts`/`printpdf::subset_font` and `fontcull` reduced PDF cmap/width metadata in prototype checks, but did not sufficiently reduce Bravura CFF OTF font data. HarfBuzz subsetting via `hb-subset` with the bundled feature produced real Bravura CFF and Arial Unicode fallback subsets for PDF embedding.
+- The native PDF path must subset fonts before registering them with `printpdf`; the PDF writer then embeds those already-subset font bytes. On this machine, `docs/examples/overview.drum` produced a 40 KB PDF with Bravura and fallback subsets, versus 54 MB when full platform CJK fonts were embedded.
+- Default Bravura resolution is `public/fonts/bravura.otf`. Fallback text fonts are only loaded when Bravura lacks a `TextRun` character. The documented fallback candidates are `DRUMMARK_TEST_FALLBACK_FONT`, `/Library/Fonts/Arial Unicode.ttf`, `/System/Library/Fonts/Supplemental/Arial Unicode.ttf`, and `/System/Library/Fonts/STHeiti Medium.ttc`; explicit `--font` and `--fallback-font` paths remain strict hard failures if invalid.

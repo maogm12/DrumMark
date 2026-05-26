@@ -54,8 +54,21 @@ BD |  p - - - p - - - | p - p - - - p -        |
 
 - **Frontend:** React + TypeScript + Vite
 - **Editor:** CodeMirror 6 (Custom syntax highlighting)
-- **Rendering:** VexFlow 5
-- **PDF Export:** pdf-lib + SVG Rasterization
+- **Rendering:** Rust layout engine (`RenderScore -> LayoutScene`) with SVG adapters
+- **Native CLI:** Rust binary for MusicXML, SVG, PDF, and debug JSON exports
+- **PDF Export:** Native PDF generation with Bravura/fallback font coverage checks and font subsetting
+
+### Native CLI
+
+```bash
+npm run drummark:native -- docs/examples/overview.drum --format musicxml
+npm run drummark:native -- docs/examples/overview.drum --format svg --output /tmp/overview.svg
+npm run drummark:native -- docs/examples/overview.drum --format pdf --output /tmp/overview.pdf
+```
+
+Supported native formats are `musicxml`, `svg`, `pdf`, `ast`, `ir`, and `scene`. `ast`, `ir`, and `scene` are developer/debug JSON outputs with unstable schemas. The native CLI does not support `--format xml` or page selection; SVG and PDF always export the complete score.
+
+PDF output uses `public/fonts/bravura.otf` by default, or `--font <PATH>`. Text characters covered by Bravura use Bravura; missing text glyphs use `--fallback-font <PATH>` or a documented platform fallback when available. Explicit font paths are strict: invalid paths fail instead of silently substituting.
 
 ---
 

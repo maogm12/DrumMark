@@ -8,10 +8,6 @@ description = "DrumMark notation parser — source text to AST"
 [lib]
 crate-type = ["cdylib", "rlib"]
 
-[[bin]]
-name = "drummark"
-path = "src/main.rs"
-
 [dependencies]
 logos = "0.15"
 wasm-bindgen = "0.2"
@@ -21,7 +17,8 @@ drummark-layout = { path = "../drummark-layout", optional = true }
 [features]
 default = ["parser-wasm", "layout-wasm"]
 parser-wasm = []
-layout-wasm = ["dep:drummark-layout"]
+layout = ["dep:drummark-layout"]
+layout-wasm = ["layout"]
 
 [dev-dependencies]
 wasm-bindgen-test = "0.3"

@@ -558,10 +558,12 @@
           "measure-number": 5,
           "grace-notehead": 5,
           "grace-stem": 5,
-          "grace-slash": 5,
+          "grace-beam": 2,
+          "grace-beam-secondary": 2,
           "ledger-line": 1,
           "accent": 2,
           "grace-flag": 1,
+          "grace-slash": 1,
           "final-barline-thin": 1,
           "final-barline-thick": 1
         },
@@ -1410,7 +1412,7 @@
     {
       "file": "docs/examples/modifiers.drum",
       "summary": {
-        "lineCount": 61,
+        "lineCount": 57,
         "rectCount": 13,
         "textCount": 99,
         "polylineCount": 0,

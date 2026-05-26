@@ -62,7 +62,7 @@ pub struct GlyphPoint {
 pub struct CanonicalGlyphMetric {
     pub role: GlyphRole,
     pub smufl_codepoint: u32,
-    pub smufl_ligature: Option<&'static str>,
+    pub smufl_ligature: Option<&'static [u32]>,
     pub width_ss: f32,
     pub bbox_sw_x_ss: f32,
     pub bbox_sw_y_ss: f32,
@@ -114,8 +114,11 @@ impl CanonicalGlyphMetric {
     }
 
     pub fn render_text(&self) -> String {
-        if let Some(ligature) = self.smufl_ligature {
-            return ligature.to_string();
+        if let Some(codepoints) = self.smufl_ligature {
+            return codepoints
+                .iter()
+                .map(|&cp| char::from_u32(cp).unwrap_or('?'))
+                .collect();
         }
         char::from_u32(self.smufl_codepoint)
             .unwrap_or('?')
@@ -155,7 +158,7 @@ pub enum FlagPathRole {
 fn glyph_metric(
     role: GlyphRole,
     smufl_codepoint: u32,
-    smufl_ligature: Option<&'static str>,
+    smufl_ligature: Option<&'static [u32]>,
     bbox_sw: [f32; 2],
     bbox_ne: [f32; 2],
     stem_up_anchor: Option<[f32; 2]>,
@@ -231,7 +234,7 @@ pub fn canonical_glyph_metric(role: GlyphRole) -> CanonicalGlyphMetric {
         GlyphRole::NoteheadBlackParens => glyph_metric(
             role,
             0xE0A4,
-            Some("uniE0F5_uniE0A4_uniE0F6"),
+            Some(&[0xE0F5, 0xE0A4, 0xE0F6]),
             [0.0, -0.724],
             [1.832, 0.724],
             Some([1.49, 0.16]),

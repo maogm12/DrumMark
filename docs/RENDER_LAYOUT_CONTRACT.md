@@ -175,6 +175,41 @@ Layout tests must validate final scenes for:
 
 Overflow suppresses only bounds failures for the explicitly overflowing system named by a `LAYOUT_WARNING overflow ...` issue. Page order, ID uniqueness, page-local references, header bounds, and unrelated system bounds remain validated.
 
+## Addendum 2026-05-25: Native CLI Export Contract
+
+The approved native command line architecture adds a Rust-owned `drummark` CLI in `crates/drummark-cli`.
+
+The first-release native CLI formats are:
+
+- `musicxml`: MusicXML output from the Rust normalized score.
+- `svg`: complete-score SVG output.
+- `pdf`: complete-score PDF output.
+- `ast`: developer/debug parser AST JSON with an unstable schema.
+- `ir`: developer/debug normalized or render-ready JSON with an unstable schema.
+- `scene`: developer/debug raw `LayoutScene` JSON with an unstable schema.
+
+The native CLI does not support `xml` as a `musicxml` alias.
+
+The CLI reads source from a file or stdin. Text outputs may write to stdout or `--output`; PDF writes to an output file.
+
+The native CLI uses Rust-owned parser, normalizer, MusicXML, render-score, and layout APIs. It must not call WASM entrypoints. `drummark-core` exposes render-score derivation through a native `layout` feature; `layout-wasm` may remain for WASM packages but must build on the native layout feature instead of being the only render-score gate. Only `crates/drummark-cli` may expose a production binary named `drummark`.
+
+SVG and PDF exports always include every `LayoutScene` page. SVG emits one SVG document with pages stacked vertically using a fixed page gap. PDF emits each `LayoutScene` page as a separate PDF page preserving page dimensions. The first-release CLI does not expose a page-selection option.
+
+PDF export uses deterministic subset-embedded fonts:
+
+- Notation `GlyphRun` output uses Bravura.
+- Bravura is resolved from explicit `--font <PATH>` or `public/fonts/bravura.otf`.
+- Explicit invalid `--font` values fail without fallback.
+- Text `TextRun` output is split into contiguous runs by actual Bravura glyph coverage.
+- Bravura-covered text runs use Bravura.
+- Text runs not covered by Bravura use a fallback Hei/CJK sans font.
+- The fallback font is resolved from explicit `--fallback-font <PATH>` or documented platform candidates only when fallback text is actually needed.
+- Explicit invalid `--fallback-font` values fail without platform fallback.
+- Missing glyph coverage or unavailable subset-embeddable fallback fonts are export failures, not viewer-dependent substitutions.
+
+Exporter adapters remain thin. SVG and PDF exporters translate `LayoutScene` primitives and approved composite fallbacks only; engraving and layout decisions remain owned by `drummark-layout`.
+
 ## Addendum 2026-05-18: Split Parser/Layout WASM and Default Layout Rendering
 
 The approved web runtime architecture separates parser startup from layout rendering:

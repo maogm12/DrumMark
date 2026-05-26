@@ -108,7 +108,7 @@ describe("SVG Renderer parity", () => {
   it("renders ghost modifier", async () => {
     const svg = await render(HEADER + "SD | d:ghost |\n");
     expect(countRole(svg, "notehead")).toBe(1);
-    expect(svg).toContain("\u{E0A4}");
+    expect(svg).toContain("\u{E0F5}\u{E0A4}\u{E0F6}");
   });
 
   it("renders double barline", async () => {

@@ -1,6 +1,7 @@
 [workspace]
 members = [
   "crates/drummark-core",
+  "crates/drummark-cli",
   "crates/drummark-layout",
 ]
 resolver = "2"

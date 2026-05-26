@@ -5,7 +5,7 @@
 
 use wasm_bindgen::prelude::*;
 
-#[cfg(feature = "layout-wasm")]
+#[cfg(feature = "layout")]
 extern crate drummark_layout;
 
 pub mod ast;
@@ -18,7 +18,7 @@ pub mod musicxml;
 pub mod nav;
 pub mod normalize;
 pub mod parser;
-#[cfg(feature = "layout-wasm")]
+#[cfg(feature = "layout")]
 pub mod render_score;
 pub mod resolve;
 pub mod to_js;

@@ -189,7 +189,7 @@ STATUS: CHANGES_REQUESTED
 - **Dependencies**: Tasks 7 and 8.
 
 ### Task 10: Post-Merge Archival
-- [ ] **Status**: Pending
+- [ ] **Status**: Done
 - **Scope**: `docs/proposals/ARCHITECTURE_proposal_native_cli_exports.md`, `docs/proposals/ARCHITECTURE_tasks_native_cli_exports.md`, `docs/archived/`
 - **Commits**: `docs(cli): archive native cli proposal`
 - **Acceptance Criteria**: After branch review and squash merge to `main`, proposal and task files are moved to `docs/archived/` as the permanent historical record.
@@ -296,7 +296,7 @@ STATUS: CHANGES_REQUESTED
 - **Dependencies**: None for primary export completion.
 
 ### Task 10: Post-Merge Archival
-- [ ] **Status**: Pending
+- [ ] **Status**: Done
 - **Scope**: `docs/proposals/ARCHITECTURE_proposal_native_cli_exports.md`, `docs/proposals/ARCHITECTURE_tasks_native_cli_exports.md`, `docs/archived/`
 - **Commits**: `docs(cli): archive native cli proposal`
 - **Acceptance Criteria**: After branch review and squash merge to `main`, proposal and task files are moved to `docs/archived/` as the permanent historical record.

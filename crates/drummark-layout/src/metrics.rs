@@ -210,7 +210,7 @@ pub fn canonical_glyph_metric(role: GlyphRole) -> CanonicalGlyphMetric {
             None,
             [0.0, -0.5],
             [1.0, 0.5],
-            Some([1.0, 0.0]),
+            Some([1.2, 0.0]),
             Some([0.0, 0.0]),
         ),
         GlyphRole::NoteheadCircleX => glyph_metric(
@@ -219,7 +219,7 @@ pub fn canonical_glyph_metric(role: GlyphRole) -> CanonicalGlyphMetric {
             None,
             [0.0, -0.5],
             [0.996, 0.5],
-            Some([0.996, 0.0]),
+            Some([1.25, 0.0]),
             Some([0.0, 0.0]),
         ),
         GlyphRole::NoteheadRim => glyph_metric(
@@ -237,8 +237,8 @@ pub fn canonical_glyph_metric(role: GlyphRole) -> CanonicalGlyphMetric {
             Some(&[0xE0F5, 0xE0A4, 0xE0F6]),
             [0.0, -0.724],
             [1.832, 0.724],
-            Some([1.49, 0.16]),
-            Some([0.1, -0.16]),
+            Some([1.86, 0.16]),
+            Some([0.48, -0.16]),
         ),
         GlyphRole::Flag8thUp => glyph_metric(
             role,

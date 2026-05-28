@@ -7,8 +7,8 @@
 - **Prototype Verification:** Before applying complex fixes or features, implement small-scale prototypes or reproduction scripts to verify assumptions autonomously.
 - **Technical Rigor:** Ensure every change is idiomatically correct and does not introduce regressions or syntax errors (like omission placeholders) into the codebase.
 - **Knowledge Retention:** After researching source code or documentation to solve a problem, document the findings (API details, internal logic, discovered constraints) in `LEARNINGS.md`. **All updates to `LEARNINGS.md` MUST follow the Append-Only Protocol** to prevent accidental data loss and maintain a chronological record of technical discoveries.
-- **Design First**: For any significant DSL or architectural changes, the agent MUST present a design proposal (documented in the relevant specification file or a dedicated design document) and obtain explicit user approval before writing or modifying any implementation code. **All design proposals and their subsequent reviews MUST follow the Linear Ledger Protocol defined below.**
-- **Proposal-Scoped Review**: Do not stop for a sub-agent review after every individual code change. Instead, each approved proposal is implemented on its own branch, and the branch receives one concentrated review pass before it is merged back to `main`.
+- **Design First**: For significant DSL, architecture, or spec/contract changes, follow **[Change Workflow](#change-workflow)** before implementation: create `docs/changes/active/<change-id>/plan.md`, complete plan review, record a human stamp in `history.md` when required, then implement.
+- **Plan-Scoped Review**: Do not request formal plan review after every task or commit during implementation. Complete one concentrated implementation review when the planned work is done, then merge back to `main`.
 
 ## Project Map & Fast Orientation
 
@@ -27,9 +27,13 @@ crates/
 docs/
   DRUMMARK_SPEC.md               Append-only language spec
   RENDER_LAYOUT_CONTRACT.md      Rendering/layout contract
+  changes/active/                Per-change plan.md + history.md (new work)
+  changes/archive/               Completed change folders
+  adr/                           Architecture Decision Records
+  spikes/                        Spike / feasibility notes
   examples/                      Example .drum inputs and generated SVG outputs
-  proposals/                     Active proposal/task ledgers
-  archived/                      Historical proposal/task/spec material
+  proposals/                     Legacy proposal/task ledgers (read-only for new work)
+  archived/                      Legacy archived proposals and specs
   layout-corpus/                 Layout corpus reports and scene snapshots
 scripts/                         Build/audit/report scripts
 public/fonts/                    Bravura font assets and metadata
@@ -43,7 +47,7 @@ public/fonts/                    Bravura font assets and metadata
 - **SVG adapter issue**: start with `src/renderer/svgSceneAdapter.test.ts`, `src/renderer/svgRenderer.ts`, and `src/renderer/svgRendererNode.ts`.
 - **Settings/UI issue**: start with `src/components/SettingsPanel.tsx`, `src/components/NumericSettingControl.tsx`, `src/hooks/useAppSettings.ts`, `src/styles.css`, and `src/i18n/*`.
 - **WASM boundary issue**: start with `src/wasm/parser_wasm_*`, `src/wasm/layout_wasm_*`, `scripts/build_wasm.mjs`, then rebuild with `npm run wasm:build`.
-- **Docs/spec change**: start with `docs/DRUMMARK_SPEC.md`, `docs/RENDER_LAYOUT_CONTRACT.md`, and active files under `docs/proposals/`.
+- **Docs/spec change**: start with the active change under `docs/changes/active/<change-id>/`, then `docs/DRUMMARK_SPEC.md` and `docs/RENDER_LAYOUT_CONTRACT.md`. Read `docs/proposals/` only for legacy context.
 
 ### Search Discipline
 
@@ -51,103 +55,74 @@ public/fonts/                    Bravura font assets and metadata
 - Exclude generated/heavy areas unless needed: `src/wasm/*/drummark_core_bg.wasm`, `docs/archived/`, generated `docs/examples/*.svg`, and layout snapshots.
 - For rendering bugs, use the CLI pipeline first, then inspect code: `--format ast`, `--format ir`, then `--format svg` or `--format xml`.
 
-## Specification & Design Review Protocol
+## Change Workflow
 
-To ensure technical integrity and historical traceability, all formal specifications (e.g., `DRUMMARK_SPEC.md`, `DRUM_IR_SPEC.md`) and design proposals must follow this **Proposal-based Review Protocol**. Proposals are authored, reviewed, and iterated in isolated files; only the final approved result lands in the spec.
+The authoritative change workflow for this repository is:
 
-### 1. Proposal File
-
-- **Create a standalone proposal file** in `docs/proposals/` for each change, named `<SpecName>_proposal_<topic>.md` (e.g., `DRUMMARK_SPEC_proposal_rehearsal_marks.md`).
-- The proposal file contains the full Addendum text as it would appear in the spec.
-- **Each proposal gets its own file** — concurrent proposals do not block each other.
-
-### 2. Review Iteration (Linear Ledger within the Proposal)
-
-The proposal file itself follows the **Linear Ledger Protocol** for review notes:
-
-- **Strict Physical Append**: Never modify the original proposal text or any previous review round. All review notes and author responses MUST be appended to the **very end of the file**.
-- **Chrono-Log Format**: The file grows downward:
-    - `## Addendum vX.Y: [Title]` (the original proposal)
-    - `### Review Round 1` (reviewer notes)
-    - `### Author Response` (author addresses feedback)
-    - `### Review Round 2` → `### Author Response` → ... until approval
-- **Prohibition of Anchoring**: Do NOT insert content above an existing header. Every response is a new section at the bottom.
-
-### 3. Mandatory Sub-agent Review
-
-After authoring a proposal, the agent MUST invoke a sub-agent to review it:
-
-- **Constructive Hostility**: The reviewer must act as a critical architect, searching for logic deadlocks, ambiguities, or implementation gaps.
-- **No Rubber Stamping**: "Looks good" is an automatic failure. The reviewer must provide specific, actionable critiques or verify complex edge cases.
-- **Physical Documentation**: The reviewer MUST append their review notes to the proposal file, following the Linear Ledger Protocol.
-- **Review Round ID**: Every review must clearly state its round number (e.g., `### Review Round 1`).
-- The reviewer must end with a clear status: `STATUS: CHANGES_REQUESTED` or `STATUS: APPROVED`.
-
-### 4. Execution Planning (Tasks File)
-
-After the proposal achieves sub-agent `STATUS: APPROVED`, the author MUST create a companion **tasks file** in `docs/proposals/`, named `<SpecName>_tasks_<topic>.md`. This file defines the implementation plan as a sequence of tasks, each mapping to one or more commits.
-
-Each task entry MUST include a status checkbox and the following fields:
-
-```markdown
-### Task N: [Title]
-- [ ] **Status**: Pending
-- **Scope**: modules/files affected (e.g., parser grammar, IR types, renderer, editor integration, syntax highlighting, docs, CLI)
-- **Commits**: list of planned commits with scope prefix (e.g., `feat(parser): add X rule`)
-- **Acceptance Criteria**: verifiable conditions (e.g., `npm run drummark --format ir <input>` produces expected IR)
-- **Dependencies**: which prior tasks must complete first (if any)
+```text
+.agents/skills/change-workflow/SKILL.md
 ```
 
-When a task is completed during implementation (Section 6), its status is updated to `[x] **Status**: Done`.
+Before Normal, Large, or Spec / Contract work, read that skill and:
 
-The final task MUST always include consolidation of the proposal into the spec (if not already done in Section 5).
+```text
+.agents/skills/change-workflow/references/project-rules.md
+```
 
-After authoring the tasks file, the agent MUST invoke a sub-agent to review it, following the **Linear Ledger Protocol** (append-only, Review Rounds + Author Responses). The reviewer checks for completeness, correct ordering, and coverage of all proposal requirements.
+Use the templates under `.agents/skills/change-workflow/references/` for `plan.md`, `history.md`, bugs, and ADRs.
 
-#### Task Independence Rule
+If the required workflow directories (`docs/changes/active/`, `docs/changes/archive/`, `docs/adr/`, `docs/spikes/`) are missing, create them before using the change workflow.
 
-Each task MUST be independently implementable and testable. Avoid the "normalize.rs trap" — where tasks are defined as logical phases but the implementation reveals they are deeply coupled (e.g., `token_to_events` cannot work without `resolve_token`, which cannot work without `fraction`). Rules:
+### Routing Summary
 
-- **Every task must have a clear input/output contract** — what data goes in, what data comes out.
-- **Every task must be testable in isolation** — using hand-crafted mock inputs, without requiring downstream or upstream tasks to be complete.
-- **Tasks that compute positions from shared data (e.g., note X from slot→X mapping) depend on foundation tasks, but tasks that compute DIFFERENT element types from the SAME shared data are parallel and independent.** Example: note placement depends on `slot→X`, but barline placement and beam placement are independent of each other — both read slot→X results, neither reads the other's output.
-- **Algorithms with no external dependencies (e.g., edge element stacking, fixpoint loop) must be their own task**, testable with a hand-crafted list of mock edge elements.
-- **Orchestrator tasks (that call modules in sequence) come last**, after all independent modules are built and tested.
+- **Tiny Change**: fix directly; no change folder. Check project-rules exclusion criteria first.
+- **Normal / Large Change**: create `docs/changes/active/<change-id>/plan.md` and `history.md`.
+- **Spec / Contract Change**: same folder layout, plus `## Spec Delta`, affected-spec update task, human stamp in `history.md`, and the spec merge protocol in `project-rules.md`.
+- **Spikes**: `docs/spikes/`
+- **ADRs**: `docs/adr/` for long-term architecture decisions only.
+- **Overlap**: Spec / Contract > Large > Normal > Tiny. When a change matches multiple types, follow the higher-priority workflow.
 
-The reviewer MUST check for task independence and reject designs where multiple tasks share hidden coupling.
+Change id format:
 
-### 5. Final Approval, Consolidation & Stamp
+```text
+YYYY-MM-DD-short-kebab-title
+```
 
-- Implementation may ONLY begin after **both** the proposal and tasks files achieve sub-agent `STATUS: APPROVED`.
-- The author presents both approved files to the user and waits for the user's explicit **stamp** (final human sign-off).
-- Once the user stamps, the author MUST:
-    1. **Append `### Consolidated Changes`** to the proposal file, synthesizing all agreed-upon changes from the proposal and its review rounds into a single, cohesive summary.
-    2. **Append a clean Addendum** to the actual spec file (`DRUMMARK_SPEC.md` etc.) following the Linear Ledger Protocol — no review noise, just the final approved content.
-- The spec file itself remains append-only: Addendums are added to its end, never inserted above existing content.
+### Artifact Rules
 
-### 6. Implementation Branch Workflow
+- `plan.md` is the current plan. The agent may rewrite it after review.
+- `history.md` is append-only. Record plan reviews, `### Approved Plan` (or `### Plan Review Skipped` when review is skipped), human stamps, `## Consolidated Changes`, and implementation reviews there.
+- Do not append review transcripts or stale task versions to `plan.md`.
+- Do not create new files under `docs/proposals/`.
+- `docs/proposals/` and `docs/archived/` are legacy artifacts. Read them for context only.
+- `docs/PLAN.md` and `docs/TASKS.md`, if present, are roadmap documents, not per-change plans.
 
-After consolidation is complete, implementation proceeds task-by-task:
+### Required Gates
 
-- The agent MUST create or use a dedicated branch for the proposal, preferably named from the proposal topic (for example `proposal/platform-neutral-drum-layout`).
-- All implementation for that proposal lands on the proposal branch first, not directly on `main`.
-- Small, related changes may be batched within a single task; the agent may commit multiple times within a task as needed.
-- After committing, the agent marks the task complete in the tasks file (e.g., `STATUS: DONE`) and moves to the next task.
-- During implementation, the agent still verifies acceptance criteria and runs `npm run drummark` to confirm no regressions, but does not need to pause for a formal sub-agent review after every code edit.
+- Plan review must end with `STATUS: APPROVED` before implementation, unless the plan review is skipped for a low-risk Normal Change (Light Normal or recorded skip reason). When skipped, record `### Plan Review Skipped` in `history.md` instead of `### Approved Plan`.
+- After plan approval, append `### Approved Plan` to `history.md`. After an intentional skip, append `### Plan Review Skipped`.
+- Spec / Contract Changes and other stamped work require `Status: APPROVED_FOR_IMPLEMENTATION` recorded in `history.md` before coding starts. Do not rely on chat history alone.
+- During implementation, update task status in `plan.md`, run relevant checks, and request one implementation review when planned work is complete.
+- Merge only after implementation review reaches `STATUS: APPROVED`.
+- Prefer squash merge unless the user requests otherwise.
+- After merge, move the change folder to `docs/changes/archive/<year>/<change-id>/`.
 
-### 7. Pre-Merge Review and Mainline Integration
+### Spec and Contract Files
 
-- When all tasks for the proposal branch are complete, the agent invokes a sub-agent to review the branch as a whole.
-- That review focuses on technical correctness, regressions, task coverage, and consistency with the approved proposal/tasks files.
-- The agent addresses review findings on the proposal branch until the branch is ready to merge.
-- Once the branch passes review, it is merged into `main` with a squash merge so `main` receives one consolidated commit (or one intentionally small set of commits if the user explicitly asks otherwise).
+Active specs and contracts such as `DRUMMARK_SPEC.md` and `RENDER_LAYOUT_CONTRACT.md` remain append-only unless the user explicitly approves a rewrite.
 
-### 8. Completion & Archival
+For Spec / Contract Changes:
 
-- After all tasks are complete, verify the proposal's content is present in the spec file. If not, append it.
-- After the reviewed proposal branch is squash-merged into `main`, archive the proposal artifacts.
-- **Move the proposal file and tasks file** to `docs/archived/` as a permanent historical record.
-- `docs/proposals/` holds active proposals; `docs/archived/` holds completed ones.
+1. Draft the change in `plan.md` under `## Spec Delta`.
+2. Record `## Consolidated Changes` in `history.md` before updating the spec.
+3. Append the final addendum to the affected spec or contract before merge.
+4. Do not copy review notes or rejected alternatives into spec text.
+
+Full rules live in `project-rules.md`.
+
+### In-Flight Legacy Work
+
+If work already exists under `docs/proposals/`, either finish it under that legacy path or migrate it into `docs/changes/active/<change-id>/` with links in `plan.md` under `## Linked Items`. Do not start duplicate plans for the same work in both systems.
 
 ## Rendering Rules
 

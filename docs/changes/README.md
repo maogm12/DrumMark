@@ -19,3 +19,7 @@ docs/changes/archive/<year>/<change-id>/
 Do not create loose `plan.md` or `history.md` files.
 
 Do not create new proposal/tasks files under `docs/proposals/` for new work.
+
+Active changes:
+
+(empty)

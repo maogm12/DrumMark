@@ -2267,7 +2267,7 @@ Classifies each Appendix C item and the rehearsal marks proposal into one of fou
 
 | Lane | Definition |
 |------|-----------|
-| **F-active** | An approved proposal stream exists; implementation tasks are pending in a separate tasks file. |
+| **F-active** | An approved change plan exists under `docs/changes/active/<change-id>/`; legacy proposal ledgers may live in `docs/archived/`. |
 | **F-spec** | Defined in `Appendix C` but no IR/render design beyond the spec table text. Requires a separate design proposal before tasking. |
 | **F-spec-rejected** | Explicitly ruled out in the spec. Documented here to prevent re-proposal without addressing the underlying constraint. |
 | **F-discovery** | Feature idea not yet reaching `Appendix C`. May exist only as verbal discussion or editorial note. Empty as of this addendum. |
@@ -2276,7 +2276,7 @@ Classifies each Appendix C item and the rehearsal marks proposal into one of fou
 
 | Lane | Feature | Evidence |
 |------|---------|----------|
-| **F-active** | Rehearsal marks (`[label]`) | Approved proposal: `docs/proposals/DRUMMARK_SPEC_proposal_rehearsal_marks.md`; tasks: `docs/proposals/DRUMMARK_SPEC_tasks_rehearsal_marks.md` |
+| **F-spec** | Rehearsal marks (`[label]`) | `Appendix C`; design proposal archived at `docs/archived/DRUMMARK_SPEC_*_rehearsal_marks.md` |
 | **F-spec** | Inline tempo change (`@tempo:<N>`) | `Appendix C`; no grammar, no IR, no source mentions |
 | **F-spec** | Inline time-signature change (`@time:<N/M>`) | `Appendix C`; no grammar, no IR, no source mentions |
 | **F-spec** | Pickup/anacrusis measure (`@partial:<N>`) | `Appendix C`; no grammar, no IR, no source mentions |
@@ -2512,3 +2512,4 @@ Dynamic marks export as below-staff MusicXML direction dynamics:
 ```
 
 The element inside `<dynamics>` is the canonical dynamic level. Mid-measure and end-measure dynamics use `<offset>` relative to measure start. Start-of-measure dynamics may omit `<offset>` or emit zero consistently with the existing direction export style. Score-level dynamics export once per percussion part, not once per track or voice.
+

@@ -1012,6 +1012,32 @@ mod group_visual_test {
         assert_eq!(rest.dot_count, 1);
         assert_eq!(rest.duration, Fraction::new(3, 8));
     }
+
+    #[test]
+    fn st_track_dash_advances_time_without_rest_event() {
+        let doc = parser::Parser::new("time 4/4\nnote 1/8\nSD | d d d d |\nST | R - L - |")
+            .parse()
+            .unwrap();
+        let score = normalize::normalize_document(&doc);
+        assert!(
+            score
+                .measures
+                .iter()
+                .flat_map(|measure| measure.events.iter())
+                .all(|event| !(event.track == "ST" && event.kind == crate::event::EventKind::Rest)),
+            "ST track '-' must not create rest events"
+        );
+        let sticking_starts = score.measures[0]
+            .events
+            .iter()
+            .filter(|event| event.kind == crate::event::EventKind::Sticking)
+            .map(|event| event.start)
+            .collect::<Vec<_>>();
+        assert_eq!(
+            sticking_starts,
+            vec![Fraction::zero(), Fraction::new(1, 4)]
+        );
+    }
 }
 
 #[cfg(test)]

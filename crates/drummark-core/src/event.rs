@@ -94,13 +94,16 @@ pub fn token_to_events(
             track_override,
         } => {
             if value == "-" {
+                // ST is a text-annotation track; "-" is a rhythmic spacer, not a rest.
                 let track = track_override
                     .as_deref()
                     .or(context_track)
-                    .unwrap_or("HH")
-                    .to_string();
+                    .unwrap_or("HH");
+                if track == "ST" {
+                    return vec![];
+                }
                 return vec![NormalizedEvent {
-                    track: track.clone(),
+                    track: track.to_string(),
                     paragraph_index,
                     measure_index,
                     measure_in_paragraph,
@@ -115,7 +118,7 @@ pub fn token_to_events(
                     modifiers: Vec::new(),
                     dot_count: (*dots).min(u8::MAX as u32) as u8,
                     modifier: None,
-                    voice: voice_for_track(&track),
+                    voice: voice_for_track(track),
                     beam: "none".to_string(),
                     tuplet: inherited_tuplet,
                     source_offset,
@@ -604,5 +607,30 @@ mod tests {
 
         assert_eq!(dynamics.len(), 1);
         assert_eq!(dynamics[0].at, Fraction::new(1, 4));
+    }
+
+    #[test]
+    fn st_track_dash_is_rhythmic_spacer_not_rest() {
+        let token = TokenGlyph::Basic {
+            value: "-".to_string(),
+            dots: 0,
+            halves: 0,
+            stars: 0,
+            modifiers: vec![],
+            track_override: None,
+        };
+        let events = token_to_events(
+            &token,
+            Fraction::zero(),
+            Fraction::new(1, 8),
+            Fraction::new(1, 8),
+            Some("ST"),
+            0,
+            0,
+            0,
+            None,
+            0,
+        );
+        assert!(events.is_empty(), "ST track '-' should not create a rest");
     }
 }

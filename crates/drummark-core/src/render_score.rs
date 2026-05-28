@@ -31,8 +31,12 @@ pub fn derive_render_score(score: &normalize::NormalizedScore) -> drummark_layou
             .measures
             .iter()
             .map(|measure| {
-                let mut events: Vec<drummark_layout::RenderEvent> =
-                    measure.events.iter().map(event_to_render_event).collect();
+                let mut events: Vec<drummark_layout::RenderEvent> = measure
+                    .events
+                    .iter()
+                    .filter(|event| !is_st_track_spacer(event))
+                    .map(event_to_render_event)
+                    .collect();
 
                 if measure.measure_repeat_slashes.is_none() && measure.multi_rest_count.is_none() {
                     events.extend(derive_implicit_rest_events(
@@ -118,6 +122,10 @@ fn dynamic_level_to_render(level: &crate::ast::DynamicLevel) -> drummark_layout:
     }
 }
 
+fn is_st_track_spacer(event: &crate::event::NormalizedEvent) -> bool {
+    event.track == "ST" && event.kind == EventKind::Rest
+}
+
 fn event_to_render_event(event: &crate::event::NormalizedEvent) -> drummark_layout::RenderEvent {
     drummark_layout::RenderEvent {
         track: event.track.clone(),
@@ -183,7 +191,7 @@ fn derive_implicit_rest_events(
     let measure_events: Vec<&crate::event::NormalizedEvent> = measure
         .events
         .iter()
-        .filter(|event| event.kind != EventKind::Sticking)
+        .filter(|event| event.kind != EventKind::Sticking && !is_st_track_spacer(event))
         .collect();
     if measure_events.is_empty() {
         let (track, track_family) = &default_voice_tracks[0];
@@ -206,6 +214,7 @@ fn derive_implicit_rest_events(
 
     let mut rests = Vec::new();
     let active_voices = active_voices_for_score(score);
+    let mut deferred_whole_measure_rests: Vec<(u8, String, String)> = Vec::new();
     for voice in [1_u8, 2_u8] {
         if !active_voices.contains(&voice) {
             continue;
@@ -231,14 +240,7 @@ fn derive_implicit_rest_events(
             .unwrap_or_else(|| fallback.clone());
 
         if voice_events.is_empty() {
-            push_rest_event(
-                &mut rests,
-                Fraction::zero(),
-                measure_duration,
-                voice,
-                &track.0,
-                &track.1,
-            );
+            deferred_whole_measure_rests.push((voice, track.0, track.1));
             continue;
         }
 
@@ -271,6 +273,32 @@ fn derive_implicit_rest_events(
                 &track.1,
                 &grouping,
                 score.header.time_beat_unit,
+            );
+        }
+    }
+
+    if deferred_whole_measure_rests.len() == 2 {
+        let (_, track, track_family) = deferred_whole_measure_rests
+            .iter()
+            .find(|(voice, _, _)| *voice == 1)
+            .unwrap_or(&deferred_whole_measure_rests[0]);
+        push_rest_event(
+            &mut rests,
+            Fraction::zero(),
+            measure_duration,
+            1,
+            track,
+            track_family,
+        );
+    } else {
+        for (voice, track, track_family) in deferred_whole_measure_rests {
+            push_rest_event(
+                &mut rests,
+                Fraction::zero(),
+                measure_duration,
+                voice,
+                &track,
+                &track_family,
             );
         }
     }

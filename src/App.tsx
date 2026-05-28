@@ -427,6 +427,7 @@ const PagePreview = memo(function PagePreview({
   const { t } = useT();
   const shellRef = useRef<HTMLDivElement | null>(null);
   const scrollPosRef = useRef({ top: 0, left: 0 });
+  const renderRequestRef = useRef(0);
   const [renderedMarkup, setRenderedMarkup] = useState("");
   const [isRendering, setIsRendering] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -439,8 +440,11 @@ const PagePreview = memo(function PagePreview({
   }
 
   useEffect(() => {
-    if (!active || !score) return;
-    onRenderInput?.(createParsedScoreState(score, source, sourceRevision));
+    if (!active || !source.trim()) return;
+    const requestId = ++renderRequestRef.current;
+    if (score) {
+      onRenderInput?.(createParsedScoreState(score, source, sourceRevision));
+    }
 
     const targetTop = scrollPosRef.current.top;
     const targetLeft = scrollPosRef.current.left;
@@ -455,6 +459,7 @@ const PagePreview = memo(function PagePreview({
         );
       })
       .then((pages) => {
+        if (requestId !== renderRequestRef.current) return;
         const markup = pages.map((svg, i) => `<section class="staff-preview-page" data-page="${i+1}">${svg}</section>`).join("");
         setRenderedMarkup(markup);
         setIsRendering(false);
@@ -462,13 +467,14 @@ const PagePreview = memo(function PagePreview({
         setError(null);
       })
       .catch((e) => {
+        if (requestId !== renderRequestRef.current) return;
         setIsRendering(false);
         const msg = e instanceof Error ? e.message : String(e);
         setError(msg || t("preview.error"));
       });
-  }, [score, source, sourceRevision, systemSpacing, stemLength, voltaSpacing, hairpinOffsetY, headerStaffSpacing, headerHeight, active, hideVoice2Rests, pagePadding, staffScale, tempoOffsetX, tempoOffsetY, measureNumberOffsetX, measureNumberOffsetY, measureNumberFontSize, durationSpacingCompression, measureWidthCompression, onRenderInput]);
+  }, [score, source, sourceRevision, systemSpacing, stemLength, voltaSpacing, hairpinOffsetY, headerStaffSpacing, headerHeight, active, hideVoice2Rests, pagePadding, staffScale, tempoOffsetX, tempoOffsetY, measureNumberOffsetX, measureNumberOffsetY, measureNumberFontSize, durationSpacingCompression, measureWidthCompression, onRenderInput, theme, t]);
 
-  if (!score) {
+  if (!source.trim()) {
     return (
       <div className={`staff-preview-shell${theme === "dark" ? " staff-preview-shell-dark" : ""}`} ref={shellRef} onScroll={handleScroll}>
         <div className="staff-printable-frame">
@@ -1227,7 +1233,7 @@ export function App() {
                   {settings.activeTab === "page" ? (
                     <PagePreview
                       score={hasRenderableScore ? score : null}
-                      source={analysis.source}
+                      source={debouncedAnalysisInput.dsl}
                       sourceRevision={analysis.sourceRevision}
                       pagePadding={settings.pagePadding}
                       staffScale={settings.staffScale}

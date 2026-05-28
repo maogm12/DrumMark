@@ -38,20 +38,44 @@ type XmlResponse = {
 let lastScore: ReturnType<typeof buildNormalizedScore> | null = null;
 let lastSource: string | null = null;
 
+function parseErrorScore(message: string): ReturnType<typeof buildNormalizedScore> {
+  return {
+    version: "1",
+    header: {},
+    tracks: [],
+    repeatSpans: [],
+    measures: [],
+    errors: [{ line: 1, column: 1, message }],
+  };
+}
+
+function postParseResponse(
+  id: number,
+  dsl: string,
+  sourceRevision: number,
+  score: ReturnType<typeof buildNormalizedScore>,
+) {
+  lastScore = score;
+  lastSource = dsl;
+  const response: ParseResponse = {
+    type: "parse",
+    id,
+    source: dsl,
+    sourceRevision,
+    score,
+  };
+  self.postMessage(response);
+}
+
 function handleMessage(msg: ScoreWorkerRequest) {
   if (msg.type === "parse") {
     const { id, dsl, sourceRevision } = msg;
-    const score = buildNormalizedScore(dsl);
-    lastScore = score;
-    lastSource = dsl;
-    const response: ParseResponse = {
-      type: "parse",
-      id,
-      source: dsl,
-      sourceRevision,
-      score,
-    };
-    self.postMessage(response);
+    try {
+      postParseResponse(id, dsl, sourceRevision, buildNormalizedScore(dsl));
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      postParseResponse(id, dsl, sourceRevision, parseErrorScore(message));
+    }
   } else if (msg.type === "generateXml") {
     const { id, hideVoice2Rests } = msg;
     if (!lastScore || lastSource === null) {
@@ -67,10 +91,18 @@ function handleMessage(msg: ScoreWorkerRequest) {
 
 self.onmessage = async (event: MessageEvent<ScoreWorkerRequest>) => {
   const msg = event.data;
-  if (msg.type === "parse") {
-    await wasmInit;
+  try {
+    if (msg.type === "parse") {
+      await wasmInit;
+    }
+    handleMessage(msg);
+  } catch (error) {
+    if (msg.type !== "parse") {
+      return;
+    }
+    const message = error instanceof Error ? error.message : String(error);
+    postParseResponse(msg.id, msg.dsl, msg.sourceRevision, parseErrorScore(message));
   }
-  handleMessage(msg);
 };
 
 export {};

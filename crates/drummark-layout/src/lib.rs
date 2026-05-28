@@ -66,7 +66,7 @@ use structural::spans::{
 };
 #[cfg(test)]
 use structural::spans::{volta_type_for_measure, VoltaSegmentType};
-use structural::stacking::stack_scene_structural_items;
+use structural::stacking::{stack_scene_structural_items, stack_sticking_items};
 
 pub use scene::build_layout_scene;
 pub(crate) use scene::fraction_to_f32;
@@ -81,6 +81,7 @@ use scene::render_header_layout_box;
 use validation::validate_layout_scene;
 
 const BASE_FONT_SIZE_PT: f32 = 30.0;
+const NOTE_FLAG_FONT_SIZE_PT: f32 = 22.0;
 
 // ── Tests ────────────────────────────────────────────────────────
 
@@ -2295,6 +2296,7 @@ mod tests {
             80.0,
             rest_glyph_for_fraction(event.duration),
             BASE_FONT_SIZE_PT,
+            false,
             &[blocking],
             &[],
         );
@@ -3569,6 +3571,239 @@ mod tests {
         assert!(
             stems.iter().all(|stem| stem.anchor_item_id.is_some()),
             "stems should preserve note anchors"
+        );
+    }
+
+    #[test]
+    fn sticking_clears_quarter_note_stem_in_alternating_st_sd_pattern() {
+        let quarter = |start_num: u32, kind: EventKind, track: &str, glyph: &str| RenderEvent {
+            track: track.into(),
+            track_family: if track == "ST" {
+                "text".into()
+            } else {
+                "drum".into()
+            },
+            start: Fraction {
+                numerator: start_num,
+                denominator: 4,
+            },
+            duration: Fraction {
+                numerator: 1,
+                denominator: 4,
+            },
+            visual_duration: Fraction {
+                numerator: 1,
+                denominator: 4,
+            },
+            kind,
+            glyph: glyph.into(),
+            modifiers: vec![],
+            dot_count: 0,
+            modifier: None,
+            voice: 1,
+            beam: "none".into(),
+            tuplet: None,
+        };
+        let measure = RenderMeasure {
+            index: 0,
+            global_index: 0,
+            paragraph_index: 0,
+            measure_in_paragraph: 0,
+            source_line: 1,
+            events: vec![
+                quarter(0, EventKind::Sticking, "ST", "R"),
+                quarter(0, EventKind::Hit, "SD", "d"),
+                quarter(2, EventKind::Sticking, "ST", "L"),
+                quarter(2, EventKind::Hit, "SD", "d"),
+            ],
+            barline: Some("regular".into()),
+            closing_barline: Some("final".into()),
+            start_nav: None,
+            end_nav: None,
+            volta_indices: None,
+            hairpins: vec![],
+            dynamics: vec![],
+            measure_repeat_slashes: None,
+            multi_rest_count: None,
+            note_value: 4,
+            volta_terminator: false,
+        };
+        let mut score = simple_layout_score(vec![measure]);
+        score.header.note_value = 4;
+        score.header.grouping = vec![1, 1, 1, 1];
+        score.tracks = vec![
+            RenderTrack {
+                id: "SD".into(),
+                family: "drum".into(),
+            },
+            RenderTrack {
+                id: "ST".into(),
+                family: "text".into(),
+            },
+        ];
+        let scene = build_layout_scene(&score, &LayoutOptions::default());
+        let stickings = items_by_role(&scene, "sticking");
+        let stems = items_by_role(&scene, "stem");
+        assert_eq!(stickings.len(), 2);
+        assert_eq!(stems.len(), 2);
+        for sticking in stickings {
+            let anchor = sticking.anchor_item_id.as_deref().expect("sticking anchor");
+            let stem = stems
+                .iter()
+                .find(|stem| stem.anchor_item_id.as_deref() == Some(anchor))
+                .expect("matching stem");
+            let stem_top = item_bounds(stem).expect("stem bounds").1;
+            let (_, sticking_top, _, sticking_height) =
+                item_bounds(sticking).expect("sticking bounds");
+            let sticking_bottom = sticking_top + sticking_height;
+            assert!(
+                sticking_bottom <= stem_top + 0.01,
+                "sticking should sit above its stem tip"
+            );
+        }
+    }
+
+    #[test]
+    fn dense_sticking_on_second_system_does_not_inflate_visual_height() {
+        let hit = |start_num: u32, track: &str, glyph: &str| RenderEvent {
+            track: track.into(),
+            track_family: if track == "ST" {
+                "text".into()
+            } else {
+                "drum".into()
+            },
+            start: Fraction {
+                numerator: start_num,
+                denominator: 16,
+            },
+            duration: Fraction {
+                numerator: 1,
+                denominator: 16,
+            },
+            visual_duration: Fraction {
+                numerator: 1,
+                denominator: 16,
+            },
+            kind: EventKind::Hit,
+            glyph: glyph.into(),
+            modifiers: vec![],
+            dot_count: 0,
+            modifier: None,
+            voice: 1,
+            beam: "none".into(),
+            tuplet: None,
+        };
+        let sticking = |start_num: u32, glyph: &str| RenderEvent {
+            track: "ST".into(),
+            track_family: "text".into(),
+            start: Fraction {
+                numerator: start_num,
+                denominator: 16,
+            },
+            duration: Fraction {
+                numerator: 1,
+                denominator: 16,
+            },
+            visual_duration: Fraction {
+                numerator: 1,
+                denominator: 16,
+            },
+            kind: EventKind::Sticking,
+            glyph: glyph.into(),
+            modifiers: vec![],
+            dot_count: 0,
+            modifier: None,
+            voice: 1,
+            beam: "none".into(),
+            tuplet: None,
+        };
+        let filler = regular_measure;
+        let mut measures = (0..6)
+            .map(|index| {
+                let mut measure = filler(index, 0, 4);
+                measure.events = vec![hit(0, "SD", "d")];
+                measure.note_value = 4;
+                measure
+            })
+            .collect::<Vec<_>>();
+        for (offset, glyphs) in [(0, "RLRL"), (4, "RLRL")] {
+            let mut measure = filler(measures.len() as u32, 1, 4);
+            measure.note_value = 16;
+            measure.events = glyphs
+                .chars()
+                .enumerate()
+                .flat_map(|(index, glyph)| {
+                    let start = offset + index as u32;
+                    vec![sticking(start, &glyph.to_string()), hit(start, "SD", "d")]
+                })
+                .collect();
+            measures.push(measure);
+        }
+        let mut score = simple_layout_score(measures);
+        score.header.note_value = 4;
+        score.header.grouping = vec![1, 1, 1, 1];
+        score.tracks = vec![
+            RenderTrack {
+                id: "SD".into(),
+                family: "drum".into(),
+            },
+            RenderTrack {
+                id: "ST".into(),
+                family: "text".into(),
+            },
+        ];
+        let scene = build_layout_scene(&score, &LayoutOptions::default());
+        assert!(
+            scene.pages[0].systems.len() >= 2,
+            "expected a second system for dense sticking measures"
+        );
+        let last_system = scene.pages[0]
+            .systems
+            .last()
+            .expect("last system");
+        let last_measure_ids = last_system
+            .measure_ids
+            .iter()
+            .cloned()
+            .collect::<std::collections::BTreeSet<_>>();
+        let mut sticking_ys = scene.pages[0]
+            .items
+            .iter()
+            .filter(|item| item.role == "sticking")
+            .filter(|item| {
+                item.measure_id
+                    .as_ref()
+                    .is_some_and(|id| last_measure_ids.contains(id))
+            })
+            .filter_map(|item| match &item.primitive {
+                ScenePrimitive::TextRun(text) => Some(text.y_pt),
+                _ => None,
+            })
+            .collect::<Vec<_>>();
+        sticking_ys.sort_by(|a, b| a.partial_cmp(b).unwrap());
+        assert!(
+            !sticking_ys.is_empty(),
+            "expected sticking labels on the last system"
+        );
+        let spread = sticking_ys.last().unwrap() - sticking_ys.first().unwrap();
+        assert!(
+            spread < 24.0,
+            "sticking labels on one system should stay in a tight band, spread={spread:?} ys={sticking_ys:?}"
+        );
+        let first_system = &scene.pages[0].systems[0];
+        let first_system_bottom = first_system.y_pt + first_system.height_pt;
+        let min_sticking_top = sticking_ys
+            .iter()
+            .map(|y| y - 9.0)
+            .fold(f32::INFINITY, f32::min);
+        assert!(
+            min_sticking_top > first_system_bottom - 8.0,
+            "sticking must not leak into the previous system band: first_bottom={first_system_bottom} min_top={min_sticking_top}"
+        );
+        let staff_top = last_system.y_pt + 10.0;
+        assert!(
+            *sticking_ys.first().unwrap() < staff_top + 20.0,
+            "sticking should sit just above the staff, not far below it"
         );
     }
 

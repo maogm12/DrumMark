@@ -1,6 +1,6 @@
 use crate::metrics::{canonical_glyph_metric, GlyphPoint, GlyphRole};
 use crate::scene_builder::{GlyphItemSpec, PathItemSpec, SceneEmitSink};
-use crate::BASE_FONT_SIZE_PT;
+use crate::NOTE_FLAG_FONT_SIZE_PT;
 
 #[derive(Clone, Debug)]
 pub(crate) struct BeamAnchor {
@@ -50,7 +50,7 @@ pub(crate) fn render_beam_groups(
                 (false, _) => GlyphRole::Flag8thDown,
             };
             let flag_metric = canonical_glyph_metric(flag_role);
-            let smufl_ss = BASE_FONT_SIZE_PT / 4.0;
+            let smufl_ss = NOTE_FLAG_FONT_SIZE_PT / 4.0;
             let flag_anchor =
                 flag_metric
                     .stem_anchor_for_direction(anchor.up)
@@ -67,7 +67,7 @@ pub(crate) fn render_beam_groups(
                 y: flag_y,
                 glyph_role: flag_role,
                 font_family: "Bravura",
-                font_size_pt: BASE_FONT_SIZE_PT,
+                font_size_pt: NOTE_FLAG_FONT_SIZE_PT,
                 fill: "#333",
             });
             sink.set_anchor_item_id(&flag_id, Some(anchor.stem_item_id.clone()));

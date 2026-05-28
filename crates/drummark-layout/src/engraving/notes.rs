@@ -131,6 +131,8 @@ pub(crate) fn render_measure_events(
 ) {
     let mut beam_anchors: Vec<BeamAnchor> = Vec::new();
     let geometry = measure_geometry(input.header, input.measure, input.mapper, &input.geometry);
+    let dual_voice_rest_zones =
+        measure_uses_dual_voice_rest_zones(input.measure, input.hide_voice2_rests);
     let mut slot_events = input
         .measure
         .events
@@ -183,6 +185,7 @@ pub(crate) fn render_measure_events(
                 beam_anchors: &mut beam_anchors,
                 stem_len_pt: input.stem_len_pt,
                 hide_voice2_rests: input.hide_voice2_rests,
+                dual_voice_rest_zones,
                 issues: input.issues,
             },
         );
@@ -207,42 +210,79 @@ pub(crate) struct RenderSlotGroupInput<'a, 'b> {
     beam_anchors: &'b mut Vec<BeamAnchor>,
     stem_len_pt: f32,
     hide_voice2_rests: bool,
+    dual_voice_rest_zones: bool,
     issues: &'b mut Vec<String>,
 }
 
-const REST_LANES_VOICE_1_SS: [f32; 15] = [
-    2.0, 1.5, 2.5, 1.0, 3.0, 0.5, 3.5, 0.0, 4.0, -0.5, 4.5, -1.0, 5.0, -1.5, 5.5,
-];
-const REST_LANES_VOICE_2_SS: [f32; 15] = [
-    3.0, 3.5, 2.5, 4.0, 2.0, 4.5, 1.5, 5.0, 1.0, 5.5, 0.5, 6.0, 0.0, 6.5, -0.5,
-];
+/// Voice 1 collision fallback: search upward only (toward the top staff line).
+const REST_LANES_VOICE_1_UP_SS: [f32; 8] = [1.0, 0.5, 0.0, -0.5, -1.0, -1.5, -2.0, -2.5];
+/// Voice 2 collision fallback: search downward only (toward the bottom staff line).
+const REST_LANES_VOICE_2_DOWN_SS: [f32; 8] = [3.5, 4.0, 4.5, 5.0, 5.5, 6.0, 6.5, 7.0];
+/// Single-voice collision fallback: expand symmetrically around the middle staff line.
+const REST_LANES_SINGLE_SS: [f32; 9] = [2.0, 1.5, 2.5, 1.0, 3.0, 0.5, 3.5, 0.0, 4.0];
 const STAFF_SPACE_STEP_PT: f32 = 10.0;
 const STEM_STROKE_WIDTH_PT: f32 = 1.5;
 const BEAM_THICKNESS_PT: f32 = 4.0;
 const SECONDARY_BEAM_GAP_PT: f32 = 6.0;
 
-fn rest_lane_candidates_ss(voice: u8) -> &'static [f32] {
-    if voice == 2 {
-        &REST_LANES_VOICE_2_SS
-    } else {
-        &REST_LANES_VOICE_1_SS
+pub(crate) fn measure_uses_dual_voice_rest_zones(
+    measure: &RenderMeasure,
+    hide_voice2_rests: bool,
+) -> bool {
+    if hide_voice2_rests {
+        return false;
+    }
+    let mut voices = std::collections::BTreeSet::new();
+    for event in &measure.events {
+        if event.kind == EventKind::Sticking {
+            continue;
+        }
+        voices.insert(event.voice);
+    }
+    voices.contains(&1) && voices.contains(&2)
+}
+
+/// Preferred lane for collision-free placement.
+///
+/// Single-voice scores use traditional center-staff defaults. Dual-voice scores keep voice 1
+/// in the upper staff (line 4 area) and voice 2 in the lower staff (line 2 area).
+fn preferred_rest_lane_ss(
+    voice: u8,
+    rest_metric: CanonicalGlyphMetric,
+    dual_voice: bool,
+) -> f32 {
+    if !dual_voice {
+        return match rest_metric.role {
+            GlyphRole::RestWhole => 1.0,
+            GlyphRole::RestHalf => 2.0,
+            _ => 2.0,
+        };
+    }
+    match (voice, rest_metric.role) {
+        (_, GlyphRole::RestWhole) if voice == 2 => 3.0,
+        (_, GlyphRole::RestWhole) => 1.0,
+        (_, GlyphRole::RestHalf) if voice == 2 => 3.0,
+        (_, GlyphRole::RestHalf) => 1.5,
+        (2, _) => 3.0,
+        _ => 1.5,
     }
 }
 
-/// Preferred lane for collision-free placement: standard engraving attaches whole
-/// rests to the second staff line and half rests to the middle line.
-fn preferred_rest_lane_ss(rest_metric: CanonicalGlyphMetric) -> f32 {
-    match rest_metric.role {
-        GlyphRole::RestWhole => 1.0,
-        GlyphRole::RestHalf => 2.0,
-        _ => 2.0,
-    }
-}
-
-fn rest_lane_candidates_for_rest(voice: u8, rest_metric: CanonicalGlyphMetric) -> Vec<f32> {
-    let preferred = preferred_rest_lane_ss(rest_metric);
+fn rest_lane_candidates_for_rest(
+    voice: u8,
+    rest_metric: CanonicalGlyphMetric,
+    dual_voice: bool,
+) -> Vec<f32> {
+    let preferred = preferred_rest_lane_ss(voice, rest_metric, dual_voice);
     let mut lanes = vec![preferred];
-    for lane_ss in rest_lane_candidates_ss(voice) {
+    let fallback_lanes = if !dual_voice {
+        REST_LANES_SINGLE_SS.as_slice()
+    } else if voice == 2 {
+        REST_LANES_VOICE_2_DOWN_SS.as_slice()
+    } else {
+        REST_LANES_VOICE_1_UP_SS.as_slice()
+    };
+    for lane_ss in fallback_lanes {
         if lanes
             .iter()
             .all(|existing| (existing - lane_ss).abs() > 0.001)
@@ -335,14 +375,13 @@ pub(crate) fn resolve_rest_placement(
     staff_top: f32,
     rest_metric: CanonicalGlyphMetric,
     font_size_pt: f32,
+    dual_voice: bool,
     obstacles: &[RectObstacle],
     occupied_rests: &[RectObstacle],
 ) -> (RestPlacement, Option<RestPlacementDiagnostic>) {
-    let mut best: Option<(RestPlacement, f32, usize)> = None;
-    for (lane_index, lane_ss) in rest_lane_candidates_for_rest(rest.event.voice, rest_metric)
-        .into_iter()
-        .enumerate()
-    {
+    let preferred_lane = preferred_rest_lane_ss(rest.event.voice, rest_metric, dual_voice);
+    let mut best: Option<(RestPlacement, f32, f32)> = None;
+    for lane_ss in rest_lane_candidates_for_rest(rest.event.voice, rest_metric, dual_voice) {
         let placement = rest_placement_for_lane(
             rest_metric,
             center_x,
@@ -358,11 +397,13 @@ pub(crate) fn resolve_rest_placement(
         if overlap <= 0.001 {
             return (placement, None);
         }
+        let distance_from_preferred = (lane_ss - preferred_lane).abs();
         match best {
-            Some((_, best_overlap, _best_lane)) if overlap > best_overlap + 0.001 => {}
-            Some((_, best_overlap, best_lane))
-                if (overlap - best_overlap).abs() <= 0.001 && lane_index >= best_lane => {}
-            _ => best = Some((placement, overlap, lane_index)),
+            Some((_, best_overlap, best_distance))
+                if overlap > best_overlap + 0.001
+                    || ((overlap - best_overlap).abs() <= 0.001
+                        && distance_from_preferred >= best_distance) => {}
+            _ => best = Some((placement, overlap, distance_from_preferred)),
         }
     }
     let (placement, _, _) = best.expect("rest lanes should not be empty");
@@ -489,6 +530,7 @@ pub(crate) fn render_slot_group(sink: &mut SceneEmitSink<'_>, input: RenderSlotG
             input.staff_top,
             rest_metric,
             rest_font_size,
+            input.dual_voice_rest_zones,
             &slot_obstacles,
             &occupied_rest_rects,
         );
@@ -541,10 +583,6 @@ pub(crate) fn render_slot_group(sink: &mut SceneEmitSink<'_>, input: RenderSlotG
         occupied_rest_rects.push(rect_obstacle_from_rest_placement(placement));
     }
 
-    for cluster_plan in hit_cluster_plans {
-        render_hit_cluster_stem_and_accents(sink, cluster_plan, input.beam_anchors);
-    }
-
     let default_anchor = note_anchors_by_voice.values().find_map(|placements| {
         placements
             .first()
@@ -558,16 +596,24 @@ pub(crate) fn render_slot_group(sink: &mut SceneEmitSink<'_>, input: RenderSlotG
         });
 
     let sticking_metric = canonical_text_metric(TextRole::Sticking);
+    let sticking_padding = 4.0_f32;
     for sticking in input
         .slot_group
         .iter()
         .filter(|slot_event| matches!(slot_event.event.kind, EventKind::Sticking))
     {
+        let sticking_y = sticking_baseline_y_above_slot_content(
+            input.staff_top,
+            default_anchor_y,
+            &hit_cluster_plans,
+            &sticking_metric,
+            sticking_padding,
+        );
         let sticking_id = sink.push_text_item(TextItemSpec {
             measure_id: Some(input.measure_id),
             role: "sticking",
             x: input.event_x,
-            y: input.staff_top - sticking_metric.descent_pt,
+            y: sticking_y,
             text_role: TextRole::Sticking,
             text: sticking.event.glyph.clone(),
             font_family: sticking_metric.font_family,
@@ -577,13 +623,30 @@ pub(crate) fn render_slot_group(sink: &mut SceneEmitSink<'_>, input: RenderSlotG
             font_weight: Some("bold"),
         });
         sink.set_anchor_item_id(&sticking_id, default_anchor.clone());
-        if let Some(anchor_y) = default_anchor_y {
-            sink.set_text_y(
-                &sticking_id,
-                anchor_y - sticking_metric.line_height_pt - 4.0,
-            );
+    }
+
+    for cluster_plan in hit_cluster_plans {
+        render_hit_cluster_stem_and_accents(sink, cluster_plan, input.beam_anchors);
+    }
+}
+
+fn sticking_baseline_y_above_slot_content(
+    staff_top: f32,
+    default_anchor_y: Option<f32>,
+    hit_cluster_plans: &[HitClusterPlan],
+    sticking_metric: &crate::metrics::CanonicalTextMetric,
+    sticking_padding: f32,
+) -> f32 {
+    let mut content_top = default_anchor_y.unwrap_or(staff_top);
+    for cluster_plan in hit_cluster_plans {
+        if let Some(stem_plan) = cluster_plan.stem_plan.as_ref() {
+            content_top = content_top.min(stem_plan.y1.min(stem_plan.y2));
+        }
+        for accent in &cluster_plan.accent_glyphs {
+            content_top = content_top.min(rect_obstacle_from_glyph(accent.clone()).y1);
         }
     }
+    content_top - sticking_metric.line_height_pt - sticking_padding + sticking_metric.ascent_pt
 }
 
 fn beam_groups_for_slot(

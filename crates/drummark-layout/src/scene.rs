@@ -707,6 +707,7 @@ pub fn build_layout_scene(score: &RenderScore, opts: &LayoutOptions) -> LayoutSc
     }
     let _ = sink;
     stack_scene_structural_items(&mut page.items, &page.composites, opts.edge_padding);
+    stack_sticking_items(&mut page.items, &page.measures, opts.edge_padding);
 
     paginate_unpaginated_page(
         page,

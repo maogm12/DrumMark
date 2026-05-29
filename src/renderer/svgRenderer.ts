@@ -136,7 +136,7 @@ export async function buildLayoutSceneFromSource(source: string, options?: Rende
     rightMargin: options?.rightMargin ?? 40,
     staffSpacePt: options?.staffSpacePt ?? DEFAULT_RENDER_OPTIONS.staffSpacePt,
     pxPerQuarter: 80,
-    stemLenPt: options?.stemLength ?? 23,
+    stemLenOffsetSs: options?.stemLength ?? SETTINGS_RANGES.stemLength.default,
     systemSpacing: options?.systemSpacing ?? SETTINGS_RANGES.systemSpacing.default,
     headerHeight: options?.headerHeight ?? SETTINGS_RANGES.headerHeight.default,
     headerStaffSpacing: options?.headerStaffSpacing ?? SETTINGS_RANGES.headerStaffSpacing.default,

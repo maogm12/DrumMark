@@ -470,6 +470,18 @@ mod tests {
         assert_eq!(opts.header_height_pt, 50.0);
         assert_eq!(opts.header_staff_spacing_pt, 60.0);
         assert_eq!(opts.volta_offset_y, 0.0);
+        assert_eq!(opts.stem_len_offset_ss, 0.0);
+        assert!((stem_length_pt(&opts) - 20.0).abs() < 0.01);
+    }
+
+    #[test]
+    fn test_stem_length_scales_with_staff_space() {
+        let mut opts = LayoutOptions::default();
+        opts.stem_len_offset_ss = 1.0;
+        opts.staff_space_pt = 5.0;
+        assert!((stem_length_pt(&opts) - 25.0).abs() < 0.01);
+        opts.staff_space_pt = 8.0;
+        assert!((stem_length_pt(&opts) - 40.0).abs() < 0.01);
     }
 
     #[test]

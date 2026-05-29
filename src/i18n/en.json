@@ -44,7 +44,7 @@
   "settings.leftMargin": "Left Margin",
   "settings.rightMargin": "Right Margin",
   "settings.hideVoice2Rests": "Hide secondary voice rests",
-  "settings.stemLength": "Note Stem Length",
+  "settings.stemLength": "Stem Length Offset",
   "settings.staffSpacePt": "Staff Space",
   "settings.systemSpacing": "System Spacing",
   "settings.titleHeight": "Title Area Height",

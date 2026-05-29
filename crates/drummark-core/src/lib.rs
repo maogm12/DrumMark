@@ -655,7 +655,14 @@ fn parse_layout_options(options: &JsValue) -> drummark_layout::LayoutOptions {
     assign_any(&mut opts.right_margin_pt, "rightMargin");
     assign_positive(&mut opts.staff_space_pt, "staffSpacePt");
     assign_positive(&mut opts.px_per_quarter, "pxPerQuarter");
-    assign_positive(&mut opts.stem_len_pt, "stemLenPt");
+    if let Some(offset) = get_optional_f64("stemLenOffsetSs") {
+        opts.stem_len_offset_ss = offset as f32;
+    } else if let Some(ss) = get_optional_f64("stemLenSs") {
+        opts.stem_len_offset_ss = ss as f32 - drummark_layout::DEFAULT_STEM_LEN_SS;
+    } else if let Some(pt) = get_optional_f64("stemLenPt").filter(|value| *value > 0.0) {
+        let staff = opts.staff_space_pt.max(0.01);
+        opts.stem_len_offset_ss = (pt as f32 / staff) - drummark_layout::DEFAULT_STEM_LEN_SS;
+    }
     assign_any(&mut opts.system_spacing_pt, "systemSpacing");
     assign_any(&mut opts.header_height_pt, "headerHeight");
     assign_any(&mut opts.header_staff_spacing_pt, "headerStaffSpacing");

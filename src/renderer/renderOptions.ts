@@ -34,7 +34,7 @@ export const DEFAULT_RENDER_OPTIONS: ScoreRenderOptions = {
   headerHeight: 50,
   headerStaffSpacing: 60,
   systemSpacing: 30,
-  stemLength: 23,
+  stemLength: 0,
   voltaSpacing: 0,
   hairpinOffsetY: 0,
   hideVoice2Rests: false,
@@ -51,7 +51,8 @@ export const SETTINGS_RANGES = {
   hairpinOffsetY: { min: -20, max: 20, default: 0 },
   voltaSpacing: { min: -20, max: 20, default: 0 },
   staffSpacePt: { min: 1, max: 10, default: 5 },
-  stemLength: { min: 15, max: 50, default: 23 },
+  /** Offset in staff-space units added to the default stem length (4 ss). */
+  stemLength: { min: -2, max: 4, default: 0 },
   systemSpacing: { min: 0, max: 100, default: 30 },
   headerHeight: { min: 10, max: 300, default: 50 },
   headerStaffSpacing: { min: 0, max: 100, default: 60 },

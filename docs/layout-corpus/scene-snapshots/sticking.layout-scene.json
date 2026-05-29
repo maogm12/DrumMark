@@ -44,7 +44,7 @@
           "index": 0,
           "pageIndex": 0,
           "xPt": 40,
-          "yPt": 169,
+          "yPt": 184.67999267578125,
           "widthPt": 532,
           "heightPt": 50,
           "measures": [
@@ -54,7 +54,7 @@
               "globalIndex": 0,
               "systemId": "system-0",
               "xPt": 40,
-              "yPt": 169,
+              "yPt": 184.67999267578125,
               "widthPt": 532,
               "heightPt": 50
             }
@@ -67,9 +67,9 @@
               "zIndex": 0,
               "primitive": {
                 "x1Pt": 40,
-                "y1Pt": 179,
+                "y1Pt": 194.67999267578125,
                 "x2Pt": 572,
-                "y2Pt": 179,
+                "y2Pt": 194.67999267578125,
                 "stroke": "#333",
                 "strokeWidth": 1
               }
@@ -81,9 +81,9 @@
               "zIndex": 0,
               "primitive": {
                 "x1Pt": 40,
-                "y1Pt": 189,
+                "y1Pt": 204.67999267578125,
                 "x2Pt": 572,
-                "y2Pt": 189,
+                "y2Pt": 204.67999267578125,
                 "stroke": "#333",
                 "strokeWidth": 1
               }
@@ -95,9 +95,9 @@
               "zIndex": 0,
               "primitive": {
                 "x1Pt": 40,
-                "y1Pt": 199,
+                "y1Pt": 214.67999267578125,
                 "x2Pt": 572,
-                "y2Pt": 199,
+                "y2Pt": 214.67999267578125,
                 "stroke": "#333",
                 "strokeWidth": 1
               }
@@ -109,9 +109,9 @@
               "zIndex": 0,
               "primitive": {
                 "x1Pt": 40,
-                "y1Pt": 209,
+                "y1Pt": 224.67999267578125,
                 "x2Pt": 572,
-                "y2Pt": 209,
+                "y2Pt": 224.67999267578125,
                 "stroke": "#333",
                 "strokeWidth": 1
               }
@@ -123,9 +123,9 @@
               "zIndex": 0,
               "primitive": {
                 "x1Pt": 40,
-                "y1Pt": 219,
+                "y1Pt": 234.67999267578125,
                 "x2Pt": 572,
-                "y2Pt": 219,
+                "y2Pt": 234.67999267578125,
                 "stroke": "#333",
                 "strokeWidth": 1
               }
@@ -137,7 +137,7 @@
               "zIndex": 0,
               "primitive": {
                 "xPt": 45,
-                "yPt": 199,
+                "yPt": 214.67999267578125,
                 "textRole": "percussionClef",
                 "text": "",
                 "fontFamily": "Bravura",
@@ -152,7 +152,7 @@
               "zIndex": 0,
               "primitive": {
                 "xPt": 70,
-                "yPt": 189,
+                "yPt": 204.67999267578125,
                 "textRole": "timeSignatureDigit",
                 "text": "",
                 "fontFamily": "Bravura",
@@ -167,7 +167,7 @@
               "zIndex": 0,
               "primitive": {
                 "xPt": 70,
-                "yPt": 209,
+                "yPt": 224.67999267578125,
                 "textRole": "timeSignatureDigit",
                 "text": "",
                 "fontFamily": "Bravura",
@@ -183,7 +183,7 @@
               "zIndex": 0,
               "primitive": {
                 "xPt": 49,
-                "yPt": 159,
+                "yPt": 174.67999267578125,
                 "textRole": "tempo",
                 "text": "",
                 "fontFamily": "Bravura",
@@ -199,7 +199,7 @@
               "zIndex": 0,
               "primitive": {
                 "xPt": 68.06666564941406,
-                "yPt": 159,
+                "yPt": 174.67999267578125,
                 "textRole": "tempo",
                 "text": "=",
                 "fontFamily": "Academico",
@@ -215,7 +215,7 @@
               "zIndex": 0,
               "primitive": {
                 "xPt": 83.06666564941406,
-                "yPt": 159,
+                "yPt": 174.67999267578125,
                 "textRole": "tempo",
                 "text": "90",
                 "fontFamily": "Academico",
@@ -231,7 +231,7 @@
               "zIndex": 0,
               "primitive": {
                 "xPt": 40,
-                "yPt": 179,
+                "yPt": 194.67999267578125,
                 "widthPt": 1,
                 "heightPt": 40,
                 "fill": "#333"
@@ -245,7 +245,7 @@
               "zIndex": 0,
               "primitive": {
                 "xPt": 115.5,
-                "yPt": 194,
+                "yPt": 209.67999267578125,
                 "textRole": "tempo",
                 "text": "",
                 "fontFamily": "Bravura",
@@ -262,7 +262,7 @@
               "zIndex": 0,
               "primitive": {
                 "xPt": 122.5,
-                "yPt": 158.32000732421875,
+                "yPt": 157,
                 "textRole": "sticking",
                 "text": "R",
                 "fontFamily": "Academico",
@@ -281,9 +281,9 @@
               "zIndex": 0,
               "primitive": {
                 "x1Pt": 126.80000305175781,
-                "y1Pt": 169.32000732421875,
+                "y1Pt": 168,
                 "x2Pt": 126.80000305175781,
-                "y2Pt": 192.32000732421875,
+                "y2Pt": 208,
                 "stroke": "#333",
                 "strokeWidth": 1
               }
@@ -296,7 +296,7 @@
               "zIndex": 0,
               "primitive": {
                 "xPt": 172.5,
-                "yPt": 194,
+                "yPt": 209.67999267578125,
                 "textRole": "tempo",
                 "text": "",
                 "fontFamily": "Bravura",
@@ -313,7 +313,7 @@
               "zIndex": 0,
               "primitive": {
                 "xPt": 179.5,
-                "yPt": 158.32000732421875,
+                "yPt": 157,
                 "textRole": "sticking",
                 "text": "L",
                 "fontFamily": "Academico",
@@ -332,9 +332,9 @@
               "zIndex": 0,
               "primitive": {
                 "x1Pt": 183.8000030517578,
-                "y1Pt": 169.32000732421875,
+                "y1Pt": 168,
                 "x2Pt": 183.8000030517578,
-                "y2Pt": 192.32000732421875,
+                "y2Pt": 208,
                 "stroke": "#333",
                 "strokeWidth": 1
               }
@@ -347,7 +347,7 @@
               "zIndex": 0,
               "primitive": {
                 "xPt": 229.49998474121094,
-                "yPt": 194,
+                "yPt": 209.67999267578125,
                 "textRole": "tempo",
                 "text": "",
                 "fontFamily": "Bravura",
@@ -364,7 +364,7 @@
               "zIndex": 0,
               "primitive": {
                 "xPt": 236.49998474121094,
-                "yPt": 158.32000732421875,
+                "yPt": 157,
                 "textRole": "sticking",
                 "text": "R",
                 "fontFamily": "Academico",
@@ -383,9 +383,9 @@
               "zIndex": 0,
               "primitive": {
                 "x1Pt": 240.79998779296875,
-                "y1Pt": 169.32000732421875,
+                "y1Pt": 168,
                 "x2Pt": 240.79998779296875,
-                "y2Pt": 192.32000732421875,
+                "y2Pt": 208,
                 "stroke": "#333",
                 "strokeWidth": 1
               }
@@ -398,7 +398,7 @@
               "zIndex": 0,
               "primitive": {
                 "xPt": 286.5,
-                "yPt": 194,
+                "yPt": 209.67999267578125,
                 "textRole": "tempo",
                 "text": "",
                 "fontFamily": "Bravura",
@@ -415,7 +415,7 @@
               "zIndex": 0,
               "primitive": {
                 "xPt": 293.5,
-                "yPt": 158.32000732421875,
+                "yPt": 157,
                 "textRole": "sticking",
                 "text": "L",
                 "fontFamily": "Academico",
@@ -434,9 +434,9 @@
               "zIndex": 0,
               "primitive": {
                 "x1Pt": 297.79998779296875,
-                "y1Pt": 169.32000732421875,
+                "y1Pt": 168,
                 "x2Pt": 297.79998779296875,
-                "y2Pt": 192.32000732421875,
+                "y2Pt": 208,
                 "stroke": "#333",
                 "strokeWidth": 1
               }
@@ -449,7 +449,7 @@
               "zIndex": 0,
               "primitive": {
                 "xPt": 343.4999694824219,
-                "yPt": 194,
+                "yPt": 209.67999267578125,
                 "textRole": "tempo",
                 "text": "",
                 "fontFamily": "Bravura",
@@ -466,7 +466,7 @@
               "zIndex": 0,
               "primitive": {
                 "xPt": 350.4999694824219,
-                "yPt": 158.32000732421875,
+                "yPt": 157,
                 "textRole": "sticking",
                 "text": "R",
                 "fontFamily": "Academico",
@@ -485,9 +485,9 @@
               "zIndex": 0,
               "primitive": {
                 "x1Pt": 354.7999572753906,
-                "y1Pt": 169.32000732421875,
+                "y1Pt": 168,
                 "x2Pt": 354.7999572753906,
-                "y2Pt": 192.32000732421875,
+                "y2Pt": 208,
                 "stroke": "#333",
                 "strokeWidth": 1
               }
@@ -500,7 +500,7 @@
               "zIndex": 0,
               "primitive": {
                 "xPt": 400.4999694824219,
-                "yPt": 194,
+                "yPt": 209.67999267578125,
                 "textRole": "tempo",
                 "text": "",
                 "fontFamily": "Bravura",
@@ -517,7 +517,7 @@
               "zIndex": 0,
               "primitive": {
                 "xPt": 407.4999694824219,
-                "yPt": 158.32000732421875,
+                "yPt": 157,
                 "textRole": "sticking",
                 "text": "L",
                 "fontFamily": "Academico",
@@ -536,9 +536,9 @@
               "zIndex": 0,
               "primitive": {
                 "x1Pt": 411.7999572753906,
-                "y1Pt": 169.32000732421875,
+                "y1Pt": 168,
                 "x2Pt": 411.7999572753906,
-                "y2Pt": 192.32000732421875,
+                "y2Pt": 208,
                 "stroke": "#333",
                 "strokeWidth": 1
               }
@@ -551,7 +551,7 @@
               "zIndex": 0,
               "primitive": {
                 "xPt": 457.4999694824219,
-                "yPt": 194,
+                "yPt": 209.67999267578125,
                 "textRole": "tempo",
                 "text": "",
                 "fontFamily": "Bravura",
@@ -568,7 +568,7 @@
               "zIndex": 0,
               "primitive": {
                 "xPt": 464.4999694824219,
-                "yPt": 158.32000732421875,
+                "yPt": 157,
                 "textRole": "sticking",
                 "text": "R",
                 "fontFamily": "Academico",
@@ -587,9 +587,9 @@
               "zIndex": 0,
               "primitive": {
                 "x1Pt": 468.7999572753906,
-                "y1Pt": 169.32000732421875,
+                "y1Pt": 168,
                 "x2Pt": 468.7999572753906,
-                "y2Pt": 192.32000732421875,
+                "y2Pt": 208,
                 "stroke": "#333",
                 "strokeWidth": 1
               }
@@ -602,7 +602,7 @@
               "zIndex": 0,
               "primitive": {
                 "xPt": 514.5,
-                "yPt": 194,
+                "yPt": 209.67999267578125,
                 "textRole": "tempo",
                 "text": "",
                 "fontFamily": "Bravura",
@@ -619,7 +619,7 @@
               "zIndex": 0,
               "primitive": {
                 "xPt": 521.5,
-                "yPt": 158.32000732421875,
+                "yPt": 157,
                 "textRole": "sticking",
                 "text": "L",
                 "fontFamily": "Academico",
@@ -638,9 +638,9 @@
               "zIndex": 0,
               "primitive": {
                 "x1Pt": 525.7999877929688,
-                "y1Pt": 169.32000732421875,
+                "y1Pt": 168,
                 "x2Pt": 525.7999877929688,
-                "y2Pt": 192.32000732421875,
+                "y2Pt": 208,
                 "stroke": "#333",
                 "strokeWidth": 1
               }
@@ -653,7 +653,7 @@
               "kind": "path",
               "zIndex": 0,
               "primitive": {
-                "d": "M 126.800 169.320 L 525.800 169.320 L 525.800 172.320 L 126.800 172.320 Z",
+                "d": "M 126.800 168.000 L 525.800 168.000 L 525.800 171.000 L 126.800 171.000 Z",
                 "fill": "#333"
               }
             },
@@ -665,7 +665,7 @@
               "zIndex": 0,
               "primitive": {
                 "xPt": 568,
-                "yPt": 179,
+                "yPt": 194.67999267578125,
                 "widthPt": 1,
                 "heightPt": 40,
                 "fill": "#333"
@@ -679,7 +679,7 @@
               "zIndex": 0,
               "primitive": {
                 "xPt": 569,
-                "yPt": 179,
+                "yPt": 194.67999267578125,
                 "widthPt": 3,
                 "heightPt": 40,
                 "fill": "#333"

@@ -31,7 +31,7 @@ export const defaultSettings: AppSettings = {
   headerStaffSpacing: 60,
   headerHeight: 50,
   systemSpacing: 30,
-  stemLength: 23,
+  stemLength: 0,
   voltaSpacing: 0,
   hairpinOffsetY: 0,
   activeTab: "page",
@@ -61,7 +61,18 @@ export function resolveAppSettings(saved: string | null): AppSettings {
     ) {
       rendererNeutralSettings.staffSpacePt = r.staffSpacePt.default;
     }
-    if (rendererNeutralSettings.stemLength === undefined || rendererNeutralSettings.stemLength < r.stemLength.min || rendererNeutralSettings.stemLength > r.stemLength.max) {
+    if (rendererNeutralSettings.stemLength === undefined) {
+      rendererNeutralSettings.stemLength = r.stemLength.default;
+    } else if (rendererNeutralSettings.stemLength > 8) {
+      // Legacy absolute stem length in pt (e.g. 23): convert to staff-space offset.
+      const staff = rendererNeutralSettings.staffSpacePt ?? defaultSettings.staffSpacePt;
+      rendererNeutralSettings.stemLength =
+        rendererNeutralSettings.stemLength / staff - 4;
+    }
+    if (
+      rendererNeutralSettings.stemLength < r.stemLength.min
+      || rendererNeutralSettings.stemLength > r.stemLength.max
+    ) {
       rendererNeutralSettings.stemLength = r.stemLength.default;
     }
     if (rendererNeutralSettings.voltaSpacing === undefined || rendererNeutralSettings.voltaSpacing < r.voltaSpacing.min || rendererNeutralSettings.voltaSpacing > r.voltaSpacing.max) {

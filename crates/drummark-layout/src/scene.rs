@@ -661,7 +661,7 @@ pub fn build_layout_scene(score: &RenderScore, opts: &LayoutOptions) -> LayoutSc
                         staff_top: s_top,
                         staff_bottom: s_bot,
                         mapper: &mapper,
-                        stem_len_pt: opts.stem_len_pt,
+                        stem_len_pt: stem_length_pt(opts),
                         hide_voice2_rests: opts.hide_voice2_rests,
                         issues: &mut layout_issues,
                     },

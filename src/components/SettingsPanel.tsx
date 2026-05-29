@@ -83,7 +83,7 @@ export function SettingsPanel({
               <Switch.Thumb className="toggle-thumb" />
             </Switch.Root>
           </label>
-          <Numeric labelKey="settings.stemLength" value={settings.stemLength} min={15} max={50} step={1} onChange={(value) => updateSetting("stemLength", value)} />
+          <Numeric labelKey="settings.stemLength" value={settings.stemLength} min={-2} max={4} step={0.5} onChange={(value) => updateSetting("stemLength", value)} />
         </Accordion.Content>
       </Accordion.Item>
 

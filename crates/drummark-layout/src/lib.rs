@@ -14,10 +14,12 @@ mod roles;
 mod scene;
 mod scene_builder;
 mod scene_geometry;
+mod scene_page;
 mod snapshot;
 mod structural;
 mod validation;
 mod wire;
+mod wire_js_export;
 
 pub use compat_planning::{
     build_systems, place_barlines, place_notes, stack_edge_elements, ElementKind, LayoutElement,
@@ -69,6 +71,11 @@ use structural::spans::{volta_type_for_measure, VoltaSegmentType};
 use structural::stacking::{stack_scene_structural_items, stack_sticking_items};
 
 pub use scene::build_layout_scene;
+pub use scene_page::{
+    collect_page_measures, page_all_composites, page_all_items, page_all_measures,
+    page_header_composites, page_header_items, page_measure_count, route_composites_to_systems,
+    route_items_to_systems,
+};
 pub(crate) use scene::fraction_to_f32;
 pub use snapshot::layout_scene_snapshot;
 pub use wire::layout_scene_to_js;
@@ -86,6 +93,11 @@ pub(crate) const STAFF_LINE_COUNT: u32 = 5;
 /// Vertical extent from system origin `sy` to the bottom staff line.
 pub(crate) fn staff_bounding_height_pt(staff_space_pt: f32) -> f32 {
     staff_space_pt * STAFF_LINE_COUNT as f32
+}
+
+/// Filled rect height for barlines spanning the top and bottom staff lines.
+pub(crate) fn staff_barline_height_pt(top: f32, bottom: f32) -> f32 {
+    (bottom - top).max(0.0)
 }
 
 pub fn glyph_position_pt(staff_space_pt: f32) -> f32 {
@@ -233,9 +245,7 @@ mod tests {
     }
 
     fn staff_top_for_scene(scene: &LayoutScene) -> f32 {
-        scene.pages[0]
-            .items
-            .iter()
+        page_all_items(&scene.pages[0])
             .find(|item| item.role == "staff-line")
             .and_then(|item| match &item.primitive {
                 ScenePrimitive::LineSegment(line) => Some(line.y1_pt),
@@ -317,14 +327,10 @@ mod tests {
         let whole_staff_top = staff_top_for_scene(&whole_scene);
         let half_staff_top = staff_top_for_scene(&half_scene);
 
-        let whole_rest = whole_scene.pages[0]
-            .items
-            .iter()
+        let whole_rest = page_all_items(&whole_scene.pages[0])
             .find(|item| item.role == "rest")
             .expect("expected whole rest");
-        let half_rest = half_scene.pages[0]
-            .items
-            .iter()
+        let half_rest = page_all_items(&half_scene.pages[0])
             .find(|item| item.role == "rest")
             .expect("expected half rest");
 
@@ -788,9 +794,7 @@ mod tests {
     }
 
     fn line_for_role<'a>(page: &'a ScenePage, role: &str) -> &'a LineSegment {
-        let item = page
-            .items
-            .iter()
+        let item = page_all_items(page)
             .find(|item| item.role == role)
             .unwrap_or_else(|| panic!("expected {role} line item"));
         let ScenePrimitive::LineSegment(line) = &item.primitive else {
@@ -800,9 +804,7 @@ mod tests {
     }
 
     fn line_for_id<'a>(page: &'a ScenePage, id: &str) -> &'a LineSegment {
-        let item = page
-            .items
-            .iter()
+        let item = page_all_items(page)
             .find(|item| item.id == id)
             .unwrap_or_else(|| panic!("expected line item {id}"));
         let ScenePrimitive::LineSegment(line) = &item.primitive else {
@@ -823,14 +825,14 @@ mod tests {
         let volta_fragments = scene
             .pages
             .iter()
-            .flat_map(|page| page.composites.iter())
+            .flat_map(|page| page_all_composites(page))
             .filter(|composite| composite.kind == CompositeKind::Volta)
             .map(|composite| composite.fragment)
             .collect::<Vec<_>>();
         let hairpin_fragments = scene
             .pages
             .iter()
-            .flat_map(|page| page.composites.iter())
+            .flat_map(|page| page_all_composites(page))
             .filter(|composite| composite.kind == CompositeKind::Hairpin)
             .map(|composite| composite.fragment)
             .collect::<Vec<_>>();
@@ -970,9 +972,7 @@ mod tests {
             })
         );
 
-        let hairpin_bottom = scene.pages[0]
-            .items
-            .iter()
+        let hairpin_bottom = page_all_items(&scene.pages[0])
             .find(|item| item.role == "hairpin-bottom")
             .expect("expected hairpin bottom");
         let staff_space_pt = LayoutOptions::default().staff_space_pt;
@@ -988,9 +988,7 @@ mod tests {
     fn test_cross_system_hairpin_continuation_keeps_partial_opening() {
         let scene = build_layout_scene(&cross_system_fixture_score(), &LayoutOptions::default());
         let page = &scene.pages[0];
-        let continuation = page
-            .composites
-            .iter()
+        let continuation = page_all_composites(page)
             .find(|composite| {
                 composite.kind == CompositeKind::Hairpin
                     && composite.fragment == SpanFragmentKind::Continuation
@@ -1046,12 +1044,12 @@ mod tests {
         let items = scene
             .pages
             .iter()
-            .flat_map(|page| page.items.iter())
+            .flat_map(|page| page_all_items(page))
             .collect::<Vec<_>>();
         let composites = scene
             .pages
             .iter()
-            .flat_map(|page| page.composites.iter())
+            .flat_map(|page| page_all_composites(page))
             .collect::<Vec<_>>();
 
         assert!(composites
@@ -1121,7 +1119,7 @@ mod tests {
         let items = scene
             .pages
             .iter()
-            .flat_map(|page| page.items.iter())
+            .flat_map(|page| page_all_items(page))
             .collect::<Vec<_>>();
         let staff_space_pt = LayoutOptions::default().staff_space_pt;
         let count_metric = canonical_text_metric(TextRole::CountLabel, staff_space_pt);
@@ -1266,9 +1264,7 @@ mod tests {
             repeat_spans: vec![],
         };
         let sticking_scene = build_layout_scene(&sticking_score, &LayoutOptions::default());
-        let sticking_item = sticking_scene.pages[0]
-            .items
-            .iter()
+        let sticking_item = page_all_items(&sticking_scene.pages[0])
             .find(|item| item.role == "sticking")
             .expect("expected sticking scene item");
         let ScenePrimitive::TextRun(sticking_text) = &sticking_item.primitive else {
@@ -1285,29 +1281,19 @@ mod tests {
         let scene = build_layout_scene(&cross_system_fixture_score(), &LayoutOptions::default());
         let page = &scene.pages[0];
 
-        let measure_number = page
-            .items
-            .iter()
+        let measure_number = page_all_items(&page)
             .find(|item| item.role == "measure-number")
             .expect("expected measure number item");
-        let nav_start = page
-            .items
-            .iter()
+        let nav_start = page_all_items(&page)
             .find(|item| item.role == "nav-start")
             .expect("expected navigation start item");
-        let volta_label = page
-            .items
-            .iter()
+        let volta_label = page_all_items(&page)
             .find(|item| item.role == "volta-label")
             .expect("expected volta label item");
-        let hairpin_top = page
-            .items
-            .iter()
+        let hairpin_top = page_all_items(&page)
             .find(|item| item.role == "hairpin-top")
             .expect("expected hairpin item");
-        let notehead = page
-            .items
-            .iter()
+        let notehead = page_all_items(&page)
             .find(|item| item.role == "notehead" && item.measure_id.as_deref() == Some("measure-0"))
             .expect("expected notehead item");
 
@@ -1387,6 +1373,15 @@ mod tests {
     }
 
     #[test]
+    #[ignore = "run with: cargo test -p drummark-layout write_cross_system_scene_golden -- --ignored"]
+    fn write_cross_system_scene_golden() {
+        let scene = build_layout_scene(&cross_system_fixture_score(), &LayoutOptions::default());
+        let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("tests/goldens/cross_system_scene_snapshot.txt");
+        std::fs::write(path, layout_scene_snapshot(&scene)).expect("write golden");
+    }
+
+    #[test]
     fn test_same_paragraph_stays_on_one_system_even_when_page_is_narrow() {
         let score = simple_layout_score(vec![
             regular_measure(0, 0, 1),
@@ -1401,7 +1396,11 @@ mod tests {
         let scene = build_layout_scene(&score, &opts);
         assert_eq!(scene.pages[0].systems.len(), 1);
         assert_eq!(
-            scene.pages[0].systems[0].measure_ids,
+            scene.pages[0].systems[0]
+                .measures
+                .iter()
+                .map(|measure| measure.id.as_str())
+                .collect::<Vec<_>>(),
             vec!["measure-0", "measure-1", "measure-2"]
         );
     }
@@ -1423,8 +1422,22 @@ mod tests {
             2,
             "each paragraph must map to its own system"
         );
-        assert_eq!(scene.pages[0].systems[0].measure_ids, vec!["measure-0"]);
-        assert_eq!(scene.pages[0].systems[1].measure_ids, vec!["measure-1"]);
+        assert_eq!(
+            scene.pages[0].systems[0]
+                .measures
+                .iter()
+                .map(|measure| measure.id.as_str())
+                .collect::<Vec<_>>(),
+            vec!["measure-0"]
+        );
+        assert_eq!(
+            scene.pages[0].systems[1]
+                .measures
+                .iter()
+                .map(|measure| measure.id.as_str())
+                .collect::<Vec<_>>(),
+            vec!["measure-1"]
+        );
     }
 
     #[test]
@@ -1435,15 +1448,11 @@ mod tests {
         let score = simple_layout_score(vec![regular_measure(0, 0, 4), compact]);
 
         let scene = build_layout_scene(&score, &LayoutOptions::default());
-        let regular_width = scene.pages[0]
-            .measures
-            .iter()
+        let regular_width = page_all_measures(&scene.pages[0])
             .find(|measure| measure.id == "measure-0")
             .unwrap()
             .width_pt;
-        let compact_width = scene.pages[0]
-            .measures
-            .iter()
+        let compact_width = page_all_measures(&scene.pages[0])
             .find(|measure| measure.id == "measure-1")
             .unwrap()
             .width_pt;
@@ -1452,9 +1461,7 @@ mod tests {
     }
 
     fn notehead_positions(scene: &LayoutScene, measure_id: &str) -> Vec<f32> {
-        let mut positions = scene.pages[0]
-            .items
-            .iter()
+        let mut positions = page_all_items(&scene.pages[0])
             .filter(|item| {
                 item.role == "notehead" && item.measure_id.as_deref() == Some(measure_id)
             })
@@ -1468,9 +1475,7 @@ mod tests {
     }
 
     fn items_by_role<'a>(scene: &'a LayoutScene, role: &str) -> Vec<&'a SceneItem> {
-        scene.pages[0]
-            .items
-            .iter()
+        page_all_items(&scene.pages[0])
             .filter(|item| item.role == role)
             .collect()
     }
@@ -1670,11 +1675,10 @@ mod tests {
             note_value: 8,
             volta_terminator: false,
         };
+        let opts = LayoutOptions::default();
         let score = simple_layout_score(vec![measure]);
-        let scene = build_layout_scene(&score, &LayoutOptions::default());
-        let measure_box = scene.pages[0]
-            .measures
-            .iter()
+        let scene = build_layout_scene(&score, &opts);
+        let measure_box = page_all_measures(&scene.pages[0])
             .find(|measure| measure.id == "measure-0")
             .unwrap();
         let xs = notehead_positions(&scene, "measure-0");
@@ -1692,18 +1696,18 @@ mod tests {
             "quarter-note gaps should match: {gaps:?}"
         );
 
-        let mut note_centers = scene.pages[0]
-            .items
-            .iter()
+        let mut note_centers = page_all_items(&scene.pages[0])
             .filter(|item| {
                 item.role == "notehead" && item.measure_id.as_deref() == Some("measure-0")
             })
             .filter_map(|item| item_bounds(item, 10.0).map(|(x, _, width, _)| x + width * 0.5))
             .collect::<Vec<_>>();
         note_centers.sort_by(|a, b| a.partial_cmp(b).unwrap());
-        let inner_left = measure_box.x_pt + measure_left_pad(0, true, Some("regular"), 7.5);
-        let inner_right =
-            measure_box.x_pt + measure_box.width_pt - measure_right_pad(Some("final"), 7.5);
+        let inner_left = measure_box.x_pt
+            + measure_left_pad(0, true, Some("regular"), opts.staff_space_pt);
+        let inner_right = measure_box.x_pt
+            + measure_box.width_pt
+            - measure_right_pad(Some("final"), opts.staff_space_pt);
         let left_edge_gap = note_centers[0] - inner_left;
         let right_edge_gap = inner_right - note_centers[3];
         assert!(
@@ -1810,14 +1814,10 @@ mod tests {
         note_score.header.grouping = vec![4];
         let note_scene = build_layout_scene(&note_score, &LayoutOptions::default());
 
-        let rest = silent_scene.pages[0]
-            .items
-            .iter()
+        let rest = page_all_items(&silent_scene.pages[0])
             .find(|item| item.role == "rest" && item.measure_id.as_deref() == Some("measure-0"))
             .expect("expected whole-measure rest");
-        let note = note_scene.pages[0]
-            .items
-            .iter()
+        let note = page_all_items(&note_scene.pages[0])
             .find(|item| item.role == "notehead" && item.measure_id.as_deref() == Some("measure-0"))
             .expect("expected first notehead");
 
@@ -1999,9 +1999,7 @@ mod tests {
         let scene = build_layout_scene(&score, &LayoutOptions::default());
 
         let role_measure = |role: &str| {
-            scene.pages[0]
-                .items
-                .iter()
+            page_all_items(&scene.pages[0])
                 .filter(|item| item.role == role && item.measure_id.as_deref() == Some("measure-0"))
                 .collect::<Vec<_>>()
         };
@@ -2091,9 +2089,7 @@ mod tests {
             &simple_layout_score(vec![measure]),
             &LayoutOptions::default(),
         );
-        let items = scene.pages[0]
-            .items
-            .iter()
+        let items = page_all_items(&scene.pages[0])
             .filter(|item| item.measure_id.as_deref() == Some("measure-0"))
             .collect::<Vec<_>>();
         let rest = items.iter().find(|item| item.role == "rest").unwrap();
@@ -2170,9 +2166,7 @@ mod tests {
             &simple_layout_score(vec![measure]),
             &LayoutOptions::default(),
         );
-        let items = scene.pages[0]
-            .items
-            .iter()
+        let items = page_all_items(&scene.pages[0])
             .filter(|item| item.measure_id.as_deref() == Some("measure-0"))
             .collect::<Vec<_>>();
         let rest = items.iter().find(|item| item.role == "rest").unwrap();
@@ -2234,9 +2228,7 @@ mod tests {
             &simple_layout_score(vec![measure]),
             &LayoutOptions::default(),
         );
-        let rest_centers = scene.pages[0]
-            .items
-            .iter()
+        let rest_centers = page_all_items(&scene.pages[0])
             .filter(|item| item.role == "rest" && item.measure_id.as_deref() == Some("measure-0"))
             .map(|item| {
                 let (_, y, _, h) = item_bounds(item, 10.0).unwrap();
@@ -2309,14 +2301,10 @@ mod tests {
                 ..LayoutOptions::default()
             },
         );
-        let visible_rests = visible.pages[0]
-            .items
-            .iter()
+        let visible_rests = page_all_items(&visible.pages[0])
             .filter(|item| item.role == "rest" && item.measure_id.as_deref() == Some("measure-0"))
             .count();
-        let hidden_rests = hidden.pages[0]
-            .items
-            .iter()
+        let hidden_rests = page_all_items(&hidden.pages[0])
             .filter(|item| item.role == "rest" && item.measure_id.as_deref() == Some("measure-0"))
             .count();
         assert_eq!(visible_rests, 2);
@@ -2438,9 +2426,7 @@ mod tests {
             &simple_layout_score(vec![measure]),
             &LayoutOptions::default(),
         );
-        let items = scene.pages[0]
-            .items
-            .iter()
+        let items = page_all_items(&scene.pages[0])
             .filter(|item| item.measure_id.as_deref() == Some("measure-0"))
             .collect::<Vec<_>>();
         let rest = items.iter().find(|item| item.role == "rest").unwrap();
@@ -2623,9 +2609,7 @@ mod tests {
         let mut score = simple_layout_score(vec![measure]);
         score.header.grouping = vec![2, 2];
         let scene = build_layout_scene(&score, &LayoutOptions::default());
-        let measure_box = scene.pages[0]
-            .measures
-            .iter()
+        let measure_box = page_all_measures(&scene.pages[0])
             .find(|measure| measure.id == "measure-0")
             .unwrap();
         let xs = notehead_positions(&scene, "measure-0");
@@ -3821,11 +3805,11 @@ mod tests {
             .last()
             .expect("last system");
         let last_measure_ids = last_system
-            .measure_ids
+            .measures
             .iter()
-            .cloned()
+            .map(|measure| measure.id.clone())
             .collect::<std::collections::BTreeSet<_>>();
-        let mut sticking_ys = scene.pages[0]
+        let mut sticking_ys = last_system
             .items
             .iter()
             .filter(|item| item.role == "sticking")
@@ -4452,28 +4436,21 @@ fn test_contract_scene_smoke() {
     assert_eq!(scene.metrics_version, CANONICAL_METRICS_VERSION);
     assert_eq!(scene.pages.len(), 1);
     assert_eq!(scene.pages[0].systems.len(), 1);
-    assert_eq!(scene.pages[0].measures.len(), 1);
-    assert_eq!(scene.pages[0].measures[0].index, 0);
-    assert!(scene.pages[0]
-        .composites
-        .iter()
+    assert_eq!(page_measure_count(&scene.pages[0]), 1);
+    assert_eq!(page_all_measures(&scene.pages[0]).next().expect("measure").index, 0);
+    assert!(page_all_composites(&scene.pages[0])
         .all(|c| c.kind != CompositeKind::RepeatSpan));
-    assert!(scene.pages[0]
-        .items
-        .iter()
+    assert!(page_all_items(&scene.pages[0])
         .all(|item| !item.role.starts_with("repeat-span")));
-    assert!(scene.pages[0]
-        .composites
-        .iter()
-        .any(|c| c.kind == CompositeKind::TextBlock && c.label.as_deref() == Some("title")));
-    assert!(scene.pages[0]
-        .composites
-        .iter()
-        .any(|c| c.kind == CompositeKind::TextBlock && c.label.as_deref() == Some("tempo")));
-    assert!(scene.pages[0]
-        .items
-        .iter()
-        .filter(|item| { matches!(item.role.as_str(), "tempo-glyph" | "tempo-equals" | "tempo") })
+    let page = &scene.pages[0];
+    assert!(page_all_composites(page).any(|c| {
+        c.kind == CompositeKind::TextBlock && c.label.as_deref() == Some("title")
+    }));
+    assert!(page_all_composites(page).any(|c| {
+        c.kind == CompositeKind::TextBlock && c.label.as_deref() == Some("tempo")
+    }));
+    assert!(page_all_items(page)
+        .filter(|item| matches!(item.role.as_str(), "tempo-glyph" | "tempo-equals" | "tempo"))
         .all(|item| item.measure_id.as_deref() == Some("measure-0")));
 }
 
@@ -4506,7 +4483,18 @@ fn test_system_box_pagination_contracts_and_overflow_warning_schema() {
             y_pt: 12.0,
             width_pt: 500.0,
             height_pt: 50.0,
-            measure_ids: vec!["measure-7".into()],
+            measures: vec![SceneMeasure {
+                id: "measure-7".into(),
+                index: 7,
+                global_index: 7,
+                system_id: "system-2".into(),
+                x_pt: 0.0,
+                y_pt: 12.0,
+                width_pt: 100.0,
+                height_pt: 50.0,
+            }],
+            items: Vec::new(),
+            composites: Vec::new(),
         }],
         items: Vec::new(),
         composites: Vec::new(),
@@ -4531,10 +4519,8 @@ fn test_system_box_pagination_contracts_and_overflow_warning_schema() {
         local_visual_top: system_box.visual_top,
         local_system_origin_y: system_box.local_system_origin_y,
         width_pt: system_box.width_pt,
-        measure_ids: system_box.systems[0].measure_ids.clone(),
     };
     assert_eq!(placed.page_x, 50.0);
-    assert_eq!(placed.measure_ids, ["measure-7"]);
 
     let mut issues = vec!["Line 1: existing parser issue".to_string()];
     issues.push(layout_overflow_warning(1, &placed.system_id, 900.0, 700.0));
@@ -4672,6 +4658,7 @@ fn test_final_scene_validator_checks_ids_and_page_local_references() {
             index: 0,
             width_pt: 200.0,
             height_pt: 200.0,
+            header: None,
             systems: vec![SceneSystem {
                 id: "system-0".into(),
                 index: 0,
@@ -4680,55 +4667,54 @@ fn test_final_scene_validator_checks_ids_and_page_local_references() {
                 y_pt: 40.0,
                 width_pt: 100.0,
                 height_pt: 50.0,
-                measure_ids: vec!["measure-0".into()],
-            }],
-            measures: vec![SceneMeasure {
-                id: "measure-0".into(),
-                index: 0,
-                global_index: 0,
-                system_id: "system-0".into(),
-                x_pt: 10.0,
-                y_pt: 40.0,
-                width_pt: 100.0,
-                height_pt: 50.0,
-            }],
-            items: vec![SceneItem {
-                id: "item-0".into(),
-                measure_id: Some("measure-0".into()),
-                anchor_item_id: None,
-                measure_local_fraction: None,
-                role: "staff-line".into(),
-                kind: SceneItemKind::LineSegment,
-                z_index: 0,
-                primitive: ScenePrimitive::LineSegment(LineSegment {
-                    x1_pt: 10.0,
-                    y1_pt: 50.0,
-                    x2_pt: 110.0,
-                    y2_pt: 50.0,
-                    stroke: "#333".into(),
-                    stroke_width: 1.0,
-                    stroke_line_cap: None,
-                }),
-            }],
-            composites: vec![SceneComposite {
-                id: "composite-0".into(),
-                kind: CompositeKind::Volta,
-                fragment: SpanFragmentKind::SingleSegment,
-                child_item_ids: vec!["item-0".into()],
-                label: Some("1.".into()),
-                count: None,
-                start_anchor_id: Some("measure-0".into()),
-                end_anchor_id: Some("measure-0".into()),
+                measures: vec![SceneMeasure {
+                    id: "measure-0".into(),
+                    index: 0,
+                    global_index: 0,
+                    system_id: "system-0".into(),
+                    x_pt: 10.0,
+                    y_pt: 40.0,
+                    width_pt: 100.0,
+                    height_pt: 50.0,
+                }],
+                items: vec![SceneItem {
+                    id: "item-0".into(),
+                    measure_id: Some("measure-0".into()),
+                    anchor_item_id: None,
+                    measure_local_fraction: None,
+                    role: "staff-line".into(),
+                    kind: SceneItemKind::LineSegment,
+                    z_index: 0,
+                    primitive: ScenePrimitive::LineSegment(LineSegment {
+                        x1_pt: 10.0,
+                        y1_pt: 50.0,
+                        x2_pt: 110.0,
+                        y2_pt: 50.0,
+                        stroke: "#333".into(),
+                        stroke_width: 1.0,
+                        stroke_line_cap: None,
+                    }),
+                }],
+                composites: vec![SceneComposite {
+                    id: "composite-0".into(),
+                    kind: CompositeKind::Volta,
+                    fragment: SpanFragmentKind::SingleSegment,
+                    child_item_ids: vec!["item-0".into()],
+                    label: Some("1.".into()),
+                    count: None,
+                    start_anchor_id: Some("measure-0".into()),
+                    end_anchor_id: Some("measure-0".into()),
+                }],
             }],
         }],
         issues: Vec::new(),
     };
     assert!(validate_layout_scene(&scene, 10.0).is_empty());
 
-    scene.pages[0].items[0].anchor_item_id = Some("missing".into());
-    scene.pages[0].composites[0].end_anchor_id = Some("item-0".into());
-    let duplicate_item = scene.pages[0].items[0].clone();
-    scene.pages[0].items.push(duplicate_item);
+    scene.pages[0].systems[0].items[0].anchor_item_id = Some("missing".into());
+    scene.pages[0].systems[0].composites[0].end_anchor_id = Some("item-0".into());
+    let duplicate_item = scene.pages[0].systems[0].items[0].clone();
+    scene.pages[0].systems[0].items.push(duplicate_item);
     let diagnostics = validate_layout_scene(&scene, 10.0).join("\n");
     assert!(diagnostics.contains("LAYOUT_ERROR item-anchor"));
     assert!(diagnostics.contains("LAYOUT_ERROR composite-anchor"));
@@ -4744,6 +4730,7 @@ fn test_final_scene_validator_suppresses_only_named_overflow_system_bounds() {
             index: 0,
             width_pt: 100.0,
             height_pt: 100.0,
+            header: None,
             systems: vec![
                 SceneSystem {
                     id: "system-0".into(),
@@ -4753,7 +4740,35 @@ fn test_final_scene_validator_suppresses_only_named_overflow_system_bounds() {
                     y_pt: 0.0,
                     width_pt: 100.0,
                     height_pt: 200.0,
-                    measure_ids: vec!["measure-0".into()],
+                    measures: vec![SceneMeasure {
+                        id: "measure-0".into(),
+                        index: 0,
+                        global_index: 0,
+                        system_id: "system-0".into(),
+                        x_pt: 0.0,
+                        y_pt: 0.0,
+                        width_pt: 100.0,
+                        height_pt: 200.0,
+                    }],
+                    items: vec![SceneItem {
+                        id: "system-0-item-0".into(),
+                        measure_id: Some("measure-0".into()),
+                        anchor_item_id: None,
+                        measure_local_fraction: None,
+                        role: "staff-line".into(),
+                        kind: SceneItemKind::LineSegment,
+                        z_index: 0,
+                        primitive: ScenePrimitive::LineSegment(LineSegment {
+                            x1_pt: 0.0,
+                            y1_pt: 150.0,
+                            x2_pt: 80.0,
+                            y2_pt: 150.0,
+                            stroke: "#333".into(),
+                            stroke_width: 1.0,
+                            stroke_line_cap: None,
+                        }),
+                    }],
+                    composites: Vec::new(),
                 },
                 SceneSystem {
                     id: "system-1".into(),
@@ -4763,70 +4778,37 @@ fn test_final_scene_validator_suppresses_only_named_overflow_system_bounds() {
                     y_pt: 0.0,
                     width_pt: 100.0,
                     height_pt: 50.0,
-                    measure_ids: vec!["measure-1".into()],
+                    measures: vec![SceneMeasure {
+                        id: "measure-1".into(),
+                        index: 1,
+                        global_index: 1,
+                        system_id: "system-1".into(),
+                        x_pt: 0.0,
+                        y_pt: 0.0,
+                        width_pt: 100.0,
+                        height_pt: 50.0,
+                    }],
+                    items: vec![SceneItem {
+                        id: "system-1-item-0".into(),
+                        measure_id: Some("measure-1".into()),
+                        anchor_item_id: None,
+                        measure_local_fraction: None,
+                        role: "staff-line".into(),
+                        kind: SceneItemKind::LineSegment,
+                        z_index: 0,
+                        primitive: ScenePrimitive::LineSegment(LineSegment {
+                            x1_pt: 0.0,
+                            y1_pt: 120.0,
+                            x2_pt: 80.0,
+                            y2_pt: 120.0,
+                            stroke: "#333".into(),
+                            stroke_width: 1.0,
+                            stroke_line_cap: None,
+                        }),
+                    }],
+                    composites: Vec::new(),
                 },
             ],
-            measures: vec![
-                SceneMeasure {
-                    id: "measure-0".into(),
-                    index: 0,
-                    global_index: 0,
-                    system_id: "system-0".into(),
-                    x_pt: 0.0,
-                    y_pt: 0.0,
-                    width_pt: 100.0,
-                    height_pt: 200.0,
-                },
-                SceneMeasure {
-                    id: "measure-1".into(),
-                    index: 1,
-                    global_index: 1,
-                    system_id: "system-1".into(),
-                    x_pt: 0.0,
-                    y_pt: 0.0,
-                    width_pt: 100.0,
-                    height_pt: 50.0,
-                },
-            ],
-            items: vec![
-                SceneItem {
-                    id: "system-0-item-0".into(),
-                    measure_id: Some("measure-0".into()),
-                    anchor_item_id: None,
-                    measure_local_fraction: None,
-                    role: "staff-line".into(),
-                    kind: SceneItemKind::LineSegment,
-                    z_index: 0,
-                    primitive: ScenePrimitive::LineSegment(LineSegment {
-                        x1_pt: 0.0,
-                        y1_pt: 150.0,
-                        x2_pt: 80.0,
-                        y2_pt: 150.0,
-                        stroke: "#333".into(),
-                        stroke_width: 1.0,
-                        stroke_line_cap: None,
-                    }),
-                },
-                SceneItem {
-                    id: "system-1-item-0".into(),
-                    measure_id: Some("measure-1".into()),
-                    anchor_item_id: None,
-                    measure_local_fraction: None,
-                    role: "staff-line".into(),
-                    kind: SceneItemKind::LineSegment,
-                    z_index: 0,
-                    primitive: ScenePrimitive::LineSegment(LineSegment {
-                        x1_pt: 0.0,
-                        y1_pt: 120.0,
-                        x2_pt: 80.0,
-                        y2_pt: 120.0,
-                        stroke: "#333".into(),
-                        stroke_width: 1.0,
-                        stroke_line_cap: None,
-                    }),
-                },
-            ],
-            composites: Vec::new(),
         }],
         issues: vec![layout_overflow_warning(0, "system-0", 200.0, 100.0)],
     };
@@ -4986,9 +4968,7 @@ fn test_volta_composites_are_emitted() {
     };
 
     let scene = build_layout_scene(&score, &LayoutOptions::default());
-    let voltas = scene.pages[0]
-        .composites
-        .iter()
+    let voltas = page_all_composites(&scene.pages[0])
         .filter(|composite| composite.kind == CompositeKind::Volta)
         .collect::<Vec<_>>();
     assert_eq!(voltas.len(), 1);
@@ -5069,7 +5049,7 @@ fn test_adjacent_voltas_share_y_and_positive_offset_moves_up() {
         scene
             .pages
             .iter()
-            .flat_map(|page| page.items.iter())
+            .flat_map(|page| page_all_items(page))
             .filter(|item| item.role == "volta-line")
             .filter_map(|item| match &item.primitive {
                 ScenePrimitive::LineSegment(line) => Some(line.y1_pt),
@@ -5082,9 +5062,7 @@ fn test_adjacent_voltas_share_y_and_positive_offset_moves_up() {
     let default_ys = line_ys(&default_scene);
     assert_eq!(default_ys.len(), 2);
     assert!((default_ys[0] - default_ys[1]).abs() < 0.01);
-    let stem_top = default_scene.pages[0]
-        .items
-        .iter()
+    let stem_top = page_all_items(&default_scene.pages[0])
         .filter(|item| item.role == "stem")
         .filter_map(|item| match &item.primitive {
             ScenePrimitive::LineSegment(line) => Some(line.y1_pt.min(line.y2_pt)),
@@ -5175,10 +5153,8 @@ fn test_two_bar_measure_repeat_expands_into_two_display_measures() {
     };
 
     let scene = build_layout_scene(&score, &LayoutOptions::default());
-    assert_eq!(scene.pages[0].measures.len(), 3);
-    let repeat_items = scene.pages[0]
-        .items
-        .iter()
+    assert_eq!(page_measure_count(&scene.pages[0]), 3);
+    let repeat_items = page_all_items(&scene.pages[0])
         .filter_map(|item| match &item.primitive {
             ScenePrimitive::GlyphRun(glyph) if item.role == "measure-repeat" => Some(glyph),
             _ => None,
@@ -5189,9 +5165,7 @@ fn test_two_bar_measure_repeat_expands_into_two_display_measures() {
         repeat_items[0].glyph_role,
         GlyphRole::MeasureRepeatMark2Bars
     );
-    let repeat_composite = scene.pages[0]
-        .composites
-        .iter()
+    let repeat_composite = page_all_composites(&scene.pages[0])
         .find(|composite| composite.kind == CompositeKind::MeasureRepeat)
         .expect("expected measure-repeat composite");
     assert_eq!(repeat_composite.count, Some(2));
@@ -5278,22 +5252,16 @@ fn test_structural_composites_are_emitted() {
     };
 
     let scene = build_layout_scene(&score, &LayoutOptions::default());
-    let hairpin = scene.pages[0]
-        .composites
-        .iter()
+    let hairpin = page_all_composites(&scene.pages[0])
         .find(|c| c.kind == CompositeKind::Hairpin)
         .expect("expected hairpin composite");
     assert_eq!(hairpin.fragment, SpanFragmentKind::SingleSegment);
     assert_eq!(hairpin.label.as_deref(), Some("crescendo"));
     assert_eq!(hairpin.start_anchor_id.as_deref(), Some("measure-0"));
     assert_eq!(hairpin.end_anchor_id.as_deref(), Some("measure-2"));
-    assert!(scene.pages[0]
-        .composites
-        .iter()
+    assert!(page_all_composites(&scene.pages[0])
         .any(|c| c.kind == CompositeKind::MeasureRepeat && c.count == Some(2)));
-    assert!(scene.pages[0]
-        .composites
-        .iter()
+    assert!(page_all_composites(&scene.pages[0])
         .any(|c| c.kind == CompositeKind::MultiRest && c.count == Some(4)));
 }
 
@@ -5364,14 +5332,10 @@ fn test_system_boundaries_align_with_staff_edges() {
 
     let opts = LayoutOptions::default();
     let scene = build_layout_scene(&score, &opts);
-    let opening = scene.pages[0]
-        .items
-        .iter()
+    let opening = page_all_items(&scene.pages[0])
         .find(|item| item.role == "opening-barline")
         .expect("expected opening barline");
-    let final_thick = scene.pages[0]
-        .items
-        .iter()
+    let final_thick = page_all_items(&scene.pages[0])
         .find(|item| item.role == "final-barline-thick")
         .expect("expected final thick barline");
 
@@ -5456,19 +5420,13 @@ fn test_first_measure_repeat_start_sits_after_system_preamble() {
 
     let opts = LayoutOptions::default();
     let scene = build_layout_scene(&score, &opts);
-    let opening = scene.pages[0]
-        .items
-        .iter()
+    let opening = page_all_items(&scene.pages[0])
         .find(|item| item.role == "opening-barline")
         .expect("expected system opening barline");
-    let repeat_start = scene.pages[0]
-        .items
-        .iter()
+    let repeat_start = page_all_items(&scene.pages[0])
         .find(|item| item.role == "repeat-start")
         .expect("expected start repeat barline");
-    let notehead = scene.pages[0]
-        .items
-        .iter()
+    let notehead = page_all_items(&scene.pages[0])
         .find(|item| item.role == "notehead")
         .expect("expected notehead");
 
@@ -5489,10 +5447,14 @@ fn test_first_measure_repeat_start_sits_after_system_preamble() {
         repeat_glyph.font_size_pt,
         notation_render_font_pt(opts.staff_space_pt)
     );
-    assert!(repeat_glyph.x_pt > opening_rect.x_pt + 60.0);
+    let preamble_width = system_start_reserved_width(true, opts.staff_space_pt);
+    assert!(
+        repeat_glyph.x_pt > opening_rect.x_pt + preamble_width * 0.4,
+        "repeat should sit in the system preamble (preamble_width={preamble_width:.2})"
+    );
     assert!((repeat_top - opening_rect.y_pt).abs() < 0.5,
         "repeat_top={repeat_top:.2} opening.y={:.2}", opening_rect.y_pt);
-    assert!((repeat_bottom - (opening_rect.y_pt + opening_rect.height_pt - 1.0)).abs() < 6.0,
+    assert!((repeat_bottom - (opening_rect.y_pt + opening_rect.height_pt)).abs() < 6.0,
         "repeat_bottom={repeat_bottom:.2} opening_rect.y={:.2} h={:.2}", opening_rect.y_pt, opening_rect.height_pt);
     assert!(note_x > repeat_glyph.x_pt + repeat_barline_rendered_width(GlyphRole::RepeatLeft, opts.staff_space_pt));
     assert!(
@@ -5590,14 +5552,10 @@ fn test_non_initial_repeat_start_reserves_content_gap() {
         &edge_padding_score(vec![first, second]),
         &LayoutOptions::default(),
     );
-    let repeat_start = scene.pages[0]
-        .items
-        .iter()
+    let repeat_start = page_all_items(&scene.pages[0])
         .find(|item| item.role == "repeat-start" && item.measure_id.as_deref() == Some("measure-1"))
         .expect("expected non-initial start repeat");
-    let first_note = scene.pages[0]
-        .items
-        .iter()
+    let first_note = page_all_items(&scene.pages[0])
         .filter(|item| item.role == "notehead" && item.measure_id.as_deref() == Some("measure-1"))
         .min_by(|a, b| {
             let ax = item_bounds(a, 10.0)
@@ -5621,6 +5579,99 @@ fn test_non_initial_repeat_start_reserves_content_gap() {
 }
 
 #[test]
+fn test_regular_barline_vertical_extent_matches_staff_lines() {
+    let scene = build_layout_scene(
+        &edge_padding_score(vec![edge_padding_measure(0, 4)]),
+        &LayoutOptions::default(),
+    );
+    let system = &scene.pages[0].systems[0];
+    let opts = LayoutOptions::default();
+    let staff_ss = opts.staff_space_pt;
+    let sy = system.y_pt;
+    let top_line = sy + staff_ss;
+    let bottom_line = sy + staff_bounding_height_pt(staff_ss);
+
+    let staff_lines: Vec<f32> = system
+        .items
+        .iter()
+        .filter(|item| item.role == "staff-line")
+        .filter_map(|item| match &item.primitive {
+            ScenePrimitive::LineSegment(line) => Some(line.y1_pt),
+            _ => None,
+        })
+        .collect();
+    assert_eq!(staff_lines.len(), STAFF_LINE_COUNT as usize);
+    assert!((staff_lines[0] - top_line).abs() < 0.01);
+    assert!((staff_lines[4] - bottom_line).abs() < 0.01);
+
+    let barline = system
+        .items
+        .iter()
+        .find(|item| item.role == "opening-barline")
+        .expect("expected opening barline");
+    let ScenePrimitive::Rect(rect) = &barline.primitive else {
+        panic!("barline should be a rect");
+    };
+    assert!((rect.y_pt - top_line).abs() < 0.01);
+    assert!((rect.y_pt + rect.height_pt - bottom_line).abs() < 0.01);
+    assert!((rect.height_pt - staff_barline_height_pt(top_line, bottom_line)).abs() < 0.01);
+}
+
+#[test]
+fn test_second_system_first_measure_repeat_start_clears_clef() {
+    let mut second = edge_padding_measure(1, 16);
+    second.paragraph_index = 1;
+    second.measure_in_paragraph = 0;
+    second.barline = Some("repeat-start".into());
+    second.closing_barline = Some("final".into());
+
+    let opts = LayoutOptions::default();
+    let scene = build_layout_scene(
+        &edge_padding_score(vec![edge_padding_measure(0, 16), second]),
+        &opts,
+    );
+    assert_eq!(
+        scene.pages[0].systems.len(),
+        2,
+        "each paragraph should start a new system"
+    );
+    let system = &scene.pages[0].systems[1];
+    let repeat_start = system
+        .items
+        .iter()
+        .find(|item| item.role == "repeat-start")
+        .expect("expected start repeat on second-system first measure");
+    let first_note = system
+        .items
+        .iter()
+        .filter(|item| item.role == "notehead")
+        .min_by(|a, b| {
+            let ax = item_bounds(a, 10.0)
+                .map(|(x, _, _, _)| x)
+                .unwrap_or(f32::INFINITY);
+            let bx = item_bounds(b, 10.0)
+                .map(|(x, _, _, _)| x)
+                .unwrap_or(f32::INFINITY);
+            ax.partial_cmp(&bx).unwrap()
+        })
+        .expect("expected notehead in second-system first measure");
+
+    let clef_end = clef_x_pt(opts.left_margin_pt) + clef_width_pt(opts.staff_space_pt);
+    let (repeat_x, _, repeat_w, _) = item_bounds(repeat_start, 10.0).expect("repeat should have bounds");
+    let (note_x, _, _, _) = item_bounds(first_note, 10.0).expect("notehead should have bounds");
+
+    assert!(
+        repeat_x >= clef_end + SYSTEM_PREAMBLE_SIDE_GAP_PT - 0.5,
+        "repeat should sit to the right of the clef: clef_end={clef_end:.2} repeat_x={repeat_x:.2}"
+    );
+    let gap = note_x - (repeat_x + repeat_w);
+    assert!(
+        gap >= 10.0,
+        "second-system first measure repeat should reserve content gap: gap={gap:.2}"
+    );
+}
+
+#[test]
 fn test_repeat_end_reserves_content_gap_before_right_barline() {
     let mut measure = edge_padding_measure(0, 16);
     measure.closing_barline = Some("repeat-end".into());
@@ -5629,14 +5680,10 @@ fn test_repeat_end_reserves_content_gap_before_right_barline() {
         &edge_padding_score(vec![measure]),
         &LayoutOptions::default(),
     );
-    let repeat_end = scene.pages[0]
-        .items
-        .iter()
+    let repeat_end = page_all_items(&scene.pages[0])
         .find(|item| item.role == "repeat-end" && item.measure_id.as_deref() == Some("measure-0"))
         .expect("expected repeat end");
-    let last_note = scene.pages[0]
-        .items
-        .iter()
+    let last_note = page_all_items(&scene.pages[0])
         .filter(|item| item.role == "notehead" && item.measure_id.as_deref() == Some("measure-0"))
         .max_by(|a, b| {
             let ax = item_bounds(a, 10.0)
@@ -5729,9 +5776,7 @@ fn test_adjacent_repeat_end_start_uses_smufl_right_left_glyph() {
     };
     let scene = build_layout_scene(&score, &LayoutOptions::default());
     let page = &scene.pages[0];
-    let shared_repeat = page
-        .items
-        .iter()
+    let shared_repeat = page_all_items(&page)
         .find(|item| item.role == "repeat-end-start")
         .expect("expected shared repeat boundary glyph");
     let ScenePrimitive::GlyphRun(shared_glyph) = &shared_repeat.primitive else {
@@ -5744,8 +5789,7 @@ fn test_adjacent_repeat_end_start_uses_smufl_right_left_glyph() {
         notation_render_font_pt(LayoutOptions::default().staff_space_pt)
     );
     assert_eq!(
-        page.items
-            .iter()
+        page_all_items(page)
             .filter(|item| item.role == "repeat-start")
             .count(),
         1,
@@ -5828,18 +5872,14 @@ fn test_later_system_uses_smaller_start_zone_than_first_system() {
     };
 
     let scene = build_layout_scene(&score, &LayoutOptions::default());
-    let first_x = scene.pages[0]
-        .items
-        .iter()
+    let first_x = page_all_items(&scene.pages[0])
         .find(|item| item.role == "notehead" && item.measure_id.as_deref() == Some("measure-0"))
         .and_then(|item| match &item.primitive {
             ScenePrimitive::TextRun(text) => Some(text.x_pt),
             _ => None,
         })
         .expect("expected first-system notehead");
-    let second_x = scene.pages[0]
-        .items
-        .iter()
+    let second_x = page_all_items(&scene.pages[0])
         .find(|item| item.role == "notehead" && item.measure_id.as_deref() == Some("measure-1"))
         .and_then(|item| match &item.primitive {
             ScenePrimitive::TextRun(text) => Some(text.x_pt),
@@ -5917,9 +5957,7 @@ fn test_later_system_measure_number_uses_absolute_measure_index() {
     };
 
     let scene = build_layout_scene(&score, &LayoutOptions::default());
-    let measure_number = scene.pages[0]
-        .items
-        .iter()
+    let measure_number = page_all_items(&scene.pages[0])
         .find(|item| item.role == "measure-number")
         .expect("expected measure number on later system");
     let ScenePrimitive::TextRun(text) = &measure_number.primitive else {
@@ -5994,19 +6032,13 @@ fn test_down_stem_keeps_notehead_on_right_and_flag_on_stem_right_side() {
     };
 
     let scene = build_layout_scene(&score, &LayoutOptions::default());
-    let notehead = scene.pages[0]
-        .items
-        .iter()
+    let notehead = page_all_items(&scene.pages[0])
         .find(|item| item.role == "notehead")
         .expect("expected notehead");
-    let stem = scene.pages[0]
-        .items
-        .iter()
+    let stem = page_all_items(&scene.pages[0])
         .find(|item| item.role == "stem")
         .expect("expected stem");
-    let flag = scene.pages[0]
-        .items
-        .iter()
+    let flag = page_all_items(&scene.pages[0])
         .find(|item| item.role == "flag")
         .expect("expected flag");
 
@@ -6100,41 +6132,31 @@ fn test_crash_maps_to_top_ledger_line() {
     };
 
     let scene = build_layout_scene(&score, &LayoutOptions::default());
-    let notehead_y = scene.pages[0]
-        .items
-        .iter()
+    let notehead_y = page_all_items(&scene.pages[0])
         .find(|item| item.role == "notehead")
         .and_then(|item| match &item.primitive {
             ScenePrimitive::TextRun(text) => Some(text.y_pt),
             _ => None,
         })
         .expect("expected crash notehead");
-    let staff_top = scene.pages[0]
-        .items
-        .iter()
+    let staff_top = page_all_items(&scene.pages[0])
         .find(|item| item.role == "staff-line")
         .and_then(|item| match &item.primitive {
             ScenePrimitive::LineSegment(line) => Some(line.y1_pt),
             _ => None,
         })
         .expect("expected staff line");
-    let ledger_y = scene.pages[0]
-        .items
-        .iter()
+    let ledger_y = page_all_items(&scene.pages[0])
         .find(|item| item.role == "ledger-line")
         .and_then(|item| match &item.primitive {
             ScenePrimitive::LineSegment(line) => Some(line.y1_pt),
             _ => None,
         })
         .expect("expected top ledger line");
-    let notehead = scene.pages[0]
-        .items
-        .iter()
+    let notehead = page_all_items(&scene.pages[0])
         .find(|item| item.role == "notehead")
         .expect("expected crash notehead");
-    let ledger = scene.pages[0]
-        .items
-        .iter()
+    let ledger = page_all_items(&scene.pages[0])
         .find(|item| item.role == "ledger-line")
         .expect("expected top ledger line");
     let ledger_center_x = match &ledger.primitive {
@@ -6230,18 +6252,14 @@ fn test_bottom_ledger_lines_render_for_notes_below_staff() {
     };
 
     let scene = build_layout_scene(&score, &LayoutOptions::default());
-    let staff_top = scene.pages[0]
-        .items
-        .iter()
+    let staff_top = page_all_items(&scene.pages[0])
         .find(|item| item.role == "staff-line")
         .and_then(|item| match &item.primitive {
             ScenePrimitive::LineSegment(line) => Some(line.y1_pt),
             _ => None,
         })
         .expect("expected staff line");
-    let ledger_ys = scene.pages[0]
-        .items
-        .iter()
+    let ledger_ys = page_all_items(&scene.pages[0])
         .filter(|item| item.role == "ledger-line")
         .filter_map(|item| match &item.primitive {
             ScenePrimitive::LineSegment(line) => Some(line.y1_pt),
@@ -6326,24 +6344,18 @@ fn test_flam_renders_grace_notehead_stem_and_slash() {
 
     let scene = build_layout_scene(&score, &LayoutOptions::default());
     let count_role = |role: &str| {
-        scene.pages[0]
-            .items
-            .iter()
+        page_all_items(&scene.pages[0])
             .filter(|item| item.role == role)
             .count()
     };
-    let main_note_x = scene.pages[0]
-        .items
-        .iter()
+    let main_note_x = page_all_items(&scene.pages[0])
         .find(|item| item.role == "notehead")
         .and_then(|item| match &item.primitive {
             ScenePrimitive::TextRun(text) => Some(text.x_pt),
             _ => None,
         })
         .expect("expected main notehead");
-    let grace_note_x = scene.pages[0]
-        .items
-        .iter()
+    let grace_note_x = page_all_items(&scene.pages[0])
         .find(|item| item.role == "grace-notehead")
         .and_then(|item| match &item.primitive {
             ScenePrimitive::TextRun(text) => Some(text.x_pt),
@@ -6370,9 +6382,7 @@ fn test_flam_defaults_grace_flag_to_eighth_note() {
         ),
         &LayoutOptions::default(),
     );
-    let flag_roles = scene.pages[0]
-        .items
-        .iter()
+    let flag_roles = page_all_items(&scene.pages[0])
         .filter(|item| item.role == "grace-flag")
         .map(|item| match &item.primitive {
             ScenePrimitive::GlyphRun(glyph) => glyph.glyph_role,
@@ -6406,7 +6416,7 @@ fn test_flam_uses_matching_grace_flags_for_sixteenth_and_thirty_second_notes() {
         &LayoutOptions::default(),
     );
 
-    assert!(sixteenth.pages[0].items.iter().any(|item| {
+    assert!(page_all_items(&sixteenth.pages[0]).any(|item| {
         item.role == "grace-flag"
             && matches!(
                 &item.primitive,
@@ -6416,7 +6426,7 @@ fn test_flam_uses_matching_grace_flags_for_sixteenth_and_thirty_second_notes() {
                 })
             )
     }));
-    assert!(thirty_second.pages[0].items.iter().any(|item| {
+    assert!(page_all_items(&thirty_second.pages[0]).any(|item| {
         item.role == "grace-flag"
             && matches!(
                 &item.primitive,
@@ -6442,49 +6452,37 @@ fn test_drag_renders_two_beamed_sixteenth_grace_notes_without_slashes() {
     );
 
     assert_eq!(
-        scene.pages[0]
-            .items
-            .iter()
+        page_all_items(&scene.pages[0])
             .filter(|item| item.role == "grace-notehead")
             .count(),
         2
     );
     assert_eq!(
-        scene.pages[0]
-            .items
-            .iter()
+        page_all_items(&scene.pages[0])
             .filter(|item| item.role == "grace-stem")
             .count(),
         2
     );
     assert_eq!(
-        scene.pages[0]
-            .items
-            .iter()
+        page_all_items(&scene.pages[0])
             .filter(|item| item.role == "grace-slash")
             .count(),
         0
     );
     assert_eq!(
-        scene.pages[0]
-            .items
-            .iter()
+        page_all_items(&scene.pages[0])
             .filter(|item| item.role == "grace-flag")
             .count(),
         0
     );
     assert_eq!(
-        scene.pages[0]
-            .items
-            .iter()
+        page_all_items(&scene.pages[0])
             .filter(|item| item.role == "grace-beam")
             .count(),
         1
     );
     assert_eq!(
-        scene.pages[0]
-            .items
-            .iter()
+        page_all_items(&scene.pages[0])
             .filter(|item| item.role == "grace-beam-secondary")
             .count(),
         1

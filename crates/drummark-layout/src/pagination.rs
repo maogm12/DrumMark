@@ -1,6 +1,7 @@
 use std::collections::{BTreeSet, HashMap};
 
-use crate::scene_geometry::{bounds_for_items, item_bounds, translate_scene_item};
+use crate::scene_geometry::{bounds_for_items, translate_scene_item};
+use crate::scene_page::{dedupe_page_item_ids, page_header_composites, page_header_items};
 use crate::validation::validate_layout_scene;
 use crate::{
     CompositeKind, LayoutOptions, LayoutScene, SceneComposite, SceneItem, SceneMeasure, ScenePage,
@@ -44,7 +45,6 @@ pub(crate) struct PlacedSystemBox {
     pub(crate) local_visual_top: f32,
     pub(crate) local_system_origin_y: f32,
     pub(crate) width_pt: f32,
-    pub(crate) measure_ids: Vec<String>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -113,11 +113,6 @@ pub(crate) fn paginate_system_boxes(
             local_visual_top: system_box.visual_top,
             local_system_origin_y: system_box.local_system_origin_y,
             width_pt: system_box.width_pt,
-            measure_ids: system_box
-                .measures
-                .iter()
-                .map(|measure| measure.id.clone())
-                .collect(),
         });
         cursor_y = placement_y + visual_height;
         systems_on_page += 1;
@@ -151,15 +146,17 @@ pub(crate) fn paginate_unpaginated_page(
             index,
             width_pt: opts.page_width_pt,
             height_pt: opts.page_height_pt,
+            header: None,
             systems: Vec::new(),
-            measures: Vec::new(),
-            items: Vec::new(),
-            composites: Vec::new(),
         })
         .collect::<Vec<_>>();
 
-    pages[0].items.extend(header_box.items.clone());
-    pages[0].composites.extend(header_box.composites.clone());
+    if !header_box.items.is_empty() || !header_box.composites.is_empty() {
+        pages[0].header = Some(crate::PageHeader {
+            items: header_box.items.clone(),
+            composites: header_box.composites.clone(),
+        });
+    }
 
     for placement in &pagination.placements {
         let Some(system_box) = system_boxes
@@ -173,8 +170,7 @@ pub(crate) fn paginate_unpaginated_page(
     }
 
     for page in &mut pages {
-        let mut seen = BTreeSet::new();
-        page.items.retain(|item| seen.insert(item.id.clone()));
+        dedupe_page_item_ids(page);
     }
 
     scene.pages = pages;
@@ -184,47 +180,20 @@ pub(crate) fn paginate_unpaginated_page(
 }
 
 pub(crate) fn header_box_from_page(page: &ScenePage, opts: &LayoutOptions) -> HeaderLayoutBox {
-    let items_by_id = page
-        .items
-        .iter()
-        .map(|item| (item.id.clone(), item))
-        .collect::<std::collections::HashMap<_, _>>();
-    let composites = page
-        .composites
-        .iter()
-        .filter(|composite| composite.kind == CompositeKind::TextBlock)
-        .filter(|composite| composite.label.as_deref() != Some("tempo"))
-        .filter(|composite| {
-            composite
-                .child_item_ids
+    let items = page_header_items(page).to_vec();
+    let composites: Vec<SceneComposite> = page
+        .header
+        .as_ref()
+        .map(|header| {
+            header
+                .composites
                 .iter()
-                .all(|id| page.items.iter().any(|item| &item.id == id))
+                .filter(|composite| composite.kind == CompositeKind::TextBlock)
+                .filter(|composite| composite.label.as_deref() != Some("tempo"))
+                .cloned()
+                .collect()
         })
-        .cloned()
-        .collect::<Vec<_>>();
-    let header_item_ids = composites
-        .iter()
-        .flat_map(|composite| composite.child_item_ids.iter())
-        .cloned()
-        .collect::<BTreeSet<_>>();
-    let items = page
-        .items
-        .iter()
-        .filter(|item| header_item_ids.contains(&item.id))
-        .cloned()
-        .collect::<Vec<_>>();
-    let composites = page
-        .composites
-        .iter()
-        .filter(|composite| composite.kind == CompositeKind::TextBlock)
-        .filter(|composite| {
-            composite
-                .child_item_ids
-                .iter()
-                .all(|id| header_item_ids.contains(id))
-        })
-        .cloned()
-        .collect::<Vec<_>>();
+        .unwrap_or_default();
     let bounds = bounds_for_items(&items, opts.staff_space_pt).ok().flatten();
     HeaderLayoutBox {
         items,
@@ -240,103 +209,35 @@ pub(crate) fn system_boxes_from_page(
 ) -> Vec<SystemLayoutBox> {
     page.systems
         .iter()
-        .enumerate()
-        .map(|(index, system)| {
-            let prev_y = index
-                .checked_sub(1)
-                .and_then(|prev| page.systems.get(prev))
-                .map(|prev| prev.y_pt);
-            let next_y = page.systems.get(index + 1).map(|next| next.y_pt);
-            system_box_from_page_system(page, system, opts, prev_y, next_y)
-        })
+        .map(|system| system_box_from_nested_system(system, opts))
         .collect()
 }
 
-pub(crate) fn system_box_from_page_system(
-    page: &ScenePage,
+pub(crate) fn system_box_from_nested_system(
     system: &SceneSystem,
     opts: &LayoutOptions,
-    previous_system_y: Option<f32>,
-    next_system_y: Option<f32>,
 ) -> SystemLayoutBox {
-    let measure_ids = system.measure_ids.iter().cloned().collect::<BTreeSet<_>>();
-    let measures = page
-        .measures
-        .iter()
-        .filter(|measure| measure.system_id == system.id)
-        .map(|measure| {
-            let mut local = measure.clone();
-            local.x_pt -= opts.left_margin_pt;
-            local
-        })
-        .collect::<Vec<_>>();
-    let staff_top = system.y_pt + opts.staff_space_pt;
-    let staff_bottom = system.y_pt + system.height_pt;
-    let band_top = previous_system_y
-        .map(|previous_y| (previous_y + system.y_pt) * 0.5)
-        .unwrap_or(system.y_pt - 90.0);
-    let band_bottom = next_system_y
-        .map(|next_y| (system.y_pt + next_y) * 0.5)
-        .unwrap_or(system.y_pt + system.height_pt + 90.0);
-    let mut items = page
-        .items
-        .iter()
-        .filter(|item| {
-            if let Some(measure_id) = item.measure_id.as_ref() {
-                return measure_ids.contains(measure_id);
-            }
-            if matches!(item.role.as_str(), "title" | "subtitle" | "composer") {
-                return false;
-            }
-            item_bounds(item, opts.staff_space_pt)
-                .map(|(_, y, _, height)| {
-                    let center_y = y + height * 0.5;
-                    if matches!(
-                        item.role.as_str(),
-                        "staff-line" | "percussion-clef" | "time-signature-digit"
-                    ) {
-                        return center_y >= staff_top - 0.5 && center_y <= staff_bottom + 0.5;
-                    }
-                    center_y >= band_top && center_y <= band_bottom
-                })
-                .unwrap_or(false)
-        })
-        .cloned()
-        .collect::<Vec<_>>();
+    let mut measures = system.measures.clone();
+    for measure in &mut measures {
+        measure.x_pt -= opts.left_margin_pt;
+    }
+    let mut items = system.items.clone();
     for item in &mut items {
         translate_scene_item(item, -opts.left_margin_pt, 0.0);
     }
-    let item_ids = items
-        .iter()
-        .map(|item| item.id.clone())
-        .collect::<BTreeSet<_>>();
-    let composites = page
-        .composites
-        .iter()
-        .filter(|composite| {
-            let children_match = composite
-                .child_item_ids
-                .iter()
-                .all(|child_id| item_ids.contains(child_id));
-            let start_matches = composite
-                .start_anchor_id
-                .as_ref()
-                .is_none_or(|id| measure_ids.contains(id));
-            let end_matches = composite
-                .end_anchor_id
-                .as_ref()
-                .is_none_or(|id| measure_ids.contains(id));
-            children_match && start_matches && end_matches
-        })
-        .cloned()
-        .collect::<Vec<_>>();
+    let composites = system.composites.clone();
     let bounds = bounds_for_items(&items, opts.staff_space_pt).ok().flatten();
     let visual_top = bounds.map(|bounds| bounds.y).unwrap_or(system.y_pt);
     let visual_bottom = bounds
         .map(|bounds| bounds.y + bounds.height)
         .unwrap_or(system.y_pt + system.height_pt);
+    let staff_top = system.y_pt + opts.staff_space_pt;
+    let staff_bottom = system.y_pt + system.height_pt;
     let mut local_system = system.clone();
     local_system.x_pt = 0.0;
+    local_system.measures.clear();
+    local_system.items.clear();
+    local_system.composites.clear();
 
     SystemLayoutBox {
         system_index: system.index,
@@ -372,39 +273,61 @@ pub(crate) fn assemble_placed_system_box(
         })
         .collect::<HashMap<_, _>>();
 
-    for system in &system_box.systems {
-        let mut final_system = system.clone();
-        final_system.page_index = placement.page_index;
-        final_system.x_pt += dx;
-        final_system.y_pt += dy;
-        page.systems.push(final_system);
-    }
-    for measure in &system_box.measures {
-        let mut final_measure = measure.clone();
-        final_measure.x_pt += dx;
-        final_measure.y_pt += dy;
-        page.measures.push(final_measure);
-    }
-    for item in &system_box.items {
-        let mut final_item = item.clone();
-        final_item.id = item_remap
-            .get(&item.id)
-            .cloned()
-            .unwrap_or_else(|| item.id.clone());
-        if let Some(anchor) = final_item.anchor_item_id.clone() {
-            final_item.anchor_item_id = item_remap.get(&anchor).cloned();
-        }
-        translate_scene_item(&mut final_item, dx, dy);
-        page.items.push(final_item);
-    }
-    for composite in &system_box.composites {
-        let mut final_composite = composite.clone();
-        final_composite.id = format!("system-{}-{}", system_box.system_index, final_composite.id);
-        final_composite.child_item_ids = final_composite
-            .child_item_ids
-            .iter()
-            .filter_map(|id| item_remap.get(id).cloned())
-            .collect();
-        page.composites.push(final_composite);
-    }
+    let mut final_system = system_box.systems[0].clone();
+    final_system.page_index = placement.page_index;
+    final_system.x_pt += dx;
+    final_system.y_pt += dy;
+    final_system.measures = system_box
+        .measures
+        .iter()
+        .map(|measure| {
+            let mut final_measure = measure.clone();
+            final_measure.x_pt += dx;
+            final_measure.y_pt += dy;
+            final_measure
+        })
+        .collect();
+    final_system.items = system_box
+        .items
+        .iter()
+        .map(|item| {
+            let mut final_item = item.clone();
+            final_item.id = item_remap
+                .get(&item.id)
+                .cloned()
+                .unwrap_or_else(|| item.id.clone());
+            if let Some(anchor) = final_item.anchor_item_id.clone() {
+                final_item.anchor_item_id = item_remap.get(&anchor).cloned();
+            }
+            translate_scene_item(&mut final_item, dx, dy);
+            final_item
+        })
+        .collect();
+    final_system.composites = system_box
+        .composites
+        .iter()
+        .map(|composite| {
+            let mut final_composite = composite.clone();
+            final_composite.id = format!("system-{}-{}", system_box.system_index, final_composite.id);
+            final_composite.child_item_ids = final_composite
+                .child_item_ids
+                .iter()
+                .filter_map(|id| item_remap.get(id).cloned())
+                .collect();
+            final_composite
+        })
+        .collect();
+    page.systems.push(final_system);
+}
+
+// Legacy name kept for tests that import `system_box_from_page_system`.
+pub(crate) fn system_box_from_page_system(
+    page: &ScenePage,
+    system: &SceneSystem,
+    opts: &LayoutOptions,
+    _previous_system_y: Option<f32>,
+    _next_system_y: Option<f32>,
+) -> SystemLayoutBox {
+    let _ = page;
+    system_box_from_nested_system(system, opts)
 }

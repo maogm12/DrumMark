@@ -1,4 +1,5 @@
 use crate::metrics::GlyphRole;
+use crate::staff_barline_height_pt;
 use crate::planning::{
     repeat_barline_rendered_width, start_repeat_vertical_origin,
 };
@@ -34,7 +35,7 @@ pub(crate) fn render_system_opening_barline(
         x,
         y: top,
         width: 1.0,
-        height: bottom - top + 1.0,
+        height: staff_barline_height_pt(top, bottom),
         fill: "#333",
         stroke: None,
         stroke_width: None,
@@ -89,7 +90,7 @@ pub(crate) struct RightBarlineSpec<'a> {
 }
 
 pub(crate) fn render_right_barline(sink: &mut SceneEmitSink<'_>, spec: RightBarlineSpec<'_>) {
-    let h = spec.bottom - spec.top + 1.0;
+    let h = staff_barline_height_pt(spec.top, spec.bottom);
     match spec.barline {
         Some("repeat-end") | Some("repeat-both") => {
             let y = start_repeat_vertical_origin(spec.top, spec.bottom, sink.staff_space_pt);

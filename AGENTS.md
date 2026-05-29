@@ -104,7 +104,7 @@ YYYY-MM-DD-short-kebab-title
 - After plan approval, append `### Approved Plan` to `history.md`. After an intentional skip, append `### Plan Review Skipped`.
 - Spec / Contract Changes and other stamped work require `Status: APPROVED_FOR_IMPLEMENTATION` recorded in `history.md` before coding starts. Do not rely on chat history alone.
 - During implementation, update task status in `plan.md`, run relevant checks, and request one implementation review when planned work is complete.
-- **Commit per task.** After each task completes (status → done, all checks pass), create a commit with a message referencing the task: `[Task N.M] brief description`. Do not accumulate changes from multiple tasks in a single commit. Untracked plan/history files go in their own commit.
+- **Commit per task (mandatory).** After each task completes (status → done, acceptance checks pass), commit **before** starting the next task: `[Task N] brief description`. Stage only that task’s scope; run `git status` to confirm the tree is clean of that task’s files. Do not batch tasks into one end-of-change commit unless the user explicitly requests a retroactive split. See `.agents/skills/change-workflow/SKILL.md` → Implementation Rules.
 - Merge only after implementation review reaches `STATUS: APPROVED`.
 - Prefer squash merge unless the user requests otherwise.
 - After merge, move the change folder to `docs/changes/archive/<year>/<change-id>/`.

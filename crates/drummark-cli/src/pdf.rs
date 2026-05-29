@@ -46,7 +46,7 @@ pub fn render_scene_to_pdf(scene: &LayoutScene, cli: &Cli) -> Result<Vec<u8>, St
         .iter()
         .map(|page| {
             let mut ops = Vec::new();
-            let mut items = page.items.iter().collect::<Vec<_>>();
+            let mut items: Vec<_> = drummark_layout::page_all_items(page).collect();
             items.sort_by_key(|item| item.z_index);
             for item in items {
                 emit_item(
@@ -336,7 +336,7 @@ fn split_text_runs(
 
 fn scene_text_requires_fallback(scene: &LayoutScene, bravura: &FontFace) -> Result<bool, String> {
     for page in &scene.pages {
-        for item in &page.items {
+        for item in drummark_layout::page_all_items(page) {
             if let ScenePrimitive::TextRun(text) = &item.primitive {
                 for ch in text.text.chars() {
                     if !bravura.covers(ch)? {
@@ -364,7 +364,7 @@ fn collect_used_font_chars(
         fallback: BTreeSet::new(),
     };
     for page in &scene.pages {
-        for item in &page.items {
+        for item in drummark_layout::page_all_items(page) {
             match &item.primitive {
                 ScenePrimitive::GlyphRun(glyph) => {
                     let ch = glyph

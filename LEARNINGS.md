@@ -385,6 +385,11 @@ When an older note conflicts with this file, treat this file plus the active spe
 - Collision fallback is directional: voice 1 searches only upward (`REST_LANES_VOICE_1_UP_SS`), voice 2 only downward (`REST_LANES_VOICE_2_DOWN_SS`). Full-collision tie-break prefers the lane closest to the voice default, not the lane with lowest overlap that may drift toward the staff center.
 - `derive_implicit_rest_events()` in `crates/drummark-core/src/render_score.rs` merges deferred whole-measure rests when both active voices are entirely silent in the same measure, emitting a single voice-1 whole rest instead of two stacked whole rests.
 
+## 2026-05-29 Barline Vertical Span And Continuation Repeat Start
+
+- Staff lines sit at `sy + staff_space_pt * (1..5)`; barline rects must use `staff_barline_height_pt(top, bottom) = bottom - top` (no `+ 1`), with `top = sy + staff_space` and `bottom = sy + staff_space * 5`, or the fill extends 1pt below the bottom staff line.
+- First-measure `|: ` on a non-first system must not use `FIRST_MEASURE_START_REPEAT_PREAMBLE_PULL_PT`; place the glyph at `compact_measure_preamble_end_x + SYSTEM_PREAMBLE_SIDE_GAP_PT` so it clears the repeated clef. `measure_left_pad` for that case must derive from the same repeat X, not `system_start_reserved + start_repeat_reserved - pull`.
+
 ## 2026-05-29 Staff Space And Rest Lane Scaling
 
 - Staff lines are drawn at `sy + staff_space_pt * (1..5)`; `staff_bounding_height_pt = staff_space_pt * 5` drives `sys_y` advance together with `system_spacing_pt`. Pagination then re-stacks systems using each box `visual_height`, so below-staff hairpins/dynamics do not require inflating `sys_y` beyond the strict staff bbox.

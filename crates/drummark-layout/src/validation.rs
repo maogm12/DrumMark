@@ -1,6 +1,7 @@
 use std::collections::BTreeSet;
 
 use crate::scene_geometry::scene_item_bounds;
+use crate::scene_page::{page_all_composites, page_all_items, page_all_measures, page_header_items};
 use crate::{LayoutScene, SceneItem, ScenePage};
 
 pub(crate) fn validate_layout_scene(scene: &LayoutScene, staff_space_pt: f32) -> Vec<String> {
@@ -13,14 +14,10 @@ pub(crate) fn validate_layout_scene(scene: &LayoutScene, staff_space_pt: f32) ->
                 expected, page.index
             ));
         }
-        let item_ids = page
-            .items
-            .iter()
+        let item_ids = page_all_items(page)
             .map(|item| item.id.as_str())
             .collect::<BTreeSet<_>>();
-        let measure_ids = page
-            .measures
-            .iter()
+        let measure_ids = page_all_measures(page)
             .map(|measure| measure.id.as_str())
             .collect::<BTreeSet<_>>();
         for system in &page.systems {
@@ -30,8 +27,30 @@ pub(crate) fn validate_layout_scene(scene: &LayoutScene, staff_space_pt: f32) ->
                     system.id, page.index, system.page_index
                 ));
             }
+            for measure in &system.measures {
+                if measure.system_id != system.id {
+                    diagnostics.push(format!(
+                        "LAYOUT_ERROR measure-system measure={} system={} actual={}",
+                        measure.id, system.id, measure.system_id
+                    ));
+                }
+            }
+            for item in &system.items {
+                if let Some(measure_id) = item.measure_id.as_deref() {
+                    if !system
+                        .measures
+                        .iter()
+                        .any(|measure| measure.id == measure_id)
+                    {
+                        diagnostics.push(format!(
+                            "LAYOUT_ERROR item-measure item={} measure={}",
+                            item.id, measure_id
+                        ));
+                    }
+                }
+            }
         }
-        for item in &page.items {
+        for item in page_all_items(page) {
             if let Some(anchor_id) = item.anchor_item_id.as_deref() {
                 if !item_ids.contains(anchor_id) {
                     diagnostics.push(format!(
@@ -55,7 +74,7 @@ pub(crate) fn validate_layout_scene(scene: &LayoutScene, staff_space_pt: f32) ->
                 }
             }
         }
-        for composite in &page.composites {
+        for composite in page_all_composites(page) {
             for child_id in &composite.child_item_ids {
                 if !item_ids.contains(child_id.as_str()) {
                     diagnostics.push(format!(
@@ -84,12 +103,12 @@ pub(crate) fn validate_layout_scene(scene: &LayoutScene, staff_space_pt: f32) ->
     let mut global_item_ids = BTreeSet::new();
     let mut global_composite_ids = BTreeSet::new();
     for page in &scene.pages {
-        for item in &page.items {
+        for item in page_all_items(page) {
             if !global_item_ids.insert(item.id.as_str()) {
                 diagnostics.push(format!("LAYOUT_ERROR duplicate-item id={}", item.id));
             }
         }
-        for composite in &page.composites {
+        for composite in page_all_composites(page) {
             if !global_composite_ids.insert(composite.id.as_str()) {
                 diagnostics.push(format!(
                     "LAYOUT_ERROR duplicate-composite id={}",
@@ -125,13 +144,17 @@ pub(crate) fn overflow_systems_by_page(scene: &LayoutScene) -> BTreeSet<(u32, St
 
 pub(crate) fn item_system_id(page: &ScenePage, item: &SceneItem) -> Option<String> {
     if let Some(measure_id) = item.measure_id.as_deref() {
-        if let Some(measure) = page
-            .measures
+        if let Some(system) = page
+            .systems
             .iter()
-            .find(|measure| measure.id == measure_id)
+            .find(|system| system.measures.iter().any(|measure| measure.id == measure_id))
         {
-            return Some(measure.system_id.clone());
+            return Some(system.id.clone());
         }
+    }
+
+    if page_header_items(page).iter().any(|header_item| header_item.id == item.id) {
+        return None;
     }
 
     page.systems

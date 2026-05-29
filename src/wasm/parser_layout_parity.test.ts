@@ -70,19 +70,37 @@ HH | x |
   },
 ] as const;
 
+function pageAllMeasures(page: Scene["pages"][number]) {
+  return (page.systems ?? []).flatMap((system) => system.measures ?? []);
+}
+
+function pageAllItems(page: Scene["pages"][number]) {
+  return [
+    ...(page.header?.items ?? []),
+    ...(page.systems ?? []).flatMap((system) => system.items ?? []),
+  ];
+}
+
+function pageAllComposites(page: Scene["pages"][number]) {
+  return [
+    ...(page.header?.composites ?? []),
+    ...(page.systems ?? []).flatMap((system) => system.composites ?? []),
+  ];
+}
+
 function sceneMeasures(scene: Scene) {
-  return scene.pages.flatMap((page) => page.measures);
+  return scene.pages.flatMap((page) => pageAllMeasures(page));
 }
 
 function countSceneRole(scene: Scene, role: string) {
   return scene.pages
-    .flatMap((page) => page.items)
+    .flatMap((page) => pageAllItems(page))
     .filter((item) => item.role === role).length;
 }
 
 function countSceneComposite(scene: Scene, kind: string) {
   return scene.pages
-    .flatMap((page) => page.composites)
+    .flatMap((page) => pageAllComposites(page))
     .filter((composite) => composite.kind === kind).length;
 }
 

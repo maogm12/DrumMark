@@ -1,7 +1,7 @@
 use crate::metrics::{GlyphRole, TextRole};
 
 pub const RENDER_SCORE_VERSION: &str = "2";
-pub const LAYOUT_SCENE_VERSION: &str = "1";
+pub const LAYOUT_SCENE_VERSION: &str = "2";
 pub const CANONICAL_METRICS_VERSION: &str = "2026-05-13";
 
 // ── Core Render Contract ────────────────────────────────────────
@@ -178,15 +178,19 @@ pub struct LayoutScene {
     pub issues: Vec<String>,
 }
 
+#[derive(Debug, Clone, PartialEq, Default)]
+pub struct PageHeader {
+    pub items: Vec<SceneItem>,
+    pub composites: Vec<SceneComposite>,
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct ScenePage {
     pub index: u32,
     pub width_pt: f32,
     pub height_pt: f32,
+    pub header: Option<PageHeader>,
     pub systems: Vec<SceneSystem>,
-    pub measures: Vec<SceneMeasure>,
-    pub items: Vec<SceneItem>,
-    pub composites: Vec<SceneComposite>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -198,7 +202,9 @@ pub struct SceneSystem {
     pub y_pt: f32,
     pub width_pt: f32,
     pub height_pt: f32,
-    pub measure_ids: Vec<String>,
+    pub measures: Vec<SceneMeasure>,
+    pub items: Vec<SceneItem>,
+    pub composites: Vec<SceneComposite>,
 }
 
 #[derive(Debug, Clone, PartialEq)]

@@ -2,7 +2,7 @@
 
 ## Status
 
-draft
+merged
 
 ## Problem
 
@@ -89,7 +89,7 @@ Append to `docs/RENDER_LAYOUT_CONTRACT.md`:
 
 ### Task 1: Contract types and version bump
 
-Status: Pending
+Status: Done
 
 Scope:
 - `crates/drummark-layout/src/contract.rs`
@@ -105,7 +105,7 @@ Acceptance:
 
 ### Task 2: Pagination assembly emits nested page
 
-Status: Pending
+Status: Done
 
 Scope:
 - `pagination.rs`, `scene.rs`, `validation.rs`, `snapshot.rs`, `wire.rs`
@@ -121,7 +121,7 @@ Acceptance:
 
 ### Task 3: Scene build path tags system ownership at emit time
 
-Status: Pending
+Status: Done
 
 Scope:
 - `scene.rs`, `scene_builder.rs` (if needed)
@@ -135,7 +135,7 @@ Acceptance:
 
 ### Task 4: CLI, WASM wire, TypeScript adapter
 
-Status: Pending
+Status: Done
 
 Scope:
 - `crates/drummark-cli/src/json.rs`, `svg.rs`, `pdf.rs`
@@ -152,7 +152,22 @@ Acceptance:
 
 ### Task 5: Spec merge and archive prep
 
-Status: Pending
+Status: Done
+
+### Task 6: Layout engraving follow-ups (same branch)
+
+Status: Done
+
+Scope:
+- `planning.rs`, `scene.rs` — system preamble metric spacing; non-first-system `|: ` after clef
+- `engraving/barlines.rs`, `lib.rs` — barline rect height spans top/bottom staff lines only
+- `engraving/beams.rs`, `engraving/notes.rs` — secondary beam offset includes ribbon thickness + gap
+- `tests/goldens/cross_system_scene_snapshot.txt`, WASM rebuild
+
+Acceptance:
+- `test_second_system_first_measure_repeat_start_clears_clef`
+- `test_regular_barline_vertical_extent_matches_staff_lines`
+- `cargo test -p drummark-layout` green
 
 Scope:
 - `docs/RENDER_LAYOUT_CONTRACT.md` (append addendum from Spec Delta)

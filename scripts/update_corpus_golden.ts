@@ -18,13 +18,22 @@ function sceneSummary(scene: any) {
 
   for (const page of scene.pages || []) {
     systems += page.systems?.length || 0;
-    measures += page.measures?.length || 0;
-    items += page.items?.length || 0;
-    composites += page.composites?.length || 0;
-    for (const item of page.items || []) {
+    const pageItems = [
+      ...(page.header?.items ?? []),
+      ...(page.systems ?? []).flatMap((system) => system.items ?? []),
+    ];
+    const pageMeasures = (page.systems ?? []).flatMap((system) => system.measures ?? []);
+    const pageComposites = [
+      ...(page.header?.composites ?? []),
+      ...(page.systems ?? []).flatMap((system) => system.composites ?? []),
+    ];
+    measures += pageMeasures.length;
+    items += pageItems.length;
+    composites += pageComposites.length;
+    for (const item of pageItems) {
       itemRoles[item.role] = (itemRoles[item.role] || 0) + 1;
     }
-    for (const composite of page.composites || []) {
+    for (const composite of pageComposites) {
       compositeKinds[composite.kind] = (compositeKinds[composite.kind] || 0) + 1;
       fragmentKinds[`${composite.kind}:${composite.fragment}`] = (fragmentKinds[`${composite.kind}:${composite.fragment}`] || 0) + 1;
     }

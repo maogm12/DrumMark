@@ -1,11 +1,93 @@
 {
-  "version": "1",
+  "version": "2",
   "metricsVersion": "2026-05-13",
   "pages": [
     {
       "index": 0,
       "widthPt": 612,
       "heightPt": 792,
+      "header": {
+        "items": [
+          {
+            "id": "item-0",
+            "role": "title",
+            "kind": "textRun",
+            "zIndex": 0,
+            "primitive": {
+              "xPt": 306,
+              "yPt": 71.5,
+              "textRole": "title",
+              "text": "Metadata Demo",
+              "fontFamily": "Academico",
+              "fontSizePt": 18,
+              "fill": "#333",
+              "textAnchor": "middle",
+              "fontWeight": "bold"
+            }
+          },
+          {
+            "id": "item-1",
+            "role": "subtitle",
+            "kind": "textRun",
+            "zIndex": 0,
+            "primitive": {
+              "xPt": 306,
+              "yPt": 112,
+              "textRole": "subtitle",
+              "text": "Subtitle",
+              "fontFamily": "Academico",
+              "fontSizePt": 14,
+              "fill": "#333",
+              "textAnchor": "middle"
+            }
+          },
+          {
+            "id": "item-2",
+            "role": "composer",
+            "kind": "textRun",
+            "zIndex": 0,
+            "primitive": {
+              "xPt": 572,
+              "yPt": 110.25,
+              "textRole": "composer",
+              "text": "G Mao",
+              "fontFamily": "Academico",
+              "fontSizePt": 11,
+              "fill": "#333",
+              "textAnchor": "end"
+            }
+          }
+        ],
+        "composites": [
+          {
+            "id": "text-block-title",
+            "kind": "textBlock",
+            "fragment": "singleSegment",
+            "childItemIds": [
+              "item-0"
+            ],
+            "label": "title"
+          },
+          {
+            "id": "text-block-subtitle",
+            "kind": "textBlock",
+            "fragment": "singleSegment",
+            "childItemIds": [
+              "item-1"
+            ],
+            "label": "subtitle"
+          },
+          {
+            "id": "text-block-composer",
+            "kind": "textBlock",
+            "fragment": "singleSegment",
+            "childItemIds": [
+              "item-2"
+            ],
+            "label": "composer"
+          }
+        ]
+      },
       "systems": [
         {
           "id": "system-0",
@@ -15,831 +97,752 @@
           "yPt": 201.94000244140625,
           "widthPt": 532,
           "heightPt": 50,
-          "measureIds": [
-            "measure-0"
+          "measures": [
+            {
+              "id": "measure-0",
+              "index": 0,
+              "globalIndex": 0,
+              "systemId": "system-0",
+              "xPt": 40,
+              "yPt": 201.94000244140625,
+              "widthPt": 532,
+              "heightPt": 50
+            }
+          ],
+          "items": [
+            {
+              "id": "system-0-item-3",
+              "role": "staff-line",
+              "kind": "lineSegment",
+              "zIndex": 0,
+              "primitive": {
+                "x1Pt": 40,
+                "y1Pt": 211.94000244140625,
+                "x2Pt": 572,
+                "y2Pt": 211.94000244140625,
+                "stroke": "#333",
+                "strokeWidth": 1
+              }
+            },
+            {
+              "id": "system-0-item-4",
+              "role": "staff-line",
+              "kind": "lineSegment",
+              "zIndex": 0,
+              "primitive": {
+                "x1Pt": 40,
+                "y1Pt": 221.94000244140625,
+                "x2Pt": 572,
+                "y2Pt": 221.94000244140625,
+                "stroke": "#333",
+                "strokeWidth": 1
+              }
+            },
+            {
+              "id": "system-0-item-5",
+              "role": "staff-line",
+              "kind": "lineSegment",
+              "zIndex": 0,
+              "primitive": {
+                "x1Pt": 40,
+                "y1Pt": 231.94000244140625,
+                "x2Pt": 572,
+                "y2Pt": 231.94000244140625,
+                "stroke": "#333",
+                "strokeWidth": 1
+              }
+            },
+            {
+              "id": "system-0-item-6",
+              "role": "staff-line",
+              "kind": "lineSegment",
+              "zIndex": 0,
+              "primitive": {
+                "x1Pt": 40,
+                "y1Pt": 241.94000244140625,
+                "x2Pt": 572,
+                "y2Pt": 241.94000244140625,
+                "stroke": "#333",
+                "strokeWidth": 1
+              }
+            },
+            {
+              "id": "system-0-item-7",
+              "role": "staff-line",
+              "kind": "lineSegment",
+              "zIndex": 0,
+              "primitive": {
+                "x1Pt": 40,
+                "y1Pt": 251.94000244140625,
+                "x2Pt": 572,
+                "y2Pt": 251.94000244140625,
+                "stroke": "#333",
+                "strokeWidth": 1
+              }
+            },
+            {
+              "id": "system-0-item-8",
+              "role": "percussion-clef",
+              "kind": "textRun",
+              "zIndex": 0,
+              "primitive": {
+                "xPt": 45,
+                "yPt": 231.94000244140625,
+                "textRole": "percussionClef",
+                "text": "",
+                "fontFamily": "Bravura",
+                "fontSizePt": 30,
+                "fill": "#333"
+              }
+            },
+            {
+              "id": "system-0-item-9",
+              "role": "time-signature-digit",
+              "kind": "textRun",
+              "zIndex": 0,
+              "primitive": {
+                "xPt": 70,
+                "yPt": 221.94000244140625,
+                "textRole": "timeSignatureDigit",
+                "text": "",
+                "fontFamily": "Bravura",
+                "fontSizePt": 30,
+                "fill": "#333"
+              }
+            },
+            {
+              "id": "system-0-item-10",
+              "role": "time-signature-digit",
+              "kind": "textRun",
+              "zIndex": 0,
+              "primitive": {
+                "xPt": 70,
+                "yPt": 241.94000244140625,
+                "textRole": "timeSignatureDigit",
+                "text": "",
+                "fontFamily": "Bravura",
+                "fontSizePt": 30,
+                "fill": "#333"
+              }
+            },
+            {
+              "id": "system-0-item-11",
+              "measureId": "measure-0",
+              "role": "tempo-glyph",
+              "kind": "textRun",
+              "zIndex": 0,
+              "primitive": {
+                "xPt": 49,
+                "yPt": 191.94000244140625,
+                "textRole": "tempo",
+                "text": "",
+                "fontFamily": "Bravura",
+                "fontSizePt": 25,
+                "fill": "#333"
+              }
+            },
+            {
+              "id": "system-0-item-12",
+              "measureId": "measure-0",
+              "role": "tempo-equals",
+              "kind": "textRun",
+              "zIndex": 0,
+              "primitive": {
+                "xPt": 68.06666564941406,
+                "yPt": 191.94000244140625,
+                "textRole": "tempo",
+                "text": "=",
+                "fontFamily": "Academico",
+                "fontSizePt": 14,
+                "fill": "#333"
+              }
+            },
+            {
+              "id": "system-0-item-13",
+              "measureId": "measure-0",
+              "role": "tempo",
+              "kind": "textRun",
+              "zIndex": 0,
+              "primitive": {
+                "xPt": 83.06666564941406,
+                "yPt": 191.94000244140625,
+                "textRole": "tempo",
+                "text": "96",
+                "fontFamily": "Academico",
+                "fontSizePt": 14,
+                "fill": "#333"
+              }
+            },
+            {
+              "id": "system-0-item-14",
+              "measureId": "measure-0",
+              "role": "opening-barline",
+              "kind": "rect",
+              "zIndex": 0,
+              "primitive": {
+                "xPt": 40,
+                "yPt": 211.94000244140625,
+                "widthPt": 1,
+                "heightPt": 40,
+                "fill": "#333"
+              }
+            },
+            {
+              "id": "system-0-item-15",
+              "measureId": "measure-0",
+              "role": "notehead",
+              "kind": "textRun",
+              "zIndex": 0,
+              "primitive": {
+                "xPt": 115.5,
+                "yPt": 206.94000244140625,
+                "textRole": "tempo",
+                "text": "",
+                "fontFamily": "Bravura",
+                "fontSizePt": 30,
+                "fill": "#333"
+              }
+            },
+            {
+              "id": "system-0-item-16",
+              "measureId": "measure-0",
+              "role": "notehead",
+              "kind": "textRun",
+              "zIndex": 0,
+              "primitive": {
+                "xPt": 115.5,
+                "yPt": 246.94000244140625,
+                "textRole": "tempo",
+                "text": "",
+                "fontFamily": "Bravura",
+                "fontSizePt": 30,
+                "fill": "#333"
+              }
+            },
+            {
+              "id": "system-0-item-17",
+              "measureId": "measure-0",
+              "anchorItemId": "system-0-item-15",
+              "role": "stem",
+              "kind": "lineSegment",
+              "zIndex": 0,
+              "primitive": {
+                "x1Pt": 126.5999984741211,
+                "y1Pt": 179.5,
+                "x2Pt": 126.5999984741211,
+                "y2Pt": 202.5,
+                "stroke": "#333",
+                "strokeWidth": 1
+              }
+            },
+            {
+              "id": "system-0-item-18",
+              "measureId": "measure-0",
+              "anchorItemId": "system-0-item-16",
+              "role": "stem",
+              "kind": "lineSegment",
+              "zIndex": 0,
+              "primitive": {
+                "x1Pt": 116,
+                "y1Pt": 248.6199951171875,
+                "x2Pt": 116,
+                "y2Pt": 271.6199951171875,
+                "stroke": "#333",
+                "strokeWidth": 1
+              }
+            },
+            {
+              "id": "system-0-item-19",
+              "measureId": "measure-0",
+              "role": "notehead",
+              "kind": "textRun",
+              "zIndex": 0,
+              "primitive": {
+                "xPt": 172.5,
+                "yPt": 206.94000244140625,
+                "textRole": "tempo",
+                "text": "",
+                "fontFamily": "Bravura",
+                "fontSizePt": 30,
+                "fill": "#333"
+              }
+            },
+            {
+              "id": "system-0-item-20",
+              "measureId": "measure-0",
+              "anchorItemId": "system-0-item-19",
+              "role": "stem",
+              "kind": "lineSegment",
+              "zIndex": 0,
+              "primitive": {
+                "x1Pt": 183.60000610351562,
+                "y1Pt": 179.5,
+                "x2Pt": 183.60000610351562,
+                "y2Pt": 202.5,
+                "stroke": "#333",
+                "strokeWidth": 1
+              }
+            },
+            {
+              "id": "system-0-item-21",
+              "measureId": "measure-0",
+              "role": "notehead",
+              "kind": "textRun",
+              "zIndex": 0,
+              "primitive": {
+                "xPt": 229.5,
+                "yPt": 206.94000244140625,
+                "textRole": "tempo",
+                "text": "",
+                "fontFamily": "Bravura",
+                "fontSizePt": 30,
+                "fill": "#333"
+              }
+            },
+            {
+              "id": "system-0-item-22",
+              "measureId": "measure-0",
+              "role": "notehead",
+              "kind": "textRun",
+              "zIndex": 0,
+              "primitive": {
+                "xPt": 229.5,
+                "yPt": 226.94000244140625,
+                "textRole": "tempo",
+                "text": "",
+                "fontFamily": "Bravura",
+                "fontSizePt": 30,
+                "fill": "#333"
+              }
+            },
+            {
+              "id": "system-0-item-23",
+              "measureId": "measure-0",
+              "role": "rest",
+              "kind": "glyphRun",
+              "zIndex": 0,
+              "primitive": {
+                "xPt": 232.2933349609375,
+                "yPt": 243.47999572753906,
+                "glyphRole": "restEighth",
+                "glyphCount": 1,
+                "codepoint": 58598,
+                "fontFamily": "Bravura",
+                "fontSizePt": 30,
+                "fill": "#333"
+              }
+            },
+            {
+              "id": "system-0-item-24",
+              "measureId": "measure-0",
+              "anchorItemId": "system-0-item-21",
+              "role": "stem",
+              "kind": "lineSegment",
+              "zIndex": 0,
+              "primitive": {
+                "x1Pt": 240.60000610351562,
+                "y1Pt": 179.5,
+                "x2Pt": 240.60000610351562,
+                "y2Pt": 225.260009765625,
+                "stroke": "#333",
+                "strokeWidth": 1
+              }
+            },
+            {
+              "id": "system-0-item-25",
+              "measureId": "measure-0",
+              "role": "notehead",
+              "kind": "textRun",
+              "zIndex": 0,
+              "primitive": {
+                "xPt": 286.5,
+                "yPt": 206.94000244140625,
+                "textRole": "tempo",
+                "text": "",
+                "fontFamily": "Bravura",
+                "fontSizePt": 30,
+                "fill": "#333"
+              }
+            },
+            {
+              "id": "system-0-item-26",
+              "measureId": "measure-0",
+              "role": "notehead",
+              "kind": "textRun",
+              "zIndex": 0,
+              "primitive": {
+                "xPt": 286.5,
+                "yPt": 246.94000244140625,
+                "textRole": "tempo",
+                "text": "",
+                "fontFamily": "Bravura",
+                "fontSizePt": 30,
+                "fill": "#333"
+              }
+            },
+            {
+              "id": "system-0-item-27",
+              "measureId": "measure-0",
+              "anchorItemId": "system-0-item-25",
+              "role": "stem",
+              "kind": "lineSegment",
+              "zIndex": 0,
+              "primitive": {
+                "x1Pt": 297.6000061035156,
+                "y1Pt": 179.5,
+                "x2Pt": 297.6000061035156,
+                "y2Pt": 202.5,
+                "stroke": "#333",
+                "strokeWidth": 1
+              }
+            },
+            {
+              "id": "system-0-item-28",
+              "measureId": "measure-0",
+              "anchorItemId": "system-0-item-26",
+              "role": "stem",
+              "kind": "lineSegment",
+              "zIndex": 0,
+              "primitive": {
+                "x1Pt": 287,
+                "y1Pt": 248.6199951171875,
+                "x2Pt": 287,
+                "y2Pt": 271.6199951171875,
+                "stroke": "#333",
+                "strokeWidth": 1
+              }
+            },
+            {
+              "id": "system-0-item-29",
+              "measureId": "measure-0",
+              "role": "notehead",
+              "kind": "textRun",
+              "zIndex": 0,
+              "primitive": {
+                "xPt": 343.5,
+                "yPt": 206.94000244140625,
+                "textRole": "tempo",
+                "text": "",
+                "fontFamily": "Bravura",
+                "fontSizePt": 30,
+                "fill": "#333"
+              }
+            },
+            {
+              "id": "system-0-item-30",
+              "measureId": "measure-0",
+              "role": "notehead",
+              "kind": "textRun",
+              "zIndex": 0,
+              "primitive": {
+                "xPt": 343.5,
+                "yPt": 246.94000244140625,
+                "textRole": "tempo",
+                "text": "",
+                "fontFamily": "Bravura",
+                "fontSizePt": 30,
+                "fill": "#333"
+              }
+            },
+            {
+              "id": "system-0-item-31",
+              "measureId": "measure-0",
+              "anchorItemId": "system-0-item-29",
+              "role": "stem",
+              "kind": "lineSegment",
+              "zIndex": 0,
+              "primitive": {
+                "x1Pt": 354.6000061035156,
+                "y1Pt": 179.5,
+                "x2Pt": 354.6000061035156,
+                "y2Pt": 202.5,
+                "stroke": "#333",
+                "strokeWidth": 1
+              }
+            },
+            {
+              "id": "system-0-item-32",
+              "measureId": "measure-0",
+              "anchorItemId": "system-0-item-30",
+              "role": "stem",
+              "kind": "lineSegment",
+              "zIndex": 0,
+              "primitive": {
+                "x1Pt": 344,
+                "y1Pt": 248.6199951171875,
+                "x2Pt": 344,
+                "y2Pt": 271.6199951171875,
+                "stroke": "#333",
+                "strokeWidth": 1
+              }
+            },
+            {
+              "id": "system-0-item-33",
+              "measureId": "measure-0",
+              "role": "notehead",
+              "kind": "textRun",
+              "zIndex": 0,
+              "primitive": {
+                "xPt": 400.5,
+                "yPt": 206.94000244140625,
+                "textRole": "tempo",
+                "text": "",
+                "fontFamily": "Bravura",
+                "fontSizePt": 30,
+                "fill": "#333"
+              }
+            },
+            {
+              "id": "system-0-item-34",
+              "measureId": "measure-0",
+              "anchorItemId": "system-0-item-33",
+              "role": "stem",
+              "kind": "lineSegment",
+              "zIndex": 0,
+              "primitive": {
+                "x1Pt": 411.6000061035156,
+                "y1Pt": 179.5,
+                "x2Pt": 411.6000061035156,
+                "y2Pt": 202.5,
+                "stroke": "#333",
+                "strokeWidth": 1
+              }
+            },
+            {
+              "id": "system-0-item-35",
+              "measureId": "measure-0",
+              "role": "notehead",
+              "kind": "textRun",
+              "zIndex": 0,
+              "primitive": {
+                "xPt": 457.5,
+                "yPt": 206.94000244140625,
+                "textRole": "tempo",
+                "text": "",
+                "fontFamily": "Bravura",
+                "fontSizePt": 30,
+                "fill": "#333"
+              }
+            },
+            {
+              "id": "system-0-item-36",
+              "measureId": "measure-0",
+              "role": "notehead",
+              "kind": "textRun",
+              "zIndex": 0,
+              "primitive": {
+                "xPt": 457.5,
+                "yPt": 226.94000244140625,
+                "textRole": "tempo",
+                "text": "",
+                "fontFamily": "Bravura",
+                "fontSizePt": 30,
+                "fill": "#333"
+              }
+            },
+            {
+              "id": "system-0-item-37",
+              "measureId": "measure-0",
+              "role": "rest",
+              "kind": "glyphRun",
+              "zIndex": 0,
+              "primitive": {
+                "xPt": 460.2933349609375,
+                "yPt": 243.47999572753906,
+                "glyphRole": "restEighth",
+                "glyphCount": 1,
+                "codepoint": 58598,
+                "fontFamily": "Bravura",
+                "fontSizePt": 30,
+                "fill": "#333"
+              }
+            },
+            {
+              "id": "system-0-item-38",
+              "measureId": "measure-0",
+              "anchorItemId": "system-0-item-35",
+              "role": "stem",
+              "kind": "lineSegment",
+              "zIndex": 0,
+              "primitive": {
+                "x1Pt": 468.6000061035156,
+                "y1Pt": 179.5,
+                "x2Pt": 468.6000061035156,
+                "y2Pt": 225.260009765625,
+                "stroke": "#333",
+                "strokeWidth": 1
+              }
+            },
+            {
+              "id": "system-0-item-39",
+              "measureId": "measure-0",
+              "role": "notehead",
+              "kind": "textRun",
+              "zIndex": 0,
+              "primitive": {
+                "xPt": 514.5,
+                "yPt": 206.94000244140625,
+                "textRole": "tempo",
+                "text": "",
+                "fontFamily": "Bravura",
+                "fontSizePt": 30,
+                "fill": "#333"
+              }
+            },
+            {
+              "id": "system-0-item-40",
+              "measureId": "measure-0",
+              "role": "rest",
+              "kind": "glyphRun",
+              "zIndex": 0,
+              "primitive": {
+                "xPt": 517.2933349609375,
+                "yPt": 243.47999572753906,
+                "glyphRole": "restEighth",
+                "glyphCount": 1,
+                "codepoint": 58598,
+                "fontFamily": "Bravura",
+                "fontSizePt": 30,
+                "fill": "#333"
+              }
+            },
+            {
+              "id": "system-0-item-41",
+              "measureId": "measure-0",
+              "anchorItemId": "system-0-item-39",
+              "role": "stem",
+              "kind": "lineSegment",
+              "zIndex": 0,
+              "primitive": {
+                "x1Pt": 525.5999755859375,
+                "y1Pt": 179.5,
+                "x2Pt": 525.5999755859375,
+                "y2Pt": 202.5,
+                "stroke": "#333",
+                "strokeWidth": 1
+              }
+            },
+            {
+              "id": "system-0-item-42",
+              "measureId": "measure-0",
+              "anchorItemId": "system-0-item-17",
+              "role": "beam",
+              "kind": "path",
+              "zIndex": 0,
+              "primitive": {
+                "d": "M 126.600 179.500 L 297.600 179.500 L 297.600 182.500 L 126.600 182.500 Z",
+                "fill": "#333"
+              }
+            },
+            {
+              "id": "system-0-item-43",
+              "measureId": "measure-0",
+              "anchorItemId": "system-0-item-31",
+              "role": "beam",
+              "kind": "path",
+              "zIndex": 0,
+              "primitive": {
+                "d": "M 354.600 179.500 L 525.600 179.500 L 525.600 182.500 L 354.600 182.500 Z",
+                "fill": "#333"
+              }
+            },
+            {
+              "id": "system-0-item-44",
+              "measureId": "measure-0",
+              "anchorItemId": "system-0-item-18",
+              "role": "flag",
+              "kind": "glyphRun",
+              "zIndex": 0,
+              "primitive": {
+                "xPt": 116,
+                "yPt": 272.5880126953125,
+                "glyphRole": "flag8thDown",
+                "glyphCount": 1,
+                "codepoint": 57921,
+                "fontFamily": "Bravura",
+                "fontSizePt": 22,
+                "fill": "#333"
+              }
+            },
+            {
+              "id": "system-0-item-45",
+              "measureId": "measure-0",
+              "anchorItemId": "system-0-item-28",
+              "role": "flag",
+              "kind": "glyphRun",
+              "zIndex": 0,
+              "primitive": {
+                "xPt": 287,
+                "yPt": 272.5880126953125,
+                "glyphRole": "flag8thDown",
+                "glyphCount": 1,
+                "codepoint": 57921,
+                "fontFamily": "Bravura",
+                "fontSizePt": 22,
+                "fill": "#333"
+              }
+            },
+            {
+              "id": "system-0-item-46",
+              "measureId": "measure-0",
+              "anchorItemId": "system-0-item-32",
+              "role": "flag",
+              "kind": "glyphRun",
+              "zIndex": 0,
+              "primitive": {
+                "xPt": 344,
+                "yPt": 272.5880126953125,
+                "glyphRole": "flag8thDown",
+                "glyphCount": 1,
+                "codepoint": 57921,
+                "fontFamily": "Bravura",
+                "fontSizePt": 22,
+                "fill": "#333"
+              }
+            },
+            {
+              "id": "system-0-item-47",
+              "measureId": "measure-0",
+              "role": "final-barline-thin",
+              "kind": "rect",
+              "zIndex": 0,
+              "primitive": {
+                "xPt": 568,
+                "yPt": 211.94000244140625,
+                "widthPt": 1,
+                "heightPt": 40,
+                "fill": "#333"
+              }
+            },
+            {
+              "id": "system-0-item-48",
+              "measureId": "measure-0",
+              "role": "final-barline-thick",
+              "kind": "rect",
+              "zIndex": 0,
+              "primitive": {
+                "xPt": 569,
+                "yPt": 211.94000244140625,
+                "widthPt": 3,
+                "heightPt": 40,
+                "fill": "#333"
+              }
+            }
+          ],
+          "composites": [
+            {
+              "id": "system-0-text-block-tempo",
+              "kind": "textBlock",
+              "fragment": "singleSegment",
+              "childItemIds": [
+                "system-0-item-11",
+                "system-0-item-12",
+                "system-0-item-13"
+              ],
+              "label": "tempo",
+              "count": 96
+            }
           ]
-        }
-      ],
-      "measures": [
-        {
-          "id": "measure-0",
-          "index": 0,
-          "globalIndex": 0,
-          "systemId": "system-0",
-          "xPt": 40,
-          "yPt": 201.94000244140625,
-          "widthPt": 532,
-          "heightPt": 50
-        }
-      ],
-      "items": [
-        {
-          "id": "item-0",
-          "role": "title",
-          "kind": "textRun",
-          "zIndex": 0,
-          "primitive": {
-            "xPt": 306,
-            "yPt": 71.5,
-            "textRole": "title",
-            "text": "Metadata Demo",
-            "fontFamily": "Academico",
-            "fontSizePt": 18,
-            "fill": "#333",
-            "textAnchor": "middle",
-            "fontWeight": "bold"
-          }
-        },
-        {
-          "id": "item-1",
-          "role": "subtitle",
-          "kind": "textRun",
-          "zIndex": 0,
-          "primitive": {
-            "xPt": 306,
-            "yPt": 112,
-            "textRole": "subtitle",
-            "text": "Subtitle",
-            "fontFamily": "Academico",
-            "fontSizePt": 14,
-            "fill": "#333",
-            "textAnchor": "middle"
-          }
-        },
-        {
-          "id": "item-2",
-          "role": "composer",
-          "kind": "textRun",
-          "zIndex": 0,
-          "primitive": {
-            "xPt": 572,
-            "yPt": 110.25,
-            "textRole": "composer",
-            "text": "G Mao",
-            "fontFamily": "Academico",
-            "fontSizePt": 11,
-            "fill": "#333",
-            "textAnchor": "end"
-          }
-        },
-        {
-          "id": "system-0-item-3",
-          "role": "staff-line",
-          "kind": "lineSegment",
-          "zIndex": 0,
-          "primitive": {
-            "x1Pt": 40,
-            "y1Pt": 211.94000244140625,
-            "x2Pt": 572,
-            "y2Pt": 211.94000244140625,
-            "stroke": "#333",
-            "strokeWidth": 1
-          }
-        },
-        {
-          "id": "system-0-item-4",
-          "role": "staff-line",
-          "kind": "lineSegment",
-          "zIndex": 0,
-          "primitive": {
-            "x1Pt": 40,
-            "y1Pt": 221.94000244140625,
-            "x2Pt": 572,
-            "y2Pt": 221.94000244140625,
-            "stroke": "#333",
-            "strokeWidth": 1
-          }
-        },
-        {
-          "id": "system-0-item-5",
-          "role": "staff-line",
-          "kind": "lineSegment",
-          "zIndex": 0,
-          "primitive": {
-            "x1Pt": 40,
-            "y1Pt": 231.94000244140625,
-            "x2Pt": 572,
-            "y2Pt": 231.94000244140625,
-            "stroke": "#333",
-            "strokeWidth": 1
-          }
-        },
-        {
-          "id": "system-0-item-6",
-          "role": "staff-line",
-          "kind": "lineSegment",
-          "zIndex": 0,
-          "primitive": {
-            "x1Pt": 40,
-            "y1Pt": 241.94000244140625,
-            "x2Pt": 572,
-            "y2Pt": 241.94000244140625,
-            "stroke": "#333",
-            "strokeWidth": 1
-          }
-        },
-        {
-          "id": "system-0-item-7",
-          "role": "staff-line",
-          "kind": "lineSegment",
-          "zIndex": 0,
-          "primitive": {
-            "x1Pt": 40,
-            "y1Pt": 251.94000244140625,
-            "x2Pt": 572,
-            "y2Pt": 251.94000244140625,
-            "stroke": "#333",
-            "strokeWidth": 1
-          }
-        },
-        {
-          "id": "system-0-item-8",
-          "role": "percussion-clef",
-          "kind": "textRun",
-          "zIndex": 0,
-          "primitive": {
-            "xPt": 45,
-            "yPt": 231.94000244140625,
-            "textRole": "percussionClef",
-            "text": "",
-            "fontFamily": "Bravura",
-            "fontSizePt": 30,
-            "fill": "#333"
-          }
-        },
-        {
-          "id": "system-0-item-9",
-          "role": "time-signature-digit",
-          "kind": "textRun",
-          "zIndex": 0,
-          "primitive": {
-            "xPt": 75,
-            "yPt": 221.94000244140625,
-            "textRole": "timeSignatureDigit",
-            "text": "",
-            "fontFamily": "Bravura",
-            "fontSizePt": 30,
-            "fill": "#333"
-          }
-        },
-        {
-          "id": "system-0-item-10",
-          "role": "time-signature-digit",
-          "kind": "textRun",
-          "zIndex": 0,
-          "primitive": {
-            "xPt": 75,
-            "yPt": 241.94000244140625,
-            "textRole": "timeSignatureDigit",
-            "text": "",
-            "fontFamily": "Bravura",
-            "fontSizePt": 30,
-            "fill": "#333"
-          }
-        },
-        {
-          "id": "system-0-item-11",
-          "measureId": "measure-0",
-          "role": "tempo-glyph",
-          "kind": "textRun",
-          "zIndex": 0,
-          "primitive": {
-            "xPt": 49,
-            "yPt": 191.94000244140625,
-            "textRole": "tempo",
-            "text": "",
-            "fontFamily": "Bravura",
-            "fontSizePt": 25,
-            "fill": "#333"
-          }
-        },
-        {
-          "id": "system-0-item-12",
-          "measureId": "measure-0",
-          "role": "tempo-equals",
-          "kind": "textRun",
-          "zIndex": 0,
-          "primitive": {
-            "xPt": 68.06666564941406,
-            "yPt": 191.94000244140625,
-            "textRole": "tempo",
-            "text": "=",
-            "fontFamily": "Academico",
-            "fontSizePt": 14,
-            "fill": "#333"
-          }
-        },
-        {
-          "id": "system-0-item-13",
-          "measureId": "measure-0",
-          "role": "tempo",
-          "kind": "textRun",
-          "zIndex": 0,
-          "primitive": {
-            "xPt": 83.06666564941406,
-            "yPt": 191.94000244140625,
-            "textRole": "tempo",
-            "text": "96",
-            "fontFamily": "Academico",
-            "fontSizePt": 14,
-            "fill": "#333"
-          }
-        },
-        {
-          "id": "system-0-item-14",
-          "measureId": "measure-0",
-          "role": "opening-barline",
-          "kind": "rect",
-          "zIndex": 0,
-          "primitive": {
-            "xPt": 40,
-            "yPt": 211.94000244140625,
-            "widthPt": 1,
-            "heightPt": 41,
-            "fill": "#333"
-          }
-        },
-        {
-          "id": "system-0-item-15",
-          "measureId": "measure-0",
-          "role": "notehead",
-          "kind": "textRun",
-          "zIndex": 0,
-          "primitive": {
-            "xPt": 153,
-            "yPt": 206.94000244140625,
-            "textRole": "tempo",
-            "text": "",
-            "fontFamily": "Bravura",
-            "fontSizePt": 30,
-            "fill": "#333"
-          }
-        },
-        {
-          "id": "system-0-item-16",
-          "measureId": "measure-0",
-          "role": "notehead",
-          "kind": "textRun",
-          "zIndex": 0,
-          "primitive": {
-            "xPt": 153,
-            "yPt": 246.94000244140625,
-            "textRole": "tempo",
-            "text": "",
-            "fontFamily": "Bravura",
-            "fontSizePt": 30,
-            "fill": "#333"
-          }
-        },
-        {
-          "id": "system-0-item-17",
-          "measureId": "measure-0",
-          "anchorItemId": "system-0-item-15",
-          "role": "stem",
-          "kind": "lineSegment",
-          "zIndex": 0,
-          "primitive": {
-            "x1Pt": 164.10000610351562,
-            "y1Pt": 179.5,
-            "x2Pt": 164.10000610351562,
-            "y2Pt": 202.5,
-            "stroke": "#333",
-            "strokeWidth": 1
-          }
-        },
-        {
-          "id": "system-0-item-18",
-          "measureId": "measure-0",
-          "anchorItemId": "system-0-item-16",
-          "role": "stem",
-          "kind": "lineSegment",
-          "zIndex": 0,
-          "primitive": {
-            "x1Pt": 153.5,
-            "y1Pt": 248.6199951171875,
-            "x2Pt": 153.5,
-            "y2Pt": 271.6199951171875,
-            "stroke": "#333",
-            "strokeWidth": 1
-          }
-        },
-        {
-          "id": "system-0-item-19",
-          "measureId": "measure-0",
-          "role": "notehead",
-          "kind": "textRun",
-          "zIndex": 0,
-          "primitive": {
-            "xPt": 205,
-            "yPt": 206.94000244140625,
-            "textRole": "tempo",
-            "text": "",
-            "fontFamily": "Bravura",
-            "fontSizePt": 30,
-            "fill": "#333"
-          }
-        },
-        {
-          "id": "system-0-item-20",
-          "measureId": "measure-0",
-          "anchorItemId": "system-0-item-19",
-          "role": "stem",
-          "kind": "lineSegment",
-          "zIndex": 0,
-          "primitive": {
-            "x1Pt": 216.10000610351562,
-            "y1Pt": 179.5,
-            "x2Pt": 216.10000610351562,
-            "y2Pt": 202.5,
-            "stroke": "#333",
-            "strokeWidth": 1
-          }
-        },
-        {
-          "id": "system-0-item-21",
-          "measureId": "measure-0",
-          "role": "notehead",
-          "kind": "textRun",
-          "zIndex": 0,
-          "primitive": {
-            "xPt": 257,
-            "yPt": 206.94000244140625,
-            "textRole": "tempo",
-            "text": "",
-            "fontFamily": "Bravura",
-            "fontSizePt": 30,
-            "fill": "#333"
-          }
-        },
-        {
-          "id": "system-0-item-22",
-          "measureId": "measure-0",
-          "role": "notehead",
-          "kind": "textRun",
-          "zIndex": 0,
-          "primitive": {
-            "xPt": 257,
-            "yPt": 226.94000244140625,
-            "textRole": "tempo",
-            "text": "",
-            "fontFamily": "Bravura",
-            "fontSizePt": 30,
-            "fill": "#333"
-          }
-        },
-        {
-          "id": "system-0-item-23",
-          "measureId": "measure-0",
-          "role": "rest",
-          "kind": "glyphRun",
-          "zIndex": 0,
-          "primitive": {
-            "xPt": 259.7933349609375,
-            "yPt": 243.47999572753906,
-            "glyphRole": "restEighth",
-            "glyphCount": 1,
-            "codepoint": 58598,
-            "fontFamily": "Bravura",
-            "fontSizePt": 30,
-            "fill": "#333"
-          }
-        },
-        {
-          "id": "system-0-item-24",
-          "measureId": "measure-0",
-          "anchorItemId": "system-0-item-21",
-          "role": "stem",
-          "kind": "lineSegment",
-          "zIndex": 0,
-          "primitive": {
-            "x1Pt": 268.1000061035156,
-            "y1Pt": 179.5,
-            "x2Pt": 268.1000061035156,
-            "y2Pt": 225.260009765625,
-            "stroke": "#333",
-            "strokeWidth": 1
-          }
-        },
-        {
-          "id": "system-0-item-25",
-          "measureId": "measure-0",
-          "role": "notehead",
-          "kind": "textRun",
-          "zIndex": 0,
-          "primitive": {
-            "xPt": 309,
-            "yPt": 206.94000244140625,
-            "textRole": "tempo",
-            "text": "",
-            "fontFamily": "Bravura",
-            "fontSizePt": 30,
-            "fill": "#333"
-          }
-        },
-        {
-          "id": "system-0-item-26",
-          "measureId": "measure-0",
-          "role": "notehead",
-          "kind": "textRun",
-          "zIndex": 0,
-          "primitive": {
-            "xPt": 309,
-            "yPt": 246.94000244140625,
-            "textRole": "tempo",
-            "text": "",
-            "fontFamily": "Bravura",
-            "fontSizePt": 30,
-            "fill": "#333"
-          }
-        },
-        {
-          "id": "system-0-item-27",
-          "measureId": "measure-0",
-          "anchorItemId": "system-0-item-25",
-          "role": "stem",
-          "kind": "lineSegment",
-          "zIndex": 0,
-          "primitive": {
-            "x1Pt": 320.1000061035156,
-            "y1Pt": 179.5,
-            "x2Pt": 320.1000061035156,
-            "y2Pt": 202.5,
-            "stroke": "#333",
-            "strokeWidth": 1
-          }
-        },
-        {
-          "id": "system-0-item-28",
-          "measureId": "measure-0",
-          "anchorItemId": "system-0-item-26",
-          "role": "stem",
-          "kind": "lineSegment",
-          "zIndex": 0,
-          "primitive": {
-            "x1Pt": 309.5,
-            "y1Pt": 248.6199951171875,
-            "x2Pt": 309.5,
-            "y2Pt": 271.6199951171875,
-            "stroke": "#333",
-            "strokeWidth": 1
-          }
-        },
-        {
-          "id": "system-0-item-29",
-          "measureId": "measure-0",
-          "role": "notehead",
-          "kind": "textRun",
-          "zIndex": 0,
-          "primitive": {
-            "xPt": 361,
-            "yPt": 206.94000244140625,
-            "textRole": "tempo",
-            "text": "",
-            "fontFamily": "Bravura",
-            "fontSizePt": 30,
-            "fill": "#333"
-          }
-        },
-        {
-          "id": "system-0-item-30",
-          "measureId": "measure-0",
-          "role": "notehead",
-          "kind": "textRun",
-          "zIndex": 0,
-          "primitive": {
-            "xPt": 361,
-            "yPt": 246.94000244140625,
-            "textRole": "tempo",
-            "text": "",
-            "fontFamily": "Bravura",
-            "fontSizePt": 30,
-            "fill": "#333"
-          }
-        },
-        {
-          "id": "system-0-item-31",
-          "measureId": "measure-0",
-          "anchorItemId": "system-0-item-29",
-          "role": "stem",
-          "kind": "lineSegment",
-          "zIndex": 0,
-          "primitive": {
-            "x1Pt": 372.1000061035156,
-            "y1Pt": 179.5,
-            "x2Pt": 372.1000061035156,
-            "y2Pt": 202.5,
-            "stroke": "#333",
-            "strokeWidth": 1
-          }
-        },
-        {
-          "id": "system-0-item-32",
-          "measureId": "measure-0",
-          "anchorItemId": "system-0-item-30",
-          "role": "stem",
-          "kind": "lineSegment",
-          "zIndex": 0,
-          "primitive": {
-            "x1Pt": 361.5,
-            "y1Pt": 248.6199951171875,
-            "x2Pt": 361.5,
-            "y2Pt": 271.6199951171875,
-            "stroke": "#333",
-            "strokeWidth": 1
-          }
-        },
-        {
-          "id": "system-0-item-33",
-          "measureId": "measure-0",
-          "role": "notehead",
-          "kind": "textRun",
-          "zIndex": 0,
-          "primitive": {
-            "xPt": 413,
-            "yPt": 206.94000244140625,
-            "textRole": "tempo",
-            "text": "",
-            "fontFamily": "Bravura",
-            "fontSizePt": 30,
-            "fill": "#333"
-          }
-        },
-        {
-          "id": "system-0-item-34",
-          "measureId": "measure-0",
-          "anchorItemId": "system-0-item-33",
-          "role": "stem",
-          "kind": "lineSegment",
-          "zIndex": 0,
-          "primitive": {
-            "x1Pt": 424.1000061035156,
-            "y1Pt": 179.5,
-            "x2Pt": 424.1000061035156,
-            "y2Pt": 202.5,
-            "stroke": "#333",
-            "strokeWidth": 1
-          }
-        },
-        {
-          "id": "system-0-item-35",
-          "measureId": "measure-0",
-          "role": "notehead",
-          "kind": "textRun",
-          "zIndex": 0,
-          "primitive": {
-            "xPt": 465,
-            "yPt": 206.94000244140625,
-            "textRole": "tempo",
-            "text": "",
-            "fontFamily": "Bravura",
-            "fontSizePt": 30,
-            "fill": "#333"
-          }
-        },
-        {
-          "id": "system-0-item-36",
-          "measureId": "measure-0",
-          "role": "notehead",
-          "kind": "textRun",
-          "zIndex": 0,
-          "primitive": {
-            "xPt": 465,
-            "yPt": 226.94000244140625,
-            "textRole": "tempo",
-            "text": "",
-            "fontFamily": "Bravura",
-            "fontSizePt": 30,
-            "fill": "#333"
-          }
-        },
-        {
-          "id": "system-0-item-37",
-          "measureId": "measure-0",
-          "role": "rest",
-          "kind": "glyphRun",
-          "zIndex": 0,
-          "primitive": {
-            "xPt": 467.7933349609375,
-            "yPt": 243.47999572753906,
-            "glyphRole": "restEighth",
-            "glyphCount": 1,
-            "codepoint": 58598,
-            "fontFamily": "Bravura",
-            "fontSizePt": 30,
-            "fill": "#333"
-          }
-        },
-        {
-          "id": "system-0-item-38",
-          "measureId": "measure-0",
-          "anchorItemId": "system-0-item-35",
-          "role": "stem",
-          "kind": "lineSegment",
-          "zIndex": 0,
-          "primitive": {
-            "x1Pt": 476.1000061035156,
-            "y1Pt": 179.5,
-            "x2Pt": 476.1000061035156,
-            "y2Pt": 225.260009765625,
-            "stroke": "#333",
-            "strokeWidth": 1
-          }
-        },
-        {
-          "id": "system-0-item-39",
-          "measureId": "measure-0",
-          "role": "notehead",
-          "kind": "textRun",
-          "zIndex": 0,
-          "primitive": {
-            "xPt": 517,
-            "yPt": 206.94000244140625,
-            "textRole": "tempo",
-            "text": "",
-            "fontFamily": "Bravura",
-            "fontSizePt": 30,
-            "fill": "#333"
-          }
-        },
-        {
-          "id": "system-0-item-40",
-          "measureId": "measure-0",
-          "role": "rest",
-          "kind": "glyphRun",
-          "zIndex": 0,
-          "primitive": {
-            "xPt": 519.7933349609375,
-            "yPt": 243.47999572753906,
-            "glyphRole": "restEighth",
-            "glyphCount": 1,
-            "codepoint": 58598,
-            "fontFamily": "Bravura",
-            "fontSizePt": 30,
-            "fill": "#333"
-          }
-        },
-        {
-          "id": "system-0-item-41",
-          "measureId": "measure-0",
-          "anchorItemId": "system-0-item-39",
-          "role": "stem",
-          "kind": "lineSegment",
-          "zIndex": 0,
-          "primitive": {
-            "x1Pt": 528.0999755859375,
-            "y1Pt": 179.5,
-            "x2Pt": 528.0999755859375,
-            "y2Pt": 202.5,
-            "stroke": "#333",
-            "strokeWidth": 1
-          }
-        },
-        {
-          "id": "system-0-item-42",
-          "measureId": "measure-0",
-          "anchorItemId": "system-0-item-17",
-          "role": "beam",
-          "kind": "path",
-          "zIndex": 0,
-          "primitive": {
-            "d": "M 164.100 179.500 L 320.100 179.500 L 320.100 181.500 L 164.100 181.500 Z",
-            "fill": "#333"
-          }
-        },
-        {
-          "id": "system-0-item-43",
-          "measureId": "measure-0",
-          "anchorItemId": "system-0-item-31",
-          "role": "beam",
-          "kind": "path",
-          "zIndex": 0,
-          "primitive": {
-            "d": "M 372.100 179.500 L 528.100 179.500 L 528.100 181.500 L 372.100 181.500 Z",
-            "fill": "#333"
-          }
-        },
-        {
-          "id": "system-0-item-44",
-          "measureId": "measure-0",
-          "anchorItemId": "system-0-item-18",
-          "role": "flag",
-          "kind": "glyphRun",
-          "zIndex": 0,
-          "primitive": {
-            "xPt": 153.5,
-            "yPt": 272.5880126953125,
-            "glyphRole": "flag8thDown",
-            "glyphCount": 1,
-            "codepoint": 57921,
-            "fontFamily": "Bravura",
-            "fontSizePt": 22,
-            "fill": "#333"
-          }
-        },
-        {
-          "id": "system-0-item-45",
-          "measureId": "measure-0",
-          "anchorItemId": "system-0-item-28",
-          "role": "flag",
-          "kind": "glyphRun",
-          "zIndex": 0,
-          "primitive": {
-            "xPt": 309.5,
-            "yPt": 272.5880126953125,
-            "glyphRole": "flag8thDown",
-            "glyphCount": 1,
-            "codepoint": 57921,
-            "fontFamily": "Bravura",
-            "fontSizePt": 22,
-            "fill": "#333"
-          }
-        },
-        {
-          "id": "system-0-item-46",
-          "measureId": "measure-0",
-          "anchorItemId": "system-0-item-32",
-          "role": "flag",
-          "kind": "glyphRun",
-          "zIndex": 0,
-          "primitive": {
-            "xPt": 361.5,
-            "yPt": 272.5880126953125,
-            "glyphRole": "flag8thDown",
-            "glyphCount": 1,
-            "codepoint": 57921,
-            "fontFamily": "Bravura",
-            "fontSizePt": 22,
-            "fill": "#333"
-          }
-        },
-        {
-          "id": "system-0-item-47",
-          "measureId": "measure-0",
-          "role": "final-barline-thin",
-          "kind": "rect",
-          "zIndex": 0,
-          "primitive": {
-            "xPt": 568,
-            "yPt": 211.94000244140625,
-            "widthPt": 1,
-            "heightPt": 41,
-            "fill": "#333"
-          }
-        },
-        {
-          "id": "system-0-item-48",
-          "measureId": "measure-0",
-          "role": "final-barline-thick",
-          "kind": "rect",
-          "zIndex": 0,
-          "primitive": {
-            "xPt": 569,
-            "yPt": 211.94000244140625,
-            "widthPt": 3,
-            "heightPt": 41,
-            "fill": "#333"
-          }
-        }
-      ],
-      "composites": [
-        {
-          "id": "text-block-title",
-          "kind": "textBlock",
-          "fragment": "singleSegment",
-          "childItemIds": [
-            "item-0"
-          ],
-          "label": "title"
-        },
-        {
-          "id": "text-block-subtitle",
-          "kind": "textBlock",
-          "fragment": "singleSegment",
-          "childItemIds": [
-            "item-1"
-          ],
-          "label": "subtitle"
-        },
-        {
-          "id": "text-block-composer",
-          "kind": "textBlock",
-          "fragment": "singleSegment",
-          "childItemIds": [
-            "item-2"
-          ],
-          "label": "composer"
-        },
-        {
-          "id": "system-0-text-block-tempo",
-          "kind": "textBlock",
-          "fragment": "singleSegment",
-          "childItemIds": [
-            "system-0-item-11",
-            "system-0-item-12",
-            "system-0-item-13"
-          ],
-          "label": "tempo",
-          "count": 96
         }
       ]
     }

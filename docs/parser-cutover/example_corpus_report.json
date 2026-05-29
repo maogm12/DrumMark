@@ -23901,21 +23901,6 @@
               },
               {
                 "track": "ST",
-                "glyph": "-",
-                "kind": "rest",
-                "start": {
-                  "numerator": 3,
-                  "denominator": 4
-                },
-                "duration": {
-                  "numerator": 1,
-                  "denominator": 16
-                },
-                "voice": 1,
-                "modifiers": []
-              },
-              {
-                "track": "ST",
                 "glyph": "L",
                 "kind": "sticking",
                 "start": {

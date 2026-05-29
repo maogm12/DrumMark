@@ -10,7 +10,7 @@ fn sample_fraction() -> Fraction {
 #[test]
 fn crate_root_public_api_smoke() {
     assert_eq!(RENDER_SCORE_VERSION, "2");
-    assert_eq!(LAYOUT_SCENE_VERSION, "1");
+    assert_eq!(LAYOUT_SCENE_VERSION, "2");
     assert!(!CANONICAL_METRICS_VERSION.is_empty());
 
     let hit = RenderEvent {

@@ -16,8 +16,59 @@ note 1/8
 HH | < x x x x ! |
 `;
 
+type FlatTestPage = {
+  index: number;
+  widthPt: number;
+  heightPt: number;
+  measures?: any[];
+  items?: any[];
+  composites?: any[];
+};
+
+function asNestedPages(pages: FlatTestPage[]) {
+  return pages.map((page) => {
+    const measures = page.measures ?? [];
+    const items = page.items ?? [];
+    const composites = page.composites ?? [];
+    const systemId = measures[0]?.systemId ?? "system-0";
+    const headerItems = items.filter(
+      (item) =>
+        item.role === "title"
+        || item.role === "subtitle"
+        || item.role === "composer"
+        || item.role.startsWith("page-"),
+    );
+    const systemItems = items.filter((item) => !headerItems.includes(item));
+    const header = headerItems.length ? { items: headerItems, composites: [] as any[] } : undefined;
+    return {
+      index: page.index,
+      widthPt: page.widthPt,
+      heightPt: page.heightPt,
+      header,
+      systems: [
+        {
+          id: systemId,
+          index: 0,
+          pageIndex: page.index,
+          xPt: 0,
+          yPt: 0,
+          widthPt: page.widthPt,
+          heightPt: page.heightPt,
+          measures,
+          items: systemItems.length ? systemItems : items,
+          composites,
+        },
+      ],
+    };
+  });
+}
+
 function hairpinCenterY(scene: any): number {
-  const items = scene.pages[0].items;
+  const page = scene.pages[0];
+  const items = [
+    ...(page.header?.items ?? []),
+    ...(page.systems ?? []).flatMap((system: any) => system.items ?? []),
+  ];
   const top = items.find((item: any) => item.role === "hairpin-top").primitive;
   const bottom = items.find((item: any) => item.role === "hairpin-bottom").primitive;
   return (top.y1Pt + top.y2Pt + bottom.y1Pt + bottom.y2Pt) / 4;
@@ -26,9 +77,9 @@ function hairpinCenterY(scene: any): number {
 describe("SVG scene adapter", () => {
   it("renders a precomputed scene without source cache", () => {
     const scene = {
-      version: "1",
+      version: "2",
       metricsVersion: "test",
-      pages: [
+      pages: asNestedPages([
         {
           index: 0,
           widthPt: 100,
@@ -99,7 +150,7 @@ describe("SVG scene adapter", () => {
             },
           ],
         },
-      ],
+      ]),
     } as any;
 
     const svg = renderSceneToSvg(scene, { staffSpacePt: 10.0 });
@@ -115,9 +166,9 @@ describe("SVG scene adapter", () => {
 
   it("renders every scene page through the page-aware adapter", () => {
     const scene = {
-      version: "1",
+      version: "2",
       metricsVersion: "test",
-      pages: [
+      pages: asNestedPages([
         {
           index: 0,
           widthPt: 100,
@@ -162,7 +213,7 @@ describe("SVG scene adapter", () => {
             },
           ],
         },
-      ],
+      ]),
     } as any;
 
     const svgs = renderScenePagesToSvgs(scene, { staffSpacePt: 10.0 });
@@ -180,10 +231,20 @@ describe("SVG scene adapter", () => {
   it("builds scene from source and renders svg", async () => {
     const scene = await buildLayoutSceneFromSource(SRC, { pageWidth: 612, staffSpacePt: 10.0 });
     expect(scene.pages.length).toBeGreaterThan(0);
-    expect(scene.pages[0]?.items.length).toBeGreaterThan(0);
-    expect(scene.pages[0]?.systems.length).toBeGreaterThan(0);
-    expect(scene.pages[0]?.systems[0]?.measureIds.length).toBeGreaterThan(0);
-    expect(scene.pages[0]?.composites.some((composite) => composite.kind === "textBlock" && composite.label === "tempo")).toBe(true);
+    const page0 = scene.pages[0];
+    const system0 = page0?.systems[0];
+    const pageItems = [
+      ...(page0?.header?.items ?? []),
+      ...(page0?.systems ?? []).flatMap((system) => system.items ?? []),
+    ];
+    const pageComposites = [
+      ...(page0?.header?.composites ?? []),
+      ...(page0?.systems ?? []).flatMap((system) => system.composites ?? []),
+    ];
+    expect(pageItems.length).toBeGreaterThan(0);
+    expect(page0?.systems.length).toBeGreaterThan(0);
+    expect(system0?.measures.length).toBeGreaterThan(0);
+    expect(pageComposites.some((composite) => composite.kind === "textBlock" && composite.label === "tempo")).toBe(true);
 
     const svg = await renderSourceToSvg(SRC, { pageWidth: 612, staffSpacePt: 10.0 });
     expect(svg).toContain("<svg");
@@ -230,7 +291,10 @@ note 1/8
 `, { pageWidth: 612, staffSpacePt: 10.0 });
 
     const beamsByMeasure = scene.pages
-      .flatMap((page) => page.items)
+      .flatMap((page) => [
+        ...(page.header?.items ?? []),
+        ...(page.systems ?? []).flatMap((system) => system.items ?? []),
+      ])
       .filter((item) => item.role === "beam")
       .reduce<Record<string, number>>((counts, item) => {
         const measureId = item.measureId ?? "unowned";
@@ -271,18 +335,18 @@ note 1/8
 
   it("throws on unknown scene item kinds", () => {
     const badScene = {
-      version: "1",
+      version: "2",
       metricsVersion: "test",
-      pages: [{ index: 0, widthPt: 10, heightPt: 10, measures: [], items: [{ id: "x", role: "bad", kind: "mystery", zIndex: 0, primitive: {} }], composites: [] }],
+      pages: asNestedPages([{ index: 0, widthPt: 10, heightPt: 10, measures: [], items: [{ id: "x", role: "bad", kind: "mystery", zIndex: 0, primitive: {} }], composites: [] }]),
     } as any;
     expect(() => renderSceneToSvg(badScene, { staffSpacePt: 10.0 })).toThrow(/Unsupported scene item kind/);
   });
 
   it("renders repeat-span fragments without duplicating hooks and labels", () => {
     const scene = {
-      version: "1",
+      version: "2",
       metricsVersion: "test",
-      pages: [
+      pages: asNestedPages([
         {
           index: 0,
           widthPt: 200,
@@ -297,7 +361,7 @@ note 1/8
             { id: "repeat-1", kind: "repeatSpan", fragment: "end", count: 2, startAnchorId: "measure-1", endAnchorId: "measure-1" },
           ],
         },
-      ],
+      ]),
     } as any;
 
     const svg = renderSceneToSvg(scene, { staffSpacePt: 10.0 });
@@ -308,9 +372,9 @@ note 1/8
 
   it("renders glyphRun, path, and polyline items", () => {
     const scene = {
-      version: "1",
+      version: "2",
       metricsVersion: "test",
-      pages: [
+      pages: asNestedPages([
         {
           index: 0,
           widthPt: 120,
@@ -341,7 +405,7 @@ note 1/8
           ],
           composites: [],
         },
-      ],
+      ]),
     } as any;
 
     const svg = renderSceneToSvg(scene, { staffSpacePt: 10.0 });

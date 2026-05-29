@@ -410,3 +410,37 @@ Implementation must preserve the approved task plan in `docs/proposals/ARCHITECT
 - `npm run wasm:build`, or a concrete implementation note explaining why no wasm-target verification was applicable
 - a public API smoke test for crate-root exports
 - a final visibility audit proving no unintended `pub` exports and no unjustified broad `pub(crate)` surface
+
+### Addendum 2026-05-29: LayoutScene Shallow Tree
+
+`ScenePage` is a shallow tree, not a flat item pool.
+
+**Page structure**
+
+- `header` (optional): `PageHeader { items, composites }` for page-0 chrome (title, subtitle, composer, tempo text block). Absent on pages with no header content.
+- `systems[]`: ordered placed systems on the page. Each entry is a `SceneSystem` carrying geometry **and** nested content.
+
+**System block**
+
+`SceneSystem` contains:
+
+- System geometry: `id`, `index`, `page_index`, `x_pt`, `y_pt`, `width_pt`, `height_pt`
+- `measures[]`: measures belonging to this system (page-space coordinates)
+- `items[]`: all items owned by this system (staff lines, clef, time signature, notes, barlines, dynamics, navigation glyphs, etc.)
+- `composites[]`: composites whose fragments belong to this system
+
+**Ownership rules**
+
+- An item appears under exactly one system on a page, except header items under `page.header`.
+- `SceneItem.measure_id` remains optional; when set, the referenced measure must be in the same system block.
+- `SceneSystem` does not use a parallel `measure_ids` list; measure membership is `measures[].id` only.
+- Cross-system span composites emit one composite per system fragment; each composite’s `child_item_ids` reference items in that system’s `items` list.
+
+**Traversal**
+
+- Platform adapters may iterate `page.systems` and nested arrays directly, or use layout-provided flatten helpers (`page_all_items`, `page_all_measures`, `page_all_composites`) for legacy paint loops.
+- Scene snapshots and `--format scene` JSON must serialize the nested structure.
+
+**Versioning**
+
+- Layout scene `version` is `"2"` for this wire shape. Consumers must not assume flat `page.items`, `page.measures`, or `page.composites`.

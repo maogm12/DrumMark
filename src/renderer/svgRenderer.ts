@@ -33,14 +33,17 @@ type Scene = {
   issues?: string[];
 };
 
+type PageHeader = {
+  items: SceneItem[];
+  composites: SceneComposite[];
+};
+
 type ScenePage = {
   index: number;
   widthPt: number;
   heightPt: number;
+  header?: PageHeader | null;
   systems: SceneSystem[];
-  measures: SceneMeasure[];
-  items: SceneItem[];
-  composites: SceneComposite[];
 };
 
 type SceneSystem = {
@@ -51,8 +54,40 @@ type SceneSystem = {
   yPt: number;
   widthPt: number;
   heightPt: number;
-  measureIds: string[];
+  measures: SceneMeasure[];
+  items: SceneItem[];
+  composites: SceneComposite[];
 };
+
+function pageAllItems(page: ScenePage): SceneItem[] {
+  const items: SceneItem[] = [];
+  if (page.header?.items?.length) {
+    items.push(...page.header.items);
+  }
+  for (const system of page.systems ?? []) {
+    if (system.items?.length) {
+      items.push(...system.items);
+    }
+  }
+  return items;
+}
+
+function pageAllMeasures(page: ScenePage): SceneMeasure[] {
+  return (page.systems ?? []).flatMap((system) => system.measures ?? []);
+}
+
+function pageAllComposites(page: ScenePage): SceneComposite[] {
+  const composites: SceneComposite[] = [];
+  if (page.header?.composites?.length) {
+    composites.push(...page.header.composites);
+  }
+  for (const system of page.systems ?? []) {
+    if (system.composites?.length) {
+      composites.push(...system.composites);
+    }
+  }
+  return composites;
+}
 
 type SceneMeasure = {
   id: string;
@@ -116,7 +151,7 @@ export async function buildLayoutSceneFromSource(source: string, options?: Rende
   if (!scene || !Array.isArray(scene.pages)) {
     throw new Error("Layout scene export returned an invalid payload.");
   }
-  const hasRenderableMeasures = scene.pages.some((page) => page.measures.length > 0);
+  const hasRenderableMeasures = scene.pages.some((page) => pageAllMeasures(page).length > 0);
   if (!hasRenderableMeasures && scene.issues?.length) {
     throw new Error(scene.issues.join("\n"));
   }
@@ -150,8 +185,8 @@ function renderScenePageToSvg(page: ScenePage, options?: RenderOptions): string 
   const displayScale = ssp / DEFAULT_RENDER_OPTIONS.staffSpacePt;
   const width = page.widthPt || 612;
   const height = page.heightPt || 792;
-  const items = [...page.items].sort((a, b) => a.zIndex - b.zIndex);
-  const measureMap = new Map((page.measures || []).map((measure) => [measure.id, measure]));
+  const items = [...pageAllItems(page)].sort((a, b) => a.zIndex - b.zIndex);
+  const measureMap = new Map(pageAllMeasures(page).map((measure) => [measure.id, measure]));
   let svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${(width * displayScale).toFixed(0)}" height="${(height * displayScale).toFixed(0)}" viewBox="0 0 ${width} ${height}">`;
 
   for (const item of items) {
@@ -247,7 +282,7 @@ function renderScenePageToSvg(page: ScenePage, options?: RenderOptions): string 
     }
   }
 
-  for (const composite of page.composites || []) {
+  for (const composite of pageAllComposites(page)) {
     svg += renderCompositeToSvg(composite, measureMap);
   }
 

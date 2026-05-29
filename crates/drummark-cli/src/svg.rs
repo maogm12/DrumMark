@@ -1,4 +1,4 @@
-use drummark_layout::{LayoutScene, ScenePrimitive};
+use drummark_layout::{page_all_items, LayoutScene, ScenePrimitive};
 
 const PAGE_GAP_PT: f32 = 24.0;
 
@@ -27,7 +27,9 @@ pub fn render_scene_to_svg(scene: &LayoutScene) -> String {
             r#"<g data-role="page" data-page-index="{}" transform="translate(0 {:.3})">"#,
             page.index, y_offset
         ));
-        for item in page.items.iter().collect::<Vec<_>>() {
+        let mut items: Vec<_> = page_all_items(page).collect();
+        items.sort_by_key(|item| item.z_index);
+        for item in items {
             svg.push_str(&render_item(item));
         }
         svg.push_str("</g>");

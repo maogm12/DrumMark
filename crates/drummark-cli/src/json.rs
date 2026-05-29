@@ -6,7 +6,7 @@ use drummark_core::fraction::Fraction as CoreFraction;
 use drummark_core::normalize::{NormalizedMeasure, NormalizedScore};
 use drummark_layout::{
     composite_kind_name, fragment_kind_name, glyph_role_name, scene_item_kind_name, text_role_name,
-    Fraction, LayoutScene, SceneItem, ScenePrimitive,
+    Fraction, LayoutScene, SceneComposite, SceneItem, ScenePage, ScenePrimitive,
 };
 use serde_json::{json, Value};
 
@@ -73,42 +73,7 @@ pub fn scene_json(scene: &LayoutScene) -> Result<String, String> {
         "version": scene.version,
         "metricsVersion": scene.metrics_version,
         "issues": scene.issues,
-        "pages": scene.pages.iter().map(|page| json!({
-            "index": page.index,
-            "widthPt": page.width_pt,
-            "heightPt": page.height_pt,
-            "systems": page.systems.iter().map(|system| json!({
-                "id": system.id,
-                "index": system.index,
-                "pageIndex": system.page_index,
-                "xPt": system.x_pt,
-                "yPt": system.y_pt,
-                "widthPt": system.width_pt,
-                "heightPt": system.height_pt,
-                "measureIds": system.measure_ids,
-            })).collect::<Vec<_>>(),
-            "measures": page.measures.iter().map(|measure| json!({
-                "id": measure.id,
-                "index": measure.index,
-                "globalIndex": measure.global_index,
-                "systemId": measure.system_id,
-                "xPt": measure.x_pt,
-                "yPt": measure.y_pt,
-                "widthPt": measure.width_pt,
-                "heightPt": measure.height_pt,
-            })).collect::<Vec<_>>(),
-            "items": page.items.iter().map(scene_item_json).collect::<Vec<_>>(),
-            "composites": page.composites.iter().map(|composite| json!({
-                "id": composite.id,
-                "kind": composite_kind_name(composite.kind),
-                "fragment": fragment_kind_name(composite.fragment),
-                "childItemIds": composite.child_item_ids,
-                "label": composite.label,
-                "count": composite.count,
-                "startAnchorId": composite.start_anchor_id,
-                "endAnchorId": composite.end_anchor_id,
-            })).collect::<Vec<_>>(),
-        })).collect::<Vec<_>>(),
+        "pages": scene.pages.iter().map(scene_page_json).collect::<Vec<_>>(),
     }))
     .map_err(|error| format!("failed to serialize scene JSON: {error}"))
 }
@@ -249,6 +214,52 @@ fn normalized_event_json(event: &NormalizedEvent) -> Value {
         "beam": event.beam,
         "tuplet": event.tuplet.map(|(actual, normal)| json!([actual, normal])),
         "sourceOffset": event.source_offset,
+    })
+}
+
+fn scene_page_json(page: &ScenePage) -> Value {
+    json!({
+        "index": page.index,
+        "widthPt": page.width_pt,
+        "heightPt": page.height_pt,
+        "header": page.header.as_ref().map(|header| json!({
+            "items": header.items.iter().map(scene_item_json).collect::<Vec<_>>(),
+            "composites": header.composites.iter().map(scene_composite_json).collect::<Vec<_>>(),
+        })),
+        "systems": page.systems.iter().map(|system| json!({
+            "id": system.id,
+            "index": system.index,
+            "pageIndex": system.page_index,
+            "xPt": system.x_pt,
+            "yPt": system.y_pt,
+            "widthPt": system.width_pt,
+            "heightPt": system.height_pt,
+            "measures": system.measures.iter().map(|measure| json!({
+                "id": measure.id,
+                "index": measure.index,
+                "globalIndex": measure.global_index,
+                "systemId": measure.system_id,
+                "xPt": measure.x_pt,
+                "yPt": measure.y_pt,
+                "widthPt": measure.width_pt,
+                "heightPt": measure.height_pt,
+            })).collect::<Vec<_>>(),
+            "items": system.items.iter().map(scene_item_json).collect::<Vec<_>>(),
+            "composites": system.composites.iter().map(scene_composite_json).collect::<Vec<_>>(),
+        })).collect::<Vec<_>>(),
+    })
+}
+
+fn scene_composite_json(composite: &SceneComposite) -> Value {
+    json!({
+        "id": composite.id,
+        "kind": composite_kind_name(composite.kind),
+        "fragment": fragment_kind_name(composite.fragment),
+        "childItemIds": composite.child_item_ids,
+        "label": composite.label,
+        "count": composite.count,
+        "startAnchorId": composite.start_anchor_id,
+        "endAnchorId": composite.end_anchor_id,
     })
 }
 

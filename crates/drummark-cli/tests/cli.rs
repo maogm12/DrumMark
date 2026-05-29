@@ -26,6 +26,23 @@ fn stderr(output: &Output) -> String {
     String::from_utf8_lossy(&output.stderr).into_owned()
 }
 
+fn page_items<'a>(page: &'a serde_json::Value) -> Vec<&'a serde_json::Value> {
+    let mut items = Vec::new();
+    if let Some(header) = page.get("header") {
+        if let Some(header_items) = header.get("items").and_then(|value| value.as_array()) {
+            items.extend(header_items.iter());
+        }
+    }
+    if let Some(systems) = page.get("systems").and_then(|value| value.as_array()) {
+        for system in systems {
+            if let Some(system_items) = system.get("items").and_then(|value| value.as_array()) {
+                items.extend(system_items.iter());
+            }
+        }
+    }
+    items
+}
+
 #[test]
 fn musicxml_svg_and_debug_json_formats_work() {
     let musicxml = run(&[OVERVIEW, "--format", "musicxml"]);
@@ -153,8 +170,8 @@ fn staff_size_affects_notehead_font_size() {
     let scene_at_10 = run(&[OVERVIEW, "--format", "scene", "--staff-size", "10"]);
     assert!(scene_at_10.status.success(), "scene failed at staff-size 10: {}", stderr(&scene_at_10));
     let v10: serde_json::Value = serde_json::from_slice(&scene_at_10.stdout).unwrap();
-    let font_10 = v10["pages"][0]["items"]
-        .as_array().unwrap().iter()
+    let font_10 = page_items(&v10["pages"][0])
+        .into_iter()
         .find(|i| i["role"] == "notehead")
         .and_then(|i| i["primitive"]["fontSizePt"].as_f64())
         .expect("notehead fontSizePt");
@@ -164,8 +181,8 @@ fn staff_size_affects_notehead_font_size() {
     let scene_at_8 = run(&[OVERVIEW, "--format", "scene", "--staff-size", "8"]);
     assert!(scene_at_8.status.success(), "scene failed at staff-size 8: {}", stderr(&scene_at_8));
     let v8: serde_json::Value = serde_json::from_slice(&scene_at_8.stdout).unwrap();
-    let font_8 = v8["pages"][0]["items"]
-        .as_array().unwrap().iter()
+    let font_8 = page_items(&v8["pages"][0])
+        .into_iter()
         .find(|i| i["role"] == "notehead")
         .and_then(|i| i["primitive"]["fontSizePt"].as_f64())
         .expect("notehead fontSizePt");

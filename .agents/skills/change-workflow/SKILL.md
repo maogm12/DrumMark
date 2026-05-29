@@ -659,14 +659,20 @@ Before implementation, confirm:
 - [ ] Human stamp was received and recorded if required.
 - [ ] Relevant GitHub Issues are linked if applicable.
 - [ ] Relevant ADRs are linked if applicable.
+- [ ] A dedicated branch exists for this change before the first implementation commit.
 
 During implementation:
 
-1. Create or use a dedicated branch.
-2. Implement task by task.
-3. Update task status in `plan.md`.
-4. **Commit per task.** After each task completes (status → done, all checks pass), create a commit with a message referencing the task: `[Task N.M] brief description`. Do not accumulate changes from multiple tasks in a single commit. Untracked plan/history files go in their own commit.
-5. Run relevant checks after meaningful milestones.
+1. Create or use a dedicated branch (`git checkout -b <change-id>` before the first code commit).
+2. Implement **one plan task at a time** — do not start Task N+1 until Task N is committed.
+3. Update task status in `plan.md` to `Done` only when that task’s acceptance criteria pass.
+4. **Commit per task (mandatory).** Immediately after step 3, create a commit before touching the next task:
+   - Message format: `[Task N] brief description` or `[Task N.M] brief description` when subtasks exist.
+   - Stage only files in that task’s Scope (plus `plan.md` task-status lines if updated). Do not mix tasks in one commit.
+   - Run `git status` after the commit; the working tree must not still contain completed-task files.
+   - Untracked `plan.md` / `history.md` from the change folder: commit in their own commit when first added or when plan-only updates land.
+   - **Do not** batch multiple tasks and commit at the end of the change unless the user explicitly asks for a retroactive split.
+5. Run relevant checks after each task commit (at minimum the acceptance criteria for that task).
 6. Do not silently expand scope.
 7. If the implementation changes the plan, update `plan.md`.
 8. If the change is significant, request another plan review.

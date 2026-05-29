@@ -1,4 +1,8 @@
 use super::*;
+use crate::scene_page::{
+    collect_page_measures, route_composites_to_systems, route_items_to_systems,
+};
+use crate::structural::spans::push_system_volta_composites;
 
 // ── Platform-Neutral Scene Output ───────────────────────────────
 
@@ -194,12 +198,12 @@ pub fn build_layout_scene(score: &RenderScore, opts: &LayoutOptions) -> LayoutSc
         index: 0,
         width_pt: page_w,
         height_pt: page_h,
+        header: Some(PageHeader::default()),
         systems: Vec::new(),
-        measures: Vec::new(),
-        items: Vec::new(),
-        composites: Vec::new(),
     };
-    let mut sink = SceneEmitSink::new(&mut page.items, &mut item_counter, opts.staff_space_pt);
+    let header = page.header.as_mut().expect("header initialized");
+    let mut header_sink =
+        SceneEmitSink::new(&mut header.items, &mut item_counter, opts.staff_space_pt);
     let mut layout_issues = Vec::new();
 
     let title_metric = canonical_text_metric(TextRole::Title, opts.staff_space_pt);
@@ -210,7 +214,7 @@ pub fn build_layout_scene(score: &RenderScore, opts: &LayoutOptions) -> LayoutSc
     let composer_y = header_bottom_y + composer_metric.ascent_pt + 12.0;
 
     if let Some(ref text) = score.header.title {
-        let title_id = sink.push_text_item(TextItemSpec {
+        let title_id = header_sink.push_text_item(TextItemSpec {
             measure_id: None,
             role: "title",
             x: center_x,
@@ -223,7 +227,7 @@ pub fn build_layout_scene(score: &RenderScore, opts: &LayoutOptions) -> LayoutSc
             text_anchor: Some("middle"),
             font_weight: Some("bold"),
         });
-        page.composites.push(SceneComposite {
+        header.composites.push(SceneComposite {
             id: "text-block-title".to_string(),
             kind: CompositeKind::TextBlock,
             fragment: SpanFragmentKind::SingleSegment,
@@ -235,7 +239,7 @@ pub fn build_layout_scene(score: &RenderScore, opts: &LayoutOptions) -> LayoutSc
         });
     }
     if let Some(ref text) = score.header.subtitle {
-        let subtitle_id = sink.push_text_item(TextItemSpec {
+        let subtitle_id = header_sink.push_text_item(TextItemSpec {
             measure_id: None,
             role: "subtitle",
             x: center_x,
@@ -248,7 +252,7 @@ pub fn build_layout_scene(score: &RenderScore, opts: &LayoutOptions) -> LayoutSc
             text_anchor: Some("middle"),
             font_weight: None,
         });
-        page.composites.push(SceneComposite {
+        header.composites.push(SceneComposite {
             id: "text-block-subtitle".to_string(),
             kind: CompositeKind::TextBlock,
             fragment: SpanFragmentKind::SingleSegment,
@@ -260,7 +264,7 @@ pub fn build_layout_scene(score: &RenderScore, opts: &LayoutOptions) -> LayoutSc
         });
     }
     if let Some(ref text) = score.header.composer {
-        let composer_id = sink.push_text_item(TextItemSpec {
+        let composer_id = header_sink.push_text_item(TextItemSpec {
             measure_id: None,
             role: "composer",
             x: page_w - margin,
@@ -273,7 +277,7 @@ pub fn build_layout_scene(score: &RenderScore, opts: &LayoutOptions) -> LayoutSc
             text_anchor: Some("end"),
             font_weight: None,
         });
-        page.composites.push(SceneComposite {
+        header.composites.push(SceneComposite {
             id: "text-block-composer".to_string(),
             kind: CompositeKind::TextBlock,
             fragment: SpanFragmentKind::SingleSegment,
@@ -296,7 +300,21 @@ pub fn build_layout_scene(score: &RenderScore, opts: &LayoutOptions) -> LayoutSc
         let s_bot = sy + staff_bounding_height_pt(staff_ss);
         let s_mid = sy + staff_ss * 3.0;
         let mut mx = system_left;
-        let mut measure_ids = Vec::new();
+
+        page.systems.push(SceneSystem {
+            id: system_id.clone(),
+            index: sys_idx as u32,
+            page_index: 0,
+            x_pt: system_left,
+            y_pt: sy,
+            width_pt: system_right - system_left,
+            height_pt: s_bot - sy,
+            measures: Vec::new(),
+            items: Vec::new(),
+            composites: Vec::new(),
+        });
+        let current = page.systems.last_mut().expect("system just pushed");
+        let mut sink = SceneEmitSink::new(&mut current.items, &mut item_counter, opts.staff_space_pt);
 
         for i in 0..5 {
             let ly = sy + staff_ss * (1.0 + i as f32);
@@ -316,7 +334,7 @@ pub fn build_layout_scene(score: &RenderScore, opts: &LayoutOptions) -> LayoutSc
         sink.push_text_item(TextItemSpec {
             measure_id: None,
             role: "percussion-clef",
-            x: margin + 5.0,
+            x: clef_x_pt(margin),
             y: s_mid,
             text_role: TextRole::PercussionClef,
             text: "\u{E069}".to_string(),
@@ -327,7 +345,7 @@ pub fn build_layout_scene(score: &RenderScore, opts: &LayoutOptions) -> LayoutSc
             font_weight: None,
         });
         if is_first_system {
-            let tsx = margin + 35.0;
+            let tsx = time_signature_x_pt(margin, opts.staff_space_pt);
             let time_sig_metric = canonical_text_metric(TextRole::TimeSignatureDigit, opts.staff_space_pt);
             sink.push_text_item(TextItemSpec {
                 measure_id: None,
@@ -405,7 +423,7 @@ pub fn build_layout_scene(score: &RenderScore, opts: &LayoutOptions) -> LayoutSc
                 text_anchor: None,
                 font_weight: None,
             });
-            page.composites.push(SceneComposite {
+            current.composites.push(SceneComposite {
                 id: "text-block-tempo".to_string(),
                 kind: CompositeKind::TextBlock,
                 fragment: SpanFragmentKind::SingleSegment,
@@ -435,8 +453,6 @@ pub fn build_layout_scene(score: &RenderScore, opts: &LayoutOptions) -> LayoutSc
 
         for (mi, (measure, mw)) in system.measures.iter().zip(system.widths.iter()).enumerate() {
             let measure_id = format!("measure-{}", measure.global_index);
-            measure_ids.push(measure_id.clone());
-
             let left_pad = measure_left_pad(mi, is_first_system, measure.barline.as_deref(), opts.staff_space_pt);
             let right_barline = measure
                 .closing_barline
@@ -460,7 +476,7 @@ pub fn build_layout_scene(score: &RenderScore, opts: &LayoutOptions) -> LayoutSc
                     render_start_repeat_barline(
                         &mut sink,
                         Some(&measure_id),
-                        first_measure_start_repeat_x(mx, is_first_system),
+                        first_measure_start_repeat_x(mx, margin, is_first_system, opts.staff_space_pt),
                         s_top,
                         s_bot,
                     );
@@ -476,7 +492,7 @@ pub fn build_layout_scene(score: &RenderScore, opts: &LayoutOptions) -> LayoutSc
                 );
             }
 
-            page.measures.push(SceneMeasure {
+            current.measures.push(SceneMeasure {
                 id: measure_id.clone(),
                 index: measure.global_index,
                 global_index: measure.global_index,
@@ -563,7 +579,7 @@ pub fn build_layout_scene(score: &RenderScore, opts: &LayoutOptions) -> LayoutSc
                     text_anchor: Some("middle"),
                     font_weight: None,
                 });
-                page.composites.push(SceneComposite {
+                current.composites.push(SceneComposite {
                     id: format!("multi-rest-{}", measure.global_index),
                     kind: CompositeKind::MultiRest,
                     fragment: SpanFragmentKind::SingleSegment,
@@ -588,7 +604,7 @@ pub fn build_layout_scene(score: &RenderScore, opts: &LayoutOptions) -> LayoutSc
                             font_size_pt: notation_render_font_pt(opts.staff_space_pt),
                             fill: "#333",
                         });
-                        page.composites.push(SceneComposite {
+                        current.composites.push(SceneComposite {
                             id: format!("measure-repeat-{}", measure.global_index),
                             kind: CompositeKind::MeasureRepeat,
                             fragment: SpanFragmentKind::SingleSegment,
@@ -615,7 +631,7 @@ pub fn build_layout_scene(score: &RenderScore, opts: &LayoutOptions) -> LayoutSc
                             fill: "#333",
                         });
                         let end_anchor_id = format!("measure-{}", measure.global_index + 1);
-                        page.composites.push(SceneComposite {
+                        current.composites.push(SceneComposite {
                             id: format!("measure-repeat-{}", measure.global_index),
                             kind: CompositeKind::MeasureRepeat,
                             fragment: SpanFragmentKind::SingleSegment,
@@ -689,40 +705,53 @@ pub fn build_layout_scene(score: &RenderScore, opts: &LayoutOptions) -> LayoutSc
             }
             mx += *mw;
         }
-
-        page.systems.push(SceneSystem {
-            id: system_id,
-            index: sys_idx as u32,
-            page_index: 0,
-            x_pt: system_left,
-            y_pt: sy,
-            width_pt: system_right - system_left,
-            height_pt: s_bot - sy,
-            measure_ids,
-        });
     }
 
-    push_volta_composites(
-        &mut sink,
-        &mut page.composites,
-        &page.measures,
-        &expanded.measures,
-        opts,
-    );
+    for (sys_idx, system) in page.systems.iter_mut().enumerate() {
+        let measures = system.measures.clone();
+        let mut sink = SceneEmitSink::new(&mut system.items, &mut item_counter, opts.staff_space_pt);
+        push_system_volta_composites(
+            &mut sink,
+            &mut system.composites,
+            &measures,
+            &expanded.measures,
+            opts,
+            sys_idx == 0,
+        );
+    }
+
+    let page_measures = collect_page_measures(&page);
+    let mut post_items = Vec::new();
+    let mut post_composites = Vec::new();
+    let mut post_sink = SceneEmitSink::new(&mut post_items, &mut item_counter, opts.staff_space_pt);
     render_hairpin_fragments(
-        &mut sink,
-        &mut page.composites,
-        &page.measures,
+        &mut post_sink,
+        &mut post_composites,
+        &page_measures,
         &expanded.measures,
         opts.hairpin_offset_y,
     );
-    render_dynamic_marks(&mut sink, &page.measures, &expanded.measures, &score.header);
+    render_dynamic_marks(&mut post_sink, &page_measures, &expanded.measures, &score.header);
     for nav_spec in &deferred_navs {
-        render_nav_markers(&mut sink, &mut page.composites, nav_spec);
+        render_nav_markers(&mut post_sink, &mut post_composites, nav_spec);
     }
-    let _ = sink;
-    stack_scene_structural_items(&mut page.items, &page.composites, opts.edge_padding, opts.staff_space_pt);
-    stack_sticking_items(&mut page.items, &page.measures, opts.edge_padding, opts.staff_space_pt);
+    route_items_to_systems(&mut page.systems, post_items);
+    route_composites_to_systems(&mut page.systems, post_composites);
+
+    for system in &mut page.systems {
+        stack_scene_structural_items(
+            &mut system.items,
+            &system.composites,
+            opts.edge_padding,
+            opts.staff_space_pt,
+        );
+        stack_sticking_items(
+            &mut system.items,
+            &system.measures,
+            opts.edge_padding,
+            opts.staff_space_pt,
+        );
+    }
 
     paginate_unpaginated_page(
         page,

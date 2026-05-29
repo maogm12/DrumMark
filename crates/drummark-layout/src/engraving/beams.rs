@@ -1,7 +1,7 @@
 use crate::metrics::{canonical_glyph_metric, GlyphPoint, GlyphRole};
 use crate::scene_builder::{GlyphItemSpec, PathItemSpec, SceneEmitSink};
 use crate::{flag_position_pt, flag_render_font_pt};
-use crate::engraving::notes::BEAM_THICKNESS_PT;
+use crate::engraving::notes::{secondary_beam_offset_from_primary_pt, BEAM_THICKNESS_PT};
 
 #[derive(Clone, Debug)]
 pub(crate) struct BeamAnchor {
@@ -115,9 +115,9 @@ pub(crate) fn render_beam_groups(
         for level in 2..=max_level {
             for segment in beam_line_segments_for_level(group, level) {
                 let level_offset = if first.up {
-                    6.0 * (level - 1) as f32
+                    secondary_beam_offset_from_primary_pt(level)
                 } else {
-                    -6.0 * (level - 1) as f32
+                    -secondary_beam_offset_from_primary_pt(level)
                 };
                 let start_y =
                     beam_y_at_x(segment.start_x, first.stem_x, primary_y, last.stem_x, end_y)

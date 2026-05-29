@@ -28,10 +28,18 @@ function renderPrecomputedScene(items: Array<Record<string, unknown>>): string {
       index: 0,
       widthPt: 120,
       heightPt: 80,
-      systems: [{ id: "system-0", index: 0, pageIndex: 0, xPt: 0, yPt: 0, widthPt: 120, heightPt: 80, measureIds: ["measure-0"] }],
-      measures: [{ id: "measure-0", globalIndex: 0, systemId: "system-0", xPt: 0, yPt: 0, widthPt: 120, heightPt: 80 }],
-      items: items as any,
-      composites: [],
+      systems: [{
+        id: "system-0",
+        index: 0,
+        pageIndex: 0,
+        xPt: 0,
+        yPt: 0,
+        widthPt: 120,
+        heightPt: 80,
+        measures: [{ id: "measure-0", globalIndex: 0, systemId: "system-0", xPt: 0, yPt: 0, widthPt: 120, heightPt: 80 }],
+        items: items as any,
+        composites: [],
+      }],
     }],
   } as any, { staffSpacePt: 10.0 });
 }
@@ -154,7 +162,8 @@ describe("SVG Renderer parity", () => {
   it("expands two-bar repeats into two display measures and uses the dedicated glyph", async () => {
     const source = HEADER + "HH | x - - - | x x - - | %% |\n";
     const scene = await buildLayoutSceneFromSource(source, { pageWidth: 612, staffSpacePt: 10.0 });
-    expect(scene.pages[0]?.measures).toHaveLength(4);
+    const measures = (scene.pages[0]?.systems ?? []).flatMap((system) => system.measures ?? []);
+    expect(measures).toHaveLength(4);
     const svg = renderSceneToSvg(scene, { staffSpacePt: 10.0 });
     expect(countRole(svg, "measure-repeat")).toBe(1);
     expect(svg).toContain("\u{E501}");
@@ -196,9 +205,10 @@ describe("SVG Renderer parity", () => {
   it("renders explicit dynamics below hairpins with edge-shifted bounds", async () => {
     const scene = await buildLayoutSceneFromSource("time 4/4\nnote 1/4\ngrouping 4\nHH | @p < x x x x @f |\n", { pageWidth: 360, staffSpacePt: 10.0 });
     const page = scene.pages[0];
-    const measure = page.measures[0];
-    const dynamics = page.items.filter((item: any) => item.role === "dynamic");
-    const hairpinBottom = page.items.find((item: any) => item.role === "hairpin-bottom");
+    const system = page.systems[0];
+    const measure = system.measures[0];
+    const dynamics = system.items.filter((item: any) => item.role === "dynamic");
+    const hairpinBottom = system.items.find((item: any) => item.role === "hairpin-bottom");
 
     expect(dynamics).toHaveLength(2);
     expect(hairpinBottom).toBeTruthy();

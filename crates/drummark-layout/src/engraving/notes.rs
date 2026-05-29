@@ -222,7 +222,23 @@ const REST_LANES_VOICE_2_DOWN_SS: [f32; 8] = [3.5, 4.0, 4.5, 5.0, 5.5, 6.0, 6.5,
 const REST_LANES_SINGLE_SS: [f32; 9] = [2.0, 1.5, 2.5, 1.0, 3.0, 0.5, 3.5, 0.0, 4.0];
 const STEM_STROKE_WIDTH_PT: f32 = 1.0;
 pub(crate) const BEAM_THICKNESS_PT: f32 = 3.0;
-const SECONDARY_BEAM_GAP_PT: f32 = 6.0;
+/// Clear space between adjacent beam ribbons (not center-to-center).
+pub(crate) const SECONDARY_BEAM_GAP_PT: f32 = 2.0;
+
+/// Vertical offset for a secondary beam level (2 = first secondary, 3 = second, …).
+pub(crate) fn secondary_beam_offset_from_primary_pt(display_level: u8) -> f32 {
+    display_level.saturating_sub(1) as f32 * (BEAM_THICKNESS_PT + SECONDARY_BEAM_GAP_PT)
+}
+
+/// Total beam-stack height from the primary beam baseline for collision envelopes.
+pub(crate) fn beam_stack_extent_from_stem_pt(beam_level: u8) -> f32 {
+    if beam_level == 0 {
+        0.0
+    } else {
+        beam_level as f32 * BEAM_THICKNESS_PT
+            + beam_level.saturating_sub(1) as f32 * SECONDARY_BEAM_GAP_PT
+    }
+}
 
 // Notehead positioning
 const NOTE_X_OFFSET_PT: f32 = 7.0;
@@ -386,8 +402,7 @@ fn beam_envelope_obstacle(
     if beam_level == 0 {
         return None;
     }
-    let extra_span =
-        BEAM_THICKNESS_PT + SECONDARY_BEAM_GAP_PT * beam_level.saturating_sub(1) as f32;
+    let extra_span = beam_stack_extent_from_stem_pt(beam_level);
     Some(if stem_up {
         RectObstacle {
             x1: stem_plan.x - 1.0,

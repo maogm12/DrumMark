@@ -40,7 +40,7 @@ pub(crate) fn push_volta_composites(
     }
 }
 
-fn push_system_volta_composites(
+pub(crate) fn push_system_volta_composites(
     sink: &mut SceneEmitSink<'_>,
     composites: &mut Vec<SceneComposite>,
     system_measures: &[SceneMeasure],

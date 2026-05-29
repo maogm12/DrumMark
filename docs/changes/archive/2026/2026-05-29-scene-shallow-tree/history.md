@@ -67,3 +67,7 @@ STATUS: APPROVED
 - **Adapters**: CLI scene JSON, WASM wire, TS `svgSceneAdapter` walk nested systems.
 - **Spec**: Append-only shallow-tree addendum in `RENDER_LAYOUT_CONTRACT.md`.
 - **Follow-ups**: Preamble side gaps; repeat-start placement after clef on continuation systems; barline height `staff_barline_height_pt`; secondary beam offset `(level-1)×(thickness+gap)`.
+
+## 2026-05-29 — Merged
+
+Squash-merged to `main` as `b536a85`.

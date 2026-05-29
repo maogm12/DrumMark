@@ -1,4 +1,4 @@
-import { SETTINGS_RANGES } from "./renderOptions";
+import { DEFAULT_RENDER_OPTIONS, SETTINGS_RANGES } from "./renderOptions";
 
 type RenderOptions = {
   staffSpacePt?: number;
@@ -99,7 +99,7 @@ export async function buildLayoutSceneFromSource(source: string, options?: Rende
     bottomMargin: options?.bottomMargin ?? 40,
     leftMargin: options?.leftMargin ?? 40,
     rightMargin: options?.rightMargin ?? 40,
-    staffSpacePt: options?.staffSpacePt ?? 10.0,
+    staffSpacePt: options?.staffSpacePt ?? DEFAULT_RENDER_OPTIONS.staffSpacePt,
     pxPerQuarter: 80,
     stemLenPt: options?.stemLength ?? 23,
     systemSpacing: options?.systemSpacing ?? SETTINGS_RANGES.systemSpacing.default,
@@ -146,8 +146,8 @@ export function renderScenePagesToSvgs(scene: Scene, options?: RenderOptions): s
 }
 
 function renderScenePageToSvg(page: ScenePage, options?: RenderOptions): string {
-  const ssp = options?.staffSpacePt ?? 10.0;
-  const displayScale = ssp / 10.0;
+  const ssp = options?.staffSpacePt ?? DEFAULT_RENDER_OPTIONS.staffSpacePt;
+  const displayScale = ssp / DEFAULT_RENDER_OPTIONS.staffSpacePt;
   const width = page.widthPt || 612;
   const height = page.heightPt || 792;
   const items = [...page.items].sort((a, b) => a.zIndex - b.zIndex);

@@ -80,6 +80,14 @@ use scene::render_header_layout_box;
 #[cfg(test)]
 use validation::validate_layout_scene;
 
+/// Number of staff lines drawn per system (percussion staff).
+pub(crate) const STAFF_LINE_COUNT: u32 = 5;
+
+/// Vertical extent from system origin `sy` to the bottom staff line.
+pub(crate) fn staff_bounding_height_pt(staff_space_pt: f32) -> f32 {
+    staff_space_pt * STAFF_LINE_COUNT as f32
+}
+
 pub fn glyph_position_pt(staff_space_pt: f32) -> f32 {
     staff_space_pt * 4.0
 }
@@ -210,11 +218,17 @@ mod tests {
         );
     }
 
-    fn rest_bounds_ss(y_pt: f32, font_size_pt: f32, staff_top: f32, role: GlyphRole) -> (f32, f32) {
+    fn rest_bounds_ss(
+        y_pt: f32,
+        font_size_pt: f32,
+        staff_top: f32,
+        staff_space_pt: f32,
+        role: GlyphRole,
+    ) -> (f32, f32) {
         let metric = canonical_glyph_metric(role);
         let ss_to_pt = font_size_pt / 4.0;
-        let top_ss = (y_pt - metric.bbox_ne_y_ss * ss_to_pt - staff_top) / 10.0;
-        let bottom_ss = (y_pt - metric.bbox_sw_y_ss * ss_to_pt - staff_top) / 10.0;
+        let top_ss = (y_pt - metric.bbox_ne_y_ss * ss_to_pt - staff_top) / staff_space_pt;
+        let bottom_ss = (y_pt - metric.bbox_sw_y_ss * ss_to_pt - staff_top) / staff_space_pt;
         (top_ss, bottom_ss)
     }
 
@@ -323,14 +337,21 @@ mod tests {
             _ => panic!("expected half rest glyph"),
         };
 
+        let staff_space_pt = LayoutOptions::default().staff_space_pt;
         let (whole_top, _) = rest_bounds_ss(
             whole_y,
             whole_font_size,
             whole_staff_top,
+            staff_space_pt,
             GlyphRole::RestWhole,
         );
-        let (_, half_bottom) =
-            rest_bounds_ss(half_y, half_font_size, half_staff_top, GlyphRole::RestHalf);
+        let (_, half_bottom) = rest_bounds_ss(
+            half_y,
+            half_font_size,
+            half_staff_top,
+            staff_space_pt,
+            GlyphRole::RestHalf,
+        );
 
         assert!(
             (whole_top - 1.0).abs() < 0.01,
@@ -448,7 +469,7 @@ mod tests {
     #[test]
     fn test_staff_space() {
         let ss = StaffSpace::default();
-        assert_eq!(ss.pt_per_ss, 8.0);
+        assert_eq!(ss.pt_per_ss, 5.0);
         assert_eq!(ss.to_pixels(40.0), 10.0); // 40pt staff / 4 = 10px per ss
     }
 
@@ -954,8 +975,9 @@ mod tests {
             .iter()
             .find(|item| item.role == "hairpin-bottom")
             .expect("expected hairpin bottom");
-        let (_, hairpin_y, _, hairpin_h) = item_bounds(hairpin_bottom, 7.5).unwrap();
-        let (_, dynamic_y, _, _) = item_bounds(dynamic, 7.5).unwrap();
+        let staff_space_pt = LayoutOptions::default().staff_space_pt;
+        let (_, hairpin_y, _, hairpin_h) = item_bounds(hairpin_bottom, staff_space_pt).unwrap();
+        let (_, dynamic_y, _, _) = item_bounds(dynamic, staff_space_pt).unwrap();
         assert!(
             dynamic_y >= hairpin_y + hairpin_h + 4.0,
             "dynamic should sit below hairpin"
@@ -1101,7 +1123,8 @@ mod tests {
             .iter()
             .flat_map(|page| page.items.iter())
             .collect::<Vec<_>>();
-        let count_metric = canonical_text_metric(TextRole::CountLabel, 7.5);
+        let staff_space_pt = LayoutOptions::default().staff_space_pt;
+        let count_metric = canonical_text_metric(TextRole::CountLabel, staff_space_pt);
 
         {
             let nav_start = items
@@ -1114,7 +1137,7 @@ mod tests {
             };
             assert_eq!(glyph.glyph_role, GlyphRole::NavigationSegno);
             assert_eq!(glyph.font_family, "Bravura");
-            assert_eq!(glyph.font_size_pt, 15.0);
+            assert_eq!(glyph.font_size_pt, nav_glyph_render_font_pt(staff_space_pt));
         }
         {
             let nav_end = items
@@ -1152,7 +1175,7 @@ mod tests {
         };
         assert_eq!(accent_glyph.glyph_role, GlyphRole::ArticAccentAbove);
         assert_eq!(accent_glyph.font_family, "Bravura");
-        assert_eq!(accent_glyph.font_size_pt, notation_render_font_pt(7.5));
+        assert_eq!(accent_glyph.font_size_pt, notation_render_font_pt(staff_space_pt));
 
         let sticking_score = RenderScore {
             version: RENDER_SCORE_VERSION.to_string(),
@@ -1251,7 +1274,7 @@ mod tests {
         let ScenePrimitive::TextRun(sticking_text) = &sticking_item.primitive else {
             panic!("expected text primitive for sticking");
         };
-        let sticking_metric = canonical_text_metric(TextRole::Sticking, 7.5);
+        let sticking_metric = canonical_text_metric(TextRole::Sticking, staff_space_pt);
         assert_eq!(sticking_text.text_role, TextRole::Sticking);
         assert_eq!(sticking_text.font_family, sticking_metric.font_family);
         assert_eq!(sticking_text.font_size_pt, sticking_metric.font_size_pt);
@@ -2324,12 +2347,14 @@ mod tests {
             y1: -1000.0,
             y2: 1000.0,
         };
+        let staff_space_pt = 10.0;
         let (_, diagnostic) = resolve_rest_placement(
             &slot,
             100.0,
             80.0,
+            staff_space_pt,
             rest_glyph_for_fraction(event.duration),
-             notation_render_font_pt(10.0),
+            notation_render_font_pt(staff_space_pt),
             false,
             &[blocking],
             &[],
@@ -4842,7 +4867,7 @@ fn test_system_box_orchestrator_outputs_multiple_pages_for_long_scores() {
         beam: "none".into(),
         tuplet: None,
     };
-    let measures = (0..8)
+    let measures = (0..12)
         .map(|index| RenderMeasure {
             index,
             global_index: index,
@@ -5454,20 +5479,24 @@ fn test_first_measure_repeat_start_sits_after_system_preamble() {
         panic!("repeat start should be a glyph");
     };
     let (note_x, _, _, _) = item_bounds(notehead, 10.0).expect("notehead should have bounds");
-    let repeat_top = repeat_glyph.y_pt - repeat_barline_rendered_height(GlyphRole::RepeatLeft, 7.5);
+    let repeat_top = repeat_glyph.y_pt
+        - repeat_barline_rendered_height(GlyphRole::RepeatLeft, opts.staff_space_pt);
     let repeat_bottom = repeat_glyph.y_pt;
 
     assert!((opening_rect.x_pt - opts.left_margin_pt).abs() < 0.01);
     assert_eq!(repeat_glyph.glyph_role, GlyphRole::RepeatLeft);
-    assert_eq!(repeat_glyph.font_size_pt, notation_render_font_pt(7.5));
+    assert_eq!(
+        repeat_glyph.font_size_pt,
+        notation_render_font_pt(opts.staff_space_pt)
+    );
     assert!(repeat_glyph.x_pt > opening_rect.x_pt + 60.0);
     assert!((repeat_top - opening_rect.y_pt).abs() < 0.5,
         "repeat_top={repeat_top:.2} opening.y={:.2}", opening_rect.y_pt);
     assert!((repeat_bottom - (opening_rect.y_pt + opening_rect.height_pt - 1.0)).abs() < 6.0,
         "repeat_bottom={repeat_bottom:.2} opening_rect.y={:.2} h={:.2}", opening_rect.y_pt, opening_rect.height_pt);
-    assert!(note_x > repeat_glyph.x_pt + repeat_barline_rendered_width(GlyphRole::RepeatLeft, 7.5));
+    assert!(note_x > repeat_glyph.x_pt + repeat_barline_rendered_width(GlyphRole::RepeatLeft, opts.staff_space_pt));
     assert!(
-        note_x - (repeat_glyph.x_pt + repeat_barline_rendered_width(GlyphRole::RepeatLeft, 7.5))
+        note_x - (repeat_glyph.x_pt + repeat_barline_rendered_width(GlyphRole::RepeatLeft, opts.staff_space_pt))
             >= 10.0,
         "first note should have visual clearance after the start repeat: repeat_x={:.2} note_x={note_x:.2}",
         repeat_glyph.x_pt
@@ -5710,7 +5739,10 @@ fn test_adjacent_repeat_end_start_uses_smufl_right_left_glyph() {
     };
 
     assert_eq!(shared_glyph.glyph_role, GlyphRole::RepeatRightLeft);
-    assert_eq!(shared_glyph.font_size_pt, notation_render_font_pt(7.5));
+    assert_eq!(
+        shared_glyph.font_size_pt,
+        notation_render_font_pt(LayoutOptions::default().staff_space_pt)
+    );
     assert_eq!(
         page.items
             .iter()
@@ -6126,8 +6158,9 @@ fn test_crash_maps_to_top_ledger_line() {
         _ => panic!("expected notehead text"),
     };
 
-    assert!((notehead_y - (staff_top - 7.5)).abs() < 0.01);
-    assert!((ledger_y - (staff_top - 7.5)).abs() < 0.01);
+    let staff_space_pt = LayoutOptions::default().staff_space_pt;
+    assert!((notehead_y - (staff_top - staff_space_pt)).abs() < 0.01);
+    assert!((ledger_y - (staff_top - staff_space_pt)).abs() < 0.01);
     assert!((ledger_center_x - notehead_center_x).abs() < 0.01);
 }
 
@@ -6216,13 +6249,14 @@ fn test_bottom_ledger_lines_render_for_notes_below_staff() {
         })
         .collect::<Vec<_>>();
 
+    let staff_space_pt = LayoutOptions::default().staff_space_pt;
     assert_eq!(ledger_ys.len(), 2);
     assert!(ledger_ys
         .iter()
-        .any(|y| (*y - (staff_top + 37.5)).abs() < 0.01));
+        .any(|y| (*y - (staff_top + staff_space_pt * 5.0)).abs() < 0.01));
     assert!(ledger_ys
         .iter()
-        .any(|y| (*y - (staff_top + 45.0)).abs() < 0.01));
+        .any(|y| (*y - (staff_top + staff_space_pt * 6.0)).abs() < 0.01));
 }
 
 #[test]

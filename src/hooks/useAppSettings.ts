@@ -27,7 +27,7 @@ export interface AppSettings {
 export const defaultSettings: AppSettings = {
   hideVoice2Rests: false,
   pagePadding: { top: 30, right: 50, bottom: 30, left: 50 },
-  staffSpacePt: 10.0,
+  staffSpacePt: 5.0,
   headerStaffSpacing: 60,
   headerHeight: 50,
   systemSpacing: 30,
@@ -51,9 +51,16 @@ export function resolveAppSettings(saved: string | null): AppSettings {
     const { useLayoutEngine: _legacyRenderer, staffScale: legacyStaffScale, ...rendererNeutralSettings } = parsed;
     void _legacyRenderer;
     if (legacyStaffScale !== undefined) {
-      rendererNeutralSettings.staffSpacePt = 10.0 * legacyStaffScale / 0.75;
+      rendererNeutralSettings.staffSpacePt = 5.0 * legacyStaffScale / 0.75;
     }
     const r = SETTINGS_RANGES;
+    if (
+      rendererNeutralSettings.staffSpacePt === undefined
+      || rendererNeutralSettings.staffSpacePt < r.staffSpacePt.min
+      || rendererNeutralSettings.staffSpacePt > r.staffSpacePt.max
+    ) {
+      rendererNeutralSettings.staffSpacePt = r.staffSpacePt.default;
+    }
     if (rendererNeutralSettings.stemLength === undefined || rendererNeutralSettings.stemLength < r.stemLength.min || rendererNeutralSettings.stemLength > r.stemLength.max) {
       rendererNeutralSettings.stemLength = r.stemLength.default;
     }

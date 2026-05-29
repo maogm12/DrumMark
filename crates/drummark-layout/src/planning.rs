@@ -601,6 +601,7 @@ pub(crate) fn finalize_planned_system<'a>(
     current_inner_estimates: Vec<f32>,
     is_first_system: bool,
     available_width: f32,
+    staff_space_pt: f32,
 ) {
     if current_measures.is_empty() {
         return;
@@ -613,13 +614,13 @@ pub(crate) fn finalize_planned_system<'a>(
                 index,
                 is_first_system,
                 current_measures[index].measure.barline.as_deref(),
-                7.5,
+                staff_space_pt,
             );
             let right_barline = current_measures[index]
                 .closing_barline
                 .as_deref()
                 .or(current_measures[index].barline.as_deref());
-            left + measure_right_pad(right_barline, 7.5)
+            left + measure_right_pad(right_barline, staff_space_pt)
         })
         .sum();
     let current_inner_sum: f32 = current_inner_estimates.iter().sum();
@@ -632,7 +633,7 @@ pub(crate) fn finalize_planned_system<'a>(
                 index,
                 is_first_system,
                 current_measures[index].barline.as_deref(),
-                7.5,
+                staff_space_pt,
             );
             let right_barline = current_measures[index]
                 .closing_barline
@@ -641,7 +642,7 @@ pub(crate) fn finalize_planned_system<'a>(
             let is_compact = current_measures[index].measure.multi_rest_count.is_some()
                 || current_measures[index].measure.measure_repeat_slashes.is_some();
             let content_width = if is_compact { width.max(width * scale) } else { width * scale };
-            content_width + left + measure_right_pad(right_barline, 7.5)
+            content_width + left + measure_right_pad(right_barline, staff_space_pt)
         })
         .collect();
     systems.push(PlannedSystem {
@@ -680,6 +681,7 @@ pub(crate) fn plan_scene_systems<'a>(
                 current_inner_estimates,
                 next_is_first_system,
                 available_width,
+                opts.staff_space_pt,
             );
             current_measures = Vec::new();
             current_inner_estimates = Vec::new();
@@ -697,6 +699,7 @@ pub(crate) fn plan_scene_systems<'a>(
         current_inner_estimates,
         next_is_first_system,
         available_width,
+        opts.staff_space_pt,
     );
 
     systems

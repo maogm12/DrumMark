@@ -30,7 +30,7 @@ export const DEFAULT_RENDER_OPTIONS: ScoreRenderOptions = {
   pagePadding: { top: 30, right: 50, bottom: 30, left: 50 },
   pageWidth: 612,
   pageHeight: 792,
-  staffSpacePt: 7.5,
+  staffSpacePt: 5.0,
   headerHeight: 50,
   headerStaffSpacing: 60,
   systemSpacing: 30,
@@ -50,7 +50,7 @@ export const DEFAULT_RENDER_OPTIONS: ScoreRenderOptions = {
 export const SETTINGS_RANGES = {
   hairpinOffsetY: { min: -20, max: 20, default: 0 },
   voltaSpacing: { min: -20, max: 20, default: 0 },
-  staffSpacePt: { min: 5, max: 15 },
+  staffSpacePt: { min: 1, max: 10, default: 5 },
   stemLength: { min: 15, max: 50, default: 23 },
   systemSpacing: { min: 0, max: 100, default: 30 },
   headerHeight: { min: 10, max: 300, default: 50 },

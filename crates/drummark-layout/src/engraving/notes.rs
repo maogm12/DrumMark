@@ -220,7 +220,6 @@ const REST_LANES_VOICE_1_UP_SS: [f32; 8] = [1.0, 0.5, 0.0, -0.5, -1.0, -1.5, -2.
 const REST_LANES_VOICE_2_DOWN_SS: [f32; 8] = [3.5, 4.0, 4.5, 5.0, 5.5, 6.0, 6.5, 7.0];
 /// Single-voice collision fallback: expand symmetrically around the middle staff line.
 const REST_LANES_SINGLE_SS: [f32; 9] = [2.0, 1.5, 2.5, 1.0, 3.0, 0.5, 3.5, 0.0, 4.0];
-const STAFF_SPACE_STEP_PT: f32 = 10.0;
 const STEM_STROKE_WIDTH_PT: f32 = 1.0;
 pub(crate) const BEAM_THICKNESS_PT: f32 = 3.0;
 const SECONDARY_BEAM_GAP_PT: f32 = 6.0;
@@ -410,6 +409,7 @@ pub(crate) fn resolve_rest_placement(
     rest: &SlotEvent<'_>,
     center_x: f32,
     staff_top: f32,
+    staff_space_pt: f32,
     rest_metric: CanonicalGlyphMetric,
     font_size_pt: f32,
     dual_voice: bool,
@@ -422,7 +422,7 @@ pub(crate) fn resolve_rest_placement(
         let placement = rest_placement_for_lane(
             rest_metric,
             center_x,
-            staff_top + lane_ss * STAFF_SPACE_STEP_PT,
+            staff_top + lane_ss * staff_space_pt,
             font_size_pt,
         );
         let rest_rect = rect_obstacle_from_rest_placement(placement);
@@ -565,6 +565,7 @@ pub(crate) fn render_slot_group(sink: &mut SceneEmitSink<'_>, input: RenderSlotG
             rest,
             note_center_x,
             input.staff_top,
+            sink.staff_space_pt,
             rest_metric,
             rest_font_size,
             input.dual_voice_rest_zones,

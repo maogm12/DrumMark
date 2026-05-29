@@ -3,7 +3,7 @@ import {
   initLayoutWasmNode,
 } from "../wasm/layout_wasm_node";
 import { renderScenePagesToSvgs, renderSceneToSvg } from "./svgRenderer";
-import { SETTINGS_RANGES } from "./renderOptions";
+import { DEFAULT_RENDER_OPTIONS, SETTINGS_RANGES } from "./renderOptions";
 
 type RenderOptions = {
   staffSpacePt?: number;
@@ -36,7 +36,7 @@ function buildLayoutOptions(options?: RenderOptions): Record<string, unknown> {
     bottomMargin: options?.bottomMargin ?? 40,
     leftMargin: options?.leftMargin ?? 40,
     rightMargin: options?.rightMargin ?? 40,
-    staffSpacePt: options?.staffSpacePt ?? 10.0,
+    staffSpacePt: options?.staffSpacePt ?? DEFAULT_RENDER_OPTIONS.staffSpacePt,
     pxPerQuarter: 80,
     stemLenPt: options?.stemLength ?? 23,
     systemSpacing: options?.systemSpacing ?? SETTINGS_RANGES.systemSpacing.default,

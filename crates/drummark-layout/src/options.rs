@@ -35,7 +35,7 @@ impl Default for LayoutOptions {
             bottom_margin_pt: 30.0,
             left_margin_pt: 50.0,
             right_margin_pt: 50.0,
-            staff_space_pt: 7.5,
+            staff_space_pt: 5.0,
             px_per_quarter: 80.0,
             header_height_pt: 50.0,
             header_staff_spacing_pt: 60.0,
@@ -64,7 +64,7 @@ pub struct StaffSpace {
 
 impl Default for StaffSpace {
     fn default() -> Self {
-        Self { pt_per_ss: 8.0 }
+        Self { pt_per_ss: 5.0 }
     }
 }
 

@@ -161,15 +161,15 @@ fn staff_size_affects_notehead_font_size() {
     assert!((font_10 - 30.0).abs() < 1.0, "expected notehead fontSizePt ~30 at staff-size 10, got {font_10}");
 
 
-    let scene_at_12 = run(&[OVERVIEW, "--format", "scene", "--staff-size", "12"]);
-    assert!(scene_at_12.status.success(), "scene failed at staff-size 12: {}", stderr(&scene_at_12));
-    let v12: serde_json::Value = serde_json::from_slice(&scene_at_12.stdout).unwrap();
-    let font_12 = v12["pages"][0]["items"]
+    let scene_at_8 = run(&[OVERVIEW, "--format", "scene", "--staff-size", "8"]);
+    assert!(scene_at_8.status.success(), "scene failed at staff-size 8: {}", stderr(&scene_at_8));
+    let v8: serde_json::Value = serde_json::from_slice(&scene_at_8.stdout).unwrap();
+    let font_8 = v8["pages"][0]["items"]
         .as_array().unwrap().iter()
         .find(|i| i["role"] == "notehead")
         .and_then(|i| i["primitive"]["fontSizePt"].as_f64())
         .expect("notehead fontSizePt");
-    assert!((font_12 - 36.0).abs() < 1.0, "expected notehead fontSizePt ~36 at staff-size 12, got {font_12}");
+    assert!((font_8 - 24.0).abs() < 1.0, "expected notehead fontSizePt ~24 at staff-size 8, got {font_8}");
 }
 
 fn fallback_font() -> Option<PathBuf> {

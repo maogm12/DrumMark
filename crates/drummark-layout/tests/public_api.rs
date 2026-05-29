@@ -97,7 +97,7 @@ fn crate_root_public_api_smoke() {
     assert!(!layout_scene_snapshot(&scene).is_empty());
 
     let staff_space = StaffSpace::default();
-    assert_eq!(staff_space.to_pt(2.0), 16.0);
+    assert_eq!(staff_space.to_pt(2.0), 10.0);
     assert_eq!(staff_y_for_track("SD"), 1.5);
 
     let note_metric = notehead_glyph("SD", &[], "d");

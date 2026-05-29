@@ -41,7 +41,7 @@ pub fn build_output(source: &str, cli: &Cli) -> Result<CliOutput, String> {
 }
 
 fn layout_options(cli: &Cli) -> LayoutOptions {
-    let staff_space_pt = cli.staff_size.max(5.0).min(15.0);
+    let staff_space_pt = cli.staff_size.max(1.0).min(10.0);
     let margin = cli.margin.unwrap_or(30.0);
     LayoutOptions {
         page_width_pt: cli.page_width,

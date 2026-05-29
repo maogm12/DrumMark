@@ -138,7 +138,7 @@ pub(crate) fn paginate_unpaginated_page(
     mut scene: LayoutScene,
     opts: &LayoutOptions,
 ) -> LayoutScene {
-    let header_box = header_box_from_page(&page);
+    let header_box = header_box_from_page(&page, opts);
     let system_boxes = system_boxes_from_page(&page, opts);
     let pagination = paginate_system_boxes(&system_boxes, &header_box, opts);
     let mut pages = (0..=pagination
@@ -183,7 +183,7 @@ pub(crate) fn paginate_unpaginated_page(
     scene
 }
 
-pub(crate) fn header_box_from_page(page: &ScenePage) -> HeaderLayoutBox {
+pub(crate) fn header_box_from_page(page: &ScenePage, opts: &LayoutOptions) -> HeaderLayoutBox {
     let items_by_id = page
         .items
         .iter()
@@ -225,7 +225,7 @@ pub(crate) fn header_box_from_page(page: &ScenePage) -> HeaderLayoutBox {
         })
         .cloned()
         .collect::<Vec<_>>();
-    let bounds = bounds_for_items(&items, 10.0).ok().flatten();
+    let bounds = bounds_for_items(&items, opts.staff_space_pt).ok().flatten();
     HeaderLayoutBox {
         items,
         composites,
@@ -291,6 +291,12 @@ pub(crate) fn system_box_from_page_system(
             item_bounds(item, opts.staff_space_pt)
                 .map(|(_, y, _, height)| {
                     let center_y = y + height * 0.5;
+                    if matches!(
+                        item.role.as_str(),
+                        "staff-line" | "percussion-clef" | "time-signature-digit"
+                    ) {
+                        return center_y >= staff_top - 0.5 && center_y <= staff_bottom + 0.5;
+                    }
                     center_y >= band_top && center_y <= band_bottom
                 })
                 .unwrap_or(false)

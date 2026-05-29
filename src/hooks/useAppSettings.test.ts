@@ -25,4 +25,8 @@ describe("resolveAppSettings", () => {
   it("resets legacy absolute stem length settings to offset default", () => {
     expect(resolveAppSettings(JSON.stringify({ stemLength: 23 })).stemLength).toBe(0);
   });
+
+  it("converts legacy staff-space stem offset to pt", () => {
+    expect(resolveAppSettings(JSON.stringify({ stemLength: 1, staffSpacePt: 5 })).stemLength).toBe(5);
+  });
 });

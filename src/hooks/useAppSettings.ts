@@ -61,9 +61,19 @@ export function resolveAppSettings(saved: string | null): AppSettings {
     ) {
       rendererNeutralSettings.staffSpacePt = r.staffSpacePt.default;
     }
+    if (rendererNeutralSettings.stemLength === undefined) {
+      rendererNeutralSettings.stemLength = r.stemLength.default;
+    } else if (
+      rendererNeutralSettings.stemLength >= -2
+      && rendererNeutralSettings.stemLength <= 4
+      && Math.abs(rendererNeutralSettings.stemLength * 2 - Math.round(rendererNeutralSettings.stemLength * 2)) < 0.001
+    ) {
+      // Legacy staff-space offset (−2…+4, step 0.5) → pt.
+      const staff = rendererNeutralSettings.staffSpacePt ?? defaultSettings.staffSpacePt;
+      rendererNeutralSettings.stemLength = rendererNeutralSettings.stemLength * staff;
+    }
     if (
-      rendererNeutralSettings.stemLength === undefined
-      || rendererNeutralSettings.stemLength < r.stemLength.min
+      rendererNeutralSettings.stemLength < r.stemLength.min
       || rendererNeutralSettings.stemLength > r.stemLength.max
     ) {
       rendererNeutralSettings.stemLength = r.stemLength.default;

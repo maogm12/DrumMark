@@ -22,8 +22,8 @@ pub struct LayoutOptions {
     pub tempo_offset_y: f32,
     pub measure_num_offset_y: f32,
     pub edge_padding: f32,
-    /// Added to [`DEFAULT_STEM_LEN_SS`] to lengthen or shorten stems (staff-space units).
-    pub stem_len_offset_ss: f32,
+    /// Fine adjustment in pt added to [`DEFAULT_STEM_LEN_SS`] × [`staff_space_pt`].
+    pub stem_len_offset_pt: f32,
     pub system_spacing_pt: f32,
     pub hide_voice2_rests: bool,
     pub duration_spacing_compression: f32,
@@ -52,7 +52,7 @@ impl Default for LayoutOptions {
             tempo_offset_y: -10.0,
             measure_num_offset_y: -4.0,
             edge_padding: 4.0,
-            stem_len_offset_ss: 0.0,
+            stem_len_offset_pt: 0.0,
             system_spacing_pt: 30.0,
             hide_voice2_rests: false,
             duration_spacing_compression: 0.6,
@@ -73,7 +73,7 @@ impl Default for StaffSpace {
 }
 
 pub fn stem_length_pt(opts: &LayoutOptions) -> f32 {
-    opts.staff_space_pt * (DEFAULT_STEM_LEN_SS + opts.stem_len_offset_ss)
+    opts.staff_space_pt * DEFAULT_STEM_LEN_SS + opts.stem_len_offset_pt
 }
 
 impl StaffSpace {

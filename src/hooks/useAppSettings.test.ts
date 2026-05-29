@@ -21,4 +21,8 @@ describe("resolveAppSettings", () => {
   it("falls back to layout engine defaults for corrupt settings", () => {
     expect(resolveAppSettings("{")).not.toHaveProperty("useLayoutEngine");
   });
+
+  it("resets legacy absolute stem length settings to offset default", () => {
+    expect(resolveAppSettings(JSON.stringify({ stemLength: 23 })).stemLength).toBe(0);
+  });
 });

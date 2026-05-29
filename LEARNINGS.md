@@ -390,6 +390,10 @@ When an older note conflicts with this file, treat this file plus the active spe
 - `LayoutOptions.stem_len_offset_ss` adjusts length around `DEFAULT_STEM_LEN_SS` (4). Effective length is `stem_length_pt(opts) = staff_space_pt * (4 + offset)`. WASM/TS pass `stemLenOffsetSs`; legacy `stemLenPt` is converted to offset on ingest.
 - App setting `stemLength` is the same offset in staff-space units (default 0, range −2…+4). Persisted pt values above 8 are migrated with `value / staffSpacePt - 4`.
 
+## 2026-05-29 Stem Length WASM Option Deprecation
+
+- Layout WASM options no longer read `stemLenPt` or `stemLenSs`; only `stemLenOffsetSs` (staff-space units added to the default 4 ss span). Saved app settings outside −2…+4 reset to offset 0 instead of converting old pt values.
+
 ## 2026-05-29 Barline Vertical Span And Continuation Repeat Start
 
 - Staff lines sit at `sy + staff_space_pt * (1..5)`; barline rects must use `staff_barline_height_pt(top, bottom) = bottom - top` (no `+ 1`), with `top = sy + staff_space` and `bottom = sy + staff_space * 5`, or the fill extends 1pt below the bottom staff line.

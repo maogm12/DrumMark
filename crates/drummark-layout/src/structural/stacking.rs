@@ -19,6 +19,7 @@ pub(crate) fn stack_scene_structural_items(
     items: &mut [SceneItem],
     composites: &[SceneComposite],
     edge_padding: f32,
+    staff_space_pt: f32,
 ) {
     let item_index = items
         .iter()
@@ -31,7 +32,7 @@ pub(crate) fn stack_scene_structural_items(
     for composite in composites {
         if composite.kind == CompositeKind::Volta {
             if let Some((_, y, _, _)) =
-                bounding_box_for_ids(items, &item_index, &composite.child_item_ids)
+                bounding_box_for_ids(items, &item_index, &composite.child_item_ids, staff_space_pt)
             {
                 let key = (y * 100.0).round() as i32;
                 volta_groups
@@ -54,7 +55,7 @@ pub(crate) fn stack_scene_structural_items(
             continue;
         }
         if let Some((x, y, width, height)) =
-            bounding_box_for_ids(items, &item_index, &composite.child_item_ids)
+            bounding_box_for_ids(items, &item_index, &composite.child_item_ids, staff_space_pt)
         {
             groups.push(EdgeGroup {
                 item_ids: composite.child_item_ids.clone(),
@@ -69,7 +70,7 @@ pub(crate) fn stack_scene_structural_items(
     }
 
     for (_, item_ids) in volta_groups {
-        if let Some((x, y, width, height)) = bounding_box_for_ids(items, &item_index, &item_ids) {
+        if let Some((x, y, width, height)) = bounding_box_for_ids(items, &item_index, &item_ids, staff_space_pt) {
             groups.push(EdgeGroup {
                 item_ids,
                 x,
@@ -84,7 +85,7 @@ pub(crate) fn stack_scene_structural_items(
 
     for role in [scene_roles::MEASURE_NUMBER] {
         for item in items.iter().filter(|item| item.role == role) {
-            if let Some((x, y, width, height)) = item_bounds(item) {
+            if let Some((x, y, width, height)) = item_bounds(item, staff_space_pt) {
                 groups.push(EdgeGroup {
                     item_ids: vec![item.id.clone()],
                     x,
@@ -121,7 +122,7 @@ pub(crate) fn stack_scene_structural_items(
             }
         }
         if let Some((_, original_y, _, _)) =
-            bounding_box_for_ids(items, &item_index, &group.item_ids)
+            bounding_box_for_ids(items, &item_index, &group.item_ids, staff_space_pt)
         {
             translate_item_ids(items, &item_index, &group.item_ids, group.y - original_y);
         }
@@ -135,6 +136,7 @@ pub(crate) fn stack_sticking_items(
     items: &mut [SceneItem],
     measures: &[SceneMeasure],
     edge_padding: f32,
+    staff_space_pt: f32,
 ) {
     const SKYLINE_ABOVE_STAFF_PT: f32 = 70.0;
     const SKYLINE_BELOW_STAFF_PT: f32 = 24.0;
@@ -169,7 +171,7 @@ pub(crate) fn stack_sticking_items(
         let Some((left, _, width, height)) = items
             .iter()
             .find(|item| item.id == sticking_id)
-            .and_then(item_bounds)
+            .and_then(|item| item_bounds(item, staff_space_pt))
         else {
             continue;
         };
@@ -189,7 +191,7 @@ pub(crate) fn stack_sticking_items(
             let shares_anchor = sticking_anchor.as_ref().is_some_and(|anchor| {
                 item.id == *anchor || item.anchor_item_id.as_deref() == Some(anchor.as_str())
             });
-            let Some((item_x, item_y, item_width, _)) = item_bounds(item) else {
+            let Some((item_x, item_y, item_width, _)) = item_bounds(item, staff_space_pt) else {
                 continue;
             };
             if let Some(staff_top) = reference_staff_top {
@@ -215,7 +217,7 @@ pub(crate) fn stack_sticking_items(
         let Some((_, current_top, _, _)) = items
             .iter()
             .find(|item| item.id == sticking_id)
-            .and_then(item_bounds)
+            .and_then(|item| item_bounds(item, staff_space_pt))
         else {
             continue;
         };
@@ -256,7 +258,7 @@ mod tests {
     fn sticking_stacks_above_anchored_stem_even_without_x_overlap() {
         let mut items = Vec::new();
         let mut counter = 0usize;
-        let mut sink = SceneEmitSink::new(&mut items, &mut counter);
+        let mut sink = SceneEmitSink::new(&mut items, &mut counter, 10.0);
 
         let note_id = sink.push_text_item(TextItemSpec {
             measure_id: Some("m0"),
@@ -299,13 +301,14 @@ mod tests {
         sink.set_anchor_item_id(&sticking_id, Some(note_id));
         let _ = sticking_id;
 
-        stack_sticking_items(&mut items, &[measure("m0", 200.0)], 4.0);
+        stack_sticking_items(&mut items, &[measure("m0", 200.0)], 4.0, 10.0);
 
         let stem_top = item_bounds(
             items
                 .iter()
                 .find(|item| item.role == "stem")
                 .expect("stem"),
+            10.0,
         )
         .unwrap()
         .1;
@@ -313,7 +316,7 @@ mod tests {
             .iter()
             .find(|item| item.role == STICKING_ROLE)
             .expect("sticking");
-        let (_, sticking_top, _, sticking_height) = item_bounds(sticking).unwrap();
+        let (_, sticking_top, _, sticking_height) = item_bounds(sticking, 10.0).unwrap();
         assert!(
             sticking_top + sticking_height <= stem_top - 4.0 + 0.01,
             "sticking should clear anchored stem tip"
@@ -324,7 +327,7 @@ mod tests {
     fn sticking_stacks_above_navigation_and_volta_content() {
         let mut items = Vec::new();
         let mut counter = 0usize;
-        let mut sink = SceneEmitSink::new(&mut items, &mut counter);
+        let mut sink = SceneEmitSink::new(&mut items, &mut counter, 10.0);
 
         let nav_id = sink.push_glyph_item(GlyphItemSpec {
             measure_id: Some("m0"),
@@ -351,10 +354,10 @@ mod tests {
         });
         let _ = (nav_id, sticking_id);
 
-        stack_sticking_items(&mut items, &[measure("m0", 0.0)], 4.0);
+        stack_sticking_items(&mut items, &[measure("m0", 0.0)], 4.0, 10.0);
 
-        let nav_top = item_bounds(&items[0]).unwrap().1;
-        let sticking_top = item_bounds(&items[1]).unwrap().1;
+        let nav_top = item_bounds(&items[0], 10.0).unwrap().1;
+        let sticking_top = item_bounds(&items[1], 10.0).unwrap().1;
         assert!(
             sticking_top + 0.01 < nav_top,
             "sticking should sit above navigation markers"
@@ -365,7 +368,7 @@ mod tests {
     fn sticking_does_not_use_obstacles_from_other_measures_at_same_x() {
         let mut items = Vec::new();
         let mut counter = 0usize;
-        let mut sink = SceneEmitSink::new(&mut items, &mut counter);
+        let mut sink = SceneEmitSink::new(&mut items, &mut counter, 10.0);
 
         let _upper_note = sink.push_text_item(TextItemSpec {
             measure_id: Some("m0"),
@@ -434,6 +437,7 @@ mod tests {
             &mut items,
             &[measure("m0", 200.0), measure("m1", 400.0)],
             4.0,
+            10.0,
         );
 
         let sticking = items

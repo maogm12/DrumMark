@@ -9,7 +9,7 @@ describe("resolveAppSettings", () => {
   it("preserves old saved settings without renderer preference", () => {
     const settings = resolveAppSettings(JSON.stringify({ staffScale: 0.9 }));
 
-    expect(settings.staffScale).toBe(0.9);
+    expect(settings.staffSpacePt).toBe(12.0);
     expect(settings).not.toHaveProperty("useLayoutEngine");
   });
 

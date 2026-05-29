@@ -1,7 +1,8 @@
 use crate::metrics::GlyphRole;
 use crate::planning::{
-    repeat_barline_rendered_width, start_repeat_vertical_origin, REPEAT_BARLINE_FONT_SIZE_PT,
+    repeat_barline_rendered_width, start_repeat_vertical_origin,
 };
+use crate::notation_render_font_pt;
 use crate::scene_builder::{GlyphItemSpec, RectItemSpec, SceneEmitSink};
 
 pub(crate) fn render_left_barline(
@@ -51,10 +52,10 @@ pub(crate) fn render_start_repeat_barline(
         measure_id,
         role: "repeat-start",
         x,
-        y: start_repeat_vertical_origin(top, bottom),
+        y: start_repeat_vertical_origin(top, bottom, sink.staff_space_pt),
         glyph_role: GlyphRole::RepeatLeft,
         font_family: "Bravura",
-        font_size_pt: REPEAT_BARLINE_FONT_SIZE_PT,
+        font_size_pt: notation_render_font_pt(sink.staff_space_pt),
         fill: "#333",
     });
 }
@@ -69,11 +70,11 @@ pub(crate) fn render_right_left_repeat_barline(
     sink.push_glyph_item(GlyphItemSpec {
         measure_id,
         role: "repeat-end-start",
-        x: x - repeat_barline_rendered_width(GlyphRole::RepeatRight),
-        y: start_repeat_vertical_origin(top, bottom),
+        x: x - repeat_barline_rendered_width(GlyphRole::RepeatRight, sink.staff_space_pt),
+        y: start_repeat_vertical_origin(top, bottom, sink.staff_space_pt),
         glyph_role: GlyphRole::RepeatRightLeft,
         font_family: "Bravura",
-        font_size_pt: REPEAT_BARLINE_FONT_SIZE_PT,
+        font_size_pt: notation_render_font_pt(sink.staff_space_pt),
         fill: "#333",
     });
 }
@@ -91,15 +92,15 @@ pub(crate) fn render_right_barline(sink: &mut SceneEmitSink<'_>, spec: RightBarl
     let h = spec.bottom - spec.top + 1.0;
     match spec.barline {
         Some("repeat-end") | Some("repeat-both") => {
-            let y = start_repeat_vertical_origin(spec.top, spec.bottom);
+            let y = start_repeat_vertical_origin(spec.top, spec.bottom, sink.staff_space_pt);
             sink.push_glyph_item(GlyphItemSpec {
                 measure_id: spec.measure_id,
                 role: "repeat-end",
-                x: spec.x - repeat_barline_rendered_width(GlyphRole::RepeatRight),
+                x: spec.x - repeat_barline_rendered_width(GlyphRole::RepeatRight, sink.staff_space_pt),
                 y,
                 glyph_role: GlyphRole::RepeatRight,
                 font_family: "Bravura",
-                font_size_pt: REPEAT_BARLINE_FONT_SIZE_PT,
+                font_size_pt: notation_render_font_pt(sink.staff_space_pt),
                 fill: "#333",
             });
         }

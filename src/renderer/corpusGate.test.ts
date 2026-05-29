@@ -119,7 +119,7 @@ describe("Layout corpus gate", () => {
       const source = readFileSync(join(REPO_ROOT, file), "utf8");
       actualSceneReport.push({
         file,
-        summary: sceneSummary(await buildLayoutSceneFromSource(source, { staffScale: 0.75, pageWidth: 612, showTitle: true })),
+        summary: sceneSummary(await buildLayoutSceneFromSource(source, { staffSpacePt: 10.0, pageWidth: 612, showTitle: true })),
       });
     }
 
@@ -130,7 +130,7 @@ describe("Layout corpus gate", () => {
     for (const file of REPRESENTATIVE_SCENE_FILES) {
       const source = readFileSync(join(REPO_ROOT, file), "utf8");
       const actual = JSON.stringify(
-        await buildLayoutSceneFromSource(source, { staffScale: 0.75, pageWidth: 612, showTitle: true }),
+        await buildLayoutSceneFromSource(source, { staffSpacePt: 10.0, pageWidth: 612, showTitle: true }),
         null,
         2,
       );
@@ -151,7 +151,7 @@ describe("Layout corpus gate", () => {
 
     for (const file of EXAMPLE_CORPUS_FILES) {
       const source = readFileSync(join(REPO_ROOT, file), "utf8");
-      const layoutSvg = (await renderSourcePagesToSvgs(source, { staffScale: 0.75, pageWidth: 612, showTitle: true })).join("\n");
+      const layoutSvg = (await renderSourcePagesToSvgs(source, { staffSpacePt: 10.0, pageWidth: 612, showTitle: true })).join("\n");
       actualSvgSemanticReport.push({
         file,
         summary: svgSemanticSummary(layoutSvg),

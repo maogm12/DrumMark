@@ -172,9 +172,14 @@ pub(crate) fn paginate_unpaginated_page(
         assemble_placed_system_box(page, system_box, placement);
     }
 
+    for page in &mut pages {
+        let mut seen = BTreeSet::new();
+        page.items.retain(|item| seen.insert(item.id.clone()));
+    }
+
     scene.pages = pages;
     scene.issues.extend(pagination.issues);
-    scene.issues.extend(validate_layout_scene(&scene));
+    scene.issues.extend(validate_layout_scene(&scene, opts.staff_space_pt));
     scene
 }
 
@@ -182,20 +187,25 @@ pub(crate) fn header_box_from_page(page: &ScenePage) -> HeaderLayoutBox {
     let items_by_id = page
         .items
         .iter()
-        .map(|item| (item.id.as_str(), item))
-        .collect::<HashMap<_, _>>();
-    let header_item_ids = page
+        .map(|item| (item.id.clone(), item))
+        .collect::<std::collections::HashMap<_, _>>();
+    let composites = page
         .composites
         .iter()
         .filter(|composite| composite.kind == CompositeKind::TextBlock)
+        .filter(|composite| composite.label.as_deref() != Some("tempo"))
         .filter(|composite| {
-            composite.child_item_ids.iter().all(|id| {
-                items_by_id
-                    .get(id.as_str())
-                    .is_some_and(|item| item.measure_id.is_none())
-            })
+            composite
+                .child_item_ids
+                .iter()
+                .all(|id| page.items.iter().any(|item| &item.id == id))
         })
-        .flat_map(|composite| composite.child_item_ids.iter().cloned())
+        .cloned()
+        .collect::<Vec<_>>();
+    let header_item_ids = composites
+        .iter()
+        .flat_map(|composite| composite.child_item_ids.iter())
+        .cloned()
         .collect::<BTreeSet<_>>();
     let items = page
         .items
@@ -215,7 +225,7 @@ pub(crate) fn header_box_from_page(page: &ScenePage) -> HeaderLayoutBox {
         })
         .cloned()
         .collect::<Vec<_>>();
-    let bounds = bounds_for_items(&items).ok().flatten();
+    let bounds = bounds_for_items(&items, 10.0).ok().flatten();
     HeaderLayoutBox {
         items,
         composites,
@@ -260,7 +270,7 @@ pub(crate) fn system_box_from_page_system(
             local
         })
         .collect::<Vec<_>>();
-    let staff_top = system.y_pt + 10.0;
+    let staff_top = system.y_pt + opts.staff_space_pt;
     let staff_bottom = system.y_pt + system.height_pt;
     let band_top = previous_system_y
         .map(|previous_y| (previous_y + system.y_pt) * 0.5)
@@ -278,7 +288,7 @@ pub(crate) fn system_box_from_page_system(
             if matches!(item.role.as_str(), "title" | "subtitle" | "composer") {
                 return false;
             }
-            item_bounds(item)
+            item_bounds(item, opts.staff_space_pt)
                 .map(|(_, y, _, height)| {
                     let center_y = y + height * 0.5;
                     center_y >= band_top && center_y <= band_bottom
@@ -314,7 +324,7 @@ pub(crate) fn system_box_from_page_system(
         })
         .cloned()
         .collect::<Vec<_>>();
-    let bounds = bounds_for_items(&items).ok().flatten();
+    let bounds = bounds_for_items(&items, opts.staff_space_pt).ok().flatten();
     let visual_top = bounds.map(|bounds| bounds.y).unwrap_or(system.y_pt);
     let visual_bottom = bounds
         .map(|bounds| bounds.y + bounds.height)

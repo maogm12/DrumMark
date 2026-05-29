@@ -82,7 +82,7 @@ pub(crate) fn render_tuplet_groups(
         let left = run.start_x - 8.0;
         let right = run.end_x + 8.0;
         let label = run.key.count.to_string();
-        let label_width = canonical_text_width(TextRole::CountLabel, &label);
+        let label_width = canonical_text_width(TextRole::CountLabel, &label, sink.staff_space_pt);
         let label_gap = (label_width + 8.0).max(16.0);
         let center_x = (left + right) * 0.5;
         let gap_left = center_x - label_gap * 0.5;
@@ -132,7 +132,7 @@ pub(crate) fn render_tuplet_groups(
             stroke_line_cap: Some("butt"),
         });
 
-        let metric = canonical_text_metric(TextRole::CountLabel);
+        let metric = canonical_text_metric(TextRole::CountLabel, sink.staff_space_pt);
         sink.push_text_item(TextItemSpec {
             measure_id: Some(measure_id),
             role: "tuplet-label",
@@ -141,7 +141,7 @@ pub(crate) fn render_tuplet_groups(
             text_role: TextRole::CountLabel,
             text: label.clone(),
             font_family: "Academico",
-            font_size_pt: 12.0,
+            font_size_pt: sink.staff_space_pt * 1.2,
             fill: "#333",
             text_anchor: Some("middle"),
             font_weight: Some("bold"),

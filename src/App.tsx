@@ -380,7 +380,7 @@ function DslEditor({ value, onChange, errors, theme }: { value: string; onChange
 const PagePreview = memo(function PagePreview({
   score,
   pagePadding,
-  staffScale,
+  staffSpacePt,
   headerHeight,
   headerStaffSpacing,
   systemSpacing,
@@ -406,7 +406,7 @@ const PagePreview = memo(function PagePreview({
   sourceRevision: number;
   onRenderInput?: (input: ParsedScoreState) => void;
   pagePadding: PagePadding;
-  staffScale: number;
+  staffSpacePt: number;
   headerHeight: number;
   headerStaffSpacing: number;
   systemSpacing: number;
@@ -454,7 +454,7 @@ const PagePreview = memo(function PagePreview({
       .then(({ renderScorePagesToSvgs }) => {
         return renderScorePagesToSvgs(
           score,
-          { staffScale, pageWidth: pdfPageWidth, pageHeight: pdfPageHeight, showTitle: true, topMargin: pagePadding.top, bottomMargin: pagePadding.bottom, leftMargin: pagePadding.left, rightMargin: pagePadding.right, stemLength, systemSpacing, headerHeight, headerStaffSpacing, voltaSpacing, hairpinOffsetY, hideVoice2Rests, durationSpacingCompression, measureWidthCompression },
+          { staffSpacePt, pageWidth: pdfPageWidth, pageHeight: pdfPageHeight, showTitle: true, topMargin: pagePadding.top, bottomMargin: pagePadding.bottom, leftMargin: pagePadding.left, rightMargin: pagePadding.right, stemLength, systemSpacing, headerHeight, headerStaffSpacing, voltaSpacing, hairpinOffsetY, hideVoice2Rests, durationSpacingCompression, measureWidthCompression },
           { source, sourceRevision },
         );
       })
@@ -472,7 +472,7 @@ const PagePreview = memo(function PagePreview({
         const msg = e instanceof Error ? e.message : String(e);
         setError(msg || t("preview.error"));
       });
-  }, [score, source, sourceRevision, systemSpacing, stemLength, voltaSpacing, hairpinOffsetY, headerStaffSpacing, headerHeight, active, hideVoice2Rests, pagePadding, staffScale, tempoOffsetX, tempoOffsetY, measureNumberOffsetX, measureNumberOffsetY, measureNumberFontSize, durationSpacingCompression, measureWidthCompression, onRenderInput, theme, t]);
+  }, [score, source, sourceRevision, systemSpacing, stemLength, voltaSpacing, hairpinOffsetY, headerStaffSpacing, headerHeight, active, hideVoice2Rests, pagePadding, staffSpacePt, tempoOffsetX, tempoOffsetY, measureNumberOffsetX, measureNumberOffsetY, measureNumberFontSize, durationSpacingCompression, measureWidthCompression, onRenderInput, theme, t]);
 
   if (!source.trim()) {
     return (
@@ -1236,7 +1236,7 @@ export function App() {
                       source={debouncedAnalysisInput.dsl}
                       sourceRevision={analysis.sourceRevision}
                       pagePadding={settings.pagePadding}
-                      staffScale={settings.staffScale}
+                      staffSpacePt={settings.staffSpacePt}
                       headerHeight={settings.headerHeight}
                       headerStaffSpacing={settings.headerStaffSpacing}
                       systemSpacing={settings.systemSpacing}

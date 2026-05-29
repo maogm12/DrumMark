@@ -38,6 +38,9 @@ pub struct Cli {
 
     #[arg(long)]
     pub margin: Option<f32>,
+
+    #[arg(long, default_value_t = 7.5, help = "Staff space in points (5–15); controls notation size")]
+    pub staff_size: f32,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, ValueEnum)]

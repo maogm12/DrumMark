@@ -92,7 +92,7 @@ describe("parser/layout wasm semantic parity", () => {
     const scene = await buildLayoutSceneFromSource(source, {
       pageWidth: 612,
       pageHeight: 792,
-      staffScale: 1,
+      staffSpacePt: 10.0,
       showTitle: true,
     });
 
@@ -155,7 +155,7 @@ SD | d d d d | d d d d |
     const scene = await buildLayoutSceneFromSource(source, {
       pageWidth: 612,
       pageHeight: 792,
-      staffScale: 1,
+      staffSpacePt: 10.0,
       showTitle: true,
     });
 

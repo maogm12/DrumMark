@@ -103,12 +103,12 @@ pub(crate) fn is_end_repeat_barline(barline: Option<&str>) -> bool {
     matches!(barline, Some("repeat-end") | Some("repeat-both"))
 }
 
-pub(crate) fn start_repeat_reserved_width() -> f32 {
-    repeat_barline_rendered_width(GlyphRole::RepeatLeft) + START_REPEAT_TRAILING_GAP_PT
+pub(crate) fn start_repeat_reserved_width(staff_space_pt: f32) -> f32 {
+    repeat_barline_rendered_width(GlyphRole::RepeatLeft, staff_space_pt) + START_REPEAT_TRAILING_GAP_PT
 }
 
-pub(crate) fn end_repeat_reserved_width() -> f32 {
-    repeat_barline_rendered_width(GlyphRole::RepeatRight) + START_REPEAT_TRAILING_GAP_PT
+pub(crate) fn end_repeat_reserved_width(staff_space_pt: f32) -> f32 {
+    repeat_barline_rendered_width(GlyphRole::RepeatRight, staff_space_pt) + START_REPEAT_TRAILING_GAP_PT
 }
 
 pub(crate) fn first_measure_start_repeat_x(measure_x: f32, is_first_system: bool) -> f32 {
@@ -116,17 +116,17 @@ pub(crate) fn first_measure_start_repeat_x(measure_x: f32, is_first_system: bool
         - FIRST_MEASURE_START_REPEAT_PREAMBLE_PULL_PT
 }
 
-pub(crate) fn start_repeat_vertical_origin(top: f32, bottom: f32) -> f32 {
-    let height_pt = repeat_barline_rendered_height(GlyphRole::RepeatLeft);
+pub(crate) fn start_repeat_vertical_origin(top: f32, bottom: f32, staff_space_pt: f32) -> f32 {
+    let height_pt = repeat_barline_rendered_height(GlyphRole::RepeatLeft, staff_space_pt);
     top + (bottom - top - height_pt) * 0.5 + height_pt
 }
 
-pub(crate) fn repeat_barline_rendered_width(role: GlyphRole) -> f32 {
-    rendered_glyph_width(role, REPEAT_BARLINE_FONT_SIZE_PT)
+pub(crate) fn repeat_barline_rendered_width(role: GlyphRole, staff_space_pt: f32) -> f32 {
+    rendered_glyph_width(role, notation_render_font_pt(staff_space_pt))
 }
 
-pub(crate) fn repeat_barline_rendered_height(role: GlyphRole) -> f32 {
-    rendered_glyph_height(role, REPEAT_BARLINE_FONT_SIZE_PT)
+pub(crate) fn repeat_barline_rendered_height(role: GlyphRole, staff_space_pt: f32) -> f32 {
+    rendered_glyph_height(role, notation_render_font_pt(staff_space_pt))
 }
 
 pub(crate) fn rendered_glyph_width(role: GlyphRole, font_size_pt: f32) -> f32 {
@@ -160,10 +160,11 @@ pub(crate) fn measure_left_pad(
     measure_index_in_system: usize,
     is_first_system: bool,
     barline: Option<&str>,
+    staff_space_pt: f32,
 ) -> f32 {
     if measure_index_in_system == 0 {
         let repeat_start_width = if is_start_repeat_barline(barline) {
-            start_repeat_reserved_width() - FIRST_MEASURE_START_REPEAT_PREAMBLE_PULL_PT
+            start_repeat_reserved_width(staff_space_pt) - FIRST_MEASURE_START_REPEAT_PREAMBLE_PULL_PT
         } else {
             0.0
         };
@@ -172,16 +173,16 @@ pub(crate) fn measure_left_pad(
             + repeat_start_width
     } else {
         if is_start_repeat_barline(barline) {
-            start_repeat_reserved_width()
+            start_repeat_reserved_width(staff_space_pt)
         } else {
             NON_INITIAL_MEASURE_LEFT_PAD_PT
         }
     }
 }
 
-pub(crate) fn measure_right_pad(barline: Option<&str>) -> f32 {
+pub(crate) fn measure_right_pad(barline: Option<&str>, staff_space_pt: f32) -> f32 {
     if is_end_repeat_barline(barline) {
-        end_repeat_reserved_width()
+        end_repeat_reserved_width(staff_space_pt)
     } else {
         match barline {
             Some("double") | Some("final") => {
@@ -546,13 +547,14 @@ pub(crate) fn finalize_planned_system<'a>(
             let left = measure_left_pad(
                 index,
                 is_first_system,
-                current_measures[index].barline.as_deref(),
+                current_measures[index].measure.barline.as_deref(),
+                7.5,
             );
             let right_barline = current_measures[index]
                 .closing_barline
                 .as_deref()
                 .or(current_measures[index].barline.as_deref());
-            left + measure_right_pad(right_barline)
+            left + measure_right_pad(right_barline, 7.5)
         })
         .sum();
     let current_inner_sum: f32 = current_inner_estimates.iter().sum();
@@ -565,12 +567,13 @@ pub(crate) fn finalize_planned_system<'a>(
                 index,
                 is_first_system,
                 current_measures[index].barline.as_deref(),
+                7.5,
             );
             let right_barline = current_measures[index]
                 .closing_barline
                 .as_deref()
                 .or(current_measures[index].barline.as_deref());
-            width * scale + left + measure_right_pad(right_barline)
+            width * scale + left + measure_right_pad(right_barline, 7.5)
         })
         .collect();
     systems.push(PlannedSystem {

@@ -9,7 +9,7 @@ export type ScoreRenderOptions = {
   pagePadding: PagePadding;
   pageWidth: number;
   pageHeight: number;
-  staffScale: number;
+  staffSpacePt: number;
   headerHeight: number;
   headerStaffSpacing: number;
   systemSpacing: number;
@@ -30,11 +30,11 @@ export const DEFAULT_RENDER_OPTIONS: ScoreRenderOptions = {
   pagePadding: { top: 30, right: 50, bottom: 30, left: 50 },
   pageWidth: 612,
   pageHeight: 792,
-  staffScale: 0.75,
+  staffSpacePt: 7.5,
   headerHeight: 50,
   headerStaffSpacing: 60,
   systemSpacing: 30,
-  stemLength: 31,
+  stemLength: 23,
   voltaSpacing: 0,
   hairpinOffsetY: 0,
   hideVoice2Rests: false,
@@ -50,8 +50,8 @@ export const DEFAULT_RENDER_OPTIONS: ScoreRenderOptions = {
 export const SETTINGS_RANGES = {
   hairpinOffsetY: { min: -20, max: 20, default: 0 },
   voltaSpacing: { min: -20, max: 20, default: 0 },
-  staffScale: { min: 30, max: 150 },
-  stemLength: { min: 20, max: 40, default: 31 },
+  staffSpacePt: { min: 5, max: 15 },
+  stemLength: { min: 15, max: 50, default: 23 },
   systemSpacing: { min: 0, max: 100, default: 30 },
   headerHeight: { min: 10, max: 300, default: 50 },
   headerStaffSpacing: { min: 0, max: 100, default: 60 },

@@ -14,12 +14,12 @@ pub(crate) fn render_header_layout_box(
     let mut item_counter = 0usize;
     let mut items = Vec::new();
     let mut composites = Vec::new();
-    let mut sink = SceneEmitSink::new(&mut items, &mut item_counter);
+    let mut sink = SceneEmitSink::new(&mut items, &mut item_counter, opts.staff_space_pt);
 
-    let title_metric = canonical_text_metric(TextRole::Title);
-    let subtitle_metric = canonical_text_metric(TextRole::Subtitle);
-    let composer_metric = canonical_text_metric(TextRole::Composer);
-    let tempo_metric = canonical_text_metric(TextRole::Tempo);
+    let title_metric = canonical_text_metric(TextRole::Title, opts.staff_space_pt);
+    let subtitle_metric = canonical_text_metric(TextRole::Subtitle, opts.staff_space_pt);
+    let composer_metric = canonical_text_metric(TextRole::Composer, opts.staff_space_pt);
+    let tempo_metric = canonical_text_metric(TextRole::Tempo, opts.staff_space_pt);
     let title_y = opts.top_margin_pt + title_metric.ascent_pt + 18.0;
     let subtitle_y = header_bottom_y + subtitle_metric.ascent_pt + 12.0;
     let composer_y = header_bottom_y + composer_metric.ascent_pt + 12.0;
@@ -103,10 +103,10 @@ pub(crate) fn render_header_layout_box(
     if header.tempo > 0 {
         let tempo_glyph_x = margin + 9.0;
         let tempo_glyph_width =
-            canonical_glyph_metric(GlyphRole::MetNoteQuarterUp).width_ss() * 25.0 / 4.0;
+            canonical_glyph_metric(GlyphRole::MetNoteQuarterUp).width_ss() * tempo_glyph_position_pt(opts.staff_space_pt) / 4.0;
         let tempo_equals_x = tempo_glyph_x + tempo_glyph_width + 8.0;
         let tempo_value_text = header.tempo.to_string();
-        let tempo_value_x = tempo_equals_x + canonical_text_width(TextRole::Tempo, "=") + 6.0;
+        let tempo_value_x = tempo_equals_x + canonical_text_width(TextRole::Tempo, "=", opts.staff_space_pt) + 6.0;
         let tempo_glyph_id = sink.push_text_item(TextItemSpec {
             measure_id: None,
             role: "tempo-glyph",
@@ -115,7 +115,7 @@ pub(crate) fn render_header_layout_box(
             text_role: TextRole::Tempo,
             text: "\u{ECA5}".to_string(),
             font_family: "Bravura",
-            font_size_pt: 25.0,
+            font_size_pt: tempo_glyph_render_font_pt(opts.staff_space_pt),
             fill: "#333",
             text_anchor: None,
             font_weight: None,
@@ -158,7 +158,7 @@ pub(crate) fn render_header_layout_box(
         });
     }
 
-    let item_bounds = bounds_for_items(&items).ok().flatten();
+    let item_bounds = bounds_for_items(&items, opts.staff_space_pt).ok().flatten();
     let visual_top = item_bounds
         .map(|bounds| bounds.y)
         .unwrap_or(opts.top_margin_pt);
@@ -178,7 +178,7 @@ pub fn build_layout_scene(score: &RenderScore, opts: &LayoutOptions) -> LayoutSc
     let page_w = opts.page_width_pt;
     let page_h = opts.page_height_pt;
     let margin = opts.left_margin_pt;
-    let staff_ss = 10.0_f32;
+    let staff_ss = opts.staff_space_pt;
     let center_x = page_w / 2.0;
     let system_left = margin;
     let system_right = page_w - margin;
@@ -199,12 +199,12 @@ pub fn build_layout_scene(score: &RenderScore, opts: &LayoutOptions) -> LayoutSc
         items: Vec::new(),
         composites: Vec::new(),
     };
-    let mut sink = SceneEmitSink::new(&mut page.items, &mut item_counter);
+    let mut sink = SceneEmitSink::new(&mut page.items, &mut item_counter, opts.staff_space_pt);
     let mut layout_issues = Vec::new();
 
-    let title_metric = canonical_text_metric(TextRole::Title);
-    let subtitle_metric = canonical_text_metric(TextRole::Subtitle);
-    let composer_metric = canonical_text_metric(TextRole::Composer);
+    let title_metric = canonical_text_metric(TextRole::Title, opts.staff_space_pt);
+    let subtitle_metric = canonical_text_metric(TextRole::Subtitle, opts.staff_space_pt);
+    let composer_metric = canonical_text_metric(TextRole::Composer, opts.staff_space_pt);
     let title_y = opts.top_margin_pt + title_metric.ascent_pt + 18.0;
     let subtitle_y = header_bottom_y + subtitle_metric.ascent_pt + 12.0;
     let composer_y = header_bottom_y + composer_metric.ascent_pt + 12.0;
@@ -312,7 +312,7 @@ pub fn build_layout_scene(score: &RenderScore, opts: &LayoutOptions) -> LayoutSc
                 stroke_line_cap: None,
             });
         }
-        let clef_metric = canonical_text_metric(TextRole::PercussionClef);
+        let clef_metric = canonical_text_metric(TextRole::PercussionClef, opts.staff_space_pt);
         sink.push_text_item(TextItemSpec {
             measure_id: None,
             role: "percussion-clef",
@@ -328,7 +328,7 @@ pub fn build_layout_scene(score: &RenderScore, opts: &LayoutOptions) -> LayoutSc
         });
         if is_first_system {
             let tsx = margin + 35.0;
-            let time_sig_metric = canonical_text_metric(TextRole::TimeSignatureDigit);
+            let time_sig_metric = canonical_text_metric(TextRole::TimeSignatureDigit, opts.staff_space_pt);
             sink.push_text_item(TextItemSpec {
                 measure_id: None,
                 role: "time-signature-digit",
@@ -358,14 +358,14 @@ pub fn build_layout_scene(score: &RenderScore, opts: &LayoutOptions) -> LayoutSc
         }
         if is_first_system && score.header.tempo > 0 {
             let first_measure_id = format!("measure-{}", system.measures[0].global_index);
-            let tempo_metric = canonical_text_metric(TextRole::Tempo);
+            let tempo_metric = canonical_text_metric(TextRole::Tempo, opts.staff_space_pt);
             let tempo_y = sy + opts.tempo_offset_y;
             let tempo_glyph_x = margin + 9.0;
             let tempo_glyph_width =
-                canonical_glyph_metric(GlyphRole::MetNoteQuarterUp).width_ss() * 25.0 / 4.0;
+                canonical_glyph_metric(GlyphRole::MetNoteQuarterUp).width_ss() * tempo_glyph_position_pt(opts.staff_space_pt) / 4.0;
             let tempo_equals_x = tempo_glyph_x + tempo_glyph_width + 8.0;
             let tempo_value_text = score.header.tempo.to_string();
-            let tempo_value_x = tempo_equals_x + canonical_text_width(TextRole::Tempo, "=") + 6.0;
+            let tempo_value_x = tempo_equals_x + canonical_text_width(TextRole::Tempo, "=", opts.staff_space_pt) + 6.0;
             let tempo_glyph_id = sink.push_text_item(TextItemSpec {
                 measure_id: Some(&first_measure_id),
                 role: "tempo-glyph",
@@ -374,7 +374,7 @@ pub fn build_layout_scene(score: &RenderScore, opts: &LayoutOptions) -> LayoutSc
                 text_role: TextRole::Tempo,
                 text: "\u{ECA5}".to_string(),
                 font_family: "Bravura",
-                font_size_pt: 25.0,
+                font_size_pt: tempo_glyph_render_font_pt(opts.staff_space_pt),
                 fill: "#333",
                 text_anchor: None,
                 font_weight: None,
@@ -416,7 +416,7 @@ pub fn build_layout_scene(score: &RenderScore, opts: &LayoutOptions) -> LayoutSc
                 end_anchor_id: None,
             });
         }
-        let measure_number_metric = canonical_text_metric(TextRole::MeasureNumber);
+        let measure_number_metric = canonical_text_metric(TextRole::MeasureNumber, opts.staff_space_pt);
         if !is_first_system {
             sink.push_text_item(TextItemSpec {
                 measure_id: None,
@@ -437,12 +437,12 @@ pub fn build_layout_scene(score: &RenderScore, opts: &LayoutOptions) -> LayoutSc
             let measure_id = format!("measure-{}", measure.global_index);
             measure_ids.push(measure_id.clone());
 
-            let left_pad = measure_left_pad(mi, is_first_system, measure.barline.as_deref());
+            let left_pad = measure_left_pad(mi, is_first_system, measure.barline.as_deref(), opts.staff_space_pt);
             let right_barline = measure
                 .closing_barline
                 .as_deref()
                 .or(measure.barline.as_deref());
-            let right_pad = measure_right_pad(right_barline);
+            let right_pad = measure_right_pad(right_barline, opts.staff_space_pt);
             let left_repeat_is_shared_boundary = mi > 0
                 && is_start_repeat_barline(measure.barline.as_deref())
                 && system.measures.get(mi - 1).is_some_and(|previous| {
@@ -533,7 +533,7 @@ pub fn build_layout_scene(score: &RenderScore, opts: &LayoutOptions) -> LayoutSc
                     .chars()
                     .map(|c| char::from_u32(0xE080 + c.to_digit(10).unwrap()).unwrap())
                     .collect();
-                let time_sig_metric = canonical_text_metric(TextRole::TimeSignatureDigit);
+                let time_sig_metric = canonical_text_metric(TextRole::TimeSignatureDigit, opts.staff_space_pt);
                 let count_y = s_top - staff_ss * 0.5 - time_sig_metric.font_size_pt * 0.5;
                 let count_id = sink.push_text_item(TextItemSpec {
                     measure_id: Some(&measure_id),
@@ -566,11 +566,11 @@ pub fn build_layout_scene(score: &RenderScore, opts: &LayoutOptions) -> LayoutSc
                         let repeat_id = sink.push_glyph_item(GlyphItemSpec {
                             measure_id: Some(&measure_id),
                             role: "measure-repeat",
-                            x: mx + *mw * 0.5 - repeat_metric.bbox_center_x_pt(30.0),
-                            y: s_mid + repeat_metric.bbox_center_y_pt(30.0),
+                            x: mx + *mw * 0.5 - repeat_metric.bbox_center_x_pt(glyph_position_pt(opts.staff_space_pt)),
+                            y: s_mid + repeat_metric.bbox_center_y_pt(glyph_position_pt(opts.staff_space_pt)),
                             glyph_role: GlyphRole::MeasureRepeatMark1Bar,
                             font_family: "Bravura",
-                            font_size_pt: 30.0,
+                            font_size_pt: notation_render_font_pt(opts.staff_space_pt),
                             fill: "#333",
                         });
                         page.composites.push(SceneComposite {
@@ -592,11 +592,11 @@ pub fn build_layout_scene(score: &RenderScore, opts: &LayoutOptions) -> LayoutSc
                         let repeat_id = sink.push_glyph_item(GlyphItemSpec {
                             measure_id: Some(&measure_id),
                             role: "measure-repeat",
-                            x: span_center_x - repeat_metric.bbox_center_x_pt(30.0),
-                            y: s_mid + repeat_metric.bbox_center_y_pt(30.0),
+                            x: span_center_x - repeat_metric.bbox_center_x_pt(glyph_position_pt(opts.staff_space_pt)),
+                            y: s_mid + repeat_metric.bbox_center_y_pt(glyph_position_pt(opts.staff_space_pt)),
                             glyph_role: GlyphRole::MeasureRepeatMark2Bars,
                             font_family: "Bravura",
-                            font_size_pt: 30.0,
+                            font_size_pt: notation_render_font_pt(opts.staff_space_pt),
                             fill: "#333",
                         });
                         let end_anchor_id = format!("measure-{}", measure.global_index + 1);
@@ -706,8 +706,8 @@ pub fn build_layout_scene(score: &RenderScore, opts: &LayoutOptions) -> LayoutSc
         render_nav_markers(&mut sink, &mut page.composites, nav_spec);
     }
     let _ = sink;
-    stack_scene_structural_items(&mut page.items, &page.composites, opts.edge_padding);
-    stack_sticking_items(&mut page.items, &page.measures, opts.edge_padding);
+    stack_scene_structural_items(&mut page.items, &page.composites, opts.edge_padding, opts.staff_space_pt);
+    stack_sticking_items(&mut page.items, &page.measures, opts.edge_padding, opts.staff_space_pt);
 
     paginate_unpaginated_page(
         page,

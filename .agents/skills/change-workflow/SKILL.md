@@ -665,11 +665,12 @@ During implementation:
 1. Create or use a dedicated branch.
 2. Implement task by task.
 3. Update task status in `plan.md`.
-4. Run relevant checks after meaningful milestones.
-5. Do not silently expand scope.
-6. If the implementation changes the plan, update `plan.md`.
-7. If the change is significant, request another plan review.
-8. If `## Spec Delta` changes materially, request another plan review and human stamp.
+4. **Commit per task.** After each task completes (status → done, all checks pass), create a commit with a message referencing the task: `[Task N.M] brief description`. Do not accumulate changes from multiple tasks in a single commit. Untracked plan/history files go in their own commit.
+5. Run relevant checks after meaningful milestones.
+6. Do not silently expand scope.
+7. If the implementation changes the plan, update `plan.md`.
+8. If the change is significant, request another plan review.
+9. If `## Spec Delta` changes materially, request another plan review and human stamp.
 
 During implementation, do not request formal plan review after every task or commit.
 

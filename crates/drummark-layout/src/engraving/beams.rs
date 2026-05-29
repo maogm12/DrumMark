@@ -1,6 +1,7 @@
 use crate::metrics::{canonical_glyph_metric, GlyphPoint, GlyphRole};
 use crate::scene_builder::{GlyphItemSpec, PathItemSpec, SceneEmitSink};
-use crate::NOTE_FLAG_FONT_SIZE_PT;
+use crate::{flag_position_pt, flag_render_font_pt};
+use crate::engraving::notes::BEAM_THICKNESS_PT;
 
 #[derive(Clone, Debug)]
 pub(crate) struct BeamAnchor {
@@ -50,7 +51,9 @@ pub(crate) fn render_beam_groups(
                 (false, _) => GlyphRole::Flag8thDown,
             };
             let flag_metric = canonical_glyph_metric(flag_role);
-            let smufl_ss = NOTE_FLAG_FONT_SIZE_PT / 4.0;
+            let flag_position = flag_position_pt(sink.staff_space_pt);
+            let flag_render = flag_render_font_pt(sink.staff_space_pt);
+            let smufl_ss = flag_position / 4.0;
             let flag_anchor =
                 flag_metric
                     .stem_anchor_for_direction(anchor.up)
@@ -67,7 +70,7 @@ pub(crate) fn render_beam_groups(
                 y: flag_y,
                 glyph_role: flag_role,
                 font_family: "Bravura",
-                font_size_pt: NOTE_FLAG_FONT_SIZE_PT,
+                font_size_pt: flag_render,
                 fill: "#333",
             });
             sink.set_anchor_item_id(&flag_id, Some(anchor.stem_item_id.clone()));
@@ -102,7 +105,7 @@ pub(crate) fn render_beam_groups(
         let beam_id = sink.push_path_item(PathItemSpec {
             measure_id: Some(measure_id),
             role: "beam",
-            d: beam_path_d(first.stem_x, primary_y, last.stem_x, end_y, first.up, 4.0),
+            d: beam_path_d(first.stem_x, primary_y, last.stem_x, end_y, first.up, BEAM_THICKNESS_PT),
             fill: "#333",
             stroke: None,
             stroke_width: None,
@@ -131,7 +134,7 @@ pub(crate) fn render_beam_groups(
                         segment.end_x,
                         segment_end_y,
                         first.up,
-                        4.0,
+                        BEAM_THICKNESS_PT,
                     ),
                     fill: "#333",
                     stroke: None,

@@ -41,14 +41,16 @@ pub fn build_output(source: &str, cli: &Cli) -> Result<CliOutput, String> {
 }
 
 fn layout_options(cli: &Cli) -> LayoutOptions {
-    let margin = cli.margin.unwrap_or(LayoutOptions::default().top_margin_pt);
+    let staff_space_pt = cli.staff_size.max(5.0).min(15.0);
+    let margin = cli.margin.unwrap_or(30.0);
     LayoutOptions {
         page_width_pt: cli.page_width,
         page_height_pt: cli.page_height,
         top_margin_pt: margin,
-        right_margin_pt: margin,
         bottom_margin_pt: margin,
         left_margin_pt: margin,
-        ..Default::default()
+        right_margin_pt: margin,
+        staff_space_pt,
+        ..LayoutOptions::default()
     }
 }

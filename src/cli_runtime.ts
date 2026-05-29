@@ -87,7 +87,7 @@ export async function buildCliOutput(
 
   ensureCliRenderEnvironment();
   const result = await renderSourceToSvgNode(source, {
-    staffScale: CLI_RENDER_OPTIONS.staffScale,
+    staffSpacePt: CLI_RENDER_OPTIONS.staffSpacePt,
     pageWidth: CLI_RENDER_OPTIONS.pageWidth,
     topMargin: CLI_RENDER_OPTIONS.pagePadding.top,
     bottomMargin: CLI_RENDER_OPTIONS.pagePadding.bottom,

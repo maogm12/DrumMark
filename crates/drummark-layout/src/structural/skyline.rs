@@ -15,8 +15,9 @@ pub(crate) fn top_skyline_sample(
     x1: f32,
     x2: f32,
     fallback_top: f32,
+    staff_space_pt: f32,
 ) -> f32 {
-    top_skyline_sample_optional(items, block_measures, x1, x2).unwrap_or(fallback_top)
+    top_skyline_sample_optional(items, block_measures, x1, x2, staff_space_pt).unwrap_or(fallback_top)
 }
 
 pub(crate) fn top_skyline_sample_optional(
@@ -24,6 +25,7 @@ pub(crate) fn top_skyline_sample_optional(
     block_measures: &[SceneMeasure],
     x1: f32,
     x2: f32,
+    staff_space_pt: f32,
 ) -> Option<f32> {
     let left = x1.min(x2);
     let right = x1.max(x2);
@@ -51,7 +53,7 @@ pub(crate) fn top_skyline_sample_optional(
             .measure_id
             .as_deref()
             .is_some_and(|measure_id| measure_ids.contains(measure_id));
-        if let Some((item_x, item_y, item_width, _)) = item_bounds(item) {
+        if let Some((item_x, item_y, item_width, _)) = item_bounds(item, staff_space_pt) {
             let in_system_band = item.measure_id.is_none()
                 && item_y >= system_top - 60.0
                 && item_y <= system_bottom + 20.0;
@@ -77,6 +79,7 @@ pub(crate) fn skyline_top_for_range(
     x2: f32,
     reference_top: f32,
     fallback: f32,
+    staff_space_pt: f32,
 ) -> f32 {
     let left = x1.min(x2);
     let right = x1.max(x2);
@@ -88,7 +91,7 @@ pub(crate) fn skyline_top_for_range(
         if scene_roles::is_volta_role(&item.role) {
             continue;
         }
-        if let Some((item_x, item_y, item_width, _)) = item_bounds(item) {
+        if let Some((item_x, item_y, item_width, _)) = item_bounds(item, staff_space_pt) {
             // Only consider items within a reasonable Y band of the reference.
             // Items far above (e.g. volta lines from other systems on the
             // pre-pagination page) must not push this marker upward.
@@ -116,6 +119,7 @@ pub(crate) fn bottom_skyline_sample(
     x1: f32,
     x2: f32,
     fallback_bottom: f32,
+    staff_space_pt: f32,
 ) -> f32 {
     let left = x1.min(x2);
     let right = x1.max(x2);
@@ -140,7 +144,7 @@ pub(crate) fn bottom_skyline_sample(
             .measure_id
             .as_deref()
             .is_some_and(|measure_id| measure_ids.contains(measure_id));
-        if let Some((item_x, item_y, item_width, item_height)) = item_bounds(item) {
+        if let Some((item_x, item_y, item_width, item_height)) = item_bounds(item, staff_space_pt) {
             let in_system_band = item.measure_id.is_none()
                 && item_y >= system_top - 20.0
                 && item_y <= system_bottom + 60.0;
@@ -166,6 +170,7 @@ pub(crate) fn bottom_skyline_sample_including_hairpins(
     x1: f32,
     x2: f32,
     fallback_bottom: f32,
+    staff_space_pt: f32,
 ) -> f32 {
     let left = x1.min(x2);
     let right = x1.max(x2);
@@ -190,7 +195,7 @@ pub(crate) fn bottom_skyline_sample_including_hairpins(
             .measure_id
             .as_deref()
             .is_some_and(|measure_id| measure_ids.contains(measure_id));
-        if let Some((item_x, item_y, item_width, item_height)) = item_bounds(item) {
+        if let Some((item_x, item_y, item_width, item_height)) = item_bounds(item, staff_space_pt) {
             let in_system_band = item.measure_id.is_none()
                 && item_y >= system_top - 20.0
                 && item_y <= system_bottom + 80.0;

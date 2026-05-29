@@ -35,14 +35,14 @@ impl SceneItemBounds {
     }
 }
 
-pub(crate) fn bounds_for_items(items: &[SceneItem]) -> Result<Option<SceneItemBounds>, String> {
+pub(crate) fn bounds_for_items(items: &[SceneItem], staff_space_pt: f32) -> Result<Option<SceneItemBounds>, String> {
     let mut min_x = f32::INFINITY;
     let mut min_y = f32::INFINITY;
     let mut max_x = f32::NEG_INFINITY;
     let mut max_y = f32::NEG_INFINITY;
     let mut found = false;
     for item in items {
-        let bounds = scene_item_bounds(item)?;
+        let bounds = scene_item_bounds(item, staff_space_pt)?;
         min_x = min_x.min(bounds.x);
         min_y = min_y.min(bounds.y);
         max_x = max_x.max(bounds.x + bounds.width);
@@ -61,13 +61,14 @@ pub(crate) fn bounding_box_for_ids(
     items: &[SceneItem],
     item_index: &std::collections::HashMap<String, usize>,
     ids: &[String],
+    staff_space_pt: f32,
 ) -> Option<(f32, f32, f32, f32)> {
     let bounds = ids
         .iter()
         .filter_map(|id| {
             item_index
                 .get(id)
-                .and_then(|index| item_bounds(&items[*index]))
+                .and_then(|index| item_bounds(&items[*index], staff_space_pt))
         })
         .collect::<Vec<_>>();
     if bounds.is_empty() {
@@ -93,11 +94,11 @@ pub(crate) fn bounding_box_for_ids(
 }
 
 /// Forgiving bounds for skyline, stacking, collision sampling, and layout heuristics.
-pub(crate) fn item_bounds(item: &SceneItem) -> Option<(f32, f32, f32, f32)> {
+pub(crate) fn item_bounds(item: &SceneItem, staff_space_pt: f32) -> Option<(f32, f32, f32, f32)> {
     match &item.primitive {
         ScenePrimitive::TextRun(text) => {
-            let metric = canonical_text_metric(text.text_role);
-            let width = canonical_text_width(text.text_role, &text.text);
+            let metric = canonical_text_metric(text.text_role, staff_space_pt);
+            let width = canonical_text_width(text.text_role, &text.text, staff_space_pt);
             let x = match text.text_anchor.as_deref() {
                 Some("middle") => text.x_pt - width * 0.5,
                 Some("end") => text.x_pt - width,
@@ -155,11 +156,11 @@ pub(crate) fn item_bounds(item: &SceneItem) -> Option<(f32, f32, f32, f32)> {
 }
 
 /// Strict bounds for validation and pagination assembly.
-pub(crate) fn scene_item_bounds(item: &SceneItem) -> Result<SceneItemBounds, String> {
+pub(crate) fn scene_item_bounds(item: &SceneItem, staff_space_pt: f32) -> Result<SceneItemBounds, String> {
     match &item.primitive {
         ScenePrimitive::TextRun(text) => {
-            let metric = canonical_text_metric(text.text_role);
-            let width = canonical_text_width(text.text_role, &text.text);
+            let metric = canonical_text_metric(text.text_role, staff_space_pt);
+            let width = canonical_text_width(text.text_role, &text.text, staff_space_pt);
             let x = match text.text_anchor.as_deref() {
                 Some("middle") => text.x_pt - width * 0.5,
                 Some("end") => text.x_pt - width,
@@ -394,6 +395,8 @@ pub(crate) fn translate_path_y(d: &mut String, dy: f32) {
 mod tests {
     use super::*;
 
+    const SS: f32 = 10.0;
+
     #[test]
     fn test_scene_item_bounds_cover_emitted_primitive_kinds() {
         let text = SceneItem {
@@ -418,10 +421,10 @@ mod tests {
                 accessible_label: None,
             }),
         };
-        let text_bounds = scene_item_bounds(&text).unwrap();
-        assert_eq!(text_bounds.x, 89.0);
-        assert_eq!(text_bounds.y, 32.0);
-        assert_eq!(text_bounds.height, 28.0);
+        let text_bounds = scene_item_bounds(&text, SS).unwrap();
+        assert_eq!(text_bounds.x, 91.75);
+        assert_eq!(text_bounds.y, 36.5);
+        assert_eq!(text_bounds.height, 21.0);
 
         let glyph = SceneItem {
             id: "glyph".into(),
@@ -442,7 +445,7 @@ mod tests {
                 fill: "#333".into(),
             }),
         };
-        let glyph_bounds = scene_item_bounds(&glyph).unwrap();
+        let glyph_bounds = scene_item_bounds(&glyph, SS).unwrap();
         assert_eq!(glyph_bounds.x, 10.0);
         assert_eq!(glyph_bounds.y, 17.5);
         assert!((glyph_bounds.width - 5.9).abs() < 0.001);
@@ -466,7 +469,7 @@ mod tests {
             }),
         };
         assert_eq!(
-            scene_item_bounds(&line).unwrap(),
+            scene_item_bounds(&line, SS).unwrap(),
             SceneItemBounds {
                 x: 9.0,
                 y: 19.0,
@@ -494,7 +497,7 @@ mod tests {
             }),
         };
         assert_eq!(
-            scene_item_bounds(&rect).unwrap(),
+            scene_item_bounds(&rect, SS).unwrap(),
             SceneItemBounds {
                 x: 3.0,
                 y: 4.0,
@@ -516,7 +519,7 @@ mod tests {
             }),
         };
         assert_eq!(
-            scene_item_bounds(&polyline).unwrap(),
+            scene_item_bounds(&polyline, SS).unwrap(),
             SceneItemBounds {
                 x: 5.0,
                 y: -2.0,
@@ -541,7 +544,7 @@ mod tests {
             }),
         };
         assert_eq!(
-            scene_item_bounds(&path).unwrap(),
+            scene_item_bounds(&path, SS).unwrap(),
             SceneItemBounds {
                 x: 7.0,
                 y: 9.0,
@@ -560,7 +563,7 @@ mod tests {
             z_index: 0,
             primitive: ScenePrimitive::Polyline(Polyline { points_pt: vec![] }),
         };
-        assert!(scene_item_bounds(&empty_polyline).is_err());
+        assert!(scene_item_bounds(&empty_polyline, SS).is_err());
     }
 
     #[test]
@@ -580,7 +583,7 @@ mod tests {
                 stroke_width: None,
             }),
         };
-        assert!(item_bounds(&path).is_none());
-        assert!(scene_item_bounds(&path).is_err());
+        assert!(item_bounds(&path, SS).is_none());
+        assert!(scene_item_bounds(&path, SS).is_err());
     }
 }

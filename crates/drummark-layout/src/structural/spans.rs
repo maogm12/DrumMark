@@ -80,6 +80,7 @@ fn push_system_volta_composites(
             block_x1,
             block_x2,
             system_measures[block_start].y_pt - 60.0,
+            sink.staff_space_pt,
         );
         struct PendingVoltaRun {
             start: usize,
@@ -139,6 +140,7 @@ fn push_system_volta_composites(
                 show_right,
                 index == 0,
                 is_first_system,
+                sink.staff_space_pt,
             );
             runs.push(PendingVoltaRun {
                 start: index,
@@ -193,6 +195,7 @@ fn volta_line_y_for_segment(
     show_right: bool,
     starts_at_system_left: bool,
     is_first_system: bool,
+    staff_space_pt: f32,
 ) -> f32 {
     let first = segment_measures
         .first()
@@ -210,6 +213,7 @@ fn volta_line_y_for_segment(
             x1 - VOLTA_LINE_THICKNESS_PT,
             x1 + VOLTA_LINE_THICKNESS_PT,
             VOLTA_LINE_HEIGHT_PT,
+            staff_space_pt,
         ));
     }
     if show_right {
@@ -219,6 +223,7 @@ fn volta_line_y_for_segment(
             x2 - VOLTA_LINE_THICKNESS_PT,
             x2 + VOLTA_LINE_THICKNESS_PT,
             VOLTA_LINE_HEIGHT_PT,
+            staff_space_pt,
         ));
     }
     if show_label {
@@ -231,8 +236,8 @@ fn volta_line_y_for_segment(
                 .join(",")
         );
         let label_x = x1 + 5.0;
-        let label_width = canonical_text_width(TextRole::CountLabel, &label_text);
-        let count_metric = canonical_text_metric(TextRole::CountLabel);
+        let label_width = canonical_text_width(TextRole::CountLabel, &label_text, staff_space_pt);
+        let count_metric = canonical_text_metric(TextRole::CountLabel, staff_space_pt);
         let label_bottom_extent = VOLTA_TEXT_SIZE_PT + 2.0 + count_metric.descent_pt;
         line_y = line_y.min(volta_line_y_for_child(
             items,
@@ -240,6 +245,7 @@ fn volta_line_y_for_segment(
             label_x,
             label_x + label_width,
             label_bottom_extent,
+            staff_space_pt,
         ));
     }
 
@@ -252,8 +258,9 @@ fn volta_line_y_for_child(
     x1: f32,
     x2: f32,
     child_bottom_extent: f32,
+    staff_space_pt: f32,
 ) -> f32 {
-    top_skyline_sample_optional(items, segment_measures, x1, x2)
+    top_skyline_sample_optional(items, segment_measures, x1, x2, staff_space_pt)
         .map(|top| top - VOLTA_SKYLINE_GAP_PT - child_bottom_extent)
         .unwrap_or(f32::INFINITY)
 }
@@ -371,7 +378,7 @@ fn volta_segment_left_x(
 ) -> f32 {
     if starts_at_system_left {
         let barline = first_display.and_then(|measure| measure.barline.as_deref());
-        first.x_pt + measure_left_pad(0, is_first_system, barline)
+        first.x_pt + measure_left_pad(0, is_first_system, barline, 7.5)
     } else {
         first.x_pt
     }
@@ -505,7 +512,7 @@ pub(crate) fn render_nav_markers(
     composites: &mut Vec<SceneComposite>,
     spec: &DeferredNavMarker,
 ) {
-    let count_metric = canonical_text_metric(TextRole::CountLabel);
+    let count_metric = canonical_text_metric(TextRole::CountLabel, sink.staff_space_pt);
     const NAV_TEXT_FONT: &str = "Academico";
     const NAV_GAP: f32 = 6.0;
     if let Some(ref start_nav) = spec.start_nav {
@@ -513,7 +520,9 @@ pub(crate) fn render_nav_markers(
             NavMarker::Segno => ("segno", GlyphRole::NavigationSegno),
             NavMarker::Coda => ("coda", GlyphRole::NavigationCoda),
         };
-        let glyph_width = rendered_glyph_width(glyph_role, 20.0);
+        let nav_render = nav_glyph_render_font_pt(sink.staff_space_pt);
+        let nav_position = nav_glyph_position_pt(sink.staff_space_pt);
+        let glyph_width = rendered_glyph_width(glyph_role, nav_position);
         let x_start = spec.x + 4.0;
         let default_y = spec.top - 8.0;
         let occupied_top = skyline_top_for_range(
@@ -522,9 +531,10 @@ pub(crate) fn render_nav_markers(
             x_start + glyph_width,
             spec.top,
             default_y + NAV_GAP,
+            sink.staff_space_pt,
         );
         let glyph_metric = canonical_glyph_metric(glyph_role);
-        let nav_y = occupied_top - NAV_GAP + glyph_metric.bbox_sw_y_ss * (20.0 / 4.0);
+        let nav_y = occupied_top - NAV_GAP + glyph_metric.bbox_sw_y_ss * (nav_position / 4.0);
         let nav_id = sink.push_glyph_item(GlyphItemSpec {
             measure_id: Some(spec.measure_id.as_str()),
             role: "nav-start",
@@ -532,7 +542,7 @@ pub(crate) fn render_nav_markers(
             y: nav_y,
             glyph_role,
             font_family: "Bravura",
-            font_size_pt: 20.0,
+            font_size_pt: nav_render,
             fill: "#333",
         });
         composites.push(SceneComposite {
@@ -560,9 +570,10 @@ pub(crate) fn render_nav_markers(
         let child_item_ids = match end_nav {
             NavJump::ToCoda => {
                 let right_x = spec.x + spec.width - 4.0;
-                let glyph_font_size = 16.0;
-                let coda_width = rendered_glyph_width(GlyphRole::NavigationCoda, glyph_font_size);
-                let to_text_width = canonical_text_width(TextRole::CountLabel, "To");
+                let coda_render = coda_glyph_render_font_pt(sink.staff_space_pt);
+                let coda_position = coda_glyph_position_pt(sink.staff_space_pt);
+                let coda_width = rendered_glyph_width(GlyphRole::NavigationCoda, coda_position);
+                let to_text_width = canonical_text_width(TextRole::CountLabel, "To", sink.staff_space_pt);
                 let combined_x_start = right_x - coda_width - 4.0 - to_text_width;
                 let combined_x_end = right_x;
                 let default_glyph_y = spec.top - 8.0;
@@ -573,10 +584,11 @@ pub(crate) fn render_nav_markers(
                     combined_x_end,
                     spec.top,
                     default_glyph_y + NAV_GAP,
+                    sink.staff_space_pt,
                 );
                 let coda_metric = canonical_glyph_metric(GlyphRole::NavigationCoda);
                 let default_glyph_bottom =
-                    default_glyph_y - coda_metric.bbox_sw_y_ss * (glyph_font_size / 4.0);
+                    default_glyph_y - coda_metric.bbox_sw_y_ss * (coda_position / 4.0);
                 let default_text_bottom = default_text_y + count_metric.descent_pt;
                 let default_group_bottom = default_glyph_bottom.max(default_text_bottom);
                 let delta = occupied_top - NAV_GAP - default_group_bottom;
@@ -589,7 +601,7 @@ pub(crate) fn render_nav_markers(
                     y: glyph_y,
                     glyph_role: GlyphRole::NavigationCoda,
                     font_family: "Bravura",
-                    font_size_pt: glyph_font_size,
+                    font_size_pt: coda_render,
                     fill: "#333",
                 });
                 let text_id = sink.push_text_item(TextItemSpec {
@@ -608,7 +620,7 @@ pub(crate) fn render_nav_markers(
                 vec![text_id, glyph_id]
             }
             _ => {
-                let text_width = canonical_text_width(TextRole::CountLabel, label);
+                let text_width = canonical_text_width(TextRole::CountLabel, label, sink.staff_space_pt);
                 let x_start = spec.x + spec.width - 4.0 - text_width;
                 let x_end = spec.x + spec.width - 4.0;
                 let default_y = spec.top - count_metric.descent_pt - 1.0;
@@ -618,6 +630,7 @@ pub(crate) fn render_nav_markers(
                     x_end,
                     spec.top,
                     default_y + NAV_GAP,
+                    sink.staff_space_pt,
                 );
                 let nav_y = occupied_top - NAV_GAP - count_metric.descent_pt;
                 let nav_id = sink.push_text_item(TextItemSpec {
@@ -726,6 +739,7 @@ pub(crate) fn render_hairpin_fragments(
                     start_x,
                     end_x,
                     first.y_pt + first.height_pt,
+                    sink.staff_space_pt,
                 ) + HAIRPIN_GAP_BELOW_PT
                     + hairpin_offset_y;
                 let center_y = top_y + HAIRPIN_OPEN_HEIGHT_PT * 0.5;
@@ -787,7 +801,7 @@ pub(crate) fn render_dynamic_marks(
     const DYNAMIC_TEXT_PADDING_X_PT: f32 = 1.5;
     const DYNAMIC_TEXT_PADDING_Y_PT: f32 = 1.0;
 
-    let metric = canonical_text_metric(TextRole::Dynamic);
+    let metric = canonical_text_metric(TextRole::Dynamic, sink.staff_space_pt);
     for display_measure in measures {
         if display_measure.measure.dynamics.is_empty() {
             continue;
@@ -800,7 +814,7 @@ pub(crate) fn render_dynamic_marks(
         };
         for dynamic in &display_measure.measure.dynamics {
             let text = dynamic.level.as_str().to_string();
-            let text_width = canonical_text_width(TextRole::Dynamic, &text);
+            let text_width = canonical_text_width(TextRole::Dynamic, &text, sink.staff_space_pt);
             let anchor_x = dynamic_anchor_x(scene_measure, header, dynamic.at);
             let left_bound = scene_measure.x_pt + DYNAMIC_EDGE_PADDING_PT;
             let right_bound = scene_measure.x_pt + scene_measure.width_pt - DYNAMIC_EDGE_PADDING_PT;
@@ -818,6 +832,7 @@ pub(crate) fn render_dynamic_marks(
                 x - half_width - DYNAMIC_TEXT_PADDING_X_PT,
                 x + half_width + DYNAMIC_TEXT_PADDING_X_PT,
                 scene_measure.y_pt + scene_measure.height_pt,
+                sink.staff_space_pt,
             );
             let baseline_y = occupied_bottom
                 + LOWER_EXPRESSION_GAP_PT

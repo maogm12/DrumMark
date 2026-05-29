@@ -18,7 +18,7 @@ use crate::planning::{
 use crate::scene_builder::{
     GlyphItemSpec, LineItemSpec, PathItemSpec, SceneEmitSink, TextItemSpec,
 };
-use crate::BASE_FONT_SIZE_PT;
+use crate::{glyph_position_pt, notation_render_font_pt, grace_position_pt, grace_render_font_pt};
 
 use super::beams::{render_beam_groups, BeamAnchor};
 use super::tuplets::render_tuplet_groups;
@@ -221,9 +221,46 @@ const REST_LANES_VOICE_2_DOWN_SS: [f32; 8] = [3.5, 4.0, 4.5, 5.0, 5.5, 6.0, 6.5,
 /// Single-voice collision fallback: expand symmetrically around the middle staff line.
 const REST_LANES_SINGLE_SS: [f32; 9] = [2.0, 1.5, 2.5, 1.0, 3.0, 0.5, 3.5, 0.0, 4.0];
 const STAFF_SPACE_STEP_PT: f32 = 10.0;
-const STEM_STROKE_WIDTH_PT: f32 = 1.5;
-const BEAM_THICKNESS_PT: f32 = 4.0;
+const STEM_STROKE_WIDTH_PT: f32 = 1.0;
+pub(crate) const BEAM_THICKNESS_PT: f32 = 3.0;
 const SECONDARY_BEAM_GAP_PT: f32 = 6.0;
+
+// Notehead positioning
+const NOTE_X_OFFSET_PT: f32 = 7.0;
+// Augmentation dots
+const DOT_SPACING_PT: f32 = 5.0;
+const DOT_PAD_PT: f32 = 8.0;
+const DOT_ON_LINE_SHIFT_SS: f32 = 0.5;
+// Rest
+const REST_FALLBACK_CENTER_X_PT: f32 = 7.0;
+const REST_DOT_SPACING_PT: f32 = 5.0;
+const REST_DOT_PAD_PT: f32 = 8.0;
+// Ledger lines
+const LEDGER_HALF_OVERHANG_PT: f32 = 3.0;
+// Sticking
+const STICKING_PADDING_PT: f32 = 4.0;
+// Grace notes
+const GRACE_SPACING_PT: f32 = 8.0;
+const GRACE_GAP_PT: f32 = 9.0;
+const GRACE_STEM_LEN_PT: f32 = 18.0;
+// Accent
+const ACCENT_GAP_PT: f32 = 4.0;
+const ACCENT_FALLBACK_Y_PT: f32 = 18.0;
+// Beam envelope
+const BEAM_ENVELOPE_PAD_X_PT: f32 = 12.0;
+// Flam slash
+const FLAM_SLASH_Y_OFFSET_PT: f32 = 9.0;
+const FLAM_SLASH_LEFT_PT: f32 = 3.5;
+const FLAM_SLASH_RIGHT_PT: f32 = 4.5;
+const FLAM_SLASH_TOP_PT: f32 = 4.0;
+const FLAM_SLASH_BOTTOM_PT: f32 = 4.0;
+// Grace beam
+const GRACE_SECONDARY_BEAM_OFFSET_PT: f32 = 4.0;
+const GRACE_BEAM_THICKNESS_PT: f32 = 2.0;
+// Collision epsilon
+const CHORD_DISPLACE_EPSILON: f32 = 0.01;
+// Rest overlap
+const REST_OVERLAP_EPSILON: f32 = 0.001;
 
 pub(crate) fn measure_uses_dual_voice_rest_zones(
     measure: &RenderMeasure,
@@ -313,7 +350,7 @@ fn rest_placement_for_lane(
     }
 }
 
-pub(crate) fn notehead_obstacles(note_placements: &[NotePlacement]) -> Vec<RectObstacle> {
+pub(crate) fn notehead_obstacles(note_placements: &[NotePlacement], staff_space_pt: f32) -> Vec<RectObstacle> {
     note_placements
         .iter()
         .map(|note| {
@@ -321,7 +358,7 @@ pub(crate) fn notehead_obstacles(note_placements: &[NotePlacement]) -> Vec<RectO
                 x: note.note_x,
                 y: note.note_y,
                 glyph_role: note.note_role,
-                font_size_pt: BASE_FONT_SIZE_PT,
+                font_size_pt: notation_render_font_pt(staff_space_pt),
                 anchor_item_id: None,
             })
         })
@@ -355,14 +392,14 @@ fn beam_envelope_obstacle(
     Some(if stem_up {
         RectObstacle {
             x1: stem_plan.x - 1.0,
-            x2: stem_plan.x + 12.0,
+            x2: stem_plan.x + BEAM_ENVELOPE_PAD_X_PT,
             y1: stem_plan.y1,
             y2: stem_plan.y1 + extra_span,
         }
     } else {
         RectObstacle {
             x1: stem_plan.x - 1.0,
-            x2: stem_plan.x + 12.0,
+            x2: stem_plan.x + BEAM_ENVELOPE_PAD_X_PT,
             y1: stem_plan.y2 - extra_span,
             y2: stem_plan.y2,
         }
@@ -394,14 +431,14 @@ pub(crate) fn resolve_rest_placement(
             .chain(occupied_rests.iter())
             .map(|obstacle| rect_overlap_area(rest_rect, *obstacle))
             .sum::<f32>();
-        if overlap <= 0.001 {
+        if overlap <= REST_OVERLAP_EPSILON {
             return (placement, None);
         }
         let distance_from_preferred = (lane_ss - preferred_lane).abs();
         match best {
             Some((_, best_overlap, best_distance))
-                if overlap > best_overlap + 0.001
-                    || ((overlap - best_overlap).abs() <= 0.001
+                if overlap > best_overlap + REST_OVERLAP_EPSILON
+                    || ((overlap - best_overlap).abs() <= REST_OVERLAP_EPSILON
                         && distance_from_preferred >= best_distance) => {}
             _ => best = Some((placement, overlap, distance_from_preferred)),
         }
@@ -461,7 +498,7 @@ pub(crate) fn render_slot_group(sink: &mut SceneEmitSink<'_>, input: RenderSlotG
 
     let mut slot_obstacles = Vec::new();
     for cluster_plan in &hit_cluster_plans {
-        slot_obstacles.extend(notehead_obstacles(&cluster_plan.note_placements));
+        slot_obstacles.extend(notehead_obstacles(&cluster_plan.note_placements, sink.staff_space_pt));
         slot_obstacles.extend(ledger_line_obstacles(&cluster_plan.ledger_lines));
         if let Some(stem_plan) = cluster_plan.stem_plan.as_ref() {
             slot_obstacles.push(stem_obstacle(stem_plan));
@@ -518,11 +555,11 @@ pub(crate) fn render_slot_group(sink: &mut SceneEmitSink<'_>, input: RenderSlotG
             rest.event.duration
         };
         let rest_metric = rest_glyph_for_fraction(rest_shape_duration);
-        let rest_font_size = BASE_FONT_SIZE_PT;
+        let rest_font_size = notation_render_font_pt(sink.staff_space_pt);
         let reference_note_metric =
             notehead_glyph(&rest.event.track, &rest.event.modifiers, &rest.event.glyph);
         let note_center_x = slot_hit_center_x.unwrap_or_else(|| {
-            input.event_x - 7.0 + glyph_bbox_center_x_offset(reference_note_metric, rest_font_size)
+            input.event_x - REST_FALLBACK_CENTER_X_PT + glyph_bbox_center_x_offset(reference_note_metric, rest_font_size)
         });
         let (placement, diagnostic) = resolve_rest_placement(
             rest,
@@ -559,12 +596,12 @@ pub(crate) fn render_slot_group(sink: &mut SceneEmitSink<'_>, input: RenderSlotG
             let dot_glyph = char::from_u32(dot_metric.smufl_codepoint)
                 .unwrap_or('?')
                 .to_string();
-            let dot_spacing_x = 5.0_f32;
+            let dot_spacing_x = REST_DOT_SPACING_PT;
             for i in 0..rest_dot_count {
                 let dot_x = placement.x
                     + (i as f32) * dot_spacing_x
                     + rest_metric.width_ss() * rest_font_size / 4.0
-                    + 8.0;
+                    + REST_DOT_PAD_PT;
                 sink.push_text_item(TextItemSpec {
                     measure_id: Some(input.measure_id),
                     role: "augmentation-dot",
@@ -595,8 +632,8 @@ pub(crate) fn render_slot_group(sink: &mut SceneEmitSink<'_>, input: RenderSlotG
             Some(acc.map_or(y, |current| current.min(y)))
         });
 
-    let sticking_metric = canonical_text_metric(TextRole::Sticking);
-    let sticking_padding = 4.0_f32;
+    let sticking_metric = canonical_text_metric(TextRole::Sticking, sink.staff_space_pt);
+    let sticking_padding = STICKING_PADDING_PT;
     for sticking in input
         .slot_group
         .iter()
@@ -710,13 +747,14 @@ pub(crate) fn render_hit_cluster(
     sink: &mut SceneEmitSink<'_>,
     input: RenderHitClusterInput<'_>,
 ) -> HitClusterPlan {
-    let note_font_size = 30.0_f32;
+    let note_font_size = notation_render_font_pt(sink.staff_space_pt);
+    let note_position_pt = glyph_position_pt(sink.staff_space_pt);
     let stem_up = input
         .voice_hits
         .first()
         .map(|slot_event| slot_event.event.voice != 2)
         .unwrap_or(true);
-    let base_note_x = input.event_x - 7.0;
+    let base_note_x = input.event_x - NOTE_X_OFFSET_PT;
     let mut placements = input
         .voice_hits
         .iter()
@@ -730,7 +768,7 @@ pub(crate) fn render_hit_cluster(
             PreparedClusterNote {
                 slot_event,
                 staff_position_ss,
-                note_y_offset: staff_position_ss * 10.0,
+                note_y_offset: staff_position_ss * sink.staff_space_pt,
                 note_role: glyph_metric.role,
                 glyph_metric,
                 x_offset: 0.0,
@@ -742,7 +780,7 @@ pub(crate) fn render_hit_cluster(
             .partial_cmp(&b.note_y_offset)
             .unwrap_or(std::cmp::Ordering::Equal)
     });
-    displace_overlapping_same_voice_noteheads(&mut placements, note_font_size);
+    displace_overlapping_same_voice_noteheads(&mut placements, note_position_pt);
 
     let mut note_placements = Vec::new();
     let mut ledger_lines = Vec::new();
@@ -763,10 +801,10 @@ pub(crate) fn render_hit_cluster(
             text_anchor: None,
             font_weight: None,
         });
-        let ledger_half_overhang_pt = 3.0_f32;
+        let ledger_half_overhang_pt = LEDGER_HALF_OVERHANG_PT;
         for ledger_y_offset in ledger_line_offsets_for_staff_position(placement.staff_position_ss) {
-            let ledger_y = input.staff_top + ledger_y_offset * 10.0;
-            let note_width = rendered_glyph_width(placement.note_role, note_font_size);
+            let ledger_y = input.staff_top + ledger_y_offset * sink.staff_space_pt;
+            let note_width = rendered_glyph_width(placement.note_role, note_position_pt);
             let ledger_x1 = note_x - ledger_half_overhang_pt;
             let ledger_x2 = note_x + note_width + ledger_half_overhang_pt;
             ledger_lines.push(LineObstacle {
@@ -774,7 +812,7 @@ pub(crate) fn render_hit_cluster(
                 y1: ledger_y,
                 x2: ledger_x2,
                 y2: ledger_y,
-                stroke_width: 1.25,
+                stroke_width: 1.0,
             });
             let ledger_id = sink.push_line_item(LineItemSpec {
                 measure_id: Some(input.measure_id),
@@ -784,13 +822,13 @@ pub(crate) fn render_hit_cluster(
                 x2: ledger_x2,
                 y2: ledger_y,
                 stroke: "#333",
-                stroke_width: 1.25,
+                stroke_width: 1.0,
                 stroke_line_cap: None,
             });
             sink.set_anchor_item_id(&ledger_id, Some(note_id.clone()));
         }
         let note_center_x =
-            note_x + glyph_bbox_center_x_offset(placement.glyph_metric, note_font_size);
+            note_x + glyph_bbox_center_x_offset(placement.glyph_metric, note_position_pt);
         let has_accent = placement
             .slot_event
             .event
@@ -805,17 +843,17 @@ pub(crate) fn render_hit_cluster(
                 .to_string();
             let dot_ss = placement.staff_position_ss;
             let dot_y_ss = if dot_ss.fract().abs() < 0.01 {
-                dot_ss - 0.5
+                dot_ss - DOT_ON_LINE_SHIFT_SS
             } else {
                 dot_ss
             };
-            let dot_spacing_x = 5.0_f32;
+            let dot_spacing_x = DOT_SPACING_PT;
             for i in 0..dot_count {
                 let dot_x = note_x
                     + (i as f32) * dot_spacing_x
-                    + canonical_glyph_metric(placement.note_role).width_ss() * note_font_size / 4.0
-                    + 8.0;
-                let dot_y = input.staff_top + dot_y_ss * 10.0;
+                    + canonical_glyph_metric(placement.note_role).width_ss() * note_position_pt / 4.0
+                    + DOT_PAD_PT;
+                let dot_y = input.staff_top + dot_y_ss * sink.staff_space_pt;
                 sink.push_text_item(TextItemSpec {
                     measure_id: Some(input.measure_id),
                     role: "augmentation-dot",
@@ -879,9 +917,10 @@ pub(crate) fn render_hit_cluster(
         beam_level,
         stem_up,
         needs_stem,
+        sink.staff_space_pt,
         input.stem_len_pt,
     );
-    let accent_glyphs = build_accent_glyph_plans(&note_placements, stem_up, stem_plan.as_ref());
+    let accent_glyphs = build_accent_glyph_plans(&note_placements, stem_up, stem_plan.as_ref(), sink.staff_space_pt);
 
     HitClusterPlan {
         measure_id: input.measure_id.to_string(),
@@ -951,7 +990,13 @@ fn shared_stem_layout(
     let (stem_body_min_y, stem_body_max_y) =
         chord_stem_body_range(note_placements, stem_up, smufl_ss);
     StemLayout {
-        stem_x: default_attach_note.note_x + stem_anchor.x_ss * smufl_ss,
+        stem_x: default_attach_note.note_x
+            + stem_anchor.x_ss * smufl_ss
+            + if stem_up {
+                -STEM_STROKE_WIDTH_PT / 2.0
+            } else {
+                STEM_STROKE_WIDTH_PT / 2.0
+            },
         stem_attach_y: default_attach_note.note_y - stem_anchor.y_ss * smufl_ss,
         stem_body_min_y,
         stem_body_max_y,
@@ -1000,7 +1045,7 @@ pub(crate) fn render_hit_cluster_stem_and_accents(
             x2: stem_plan.x,
             y2: stem_plan.y2,
             stroke: "#333",
-            stroke_width: 1.5,
+            stroke_width: STEM_STROKE_WIDTH_PT,
             stroke_line_cap: None,
         });
         if let Some(anchor_note_id) = stem_plan.anchor_note_id.as_ref() {
@@ -1073,9 +1118,9 @@ pub(crate) fn render_grace_notes_for_hit(
         None
     };
 
-    let grace_font_size = 16.0_f32;
-    let grace_spacing = 8.0_f32;
-    let grace_gap = 9.0_f32;
+    let grace_render = grace_render_font_pt(sink.staff_space_pt);
+    let grace_spacing = GRACE_SPACING_PT;
+    let grace_gap = GRACE_GAP_PT;
     let note_metric = canonical_glyph_metric(note_role);
     let note_glyph = note_metric.render_text();
     let total_grace_width = (grace_count as f32 - 1.0) * grace_spacing;
@@ -1091,7 +1136,7 @@ pub(crate) fn render_grace_notes_for_hit(
             y_ss: -0.168,
         })
     };
-    let smufl_ss = grace_font_size / 4.0;
+    let smufl_ss = grace_position_pt(sink.staff_space_pt) / 4.0;
     let mut drag_beam_points = Vec::new();
 
     for index in 0..grace_count {
@@ -1104,19 +1149,19 @@ pub(crate) fn render_grace_notes_for_hit(
             text_role: TextRole::Tempo,
             text: note_glyph.clone(),
             font_family: "Bravura",
-            font_size_pt: grace_font_size,
+            font_size_pt: grace_render,
             fill: "#333",
             text_anchor: None,
             font_weight: None,
         });
         sink.set_anchor_item_id(&note_id, Some(anchor_note_id.clone()));
 
-        let stem_x = grace_x + stem_anchor.x_ss * smufl_ss;
+        let stem_x = grace_x + stem_anchor.x_ss * smufl_ss - STEM_STROKE_WIDTH_PT / 2.0;
         let stem_attach_y = main_note_y - stem_anchor.y_ss * smufl_ss;
         let (stem_y1, stem_y2) = if stem_up {
-            (stem_attach_y - 18.0, stem_attach_y)
+            (stem_attach_y - GRACE_STEM_LEN_PT, stem_attach_y)
         } else {
-            (stem_attach_y, stem_attach_y + 18.0)
+            (stem_attach_y, stem_attach_y + GRACE_STEM_LEN_PT)
         };
         let stem_id = sink.push_line_item(LineItemSpec {
             measure_id: Some(measure_id),
@@ -1155,7 +1200,7 @@ pub(crate) fn render_grace_notes_for_hit(
                 y: stem_tip_y + flag_anchor.y_ss * smufl_ss,
                 glyph_role: flag_role,
                 font_family: "Bravura",
-                font_size_pt: grace_font_size,
+                font_size_pt: grace_render,
                 fill: "#333",
             });
             sink.set_anchor_item_id(&flag_id, Some(stem_id.clone()));
@@ -1163,17 +1208,17 @@ pub(crate) fn render_grace_notes_for_hit(
 
         if has_flam {
             let slash_mid_y = if stem_up {
-                stem_y1 + 9.0
+                stem_y1 + FLAM_SLASH_Y_OFFSET_PT
             } else {
-                stem_y2 - 9.0
+                stem_y2 - FLAM_SLASH_Y_OFFSET_PT
             };
             let slash_id = sink.push_line_item(LineItemSpec {
                 measure_id: Some(measure_id),
                 role: "grace-slash",
-                x1: stem_x - 3.5,
-                y1: slash_mid_y + 4.0,
-                x2: stem_x + 4.5,
-                y2: slash_mid_y - 4.0,
+                x1: stem_x - FLAM_SLASH_LEFT_PT,
+                y1: slash_mid_y + FLAM_SLASH_TOP_PT,
+                x2: stem_x + FLAM_SLASH_RIGHT_PT,
+                y2: slash_mid_y - FLAM_SLASH_BOTTOM_PT,
                 stroke: "#333",
                 stroke_width: 1.0,
                 stroke_line_cap: Some("round"),
@@ -1195,7 +1240,7 @@ pub(crate) fn render_grace_notes_for_hit(
         });
         sink.set_anchor_item_id(&primary_id, Some(first_stem_id.clone()));
 
-        let secondary_offset = if stem_up { 4.0 } else { -4.0 };
+        let secondary_offset = if stem_up { GRACE_SECONDARY_BEAM_OFFSET_PT } else { -GRACE_SECONDARY_BEAM_OFFSET_PT };
         let secondary_id = sink.push_path_item(PathItemSpec {
             measure_id: Some(measure_id),
             role: "grace-beam-secondary",
@@ -1215,7 +1260,7 @@ pub(crate) fn render_grace_notes_for_hit(
 }
 
 fn grace_beam_path_d(x1: f32, y1: f32, x2: f32, y2: f32, up: bool) -> String {
-    let thickness = 2.0_f32;
+    let thickness = GRACE_BEAM_THICKNESS_PT;
     let offset = if up { thickness } else { -thickness };
     format!(
         "M {:.3} {:.3} L {:.3} {:.3} L {:.3} {:.3} L {:.3} {:.3} Z",
@@ -1252,7 +1297,7 @@ fn centered_stem_x_for_displaced_chord(note_placements: &[NotePlacement]) -> Opt
         .map(|note| note.note_x)
         .fold(f32::NEG_INFINITY, f32::max);
 
-    if max_x - min_x > 0.01 {
+    if max_x - min_x > CHORD_DISPLACE_EPSILON {
         Some(max_x)
     } else {
         None
@@ -1308,12 +1353,13 @@ fn build_stem_render_plan(
     beam_level: u8,
     stem_up: bool,
     needs_stem: bool,
+    staff_space_pt: f32,
     stem_len_pt: f32,
 ) -> Option<StemRenderPlan> {
     if !needs_stem {
         return None;
     }
-    let smufl_ss = BASE_FONT_SIZE_PT / 4.0;
+    let smufl_ss = glyph_position_pt(staff_space_pt) / 4.0;
     let attach_note = if stem_up {
         note_placements.iter().min_by(|a, b| {
             a.note_y
@@ -1382,27 +1428,28 @@ fn build_accent_glyph_plans(
     note_placements: &[NotePlacement],
     stem_up: bool,
     stem_plan: Option<&StemRenderPlan>,
+    staff_space_pt: f32,
 ) -> Vec<GlyphObstacle> {
     let accent_role = if stem_up {
         GlyphRole::ArticAccentAbove
     } else {
         GlyphRole::ArticAccentBelow
     };
-    let accent_font_size = BASE_FONT_SIZE_PT;
-    let accent_gap = 4.0_f32;
+    let accent_font_size = notation_render_font_pt(staff_space_pt);
+    let accent_gap = ACCENT_GAP_PT;
     let accent_width = rendered_glyph_width(accent_role, accent_font_size);
     let fallback_reference_y = if stem_up {
         note_placements
             .iter()
             .map(|placement| placement.note_y)
             .fold(f32::INFINITY, f32::min)
-            - 18.0
+            - ACCENT_FALLBACK_Y_PT
     } else {
         note_placements
             .iter()
             .map(|placement| placement.note_y)
             .fold(f32::NEG_INFINITY, f32::max)
-            + 18.0
+            + ACCENT_FALLBACK_Y_PT
     };
     let reference_y = stem_plan
         .map(|plan| if stem_up { plan.y1 } else { plan.y2 })

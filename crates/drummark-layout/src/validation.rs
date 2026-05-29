@@ -3,7 +3,7 @@ use std::collections::BTreeSet;
 use crate::scene_geometry::scene_item_bounds;
 use crate::{LayoutScene, SceneItem, ScenePage};
 
-pub(crate) fn validate_layout_scene(scene: &LayoutScene) -> Vec<String> {
+pub(crate) fn validate_layout_scene(scene: &LayoutScene, staff_space_pt: f32) -> Vec<String> {
     let mut diagnostics = Vec::new();
     let overflow_systems = overflow_systems_by_page(scene);
     for (expected, page) in scene.pages.iter().enumerate() {
@@ -40,7 +40,7 @@ pub(crate) fn validate_layout_scene(scene: &LayoutScene) -> Vec<String> {
                     ));
                 }
             }
-            if let Ok(bounds) = scene_item_bounds(item) {
+            if let Ok(bounds) = scene_item_bounds(item, staff_space_pt) {
                 if bounds.x < -0.01
                     || bounds.y < -0.01
                     || bounds.x + bounds.width > page.width_pt + 0.01

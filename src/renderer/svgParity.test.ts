@@ -33,7 +33,7 @@ function renderPrecomputedScene(items: Array<Record<string, unknown>>): string {
       items: items as any,
       composites: [],
     }],
-  } as any, { staffScale: 1 });
+  } as any, { staffSpacePt: 10.0 });
 }
 
 describe("SVG Renderer parity", () => {
@@ -153,9 +153,9 @@ describe("SVG Renderer parity", () => {
 
   it("expands two-bar repeats into two display measures and uses the dedicated glyph", async () => {
     const source = HEADER + "HH | x - - - | x x - - | %% |\n";
-    const scene = await buildLayoutSceneFromSource(source, { pageWidth: 612, staffScale: 1 });
+    const scene = await buildLayoutSceneFromSource(source, { pageWidth: 612, staffSpacePt: 10.0 });
     expect(scene.pages[0]?.measures).toHaveLength(4);
-    const svg = renderSceneToSvg(scene, { staffScale: 1 });
+    const svg = renderSceneToSvg(scene, { staffSpacePt: 10.0 });
     expect(countRole(svg, "measure-repeat")).toBe(1);
     expect(svg).toContain("\u{E501}");
   });
@@ -194,7 +194,7 @@ describe("SVG Renderer parity", () => {
   });
 
   it("renders explicit dynamics below hairpins with edge-shifted bounds", async () => {
-    const scene = await buildLayoutSceneFromSource("time 4/4\nnote 1/4\ngrouping 4\nHH | @p < x x x x @f |\n", { pageWidth: 360, staffScale: 1 });
+    const scene = await buildLayoutSceneFromSource("time 4/4\nnote 1/4\ngrouping 4\nHH | @p < x x x x @f |\n", { pageWidth: 360, staffSpacePt: 10.0 });
     const page = scene.pages[0];
     const measure = page.measures[0];
     const dynamics = page.items.filter((item: any) => item.role === "dynamic");
@@ -216,7 +216,7 @@ describe("SVG Renderer parity", () => {
     expect(startPrimitive.yPt).toBeGreaterThan(hairpinPrimitive.y1Pt);
     expect(endPrimitive.yPt).toBeGreaterThan(hairpinPrimitive.y1Pt);
 
-    const svg = renderSceneToSvg(scene, { staffScale: 1 });
+    const svg = renderSceneToSvg(scene, { staffSpacePt: 10.0 });
     expect(countRole(svg, "dynamic")).toBe(2);
     expect(svg).toContain('aria-label="dynamic p"');
     expect(svg).toContain('aria-label="dynamic f"');

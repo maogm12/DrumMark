@@ -7,7 +7,7 @@ export type MainTab = "editor" | "page" | "xml";
 export interface AppSettings {
   hideVoice2Rests: boolean;
   pagePadding: PagePadding;
-  staffScale: number;
+  staffSpacePt: number;
   headerStaffSpacing: number;
   systemSpacing: number;
   stemLength: number;
@@ -27,11 +27,11 @@ export interface AppSettings {
 export const defaultSettings: AppSettings = {
   hideVoice2Rests: false,
   pagePadding: { top: 30, right: 50, bottom: 30, left: 50 },
-  staffScale: 0.75,
+  staffSpacePt: 10.0,
   headerStaffSpacing: 60,
   headerHeight: 50,
   systemSpacing: 30,
-  stemLength: 31,
+  stemLength: 23,
   voltaSpacing: 0,
   hairpinOffsetY: 0,
   activeTab: "page",
@@ -47,9 +47,12 @@ export const defaultSettings: AppSettings = {
 export function resolveAppSettings(saved: string | null): AppSettings {
   if (!saved) return defaultSettings;
   try {
-    const parsed = JSON.parse(saved) as Partial<AppSettings> & { useLayoutEngine?: unknown };
-    const { useLayoutEngine: _legacyRenderer, ...rendererNeutralSettings } = parsed;
+    const parsed = JSON.parse(saved) as Partial<AppSettings> & { useLayoutEngine?: unknown; staffScale?: number };
+    const { useLayoutEngine: _legacyRenderer, staffScale: legacyStaffScale, ...rendererNeutralSettings } = parsed;
     void _legacyRenderer;
+    if (legacyStaffScale !== undefined) {
+      rendererNeutralSettings.staffSpacePt = 10.0 * legacyStaffScale / 0.75;
+    }
     const r = SETTINGS_RANGES;
     if (rendererNeutralSettings.stemLength === undefined || rendererNeutralSettings.stemLength < r.stemLength.min || rendererNeutralSettings.stemLength > r.stemLength.max) {
       rendererNeutralSettings.stemLength = r.stemLength.default;

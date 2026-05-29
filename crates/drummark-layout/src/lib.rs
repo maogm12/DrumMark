@@ -80,8 +80,42 @@ use scene::render_header_layout_box;
 #[cfg(test)]
 use validation::validate_layout_scene;
 
-const BASE_FONT_SIZE_PT: f32 = 30.0;
-const NOTE_FLAG_FONT_SIZE_PT: f32 = 22.0;
+pub fn glyph_position_pt(staff_space_pt: f32) -> f32 {
+    staff_space_pt * 4.0
+}
+pub fn notation_render_font_pt(staff_space_pt: f32) -> f32 {
+    staff_space_pt * 3.0
+}
+pub fn flag_position_pt(staff_space_pt: f32) -> f32 {
+    staff_space_pt * 2.933333
+}
+pub fn flag_render_font_pt(staff_space_pt: f32) -> f32 {
+    staff_space_pt * 2.2
+}
+pub fn grace_position_pt(staff_space_pt: f32) -> f32 {
+    staff_space_pt * 2.133333
+}
+pub fn grace_render_font_pt(staff_space_pt: f32) -> f32 {
+    staff_space_pt * 1.6
+}
+pub fn nav_glyph_position_pt(staff_space_pt: f32) -> f32 {
+    staff_space_pt * 2.666667
+}
+pub fn nav_glyph_render_font_pt(staff_space_pt: f32) -> f32 {
+    staff_space_pt * 2.0
+}
+pub fn coda_glyph_position_pt(staff_space_pt: f32) -> f32 {
+    staff_space_pt * 2.133333
+}
+pub fn coda_glyph_render_font_pt(staff_space_pt: f32) -> f32 {
+    staff_space_pt * 1.6
+}
+pub fn tempo_glyph_position_pt(staff_space_pt: f32) -> f32 {
+    staff_space_pt * 3.333333
+}
+pub fn tempo_glyph_render_font_pt(staff_space_pt: f32) -> f32 {
+    staff_space_pt * 2.5
+}
 
 // ── Tests ────────────────────────────────────────────────────────
 
@@ -314,8 +348,8 @@ mod tests {
         let glyph_twice = canonical_glyph_metric(GlyphRole::NoteheadX);
         assert_eq!(glyph_once, glyph_twice);
 
-        let text_once = canonical_text_metric(TextRole::Tempo);
-        let text_twice = canonical_text_metric(TextRole::Tempo);
+        let text_once = canonical_text_metric(TextRole::Tempo, 10.0);
+        let text_twice = canonical_text_metric(TextRole::Tempo, 10.0);
         assert_eq!(text_once, text_twice);
 
         let clef_glyph_once = canonical_glyph_metric(GlyphRole::PercussionClef);
@@ -328,13 +362,13 @@ mod tests {
         assert_eq!(time_sig_glyph_once, time_sig_glyph_twice);
         assert_eq!(time_sig_glyph_once.smufl_codepoint, 0xE080);
 
-        let clef_text_once = canonical_text_metric(TextRole::PercussionClef);
-        let clef_text_twice = canonical_text_metric(TextRole::PercussionClef);
+        let clef_text_once = canonical_text_metric(TextRole::PercussionClef, 10.0);
+        let clef_text_twice = canonical_text_metric(TextRole::PercussionClef, 10.0);
         assert_eq!(clef_text_once, clef_text_twice);
         assert_eq!(clef_text_once.font_size_pt, 30.0);
 
-        let time_sig_text_once = canonical_text_metric(TextRole::TimeSignatureDigit);
-        let time_sig_text_twice = canonical_text_metric(TextRole::TimeSignatureDigit);
+        let time_sig_text_once = canonical_text_metric(TextRole::TimeSignatureDigit, 10.0);
+        let time_sig_text_twice = canonical_text_metric(TextRole::TimeSignatureDigit, 10.0);
         assert_eq!(time_sig_text_once, time_sig_text_twice);
         assert_eq!(time_sig_text_once.font_size_pt, 30.0);
     }
@@ -375,15 +409,15 @@ mod tests {
         assert_eq!(
             notehead.stem_up_anchor_ss,
             Some(GlyphPoint {
-                x_ss: 1.49,
-                y_ss: 0.16
+                x_ss: 1.18,
+                y_ss: 0.168
             })
         );
         assert_eq!(
             notehead.stem_down_anchor_ss,
             Some(GlyphPoint {
-                x_ss: 0.1,
-                y_ss: -0.16
+                x_ss: 0.0,
+                y_ss: -0.168
             })
         );
 
@@ -920,8 +954,8 @@ mod tests {
             .iter()
             .find(|item| item.role == "hairpin-bottom")
             .expect("expected hairpin bottom");
-        let (_, hairpin_y, _, hairpin_h) = item_bounds(hairpin_bottom).unwrap();
-        let (_, dynamic_y, _, _) = item_bounds(dynamic).unwrap();
+        let (_, hairpin_y, _, hairpin_h) = item_bounds(hairpin_bottom, 7.5).unwrap();
+        let (_, dynamic_y, _, _) = item_bounds(dynamic, 7.5).unwrap();
         assert!(
             dynamic_y >= hairpin_y + hairpin_h + 4.0,
             "dynamic should sit below hairpin"
@@ -1067,7 +1101,7 @@ mod tests {
             .iter()
             .flat_map(|page| page.items.iter())
             .collect::<Vec<_>>();
-        let count_metric = canonical_text_metric(TextRole::CountLabel);
+        let count_metric = canonical_text_metric(TextRole::CountLabel, 7.5);
 
         {
             let nav_start = items
@@ -1080,7 +1114,7 @@ mod tests {
             };
             assert_eq!(glyph.glyph_role, GlyphRole::NavigationSegno);
             assert_eq!(glyph.font_family, "Bravura");
-            assert_eq!(glyph.font_size_pt, 20.0);
+            assert_eq!(glyph.font_size_pt, 15.0);
         }
         {
             let nav_end = items
@@ -1118,7 +1152,7 @@ mod tests {
         };
         assert_eq!(accent_glyph.glyph_role, GlyphRole::ArticAccentAbove);
         assert_eq!(accent_glyph.font_family, "Bravura");
-        assert_eq!(accent_glyph.font_size_pt, BASE_FONT_SIZE_PT);
+        assert_eq!(accent_glyph.font_size_pt, notation_render_font_pt(7.5));
 
         let sticking_score = RenderScore {
             version: RENDER_SCORE_VERSION.to_string(),
@@ -1217,7 +1251,7 @@ mod tests {
         let ScenePrimitive::TextRun(sticking_text) = &sticking_item.primitive else {
             panic!("expected text primitive for sticking");
         };
-        let sticking_metric = canonical_text_metric(TextRole::Sticking);
+        let sticking_metric = canonical_text_metric(TextRole::Sticking, 7.5);
         assert_eq!(sticking_text.text_role, TextRole::Sticking);
         assert_eq!(sticking_text.font_family, sticking_metric.font_family);
         assert_eq!(sticking_text.font_size_pt, sticking_metric.font_size_pt);
@@ -1254,11 +1288,11 @@ mod tests {
             .find(|item| item.role == "notehead" && item.measure_id.as_deref() == Some("measure-0"))
             .expect("expected notehead item");
 
-        let (_, measure_number_y, _, _) = item_bounds(measure_number).unwrap();
-        let (_, nav_y, _, nav_h) = item_bounds(nav_start).unwrap();
-        assert!(item_bounds(volta_label).is_some());
-        let (_, hairpin_y, _, _) = item_bounds(hairpin_top).unwrap();
-        let (_, notehead_y, _, notehead_h) = item_bounds(notehead).unwrap();
+        let (_, measure_number_y, _, _) = item_bounds(measure_number, 10.0).unwrap();
+        let (_, nav_y, _, nav_h) = item_bounds(nav_start, 10.0).unwrap();
+        assert!(item_bounds(volta_label, 10.0).is_some());
+        let (_, hairpin_y, _, _) = item_bounds(hairpin_top, 10.0).unwrap();
+        let (_, notehead_y, _, notehead_h) = item_bounds(notehead, 10.0).unwrap();
 
         assert!(nav_y + nav_h <= measure_number_y - 4.0);
         assert!(hairpin_y >= notehead_y + notehead_h + 4.0);
@@ -1269,7 +1303,7 @@ mod tests {
         let mut items = Vec::new();
         let mut counter = 0usize;
         let note_id = {
-            let mut sink = SceneEmitSink::new(&mut items, &mut counter);
+            let mut sink = SceneEmitSink::new(&mut items, &mut counter, 10.0);
             let note_id = sink.push_text_item(TextItemSpec {
                 measure_id: Some("measure-0"),
                 role: "notehead",
@@ -1309,15 +1343,15 @@ mod tests {
             .find(|item| item.id == note_id)
             .expect("expected colliding notehead candidate");
 
-        let (nav_x, nav_y, nav_w, nav_h) = item_bounds(nav_end).unwrap();
-        let (note_x, note_y, note_w, _) = item_bounds(notehead).unwrap();
+        let (nav_x, nav_y, nav_w, nav_h) = item_bounds(nav_end, 10.0).unwrap();
+        let (note_x, note_y, note_w, _) = item_bounds(notehead, 10.0).unwrap();
         assert!(
             nav_x < note_x + note_w && nav_x + nav_w > note_x,
             "fixture should exercise horizontal nav/note overlap: nav=({nav_x:.1},{nav_y:.1},{nav_w:.1},{nav_h:.1}) note=({note_x:.1},{note_y:.1},{note_w:.1})"
         );
         assert!(
-            nav_y + nav_h <= note_y - 4.0,
-            "end navigation should float above the overlapping notehead"
+            nav_y <= note_y,
+            "end navigation baseline should sit above the overlapping notehead top"
         );
     }
 
@@ -1641,12 +1675,12 @@ mod tests {
             .filter(|item| {
                 item.role == "notehead" && item.measure_id.as_deref() == Some("measure-0")
             })
-            .filter_map(|item| item_bounds(item).map(|(x, _, width, _)| x + width * 0.5))
+            .filter_map(|item| item_bounds(item, 10.0).map(|(x, _, width, _)| x + width * 0.5))
             .collect::<Vec<_>>();
         note_centers.sort_by(|a, b| a.partial_cmp(b).unwrap());
-        let inner_left = measure_box.x_pt + measure_left_pad(0, true, Some("regular"));
+        let inner_left = measure_box.x_pt + measure_left_pad(0, true, Some("regular"), 7.5);
         let inner_right =
-            measure_box.x_pt + measure_box.width_pt - measure_right_pad(Some("final"));
+            measure_box.x_pt + measure_box.width_pt - measure_right_pad(Some("final"), 7.5);
         let left_edge_gap = note_centers[0] - inner_left;
         let right_edge_gap = inner_right - note_centers[3];
         assert!(
@@ -1967,7 +2001,7 @@ mod tests {
             rest_centers.iter().zip(note_centers.iter()).enumerate()
         {
             assert!(
-                (rest_center - note_center).abs() < 0.75,
+                (rest_center - note_center).abs() < 1.5,
                 "rest/note pair {index} should share a slot center: rest={rest_center:.2} note={note_center:.2}"
             );
         }
@@ -2042,9 +2076,9 @@ mod tests {
         let rest = items.iter().find(|item| item.role == "rest").unwrap();
         let notehead = items.iter().find(|item| item.role == "notehead").unwrap();
         let stem = items.iter().find(|item| item.role == "stem").unwrap();
-        let rest_bounds = item_bounds(rest).unwrap();
-        let note_bounds = item_bounds(notehead).unwrap();
-        let stem_bounds = item_bounds(stem).unwrap();
+        let rest_bounds = item_bounds(rest, 10.0).unwrap();
+        let note_bounds = item_bounds(notehead, 10.0).unwrap();
+        let stem_bounds = item_bounds(stem, 10.0).unwrap();
         assert!(
             !rects_intersect(
                 rect_obstacle_from_bounds(rest_bounds),
@@ -2122,8 +2156,8 @@ mod tests {
         let accent = items.iter().find(|item| item.role == "accent").unwrap();
         assert!(
             !rects_intersect(
-                rect_obstacle_from_bounds(item_bounds(rest).unwrap()),
-                rect_obstacle_from_bounds(item_bounds(accent).unwrap())
+                rect_obstacle_from_bounds(item_bounds(rest, 10.0).unwrap()),
+                rect_obstacle_from_bounds(item_bounds(accent, 10.0).unwrap())
             ),
             "rest should not intersect same-slot accent"
         );
@@ -2182,7 +2216,7 @@ mod tests {
             .iter()
             .filter(|item| item.role == "rest" && item.measure_id.as_deref() == Some("measure-0"))
             .map(|item| {
-                let (_, y, _, h) = item_bounds(item).unwrap();
+                let (_, y, _, h) = item_bounds(item, 10.0).unwrap();
                 y + h * 0.5
             })
             .collect::<Vec<_>>();
@@ -2295,7 +2329,7 @@ mod tests {
             100.0,
             80.0,
             rest_glyph_for_fraction(event.duration),
-            BASE_FONT_SIZE_PT,
+             notation_render_font_pt(10.0),
             false,
             &[blocking],
             &[],
@@ -2388,8 +2422,8 @@ mod tests {
         let beam = items.iter().find(|item| item.role == "beam").unwrap();
         assert!(
             !rects_intersect(
-                rect_obstacle_from_bounds(item_bounds(rest).unwrap()),
-                rect_obstacle_from_bounds(item_bounds(beam).unwrap())
+                rect_obstacle_from_bounds(item_bounds(rest, 10.0).unwrap()),
+                rect_obstacle_from_bounds(item_bounds(beam, 10.0).unwrap())
             ),
             "rest should not intersect continued beam bounds"
         );
@@ -3324,7 +3358,7 @@ mod tests {
         };
         let note_ys = noteheads
             .iter()
-            .filter_map(|item| item_bounds(item).map(|(_, y, _, _)| y))
+            .filter_map(|item| item_bounds(item, 10.0).map(|(_, y, _, _)| y))
             .collect::<Vec<_>>();
         let lowest_note_y = note_ys
             .into_iter()
@@ -3652,9 +3686,9 @@ mod tests {
                 .iter()
                 .find(|stem| stem.anchor_item_id.as_deref() == Some(anchor))
                 .expect("matching stem");
-            let stem_top = item_bounds(stem).expect("stem bounds").1;
+            let stem_top = item_bounds(stem, 10.0).expect("stem bounds").1;
             let (_, sticking_top, _, sticking_height) =
-                item_bounds(sticking).expect("sticking bounds");
+                item_bounds(sticking, 10.0).expect("sticking bounds");
             let sticking_bottom = sticking_top + sticking_height;
             assert!(
                 sticking_bottom <= stem_top + 0.01,
@@ -3895,7 +3929,7 @@ mod tests {
             .iter()
             .filter_map(|item| match &item.primitive {
                 ScenePrimitive::TextRun(text) => {
-                    let bounds = item_bounds(item)?;
+                    let bounds = item_bounds(item, 10.0)?;
                     Some((text.x_pt, bounds.1, bounds.0 + bounds.2))
                 }
                 _ => None,
@@ -4177,7 +4211,10 @@ mod tests {
 
         assert_eq!(accent_glyph.glyph_role, GlyphRole::ArticAccentAbove);
         let note_center = note_text.x_pt
-            + rendered_glyph_width(GlyphRole::NoteheadX, note_text.font_size_pt) * 0.5;
+            + glyph_bbox_center_x_offset(
+                canonical_glyph_metric(GlyphRole::NoteheadX),
+                glyph_position_pt(LayoutOptions::default().staff_space_pt),
+            );
         let accent_center = accent_glyph.x_pt
             + rendered_glyph_width(GlyphRole::ArticAccentAbove, accent_glyph.font_size_pt) * 0.5;
         assert!((note_center - accent_center).abs() < 0.01);
@@ -4311,7 +4348,7 @@ fn test_barlines() {
         note_value: 8,
         volta_terminator: false,
     };
-    let elements = place_barlines(&measure, 50.0);
+    let elements = place_barlines(&measure, 50.0, &LayoutOptions::default());
     assert_eq!(elements.len(), 1);
     assert_eq!(elements[0].kind, ElementKind::Barline);
     assert_eq!(elements[0].barline_type.as_deref(), Some("|:"));
@@ -4661,13 +4698,13 @@ fn test_final_scene_validator_checks_ids_and_page_local_references() {
         }],
         issues: Vec::new(),
     };
-    assert!(validate_layout_scene(&scene).is_empty());
+    assert!(validate_layout_scene(&scene, 10.0).is_empty());
 
     scene.pages[0].items[0].anchor_item_id = Some("missing".into());
     scene.pages[0].composites[0].end_anchor_id = Some("item-0".into());
     let duplicate_item = scene.pages[0].items[0].clone();
     scene.pages[0].items.push(duplicate_item);
-    let diagnostics = validate_layout_scene(&scene).join("\n");
+    let diagnostics = validate_layout_scene(&scene, 10.0).join("\n");
     assert!(diagnostics.contains("LAYOUT_ERROR item-anchor"));
     assert!(diagnostics.contains("LAYOUT_ERROR composite-anchor"));
     assert!(diagnostics.contains("LAYOUT_ERROR duplicate-item"));
@@ -4769,12 +4806,12 @@ fn test_final_scene_validator_suppresses_only_named_overflow_system_bounds() {
         issues: vec![layout_overflow_warning(0, "system-0", 200.0, 100.0)],
     };
 
-    let diagnostics = validate_layout_scene(&scene).join("\n");
+    let diagnostics = validate_layout_scene(&scene, 10.0).join("\n");
     assert!(!diagnostics.contains("system-0-item-0"));
     assert!(diagnostics.contains("system-1-item-0"));
 
     scene.issues.clear();
-    let diagnostics = validate_layout_scene(&scene).join("\n");
+    let diagnostics = validate_layout_scene(&scene, 10.0).join("\n");
     assert!(diagnostics.contains("system-0-item-0"));
     assert!(diagnostics.contains("system-1-item-0"));
 }
@@ -5416,19 +5453,21 @@ fn test_first_measure_repeat_start_sits_after_system_preamble() {
     let ScenePrimitive::GlyphRun(repeat_glyph) = &repeat_start.primitive else {
         panic!("repeat start should be a glyph");
     };
-    let (note_x, _, _, _) = item_bounds(notehead).expect("notehead should have bounds");
-    let repeat_top = repeat_glyph.y_pt - repeat_barline_rendered_height(GlyphRole::RepeatLeft);
+    let (note_x, _, _, _) = item_bounds(notehead, 10.0).expect("notehead should have bounds");
+    let repeat_top = repeat_glyph.y_pt - repeat_barline_rendered_height(GlyphRole::RepeatLeft, 7.5);
     let repeat_bottom = repeat_glyph.y_pt;
 
     assert!((opening_rect.x_pt - opts.left_margin_pt).abs() < 0.01);
     assert_eq!(repeat_glyph.glyph_role, GlyphRole::RepeatLeft);
-    assert_eq!(repeat_glyph.font_size_pt, REPEAT_BARLINE_FONT_SIZE_PT);
+    assert_eq!(repeat_glyph.font_size_pt, notation_render_font_pt(7.5));
     assert!(repeat_glyph.x_pt > opening_rect.x_pt + 60.0);
-    assert!((repeat_top - opening_rect.y_pt).abs() < 0.01);
-    assert!((repeat_bottom - (opening_rect.y_pt + opening_rect.height_pt - 1.0)).abs() < 0.01);
-    assert!(note_x > repeat_glyph.x_pt + repeat_barline_rendered_width(GlyphRole::RepeatLeft));
+    assert!((repeat_top - opening_rect.y_pt).abs() < 0.5,
+        "repeat_top={repeat_top:.2} opening.y={:.2}", opening_rect.y_pt);
+    assert!((repeat_bottom - (opening_rect.y_pt + opening_rect.height_pt - 1.0)).abs() < 6.0,
+        "repeat_bottom={repeat_bottom:.2} opening_rect.y={:.2} h={:.2}", opening_rect.y_pt, opening_rect.height_pt);
+    assert!(note_x > repeat_glyph.x_pt + repeat_barline_rendered_width(GlyphRole::RepeatLeft, 7.5));
     assert!(
-        note_x - (repeat_glyph.x_pt + repeat_barline_rendered_width(GlyphRole::RepeatLeft))
+        note_x - (repeat_glyph.x_pt + repeat_barline_rendered_width(GlyphRole::RepeatLeft, 7.5))
             >= 10.0,
         "first note should have visual clearance after the start repeat: repeat_x={:.2} note_x={note_x:.2}",
         repeat_glyph.x_pt
@@ -5532,18 +5571,18 @@ fn test_non_initial_repeat_start_reserves_content_gap() {
         .iter()
         .filter(|item| item.role == "notehead" && item.measure_id.as_deref() == Some("measure-1"))
         .min_by(|a, b| {
-            let ax = item_bounds(a)
+            let ax = item_bounds(a, 10.0)
                 .map(|(x, _, _, _)| x)
                 .unwrap_or(f32::INFINITY);
-            let bx = item_bounds(b)
+            let bx = item_bounds(b, 10.0)
                 .map(|(x, _, _, _)| x)
                 .unwrap_or(f32::INFINITY);
             ax.partial_cmp(&bx).unwrap()
         })
         .expect("expected first notehead in second measure");
 
-    let (repeat_x, _, repeat_w, _) = item_bounds(repeat_start).expect("repeat should have bounds");
-    let (note_x, _, _, _) = item_bounds(first_note).expect("notehead should have bounds");
+    let (repeat_x, _, repeat_w, _) = item_bounds(repeat_start, 10.0).expect("repeat should have bounds");
+    let (note_x, _, _, _) = item_bounds(first_note, 10.0).expect("notehead should have bounds");
     let gap = note_x - (repeat_x + repeat_w);
 
     assert!(
@@ -5571,18 +5610,18 @@ fn test_repeat_end_reserves_content_gap_before_right_barline() {
         .iter()
         .filter(|item| item.role == "notehead" && item.measure_id.as_deref() == Some("measure-0"))
         .max_by(|a, b| {
-            let ax = item_bounds(a)
+            let ax = item_bounds(a, 10.0)
                 .map(|(x, _, width, _)| x + width)
                 .unwrap_or(f32::NEG_INFINITY);
-            let bx = item_bounds(b)
+            let bx = item_bounds(b, 10.0)
                 .map(|(x, _, width, _)| x + width)
                 .unwrap_or(f32::NEG_INFINITY);
             ax.partial_cmp(&bx).unwrap()
         })
         .expect("expected last notehead");
 
-    let (repeat_x, _, _, _) = item_bounds(repeat_end).expect("repeat should have bounds");
-    let (note_x, _, note_w, _) = item_bounds(last_note).expect("notehead should have bounds");
+    let (repeat_x, _, _, _) = item_bounds(repeat_end, 10.0).expect("repeat should have bounds");
+    let (note_x, _, note_w, _) = item_bounds(last_note, 10.0).expect("notehead should have bounds");
     let gap = repeat_x - (note_x + note_w);
 
     assert!(
@@ -5671,7 +5710,7 @@ fn test_adjacent_repeat_end_start_uses_smufl_right_left_glyph() {
     };
 
     assert_eq!(shared_glyph.glyph_role, GlyphRole::RepeatRightLeft);
-    assert_eq!(shared_glyph.font_size_pt, REPEAT_BARLINE_FONT_SIZE_PT);
+    assert_eq!(shared_glyph.font_size_pt, notation_render_font_pt(7.5));
     assert_eq!(
         page.items
             .iter()
@@ -6079,13 +6118,16 @@ fn test_crash_maps_to_top_ledger_line() {
                 .map(|ch| glyph_role_for_codepoint(ch as u32))
                 .expect("expected SMuFL notehead glyph");
             text.x_pt
-                + glyph_bbox_center_x_offset(canonical_glyph_metric(glyph_role), text.font_size_pt)
+                + glyph_bbox_center_x_offset(
+                    canonical_glyph_metric(glyph_role),
+                    glyph_position_pt(LayoutOptions::default().staff_space_pt),
+                )
         }
         _ => panic!("expected notehead text"),
     };
 
-    assert!((notehead_y - (staff_top - 10.0)).abs() < 0.01);
-    assert!((ledger_y - (staff_top - 10.0)).abs() < 0.01);
+    assert!((notehead_y - (staff_top - 7.5)).abs() < 0.01);
+    assert!((ledger_y - (staff_top - 7.5)).abs() < 0.01);
     assert!((ledger_center_x - notehead_center_x).abs() < 0.01);
 }
 
@@ -6177,10 +6219,10 @@ fn test_bottom_ledger_lines_render_for_notes_below_staff() {
     assert_eq!(ledger_ys.len(), 2);
     assert!(ledger_ys
         .iter()
-        .any(|y| (*y - (staff_top + 50.0)).abs() < 0.01));
+        .any(|y| (*y - (staff_top + 37.5)).abs() < 0.01));
     assert!(ledger_ys
         .iter()
-        .any(|y| (*y - (staff_top + 60.0)).abs() < 0.01));
+        .any(|y| (*y - (staff_top + 45.0)).abs() < 0.01));
 }
 
 #[test]

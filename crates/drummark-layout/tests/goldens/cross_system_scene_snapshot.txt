@@ -1,92 +1,92 @@
 version=1
 metricsVersion=2026-05-13
 page index=0 widthPt=612.000 heightPt=792.000
-  system id=system-0 index=0 pageIndex=0 xPt=50.000 yPt=210.460 widthPt=512.000 heightPt=50.000 measureIds=[measure-0]
-  system id=system-1 index=1 pageIndex=0 xPt=50.000 yPt=333.643 widthPt=512.000 heightPt=50.000 measureIds=[measure-1]
-  system id=system-2 index=2 pageIndex=0 xPt=50.000 yPt=458.160 widthPt=512.000 heightPt=50.000 measureIds=[measure-2]
-  system id=system-3 index=3 pageIndex=0 xPt=50.000 yPt=572.810 widthPt=512.000 heightPt=50.000 measureIds=[measure-3]
-  measure id=measure-0 index=0 globalIndex=0 systemId=system-0 xPt=50.000 yPt=210.460 widthPt=512.000 heightPt=50.000
-  measure id=measure-1 index=1 globalIndex=1 systemId=system-1 xPt=50.000 yPt=333.643 widthPt=512.000 heightPt=50.000
-  measure id=measure-2 index=2 globalIndex=2 systemId=system-2 xPt=50.000 yPt=458.160 widthPt=512.000 heightPt=50.000
-  measure id=measure-3 index=3 globalIndex=3 systemId=system-3 xPt=50.000 yPt=572.810 widthPt=512.000 heightPt=50.000
-  item id=item-0 measureId=- anchorItemId=- role=title kind=textRun zIndex=0 primitive={textRole=title text="Fixture" xPt=306.000 yPt=66.000 fontFamily=Academico fontSizePt=24.000 fill=#333 textAnchor=middle fontWeight=bold}
-  item id=item-1 measureId=- anchorItemId=- role=subtitle kind=textRun zIndex=0 primitive={textRole=subtitle text="Scene" xPt=306.000 yPt=106.000 fontFamily=Academico fontSizePt=18.000 fill=#333 textAnchor=middle fontWeight=-}
-  item id=item-2 measureId=- anchorItemId=- role=composer kind=textRun zIndex=0 primitive={textRole=composer text="Codex" xPt=562.000 yPt=103.000 fontFamily=Academico fontSizePt=14.000 fill=#333 textAnchor=end fontWeight=-}
-  item id=system-0-item-3 measureId=- anchorItemId=- role=staff-line kind=lineSegment zIndex=0 primitive={x1Pt=50.000 y1Pt=220.460 x2Pt=562.000 y2Pt=220.460 stroke=#333 strokeWidth=1.000}
-  item id=system-0-item-4 measureId=- anchorItemId=- role=staff-line kind=lineSegment zIndex=0 primitive={x1Pt=50.000 y1Pt=230.460 x2Pt=562.000 y2Pt=230.460 stroke=#333 strokeWidth=1.000}
-  item id=system-0-item-5 measureId=- anchorItemId=- role=staff-line kind=lineSegment zIndex=0 primitive={x1Pt=50.000 y1Pt=240.460 x2Pt=562.000 y2Pt=240.460 stroke=#333 strokeWidth=1.000}
-  item id=system-0-item-6 measureId=- anchorItemId=- role=staff-line kind=lineSegment zIndex=0 primitive={x1Pt=50.000 y1Pt=250.460 x2Pt=562.000 y2Pt=250.460 stroke=#333 strokeWidth=1.000}
-  item id=system-0-item-7 measureId=- anchorItemId=- role=staff-line kind=lineSegment zIndex=0 primitive={x1Pt=50.000 y1Pt=260.460 x2Pt=562.000 y2Pt=260.460 stroke=#333 strokeWidth=1.000}
-  item id=system-0-item-8 measureId=- anchorItemId=- role=percussion-clef kind=textRun zIndex=0 primitive={textRole=percussionClef text="\u{e069}" xPt=55.000 yPt=240.460 fontFamily=Bravura fontSizePt=30.000 fill=#333 textAnchor=- fontWeight=-}
-  item id=system-0-item-9 measureId=- anchorItemId=- role=time-signature-digit kind=textRun zIndex=0 primitive={textRole=timeSignatureDigit text="\u{e084}" xPt=85.000 yPt=230.460 fontFamily=Bravura fontSizePt=30.000 fill=#333 textAnchor=- fontWeight=-}
-  item id=system-0-item-10 measureId=- anchorItemId=- role=time-signature-digit kind=textRun zIndex=0 primitive={textRole=timeSignatureDigit text="\u{e084}" xPt=85.000 yPt=250.460 fontFamily=Bravura fontSizePt=30.000 fill=#333 textAnchor=- fontWeight=-}
-  item id=system-0-item-11 measureId=measure-0 anchorItemId=- role=tempo-glyph kind=textRun zIndex=0 primitive={textRole=tempo text="\u{eca5}" xPt=59.000 yPt=200.460 fontFamily=Bravura fontSizePt=25.000 fill=#333 textAnchor=- fontWeight=-}
-  item id=system-0-item-12 measureId=measure-0 anchorItemId=- role=tempo-equals kind=textRun zIndex=0 primitive={textRole=tempo text="=" xPt=75.300 yPt=200.460 fontFamily=Academico fontSizePt=14.000 fill=#333 textAnchor=- fontWeight=-}
-  item id=system-0-item-13 measureId=measure-0 anchorItemId=- role=tempo kind=textRun zIndex=0 primitive={textRole=tempo text="120" xPt=88.300 yPt=200.460 fontFamily=Academico fontSizePt=14.000 fill=#333 textAnchor=- fontWeight=-}
-  item id=system-0-item-14 measureId=measure-0 anchorItemId=- role=opening-barline kind=rect zIndex=0 primitive={xPt=50.000 yPt=220.460 widthPt=1.000 heightPt=41.000 fill=#333 stroke=- strokeWidth=-}
-  item id=system-0-item-15 measureId=measure-0 anchorItemId=- role=notehead kind=textRun zIndex=0 primitive={textRole=tempo text="\u{e0a9}" xPt=169.320 yPt=215.460 fontFamily=Bravura fontSizePt=30.000 fill=#333 textAnchor=- fontWeight=-}
-  item id=system-0-item-16 measureId=measure-0 anchorItemId=system-0-item-15 role=stem kind=lineSegment zIndex=0 primitive={x1Pt=180.495 y1Pt=180.710 x2Pt=180.495 y2Pt=211.710 stroke=#333 strokeWidth=1.500}
-  item id=system-0-item-17 measureId=measure-0 anchorItemId=system-0-item-16 role=flag kind=glyphRun zIndex=0 primitive={glyphRole=flag32ndUp glyphCount=1 codepoint=57924 xPt=180.495 yPt=182.778 fontFamily=Bravura fontSizePt=22.000 fill=#333}
-  item id=system-0-item-18 measureId=measure-0 anchorItemId=- role=barline kind=rect zIndex=0 primitive={xPt=561.000 yPt=220.460 widthPt=1.000 heightPt=41.000 fill=#333 stroke=- strokeWidth=-}
-  item id=system-0-item-58 measureId=measure-0 anchorItemId=- role=volta-line kind=lineSegment zIndex=0 primitive={x1Pt=144.000 y1Pt=174.500 x2Pt=562.000 y2Pt=174.500 stroke=#333 strokeWidth=1.000}
-  item id=system-0-item-59 measureId=measure-0 anchorItemId=- role=volta-start-hook kind=lineSegment zIndex=0 primitive={x1Pt=144.000 y1Pt=174.500 x2Pt=144.000 y2Pt=189.500 stroke=#333 strokeWidth=1.000}
-  item id=system-0-item-60 measureId=measure-0 anchorItemId=- role=volta-label kind=textRun zIndex=0 primitive={textRole=countLabel text="1." xPt=149.000 yPt=188.500 fontFamily=Academico fontSizePt=12.000 fill=#333 textAnchor=- fontWeight=-}
-  item id=system-0-item-68 measureId=measure-0 anchorItemId=- role=hairpin-top kind=lineSegment zIndex=0 primitive={x1Pt=64.000 y1Pt=266.460 x2Pt=550.000 y2Pt=265.127 stroke=#333 strokeWidth=1.200}
-  item id=system-0-item-69 measureId=measure-0 anchorItemId=- role=hairpin-bottom kind=lineSegment zIndex=0 primitive={x1Pt=64.000 y1Pt=266.460 x2Pt=550.000 y2Pt=267.793 stroke=#333 strokeWidth=1.200}
-  item id=system-0-item-76 measureId=measure-0 anchorItemId=- role=nav-start kind=glyphRun zIndex=0 primitive={glyphRole=navigationSegno glyphCount=1 codepoint=57415 xPt=54.000 yPt=211.920 fontFamily=Bravura fontSizePt=20.000 fill=#333}
-  item id=system-1-item-19 measureId=- anchorItemId=- role=staff-line kind=lineSegment zIndex=0 primitive={x1Pt=50.000 y1Pt=343.643 x2Pt=562.000 y2Pt=343.643 stroke=#333 strokeWidth=1.000}
-  item id=system-1-item-20 measureId=- anchorItemId=- role=staff-line kind=lineSegment zIndex=0 primitive={x1Pt=50.000 y1Pt=353.643 x2Pt=562.000 y2Pt=353.643 stroke=#333 strokeWidth=1.000}
-  item id=system-1-item-21 measureId=- anchorItemId=- role=staff-line kind=lineSegment zIndex=0 primitive={x1Pt=50.000 y1Pt=363.643 x2Pt=562.000 y2Pt=363.643 stroke=#333 strokeWidth=1.000}
-  item id=system-1-item-22 measureId=- anchorItemId=- role=staff-line kind=lineSegment zIndex=0 primitive={x1Pt=50.000 y1Pt=373.643 x2Pt=562.000 y2Pt=373.643 stroke=#333 strokeWidth=1.000}
-  item id=system-1-item-23 measureId=- anchorItemId=- role=staff-line kind=lineSegment zIndex=0 primitive={x1Pt=50.000 y1Pt=383.643 x2Pt=562.000 y2Pt=383.643 stroke=#333 strokeWidth=1.000}
-  item id=system-1-item-24 measureId=- anchorItemId=- role=percussion-clef kind=textRun zIndex=0 primitive={textRole=percussionClef text="\u{e069}" xPt=55.000 yPt=363.643 fontFamily=Bravura fontSizePt=30.000 fill=#333 textAnchor=- fontWeight=-}
-  item id=system-1-item-25 measureId=- anchorItemId=- role=measure-number kind=textRun zIndex=0 primitive={textRole=measureNumber text="2" xPt=50.000 yPt=333.643 fontFamily=Academico fontSizePt=10.000 fill=#333 textAnchor=- fontWeight=-}
-  item id=system-1-item-26 measureId=measure-1 anchorItemId=- role=opening-barline kind=rect zIndex=0 primitive={xPt=50.000 yPt=343.643 widthPt=1.000 heightPt=41.000 fill=#333 stroke=- strokeWidth=-}
-  item id=system-1-item-27 measureId=measure-1 anchorItemId=- role=notehead kind=textRun zIndex=0 primitive={textRole=tempo text="\u{e0a9}" xPt=132.314 yPt=338.643 fontFamily=Bravura fontSizePt=30.000 fill=#333 textAnchor=- fontWeight=-}
-  item id=system-1-item-28 measureId=measure-1 anchorItemId=system-1-item-27 role=stem kind=lineSegment zIndex=0 primitive={x1Pt=143.489 y1Pt=303.893 x2Pt=143.489 y2Pt=334.893 stroke=#333 strokeWidth=1.500}
-  item id=system-1-item-29 measureId=measure-1 anchorItemId=- role=notehead kind=textRun zIndex=0 primitive={textRole=tempo text="\u{e0a4}" xPt=206.941 yPt=358.643 fontFamily=Bravura fontSizePt=30.000 fill=#333 textAnchor=- fontWeight=-}
-  item id=system-1-item-30 measureId=measure-1 anchorItemId=system-1-item-29 role=stem kind=lineSegment zIndex=0 primitive={x1Pt=218.116 y1Pt=315.087 x2Pt=218.116 y2Pt=357.443 stroke=#333 strokeWidth=1.500}
-  item id=system-1-item-31 measureId=measure-1 anchorItemId=system-1-item-28 role=beam kind=path zIndex=0 primitive={d="M 143.489 303.893 L 218.116 315.087 L 218.116 319.087 L 143.489 307.893 Z" fill=#333 stroke=- strokeWidth=-}
-  item id=system-1-item-32 measureId=measure-1 anchorItemId=system-1-item-28 role=beam-secondary kind=path zIndex=0 primitive={d="M 143.489 309.893 L 218.116 321.087 L 218.116 325.087 L 143.489 313.893 Z" fill=#333 stroke=- strokeWidth=-}
-  item id=system-1-item-33 measureId=measure-1 anchorItemId=- role=barline kind=rect zIndex=0 primitive={xPt=561.000 yPt=343.643 widthPt=1.000 heightPt=41.000 fill=#333 stroke=- strokeWidth=-}
-  item id=system-1-item-61 measureId=measure-1 anchorItemId=- role=volta-line kind=lineSegment zIndex=0 primitive={x1Pt=102.000 y1Pt=298.893 x2Pt=562.000 y2Pt=298.893 stroke=#333 strokeWidth=1.000}
-  item id=system-1-item-62 measureId=measure-1 anchorItemId=- role=volta-start-hook kind=lineSegment zIndex=0 primitive={x1Pt=102.000 y1Pt=298.893 x2Pt=102.000 y2Pt=313.893 stroke=#333 strokeWidth=1.000}
-  item id=system-1-item-70 measureId=measure-1 anchorItemId=- role=hairpin-top kind=lineSegment zIndex=0 primitive={x1Pt=64.000 y1Pt=388.310 x2Pt=550.000 y2Pt=386.977 stroke=#333 strokeWidth=1.200}
-  item id=system-1-item-71 measureId=measure-1 anchorItemId=- role=hairpin-bottom kind=lineSegment zIndex=0 primitive={x1Pt=64.000 y1Pt=390.977 x2Pt=550.000 y2Pt=392.310 stroke=#333 strokeWidth=1.200}
-  item id=system-2-item-34 measureId=- anchorItemId=- role=staff-line kind=lineSegment zIndex=0 primitive={x1Pt=50.000 y1Pt=468.160 x2Pt=562.000 y2Pt=468.160 stroke=#333 strokeWidth=1.000}
-  item id=system-2-item-35 measureId=- anchorItemId=- role=staff-line kind=lineSegment zIndex=0 primitive={x1Pt=50.000 y1Pt=478.160 x2Pt=562.000 y2Pt=478.160 stroke=#333 strokeWidth=1.000}
-  item id=system-2-item-36 measureId=- anchorItemId=- role=staff-line kind=lineSegment zIndex=0 primitive={x1Pt=50.000 y1Pt=488.160 x2Pt=562.000 y2Pt=488.160 stroke=#333 strokeWidth=1.000}
-  item id=system-2-item-37 measureId=- anchorItemId=- role=staff-line kind=lineSegment zIndex=0 primitive={x1Pt=50.000 y1Pt=498.160 x2Pt=562.000 y2Pt=498.160 stroke=#333 strokeWidth=1.000}
-  item id=system-2-item-38 measureId=- anchorItemId=- role=staff-line kind=lineSegment zIndex=0 primitive={x1Pt=50.000 y1Pt=508.160 x2Pt=562.000 y2Pt=508.160 stroke=#333 strokeWidth=1.000}
-  item id=system-2-item-39 measureId=- anchorItemId=- role=percussion-clef kind=textRun zIndex=0 primitive={textRole=percussionClef text="\u{e069}" xPt=55.000 yPt=488.160 fontFamily=Bravura fontSizePt=30.000 fill=#333 textAnchor=- fontWeight=-}
-  item id=system-2-item-40 measureId=- anchorItemId=- role=measure-number kind=textRun zIndex=0 primitive={textRole=measureNumber text="3" xPt=50.000 yPt=458.160 fontFamily=Academico fontSizePt=10.000 fill=#333 textAnchor=- fontWeight=-}
-  item id=system-2-item-41 measureId=measure-2 anchorItemId=- role=opening-barline kind=rect zIndex=0 primitive={xPt=50.000 yPt=468.160 widthPt=1.000 heightPt=41.000 fill=#333 stroke=- strokeWidth=-}
-  item id=system-2-item-42 measureId=measure-2 anchorItemId=- role=notehead kind=textRun zIndex=0 primitive={textRole=tempo text="\u{e0a9}" xPt=150.750 yPt=463.160 fontFamily=Bravura fontSizePt=30.000 fill=#333 textAnchor=- fontWeight=-}
-  item id=system-2-item-43 measureId=measure-2 anchorItemId=system-2-item-42 role=stem kind=lineSegment zIndex=0 primitive={x1Pt=161.925 y1Pt=428.410 x2Pt=161.925 y2Pt=459.410 stroke=#333 strokeWidth=1.500}
-  item id=system-2-item-44 measureId=measure-2 anchorItemId=- role=barline kind=rect zIndex=0 primitive={xPt=561.000 yPt=468.160 widthPt=1.000 heightPt=41.000 fill=#333 stroke=- strokeWidth=-}
-  item id=system-2-item-63 measureId=measure-2 anchorItemId=- role=volta-line kind=lineSegment zIndex=0 primitive={x1Pt=102.000 y1Pt=423.410 x2Pt=562.000 y2Pt=423.410 stroke=#333 strokeWidth=1.000}
-  item id=system-2-item-64 measureId=measure-2 anchorItemId=- role=volta-start-hook kind=lineSegment zIndex=0 primitive={x1Pt=102.000 y1Pt=423.410 x2Pt=102.000 y2Pt=438.410 stroke=#333 strokeWidth=1.000}
-  item id=system-2-item-72 measureId=measure-2 anchorItemId=- role=hairpin-top kind=lineSegment zIndex=0 primitive={x1Pt=64.000 y1Pt=511.493 x2Pt=550.000 y2Pt=510.160 stroke=#333 strokeWidth=1.200}
-  item id=system-2-item-73 measureId=measure-2 anchorItemId=- role=hairpin-bottom kind=lineSegment zIndex=0 primitive={x1Pt=64.000 y1Pt=516.827 x2Pt=550.000 y2Pt=518.160 stroke=#333 strokeWidth=1.200}
-  item id=system-3-item-45 measureId=- anchorItemId=- role=staff-line kind=lineSegment zIndex=0 primitive={x1Pt=50.000 y1Pt=582.810 x2Pt=562.000 y2Pt=582.810 stroke=#333 strokeWidth=1.000}
-  item id=system-3-item-46 measureId=- anchorItemId=- role=staff-line kind=lineSegment zIndex=0 primitive={x1Pt=50.000 y1Pt=592.810 x2Pt=562.000 y2Pt=592.810 stroke=#333 strokeWidth=1.000}
-  item id=system-3-item-47 measureId=- anchorItemId=- role=staff-line kind=lineSegment zIndex=0 primitive={x1Pt=50.000 y1Pt=602.810 x2Pt=562.000 y2Pt=602.810 stroke=#333 strokeWidth=1.000}
-  item id=system-3-item-48 measureId=- anchorItemId=- role=staff-line kind=lineSegment zIndex=0 primitive={x1Pt=50.000 y1Pt=612.810 x2Pt=562.000 y2Pt=612.810 stroke=#333 strokeWidth=1.000}
-  item id=system-3-item-49 measureId=- anchorItemId=- role=staff-line kind=lineSegment zIndex=0 primitive={x1Pt=50.000 y1Pt=622.810 x2Pt=562.000 y2Pt=622.810 stroke=#333 strokeWidth=1.000}
-  item id=system-3-item-50 measureId=- anchorItemId=- role=percussion-clef kind=textRun zIndex=0 primitive={textRole=percussionClef text="\u{e069}" xPt=55.000 yPt=602.810 fontFamily=Bravura fontSizePt=30.000 fill=#333 textAnchor=- fontWeight=-}
-  item id=system-3-item-51 measureId=- anchorItemId=- role=measure-number kind=textRun zIndex=0 primitive={textRole=measureNumber text="4" xPt=50.000 yPt=572.810 fontFamily=Academico fontSizePt=10.000 fill=#333 textAnchor=- fontWeight=-}
-  item id=system-3-item-52 measureId=measure-3 anchorItemId=- role=opening-barline kind=rect zIndex=0 primitive={xPt=50.000 yPt=582.810 widthPt=1.000 heightPt=41.000 fill=#333 stroke=- strokeWidth=-}
-  item id=system-3-item-53 measureId=measure-3 anchorItemId=- role=notehead kind=textRun zIndex=0 primitive={textRole=tempo text="\u{e0a4}" xPt=149.750 yPt=597.810 fontFamily=Bravura fontSizePt=30.000 fill=#333 textAnchor=- fontWeight=-}
-  item id=system-3-item-54 measureId=measure-3 anchorItemId=system-3-item-53 role=stem kind=lineSegment zIndex=0 primitive={x1Pt=160.925 y1Pt=565.610 x2Pt=160.925 y2Pt=596.610 stroke=#333 strokeWidth=1.500}
-  item id=system-3-item-55 measureId=measure-3 anchorItemId=system-3-item-53 role=accent kind=glyphRun zIndex=0 primitive={glyphRole=articAccentAbove glyphCount=1 codepoint=58528 xPt=148.870 yPt=561.610 fontFamily=Bravura fontSizePt=30.000 fill=#333}
-  item id=system-3-item-56 measureId=measure-3 anchorItemId=- role=final-barline-thin kind=rect zIndex=0 primitive={xPt=558.000 yPt=582.810 widthPt=1.000 heightPt=41.000 fill=#333 stroke=- strokeWidth=-}
-  item id=system-3-item-57 measureId=measure-3 anchorItemId=- role=final-barline-thick kind=rect zIndex=0 primitive={xPt=559.000 yPt=582.810 widthPt=3.000 heightPt=41.000 fill=#333 stroke=- strokeWidth=-}
-  item id=system-3-item-65 measureId=measure-3 anchorItemId=- role=volta-line kind=lineSegment zIndex=0 primitive={x1Pt=102.000 y1Pt=549.260 x2Pt=562.000 y2Pt=549.260 stroke=#333 strokeWidth=1.000}
-  item id=system-3-item-66 measureId=measure-3 anchorItemId=- role=volta-start-hook kind=lineSegment zIndex=0 primitive={x1Pt=102.000 y1Pt=549.260 x2Pt=102.000 y2Pt=564.260 stroke=#333 strokeWidth=1.000}
-  item id=system-3-item-67 measureId=measure-3 anchorItemId=- role=volta-end-hook kind=lineSegment zIndex=0 primitive={x1Pt=562.000 y1Pt=549.260 x2Pt=562.000 y2Pt=564.260 stroke=#333 strokeWidth=1.000}
-  item id=system-3-item-74 measureId=measure-3 anchorItemId=- role=hairpin-top kind=lineSegment zIndex=0 primitive={x1Pt=64.000 y1Pt=624.810 x2Pt=427.000 y2Pt=623.810 stroke=#333 strokeWidth=1.200}
-  item id=system-3-item-75 measureId=measure-3 anchorItemId=- role=hairpin-bottom kind=lineSegment zIndex=0 primitive={x1Pt=64.000 y1Pt=632.810 x2Pt=427.000 y2Pt=633.810 stroke=#333 strokeWidth=1.200}
-  item id=system-3-item-77 measureId=measure-3 anchorItemId=- role=nav-end kind=textRun zIndex=0 primitive={textRole=countLabel text="D.S. al Coda" xPt=558.000 yPt=575.810 fontFamily=Academico fontSizePt=12.000 fill=#333 textAnchor=end fontWeight=bold}
+  system id=system-0 index=0 pageIndex=0 xPt=50.000 yPt=197.471 widthPt=512.000 heightPt=37.500 measureIds=[measure-0]
+  system id=system-1 index=1 pageIndex=0 xPt=50.000 yPt=303.734 widthPt=512.000 heightPt=37.500 measureIds=[measure-1]
+  system id=system-2 index=2 pageIndex=0 xPt=50.000 yPt=408.580 widthPt=512.000 heightPt=37.500 measureIds=[measure-2]
+  system id=system-3 index=3 pageIndex=0 xPt=50.000 yPt=507.203 widthPt=512.000 heightPt=37.500 measureIds=[measure-3]
+  measure id=measure-0 index=0 globalIndex=0 systemId=system-0 xPt=50.000 yPt=197.471 widthPt=512.000 heightPt=37.500
+  measure id=measure-1 index=1 globalIndex=1 systemId=system-1 xPt=50.000 yPt=303.734 widthPt=512.000 heightPt=37.500
+  measure id=measure-2 index=2 globalIndex=2 systemId=system-2 xPt=50.000 yPt=408.580 widthPt=512.000 heightPt=37.500
+  measure id=measure-3 index=3 globalIndex=3 systemId=system-3 xPt=50.000 yPt=507.203 widthPt=512.000 heightPt=37.500
+  item id=item-0 measureId=- anchorItemId=- role=title kind=textRun zIndex=0 primitive={textRole=title text="Fixture" xPt=306.000 yPt=61.500 fontFamily=Academico fontSizePt=18.000 fill=#333 textAnchor=middle fontWeight=bold}
+  item id=item-1 measureId=- anchorItemId=- role=subtitle kind=textRun zIndex=0 primitive={textRole=subtitle text="Scene" xPt=306.000 yPt=102.000 fontFamily=Academico fontSizePt=14.000 fill=#333 textAnchor=middle fontWeight=-}
+  item id=item-2 measureId=- anchorItemId=- role=composer kind=textRun zIndex=0 primitive={textRole=composer text="Codex" xPt=562.000 yPt=100.250 fontFamily=Academico fontSizePt=11.000 fill=#333 textAnchor=end fontWeight=-}
+  item id=system-0-item-3 measureId=- anchorItemId=- role=staff-line kind=lineSegment zIndex=0 primitive={x1Pt=50.000 y1Pt=204.971 x2Pt=562.000 y2Pt=204.971 stroke=#333 strokeWidth=1.000}
+  item id=system-0-item-4 measureId=- anchorItemId=- role=staff-line kind=lineSegment zIndex=0 primitive={x1Pt=50.000 y1Pt=212.471 x2Pt=562.000 y2Pt=212.471 stroke=#333 strokeWidth=1.000}
+  item id=system-0-item-5 measureId=- anchorItemId=- role=staff-line kind=lineSegment zIndex=0 primitive={x1Pt=50.000 y1Pt=219.971 x2Pt=562.000 y2Pt=219.971 stroke=#333 strokeWidth=1.000}
+  item id=system-0-item-6 measureId=- anchorItemId=- role=staff-line kind=lineSegment zIndex=0 primitive={x1Pt=50.000 y1Pt=227.471 x2Pt=562.000 y2Pt=227.471 stroke=#333 strokeWidth=1.000}
+  item id=system-0-item-7 measureId=- anchorItemId=- role=staff-line kind=lineSegment zIndex=0 primitive={x1Pt=50.000 y1Pt=234.971 x2Pt=562.000 y2Pt=234.971 stroke=#333 strokeWidth=1.000}
+  item id=system-0-item-8 measureId=- anchorItemId=- role=percussion-clef kind=textRun zIndex=0 primitive={textRole=percussionClef text="\u{e069}" xPt=55.000 yPt=219.971 fontFamily=Bravura fontSizePt=22.500 fill=#333 textAnchor=- fontWeight=-}
+  item id=system-0-item-9 measureId=- anchorItemId=- role=time-signature-digit kind=textRun zIndex=0 primitive={textRole=timeSignatureDigit text="\u{e084}" xPt=85.000 yPt=212.471 fontFamily=Bravura fontSizePt=22.500 fill=#333 textAnchor=- fontWeight=-}
+  item id=system-0-item-10 measureId=- anchorItemId=- role=time-signature-digit kind=textRun zIndex=0 primitive={textRole=timeSignatureDigit text="\u{e084}" xPt=85.000 yPt=227.471 fontFamily=Bravura fontSizePt=22.500 fill=#333 textAnchor=- fontWeight=-}
+  item id=system-0-item-11 measureId=measure-0 anchorItemId=- role=tempo-glyph kind=textRun zIndex=0 primitive={textRole=tempo text="\u{eca5}" xPt=59.000 yPt=187.471 fontFamily=Bravura fontSizePt=18.750 fill=#333 textAnchor=- fontWeight=-}
+  item id=system-0-item-12 measureId=measure-0 anchorItemId=- role=tempo-equals kind=textRun zIndex=0 primitive={textRole=tempo text="=" xPt=75.300 yPt=187.471 fontFamily=Academico fontSizePt=10.500 fill=#333 textAnchor=- fontWeight=-}
+  item id=system-0-item-13 measureId=measure-0 anchorItemId=- role=tempo kind=textRun zIndex=0 primitive={textRole=tempo text="120" xPt=88.050 yPt=187.471 fontFamily=Academico fontSizePt=10.500 fill=#333 textAnchor=- fontWeight=-}
+  item id=system-0-item-14 measureId=measure-0 anchorItemId=- role=opening-barline kind=rect zIndex=0 primitive={xPt=50.000 yPt=204.971 widthPt=1.000 heightPt=31.000 fill=#333 stroke=- strokeWidth=-}
+  item id=system-0-item-15 measureId=measure-0 anchorItemId=- role=notehead kind=textRun zIndex=0 primitive={textRole=tempo text="\u{e0a9}" xPt=169.320 yPt=201.221 fontFamily=Bravura fontSizePt=22.500 fill=#333 textAnchor=- fontWeight=-}
+  item id=system-0-item-16 measureId=measure-0 anchorItemId=system-0-item-15 role=stem kind=lineSegment zIndex=0 primitive={x1Pt=177.520 y1Pt=174.891 x2Pt=177.520 y2Pt=197.891 stroke=#333 strokeWidth=1.000}
+  item id=system-0-item-17 measureId=measure-0 anchorItemId=system-0-item-16 role=flag kind=glyphRun zIndex=0 primitive={glyphRole=flag32ndUp glyphCount=1 codepoint=57924 xPt=177.520 yPt=176.958 fontFamily=Bravura fontSizePt=16.500 fill=#333}
+  item id=system-0-item-18 measureId=measure-0 anchorItemId=- role=barline kind=rect zIndex=0 primitive={xPt=561.000 yPt=204.971 widthPt=1.000 heightPt=31.000 fill=#333 stroke=- strokeWidth=-}
+  item id=system-0-item-58 measureId=measure-0 anchorItemId=- role=volta-line kind=lineSegment zIndex=0 primitive={x1Pt=144.000 y1Pt=169.500 x2Pt=562.000 y2Pt=169.500 stroke=#333 strokeWidth=1.000}
+  item id=system-0-item-59 measureId=measure-0 anchorItemId=- role=volta-start-hook kind=lineSegment zIndex=0 primitive={x1Pt=144.000 y1Pt=169.500 x2Pt=144.000 y2Pt=184.500 stroke=#333 strokeWidth=1.000}
+  item id=system-0-item-60 measureId=measure-0 anchorItemId=- role=volta-label kind=textRun zIndex=0 primitive={textRole=countLabel text="1." xPt=149.000 yPt=183.500 fontFamily=Academico fontSizePt=12.000 fill=#333 textAnchor=- fontWeight=-}
+  item id=system-0-item-68 measureId=measure-0 anchorItemId=- role=hairpin-top kind=lineSegment zIndex=0 primitive={x1Pt=64.000 y1Pt=243.721 x2Pt=550.000 y2Pt=242.387 stroke=#333 strokeWidth=1.200}
+  item id=system-0-item-69 measureId=measure-0 anchorItemId=- role=hairpin-bottom kind=lineSegment zIndex=0 primitive={x1Pt=64.000 y1Pt=243.721 x2Pt=550.000 y2Pt=245.054 stroke=#333 strokeWidth=1.200}
+  item id=system-0-item-76 measureId=measure-0 anchorItemId=- role=nav-start kind=glyphRun zIndex=0 primitive={glyphRole=navigationSegno glyphCount=1 codepoint=57415 xPt=54.000 yPt=196.431 fontFamily=Bravura fontSizePt=15.000 fill=#333}
+  item id=system-1-item-19 measureId=- anchorItemId=- role=staff-line kind=lineSegment zIndex=0 primitive={x1Pt=50.000 y1Pt=311.234 x2Pt=562.000 y2Pt=311.234 stroke=#333 strokeWidth=1.000}
+  item id=system-1-item-20 measureId=- anchorItemId=- role=staff-line kind=lineSegment zIndex=0 primitive={x1Pt=50.000 y1Pt=318.734 x2Pt=562.000 y2Pt=318.734 stroke=#333 strokeWidth=1.000}
+  item id=system-1-item-21 measureId=- anchorItemId=- role=staff-line kind=lineSegment zIndex=0 primitive={x1Pt=50.000 y1Pt=326.234 x2Pt=562.000 y2Pt=326.234 stroke=#333 strokeWidth=1.000}
+  item id=system-1-item-22 measureId=- anchorItemId=- role=staff-line kind=lineSegment zIndex=0 primitive={x1Pt=50.000 y1Pt=333.734 x2Pt=562.000 y2Pt=333.734 stroke=#333 strokeWidth=1.000}
+  item id=system-1-item-23 measureId=- anchorItemId=- role=staff-line kind=lineSegment zIndex=0 primitive={x1Pt=50.000 y1Pt=341.234 x2Pt=562.000 y2Pt=341.234 stroke=#333 strokeWidth=1.000}
+  item id=system-1-item-24 measureId=- anchorItemId=- role=percussion-clef kind=textRun zIndex=0 primitive={textRole=percussionClef text="\u{e069}" xPt=55.000 yPt=326.234 fontFamily=Bravura fontSizePt=22.500 fill=#333 textAnchor=- fontWeight=-}
+  item id=system-1-item-25 measureId=- anchorItemId=- role=measure-number kind=textRun zIndex=0 primitive={textRole=measureNumber text="2" xPt=50.000 yPt=303.734 fontFamily=Academico fontSizePt=7.500 fill=#333 textAnchor=- fontWeight=-}
+  item id=system-1-item-26 measureId=measure-1 anchorItemId=- role=opening-barline kind=rect zIndex=0 primitive={xPt=50.000 yPt=311.234 widthPt=1.000 heightPt=31.000 fill=#333 stroke=- strokeWidth=-}
+  item id=system-1-item-27 measureId=measure-1 anchorItemId=- role=notehead kind=textRun zIndex=0 primitive={textRole=tempo text="\u{e0a9}" xPt=132.314 yPt=307.484 fontFamily=Bravura fontSizePt=22.500 fill=#333 textAnchor=- fontWeight=-}
+  item id=system-1-item-28 measureId=measure-1 anchorItemId=system-1-item-27 role=stem kind=lineSegment zIndex=0 primitive={x1Pt=140.514 y1Pt=281.154 x2Pt=140.514 y2Pt=304.154 stroke=#333 strokeWidth=1.000}
+  item id=system-1-item-29 measureId=measure-1 anchorItemId=- role=notehead kind=textRun zIndex=0 primitive={textRole=tempo text="\u{e0a4}" xPt=206.941 yPt=322.484 fontFamily=Bravura fontSizePt=22.500 fill=#333 textAnchor=- fontWeight=-}
+  item id=system-1-item-30 measureId=measure-1 anchorItemId=system-1-item-29 role=stem kind=lineSegment zIndex=0 primitive={x1Pt=215.291 y1Pt=290.501 x2Pt=215.291 y2Pt=321.224 stroke=#333 strokeWidth=1.000}
+  item id=system-1-item-31 measureId=measure-1 anchorItemId=system-1-item-28 role=beam kind=path zIndex=0 primitive={d="M 140.514 281.154 L 215.291 290.501 L 215.291 293.501 L 140.514 284.154 Z" fill=#333 stroke=- strokeWidth=-}
+  item id=system-1-item-32 measureId=measure-1 anchorItemId=system-1-item-28 role=beam-secondary kind=path zIndex=0 primitive={d="M 140.514 287.154 L 215.291 296.501 L 215.291 299.501 L 140.514 290.154 Z" fill=#333 stroke=- strokeWidth=-}
+  item id=system-1-item-33 measureId=measure-1 anchorItemId=- role=barline kind=rect zIndex=0 primitive={xPt=561.000 yPt=311.234 widthPt=1.000 heightPt=31.000 fill=#333 stroke=- strokeWidth=-}
+  item id=system-1-item-61 measureId=measure-1 anchorItemId=- role=volta-line kind=lineSegment zIndex=0 primitive={x1Pt=102.000 y1Pt=276.154 x2Pt=562.000 y2Pt=276.154 stroke=#333 strokeWidth=1.000}
+  item id=system-1-item-62 measureId=measure-1 anchorItemId=- role=volta-start-hook kind=lineSegment zIndex=0 primitive={x1Pt=102.000 y1Pt=276.154 x2Pt=102.000 y2Pt=291.154 stroke=#333 strokeWidth=1.000}
+  item id=system-1-item-70 measureId=measure-1 anchorItemId=- role=hairpin-top kind=lineSegment zIndex=0 primitive={x1Pt=64.000 y1Pt=345.901 x2Pt=550.000 y2Pt=344.567 stroke=#333 strokeWidth=1.200}
+  item id=system-1-item-71 measureId=measure-1 anchorItemId=- role=hairpin-bottom kind=lineSegment zIndex=0 primitive={x1Pt=64.000 y1Pt=348.567 x2Pt=550.000 y2Pt=349.901 stroke=#333 strokeWidth=1.200}
+  item id=system-2-item-34 measureId=- anchorItemId=- role=staff-line kind=lineSegment zIndex=0 primitive={x1Pt=50.000 y1Pt=416.080 x2Pt=562.000 y2Pt=416.080 stroke=#333 strokeWidth=1.000}
+  item id=system-2-item-35 measureId=- anchorItemId=- role=staff-line kind=lineSegment zIndex=0 primitive={x1Pt=50.000 y1Pt=423.580 x2Pt=562.000 y2Pt=423.580 stroke=#333 strokeWidth=1.000}
+  item id=system-2-item-36 measureId=- anchorItemId=- role=staff-line kind=lineSegment zIndex=0 primitive={x1Pt=50.000 y1Pt=431.080 x2Pt=562.000 y2Pt=431.080 stroke=#333 strokeWidth=1.000}
+  item id=system-2-item-37 measureId=- anchorItemId=- role=staff-line kind=lineSegment zIndex=0 primitive={x1Pt=50.000 y1Pt=438.580 x2Pt=562.000 y2Pt=438.580 stroke=#333 strokeWidth=1.000}
+  item id=system-2-item-38 measureId=- anchorItemId=- role=staff-line kind=lineSegment zIndex=0 primitive={x1Pt=50.000 y1Pt=446.080 x2Pt=562.000 y2Pt=446.080 stroke=#333 strokeWidth=1.000}
+  item id=system-2-item-39 measureId=- anchorItemId=- role=percussion-clef kind=textRun zIndex=0 primitive={textRole=percussionClef text="\u{e069}" xPt=55.000 yPt=431.080 fontFamily=Bravura fontSizePt=22.500 fill=#333 textAnchor=- fontWeight=-}
+  item id=system-2-item-40 measureId=- anchorItemId=- role=measure-number kind=textRun zIndex=0 primitive={textRole=measureNumber text="3" xPt=50.000 yPt=408.580 fontFamily=Academico fontSizePt=7.500 fill=#333 textAnchor=- fontWeight=-}
+  item id=system-2-item-41 measureId=measure-2 anchorItemId=- role=opening-barline kind=rect zIndex=0 primitive={xPt=50.000 yPt=416.080 widthPt=1.000 heightPt=31.000 fill=#333 stroke=- strokeWidth=-}
+  item id=system-2-item-42 measureId=measure-2 anchorItemId=- role=notehead kind=textRun zIndex=0 primitive={textRole=tempo text="\u{e0a9}" xPt=150.750 yPt=412.330 fontFamily=Bravura fontSizePt=22.500 fill=#333 textAnchor=- fontWeight=-}
+  item id=system-2-item-43 measureId=measure-2 anchorItemId=system-2-item-42 role=stem kind=lineSegment zIndex=0 primitive={x1Pt=158.950 y1Pt=386.000 x2Pt=158.950 y2Pt=409.000 stroke=#333 strokeWidth=1.000}
+  item id=system-2-item-44 measureId=measure-2 anchorItemId=- role=barline kind=rect zIndex=0 primitive={xPt=561.000 yPt=416.080 widthPt=1.000 heightPt=31.000 fill=#333 stroke=- strokeWidth=-}
+  item id=system-2-item-63 measureId=measure-2 anchorItemId=- role=volta-line kind=lineSegment zIndex=0 primitive={x1Pt=102.000 y1Pt=381.000 x2Pt=562.000 y2Pt=381.000 stroke=#333 strokeWidth=1.000}
+  item id=system-2-item-64 measureId=measure-2 anchorItemId=- role=volta-start-hook kind=lineSegment zIndex=0 primitive={x1Pt=102.000 y1Pt=381.000 x2Pt=102.000 y2Pt=396.000 stroke=#333 strokeWidth=1.000}
+  item id=system-2-item-72 measureId=measure-2 anchorItemId=- role=hairpin-top kind=lineSegment zIndex=0 primitive={x1Pt=64.000 y1Pt=449.414 x2Pt=550.000 y2Pt=448.080 stroke=#333 strokeWidth=1.200}
+  item id=system-2-item-73 measureId=measure-2 anchorItemId=- role=hairpin-bottom kind=lineSegment zIndex=0 primitive={x1Pt=64.000 y1Pt=454.747 x2Pt=550.000 y2Pt=456.080 stroke=#333 strokeWidth=1.200}
+  item id=system-3-item-45 measureId=- anchorItemId=- role=staff-line kind=lineSegment zIndex=0 primitive={x1Pt=50.000 y1Pt=514.703 x2Pt=562.000 y2Pt=514.703 stroke=#333 strokeWidth=1.000}
+  item id=system-3-item-46 measureId=- anchorItemId=- role=staff-line kind=lineSegment zIndex=0 primitive={x1Pt=50.000 y1Pt=522.203 x2Pt=562.000 y2Pt=522.203 stroke=#333 strokeWidth=1.000}
+  item id=system-3-item-47 measureId=- anchorItemId=- role=staff-line kind=lineSegment zIndex=0 primitive={x1Pt=50.000 y1Pt=529.703 x2Pt=562.000 y2Pt=529.703 stroke=#333 strokeWidth=1.000}
+  item id=system-3-item-48 measureId=- anchorItemId=- role=staff-line kind=lineSegment zIndex=0 primitive={x1Pt=50.000 y1Pt=537.203 x2Pt=562.000 y2Pt=537.203 stroke=#333 strokeWidth=1.000}
+  item id=system-3-item-49 measureId=- anchorItemId=- role=staff-line kind=lineSegment zIndex=0 primitive={x1Pt=50.000 y1Pt=544.703 x2Pt=562.000 y2Pt=544.703 stroke=#333 strokeWidth=1.000}
+  item id=system-3-item-50 measureId=- anchorItemId=- role=percussion-clef kind=textRun zIndex=0 primitive={textRole=percussionClef text="\u{e069}" xPt=55.000 yPt=529.703 fontFamily=Bravura fontSizePt=22.500 fill=#333 textAnchor=- fontWeight=-}
+  item id=system-3-item-51 measureId=- anchorItemId=- role=measure-number kind=textRun zIndex=0 primitive={textRole=measureNumber text="4" xPt=50.000 yPt=507.203 fontFamily=Academico fontSizePt=7.500 fill=#333 textAnchor=- fontWeight=-}
+  item id=system-3-item-52 measureId=measure-3 anchorItemId=- role=opening-barline kind=rect zIndex=0 primitive={xPt=50.000 yPt=514.703 widthPt=1.000 heightPt=31.000 fill=#333 stroke=- strokeWidth=-}
+  item id=system-3-item-53 measureId=measure-3 anchorItemId=- role=notehead kind=textRun zIndex=0 primitive={textRole=tempo text="\u{e0a4}" xPt=149.750 yPt=525.953 fontFamily=Bravura fontSizePt=22.500 fill=#333 textAnchor=- fontWeight=-}
+  item id=system-3-item-54 measureId=measure-3 anchorItemId=system-3-item-53 role=stem kind=lineSegment zIndex=0 primitive={x1Pt=158.100 y1Pt=501.693 x2Pt=158.100 y2Pt=524.693 stroke=#333 strokeWidth=1.000}
+  item id=system-3-item-55 measureId=measure-3 anchorItemId=system-3-item-53 role=accent kind=glyphRun zIndex=0 primitive={glyphRole=articAccentAbove glyphCount=1 codepoint=58528 xPt=150.565 yPt=497.693 fontFamily=Bravura fontSizePt=22.500 fill=#333}
+  item id=system-3-item-56 measureId=measure-3 anchorItemId=- role=final-barline-thin kind=rect zIndex=0 primitive={xPt=558.000 yPt=514.703 widthPt=1.000 heightPt=31.000 fill=#333 stroke=- strokeWidth=-}
+  item id=system-3-item-57 measureId=measure-3 anchorItemId=- role=final-barline-thick kind=rect zIndex=0 primitive={xPt=559.000 yPt=514.703 widthPt=3.000 heightPt=31.000 fill=#333 stroke=- strokeWidth=-}
+  item id=system-3-item-65 measureId=measure-3 anchorItemId=- role=volta-line kind=lineSegment zIndex=0 primitive={x1Pt=102.000 y1Pt=487.180 x2Pt=562.000 y2Pt=487.180 stroke=#333 strokeWidth=1.000}
+  item id=system-3-item-66 measureId=measure-3 anchorItemId=- role=volta-start-hook kind=lineSegment zIndex=0 primitive={x1Pt=102.000 y1Pt=487.180 x2Pt=102.000 y2Pt=502.180 stroke=#333 strokeWidth=1.000}
+  item id=system-3-item-67 measureId=measure-3 anchorItemId=- role=volta-end-hook kind=lineSegment zIndex=0 primitive={x1Pt=562.000 y1Pt=487.180 x2Pt=562.000 y2Pt=502.180 stroke=#333 strokeWidth=1.000}
+  item id=system-3-item-74 measureId=measure-3 anchorItemId=- role=hairpin-top kind=lineSegment zIndex=0 primitive={x1Pt=64.000 y1Pt=546.703 x2Pt=427.000 y2Pt=545.703 stroke=#333 strokeWidth=1.200}
+  item id=system-3-item-75 measureId=measure-3 anchorItemId=- role=hairpin-bottom kind=lineSegment zIndex=0 primitive={x1Pt=64.000 y1Pt=554.703 x2Pt=427.000 y2Pt=555.703 stroke=#333 strokeWidth=1.200}
+  item id=system-3-item-77 measureId=measure-3 anchorItemId=- role=nav-end kind=textRun zIndex=0 primitive={textRole=countLabel text="D.S. al Coda" xPt=558.000 yPt=516.703 fontFamily=Academico fontSizePt=9.000 fill=#333 textAnchor=end fontWeight=bold}
   composite id=text-block-title kind=textBlock fragment=singleSegment childItemIds=[item-0] label=title count=- startAnchorId=- endAnchorId=-
   composite id=text-block-subtitle kind=textBlock fragment=singleSegment childItemIds=[item-1] label=subtitle count=- startAnchorId=- endAnchorId=-
   composite id=text-block-composer kind=textBlock fragment=singleSegment childItemIds=[item-2] label=composer count=- startAnchorId=- endAnchorId=-

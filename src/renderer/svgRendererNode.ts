@@ -6,7 +6,7 @@ import { renderScenePagesToSvgs, renderSceneToSvg } from "./svgRenderer";
 import { SETTINGS_RANGES } from "./renderOptions";
 
 type RenderOptions = {
-  staffScale?: number;
+  staffSpacePt?: number;
   pageWidth?: number;
   pageHeight?: number;
   showTitle?: boolean;
@@ -29,22 +29,21 @@ type RenderOptions = {
 type Scene = Parameters<typeof renderSceneToSvg>[0];
 
 function buildLayoutOptions(options?: RenderOptions): Record<string, unknown> {
-  const ss = options?.staffScale ?? 0.75;
   return {
-    pageWidth: (options?.pageWidth ?? 612) / ss,
-    pageHeight: (options?.pageHeight ?? 792) / ss,
-    topMargin: (options?.topMargin ?? 40) / ss,
-    bottomMargin: (options?.bottomMargin ?? 40) / ss,
-    leftMargin: (options?.leftMargin ?? 40) / ss,
-    rightMargin: (options?.rightMargin ?? 40) / ss,
-    staffScale: 1.0,
+    pageWidth: options?.pageWidth ?? 612,
+    pageHeight: options?.pageHeight ?? 792,
+    topMargin: options?.topMargin ?? 40,
+    bottomMargin: options?.bottomMargin ?? 40,
+    leftMargin: options?.leftMargin ?? 40,
+    rightMargin: options?.rightMargin ?? 40,
+    staffSpacePt: options?.staffSpacePt ?? 10.0,
     pxPerQuarter: 80,
-    stemLenPt: options?.stemLength ?? 31,
-    systemSpacing: (options?.systemSpacing ?? SETTINGS_RANGES.systemSpacing.default) / ss,
-    headerHeight: (options?.headerHeight ?? SETTINGS_RANGES.headerHeight.default) / ss,
-    headerStaffSpacing: (options?.headerStaffSpacing ?? SETTINGS_RANGES.headerStaffSpacing.default) / ss,
-    voltaSpacing: (options?.voltaSpacing ?? SETTINGS_RANGES.voltaSpacing.default) / ss,
-    hairpinOffsetY: (options?.hairpinOffsetY ?? SETTINGS_RANGES.hairpinOffsetY.default) / ss,
+    stemLenPt: options?.stemLength ?? 23,
+    systemSpacing: options?.systemSpacing ?? SETTINGS_RANGES.systemSpacing.default,
+    headerHeight: options?.headerHeight ?? SETTINGS_RANGES.headerHeight.default,
+    headerStaffSpacing: options?.headerStaffSpacing ?? SETTINGS_RANGES.headerStaffSpacing.default,
+    voltaSpacing: options?.voltaSpacing ?? SETTINGS_RANGES.voltaSpacing.default,
+    hairpinOffsetY: options?.hairpinOffsetY ?? SETTINGS_RANGES.hairpinOffsetY.default,
     hideVoice2Rests: options?.hideVoice2Rests ?? false,
     durationSpacingCompression: options?.durationSpacingCompression ?? SETTINGS_RANGES.durationSpacingCompression.default,
     measureWidthCompression: options?.measureWidthCompression ?? SETTINGS_RANGES.measureWidthCompression.default,

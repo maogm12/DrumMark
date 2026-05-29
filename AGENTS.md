@@ -99,13 +99,32 @@ YYYY-MM-DD-short-kebab-title
 
 ### Required Gates
 
+- **Plan review MUST happen before asking the user for implementation go-ahead.** Do not present a plan and immediately ask "要开始实现吗?" — first complete the review cycle (subagent review → revise → approve), then present the approved plan.
 - Plan review must end with `STATUS: APPROVED` before implementation, unless the plan review is skipped for a low-risk Normal Change (Light Normal or recorded skip reason). When skipped, record `### Plan Review Skipped` in `history.md` instead of `### Approved Plan`.
 - After plan approval, append `### Approved Plan` to `history.md`. After an intentional skip, append `### Plan Review Skipped`.
 - Spec / Contract Changes and other stamped work require `Status: APPROVED_FOR_IMPLEMENTATION` recorded in `history.md` before coding starts. Do not rely on chat history alone.
 - During implementation, update task status in `plan.md`, run relevant checks, and request one implementation review when planned work is complete.
+- **Commit per task.** After each task completes (status → done, all checks pass), create a commit with a message referencing the task: `[Task N.M] brief description`. Do not accumulate changes from multiple tasks in a single commit. Untracked plan/history files go in their own commit.
 - Merge only after implementation review reaches `STATUS: APPROVED`.
 - Prefer squash merge unless the user requests otherwise.
 - After merge, move the change folder to `docs/changes/archive/<year>/<change-id>/`.
+
+### Pre-Implementation Gate
+
+**Before writing any code for a Normal / Large / Spec Change, the agent MUST confirm every item on this list. Do not edit, create, or modify source files until all applicable items are checked.**
+
+- [ ] `plan.md` exists at `docs/changes/active/<change-id>/plan.md`
+- [ ] `history.md` exists at `docs/changes/active/<change-id>/history.md`
+- [ ] Plan review completed AND `STATUS: APPROVED` recorded in `history.md` — OR — `### Plan Review Skipped` recorded in `history.md` with a valid skip reason
+- [ ] `### Approved Plan` (or `### Plan Review Skipped`) appended to `history.md`
+- [ ] If Spec / Contract or stamped: `Status: APPROVED_FOR_IMPLEMENTATION` recorded in `history.md`
+- [ ] If Spec / Contract: `## Spec Delta` present in `plan.md` and affected specs listed
+- [ ] A dedicated git branch exists for this change (create with `git checkout -b <change-id>` if not already on one)
+- [ ] Relevant GitHub Issues linked in `plan.md` under `## Linked Items` (if applicable)
+- [ ] All open plan conditions (margin defaults, design decisions flagged in plan) are resolved before coding
+
+**If any item is unchecked, stop and resolve it. Do not proceed to implementation.**
+
 
 ### Spec and Contract Files
 

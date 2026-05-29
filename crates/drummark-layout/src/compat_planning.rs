@@ -75,7 +75,7 @@ pub enum ElementKind {
 pub fn place_notes(
     measure: &NormalizedMeasure,
     mapper: &SlotMapper,
-    _opts: &LayoutOptions,
+    opts: &LayoutOptions,
 ) -> Vec<LayoutElement> {
     let mut elements = Vec::new();
     for ev in &measure.events {
@@ -99,8 +99,8 @@ pub fn place_notes(
             },
             x,
             y,
-            width: metrics.width_ss() * 10.0,
-            height: metrics.bbox_height_ss() * 10.0,
+            width: metrics.width_ss() * opts.staff_space_pt,
+            height: metrics.bbox_height_ss() * opts.staff_space_pt,
             smufl_codepoint: Some(metrics.smufl_codepoint),
             voice: Some(ev.voice),
             stem_up: Some(ev.voice == 1),
@@ -116,7 +116,7 @@ pub fn place_notes(
     elements
 }
 
-pub fn place_barlines(measure: &NormalizedMeasure, measure_x: f32) -> Vec<LayoutElement> {
+pub fn place_barlines(measure: &NormalizedMeasure, measure_x: f32, opts: &LayoutOptions) -> Vec<LayoutElement> {
     let mut elements = Vec::new();
     let bar_type = measure.barline.as_deref().unwrap_or("regular");
     elements.push(LayoutElement {
@@ -124,7 +124,7 @@ pub fn place_barlines(measure: &NormalizedMeasure, measure_x: f32) -> Vec<Layout
         x: measure_x,
         y: 0.0,
         width: 2.0,
-        height: STAFF_HEIGHT_SS * 10.0,
+        height: STAFF_HEIGHT_SS * opts.staff_space_pt,
         smufl_codepoint: None,
         voice: None,
         stem_up: None,
@@ -213,7 +213,7 @@ pub fn build_systems(score: &NormalizedScore, opts: &LayoutOptions) -> Vec<Syste
     let mut systems = Vec::new();
     let mut current_system = System {
         y: opts.top_margin_pt,
-        height: STAFF_HEIGHT_SS * 10.0 * opts.staff_scale,
+        height: STAFF_HEIGHT_SS * opts.staff_space_pt,
         measures: Vec::new(),
     };
     let mut cursor_x = opts.left_margin_pt + 30.0 + 40.0;
@@ -231,8 +231,8 @@ pub fn build_systems(score: &NormalizedScore, opts: &LayoutOptions) -> Vec<Syste
         {
             systems.push(current_system);
             current_system = System {
-                y: opts.top_margin_pt + (systems.len() as f32 + 1.0) * (opts.staff_scale * 80.0),
-                height: STAFF_HEIGHT_SS * 10.0 * opts.staff_scale,
+                y: opts.top_margin_pt + (systems.len() as f32 + 1.0) * (opts.staff_space_pt * 8.0),
+                height: STAFF_HEIGHT_SS * opts.staff_space_pt,
                 measures: Vec::new(),
             };
             cursor_x = opts.left_margin_pt + 30.0 + 40.0;
@@ -240,7 +240,7 @@ pub fn build_systems(score: &NormalizedScore, opts: &LayoutOptions) -> Vec<Syste
 
         let mut elements = Vec::new();
         elements.extend(place_notes(measure, &mapper, opts));
-        elements.extend(place_barlines(measure, cursor_x));
+        elements.extend(place_barlines(measure, cursor_x, opts));
 
         current_system.measures.push(MeasureLayout {
             x: cursor_x,

@@ -10,7 +10,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const docsRenderOptions = {
-    staffScale: DEFAULT_RENDER_OPTIONS.staffScale,
+    staffSpacePt: DEFAULT_RENDER_OPTIONS.staffSpacePt,
     pageWidth: DEFAULT_RENDER_OPTIONS.pageWidth,
     pageHeight: DEFAULT_RENDER_OPTIONS.pageHeight,
     showTitle: true,

@@ -103,7 +103,7 @@ fn crate_root_public_api_smoke() {
     let note_metric = notehead_glyph("SD", &[], "d");
     assert_eq!(note_metric.role, GlyphRole::NoteheadBlack);
     assert!(canonical_glyph_metric(GlyphRole::RestQuarter).width_ss() > 0.0);
-    assert!(canonical_text_metric(TextRole::Tempo).font_size_pt > 0.0);
+    assert!(canonical_text_metric(TextRole::Tempo, 10.0).font_size_pt > 0.0);
     assert!(!canonical_flag_path(FlagPathRole::EighthUp, 10.0, 20.0).is_empty());
     assert_eq!(
         rest_glyph_for_fraction(Fraction {
@@ -118,7 +118,7 @@ fn crate_root_public_api_smoke() {
 
     let mapper = SlotMapper::new(80.0);
     let mut elements = place_notes(&score.measures[0], &mapper, &opts);
-    elements.extend(place_barlines(&score.measures[0], 50.0));
+    elements.extend(place_barlines(&score.measures[0], 50.0, &opts));
     let warnings = stack_edge_elements(&mut elements, 4.0);
     assert!(warnings.is_empty());
     assert_eq!(build_systems(&score, &opts).len(), 1);

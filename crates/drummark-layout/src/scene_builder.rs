@@ -9,14 +9,15 @@ use crate::{
 pub(crate) struct SceneBuilder<'a> {
     items: &'a mut Vec<SceneItem>,
     counter: &'a mut usize,
+    pub(crate) staff_space_pt: f32,
 }
 
 /// Migration alias; target-state name is [`SceneBuilder`].
 pub(crate) type SceneEmitSink<'a> = SceneBuilder<'a>;
 
 impl<'a> SceneBuilder<'a> {
-    pub(crate) fn new(items: &'a mut Vec<SceneItem>, counter: &'a mut usize) -> Self {
-        Self { items, counter }
+    pub(crate) fn new(items: &'a mut Vec<SceneItem>, counter: &'a mut usize, staff_space_pt: f32) -> Self {
+        Self { items, counter, staff_space_pt }
     }
 
     pub(crate) fn items(&self) -> &[SceneItem] {
@@ -273,7 +274,7 @@ mod tests {
         let mut counter = 0usize;
 
         {
-            let mut sink = SceneEmitSink::new(&mut items, &mut counter);
+            let mut sink = SceneEmitSink::new(&mut items, &mut counter, 10.0);
             let text_id = sink.push_text_item(TextItemSpec {
                 measure_id: Some("measure-0"),
                 role: "dynamic",
@@ -303,7 +304,7 @@ mod tests {
             assert_eq!(line_id, "item-1");
         }
 
-        let mut sink = SceneEmitSink::new(&mut items, &mut counter);
+        let mut sink = SceneEmitSink::new(&mut items, &mut counter, 10.0);
         let glyph_id = sink.push_glyph_item(GlyphItemSpec {
             measure_id: Some("measure-0"),
             role: "flag",
@@ -323,7 +324,7 @@ mod tests {
     fn scene_builder_supports_item_lookup_and_targeted_mutation() {
         let mut items = Vec::new();
         let mut counter = 0usize;
-        let mut sink = SceneEmitSink::new(&mut items, &mut counter);
+        let mut sink = SceneEmitSink::new(&mut items, &mut counter, 10.0);
 
         let note_id = sink.push_text_item(TextItemSpec {
             measure_id: Some("measure-0"),

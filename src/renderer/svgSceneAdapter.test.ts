@@ -102,7 +102,7 @@ describe("SVG scene adapter", () => {
       ],
     } as any;
 
-    const svg = renderSceneToSvg(scene, { staffScale: 1 });
+    const svg = renderSceneToSvg(scene, { staffSpacePt: 10.0 });
     expect(svg).toContain('<line data-role="staff-line"');
     expect(svg).toContain("Smoke");
     expect(svg).toContain('data-role="repeat-span-line"');
@@ -165,32 +165,32 @@ describe("SVG scene adapter", () => {
       ],
     } as any;
 
-    const svgs = renderScenePagesToSvgs(scene, { staffScale: 1 });
+    const svgs = renderScenePagesToSvgs(scene, { staffSpacePt: 10.0 });
     expect(svgs).toHaveLength(2);
     expect(svgs[0]).toContain("Page Zero");
     expect(svgs[1]).toContain("Page One");
     expect(svgs[1]).toContain('data-role="repeat-span-line"');
 
     const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
-    expect(renderSceneToSvg(scene, { staffScale: 1 })).toContain("Page Zero");
+    expect(renderSceneToSvg(scene, { staffSpacePt: 10.0 })).toContain("Page Zero");
     expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining("renderSceneToSvg received a multi-page scene"));
     warnSpy.mockRestore();
   });
 
   it("builds scene from source and renders svg", async () => {
-    const scene = await buildLayoutSceneFromSource(SRC, { pageWidth: 612, staffScale: 0.75 });
+    const scene = await buildLayoutSceneFromSource(SRC, { pageWidth: 612, staffSpacePt: 10.0 });
     expect(scene.pages.length).toBeGreaterThan(0);
     expect(scene.pages[0]?.items.length).toBeGreaterThan(0);
     expect(scene.pages[0]?.systems.length).toBeGreaterThan(0);
     expect(scene.pages[0]?.systems[0]?.measureIds.length).toBeGreaterThan(0);
     expect(scene.pages[0]?.composites.some((composite) => composite.kind === "textBlock" && composite.label === "tempo")).toBe(true);
 
-    const svg = await renderSourceToSvg(SRC, { pageWidth: 612, staffScale: 0.75 });
+    const svg = await renderSourceToSvg(SRC, { pageWidth: 612, staffSpacePt: 10.0 });
     expect(svg).toContain("<svg");
     expect(svg).toContain("Smoke");
     expect(svg).toContain('data-role="notehead"');
 
-    const pages = await renderSourcePagesToSvgs(SRC, { pageWidth: 612, staffScale: 0.75 });
+    const pages = await renderSourcePagesToSvgs(SRC, { pageWidth: 612, staffSpacePt: 10.0 });
     expect(pages).toHaveLength(scene.pages.length);
     expect(pages[0]).toContain('data-role="notehead"');
   });
@@ -206,7 +206,7 @@ ${paragraphs}
 `;
 
     const pages = await renderScorePagesToSvgs({}, {
-      staffScale: 1,
+      staffSpacePt: 10.0,
       pageWidth: 612,
       pageHeight: 260,
       topMargin: 20,
@@ -227,7 +227,7 @@ note 1/8
 | p p b b |
 
 | ss|
-`, { pageWidth: 612, staffScale: 1 });
+`, { pageWidth: 612, staffSpacePt: 10.0 });
 
     const beamsByMeasure = scene.pages
       .flatMap((page) => page.items)
@@ -245,9 +245,9 @@ note 1/8
   });
 
   it("passes hairpin vertical offset into the layout engine", async () => {
-    const baseline = await buildLayoutSceneFromSource(HAIRPIN_SRC, { pageWidth: 612, staffScale: 1, hairpinOffsetY: 0 });
-    const lower = await buildLayoutSceneFromSource(HAIRPIN_SRC, { pageWidth: 612, staffScale: 1, hairpinOffsetY: 10 });
-    const higher = await buildLayoutSceneFromSource(HAIRPIN_SRC, { pageWidth: 612, staffScale: 1, hairpinOffsetY: -5 });
+    const baseline = await buildLayoutSceneFromSource(HAIRPIN_SRC, { pageWidth: 612, staffSpacePt: 10.0, hairpinOffsetY: 0 });
+    const lower = await buildLayoutSceneFromSource(HAIRPIN_SRC, { pageWidth: 612, staffSpacePt: 10.0, hairpinOffsetY: 10 });
+    const higher = await buildLayoutSceneFromSource(HAIRPIN_SRC, { pageWidth: 612, staffSpacePt: 10.0, hairpinOffsetY: -5 });
     const baselineY = hairpinCenterY(baseline);
 
     expect(hairpinCenterY(lower) - baselineY).toBeCloseTo(10, 3);
@@ -255,9 +255,9 @@ note 1/8
   });
 
   it("passes title area height and title gap into the layout engine", async () => {
-    const baseline = await buildLayoutSceneFromSource(SRC, { pageWidth: 612, staffScale: 1, topMargin: 30, headerHeight: 50, headerStaffSpacing: 60 });
-    const taller = await buildLayoutSceneFromSource(SRC, { pageWidth: 612, staffScale: 1, topMargin: 30, headerHeight: 80, headerStaffSpacing: 60 });
-    const tighter = await buildLayoutSceneFromSource(SRC, { pageWidth: 612, staffScale: 1, topMargin: 30, headerHeight: 50, headerStaffSpacing: 20 });
+    const baseline = await buildLayoutSceneFromSource(SRC, { pageWidth: 612, staffSpacePt: 10.0, topMargin: 30, headerHeight: 50, headerStaffSpacing: 60 });
+    const taller = await buildLayoutSceneFromSource(SRC, { pageWidth: 612, staffSpacePt: 10.0, topMargin: 30, headerHeight: 80, headerStaffSpacing: 60 });
+    const tighter = await buildLayoutSceneFromSource(SRC, { pageWidth: 612, staffSpacePt: 10.0, topMargin: 30, headerHeight: 50, headerStaffSpacing: 20 });
 
     expect(baseline.pages[0].systems[0].yPt).toBeGreaterThan(140);
     expect(taller.pages[0].systems[0].yPt).toBeGreaterThan(baseline.pages[0].systems[0].yPt);
@@ -275,7 +275,7 @@ note 1/8
       metricsVersion: "test",
       pages: [{ index: 0, widthPt: 10, heightPt: 10, measures: [], items: [{ id: "x", role: "bad", kind: "mystery", zIndex: 0, primitive: {} }], composites: [] }],
     } as any;
-    expect(() => renderSceneToSvg(badScene, { staffScale: 1 })).toThrow(/Unsupported scene item kind/);
+    expect(() => renderSceneToSvg(badScene, { staffSpacePt: 10.0 })).toThrow(/Unsupported scene item kind/);
   });
 
   it("renders repeat-span fragments without duplicating hooks and labels", () => {
@@ -300,7 +300,7 @@ note 1/8
       ],
     } as any;
 
-    const svg = renderSceneToSvg(scene, { staffScale: 1 });
+    const svg = renderSceneToSvg(scene, { staffSpacePt: 10.0 });
     expect((svg.match(/data-role="repeat-span-count"/g) || []).length).toBe(1);
     expect((svg.match(/data-role="repeat-span-start"/g) || []).length).toBe(1);
     expect((svg.match(/data-role="repeat-span-end"/g) || []).length).toBe(1);
@@ -344,7 +344,7 @@ note 1/8
       ],
     } as any;
 
-    const svg = renderSceneToSvg(scene, { staffScale: 1 });
+    const svg = renderSceneToSvg(scene, { staffSpacePt: 10.0 });
     expect(svg).toContain('data-role="glyph-note"');
     expect(svg).toContain('data-role="beam"');
     expect(svg).toContain('data-role="shape"');

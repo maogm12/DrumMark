@@ -65,6 +65,9 @@ pub(crate) struct SystemStartReservation {
 pub(crate) const MEASURE_RIGHT_PAD_PT: f32 = 14.0;
 pub(crate) const NON_INITIAL_MEASURE_LEFT_PAD_PT: f32 = 14.0;
 pub(crate) const SYSTEM_PREAMBLE_TRAILING_CONTENT_GAP_PT: f32 = 8.0;
+/// Visual gap between compact-measure content (multi-rest) and adjacent barlines/glyphs.
+pub(crate) const COMPACT_MEASURE_EDGE_GAP_PT: f32 = 8.0;
+pub(crate) const OPENING_BARLINE_THICKNESS_PT: f32 = 1.0;
 pub(crate) const COMPLEX_BARLINE_TRAILING_CONTENT_GAP_PT: f32 = 8.0;
 pub(crate) const SVG_POINT_TO_USER_UNIT: f32 = 4.0 / 3.0;
 pub(crate) const REPEAT_BARLINE_FONT_SIZE_PT: f32 = 30.0;
@@ -190,6 +193,68 @@ pub(crate) fn measure_right_pad(barline: Option<&str>, staff_space_pt: f32) -> f
             }
             _ => MEASURE_RIGHT_PAD_PT,
         }
+    }
+}
+
+/// Right edge of clef/time-signature glyphs drawn at the system margin (see scene.rs).
+pub(crate) fn compact_measure_preamble_end_x(
+    page_margin_left: f32,
+    is_first_system: bool,
+    staff_space_pt: f32,
+) -> f32 {
+    let clef_metric = canonical_text_metric(TextRole::PercussionClef, staff_space_pt);
+    let clef_end = page_margin_left + 5.0 + clef_metric.average_advance_pt;
+    if !is_first_system {
+        return clef_end;
+    }
+    let ts_metric = canonical_text_metric(TextRole::TimeSignatureDigit, staff_space_pt);
+    let ts_end = page_margin_left + 35.0 + ts_metric.average_advance_pt;
+    clef_end.max(ts_end)
+}
+
+pub(crate) fn compact_measure_inner_left(
+    measure_x: f32,
+    measure_index_in_system: usize,
+    page_margin_left: f32,
+    is_first_system: bool,
+    barline: Option<&str>,
+    staff_space_pt: f32,
+) -> f32 {
+    if measure_index_in_system == 0 {
+        let mut left = compact_measure_preamble_end_x(page_margin_left, is_first_system, staff_space_pt)
+            + COMPACT_MEASURE_EDGE_GAP_PT;
+        if is_start_repeat_barline(barline) {
+            let repeat_left = first_measure_start_repeat_x(measure_x, is_first_system);
+            left = left.max(
+                repeat_left
+                    + repeat_barline_rendered_width(GlyphRole::RepeatLeft, staff_space_pt)
+                    + COMPACT_MEASURE_EDGE_GAP_PT,
+            );
+        }
+        left.max(measure_x + OPENING_BARLINE_THICKNESS_PT)
+    } else if is_start_repeat_barline(barline) {
+        measure_x
+            + repeat_barline_rendered_width(GlyphRole::RepeatLeft, staff_space_pt)
+            + START_REPEAT_TRAILING_GAP_PT
+    } else {
+        measure_x + OPENING_BARLINE_THICKNESS_PT + COMPACT_MEASURE_EDGE_GAP_PT
+    }
+}
+
+pub(crate) fn compact_measure_inner_right(
+    measure_x: f32,
+    measure_width: f32,
+    right_barline: Option<&str>,
+    staff_space_pt: f32,
+) -> f32 {
+    let x = measure_x + measure_width;
+    match right_barline {
+        Some("repeat-end") | Some("repeat-both") => {
+            x - repeat_barline_rendered_width(GlyphRole::RepeatRight, staff_space_pt)
+                - COMPACT_MEASURE_EDGE_GAP_PT
+        }
+        Some("final") | Some("double") => x - 4.0 - COMPACT_MEASURE_EDGE_GAP_PT,
+        _ => x - OPENING_BARLINE_THICKNESS_PT - COMPACT_MEASURE_EDGE_GAP_PT,
     }
 }
 
@@ -573,7 +638,10 @@ pub(crate) fn finalize_planned_system<'a>(
                 .closing_barline
                 .as_deref()
                 .or(current_measures[index].barline.as_deref());
-            width * scale + left + measure_right_pad(right_barline, 7.5)
+            let is_compact = current_measures[index].measure.multi_rest_count.is_some()
+                || current_measures[index].measure.measure_repeat_slashes.is_some();
+            let content_width = if is_compact { width.max(width * scale) } else { width * scale };
+            content_width + left + measure_right_pad(right_barline, 7.5)
         })
         .collect();
     systems.push(PlannedSystem {

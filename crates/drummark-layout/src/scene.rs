@@ -489,9 +489,24 @@ pub fn build_layout_scene(score: &RenderScore, opts: &LayoutOptions) -> LayoutSc
 
             if let Some(count) = measure.measure.multi_rest_count {
                 let center_y = s_top + (s_bot - s_top) * 0.5;
-                let pad = (*mw * 0.1).max(8.0);
-                let bar_left = mx + pad;
-                let bar_right = mx + *mw - pad;
+                let inner_left = compact_measure_inner_left(
+                    mx,
+                    mi,
+                    margin,
+                    is_first_system,
+                    measure.barline.as_deref(),
+                    opts.staff_space_pt,
+                );
+                let inner_right = compact_measure_inner_right(
+                    mx,
+                    *mw,
+                    right_barline,
+                    opts.staff_space_pt,
+                );
+                let inner_width = (inner_right - inner_left).max(0.0);
+                let pad = (inner_width * 0.1).max(8.0);
+                let bar_left = inner_left + pad;
+                let bar_right = inner_right - pad;
                 let bar_thickness = staff_ss * 0.5;
                 let serif_height = staff_ss * 2.0;
                 let serif_thickness = 2.0;
@@ -538,7 +553,7 @@ pub fn build_layout_scene(score: &RenderScore, opts: &LayoutOptions) -> LayoutSc
                 let count_id = sink.push_text_item(TextItemSpec {
                     measure_id: Some(&measure_id),
                     role: "multi-rest-count",
-                    x: mx + *mw * 0.5,
+                    x: (inner_left + inner_right) * 0.5,
                     y: count_y,
                     text_role: TextRole::TimeSignatureDigit,
                     text: count_glyph,

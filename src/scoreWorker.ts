@@ -41,7 +41,13 @@ let lastSource: string | null = null;
 function parseErrorScore(message: string): ReturnType<typeof buildNormalizedScore> {
   return {
     version: "1",
-    header: {},
+    header: {
+      tempo: 120,
+      timeSignature: { beats: 4, beatUnit: 4 },
+      divisions: 24,
+      noteValue: 4,
+      grouping: [4],
+    },
     tracks: [],
     repeatSpans: [],
     measures: [],

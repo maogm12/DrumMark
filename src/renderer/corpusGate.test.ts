@@ -44,12 +44,12 @@ function sceneSummary(scene: any): SceneSummary {
     systems += page.systems?.length || 0;
     const pageItems = [
       ...(page.header?.items ?? []),
-      ...(page.systems ?? []).flatMap((system) => system.items ?? []),
+      ...(page.systems ?? []).flatMap((system: any) => system.items ?? []),
     ];
-    const pageMeasures = (page.systems ?? []).flatMap((system) => system.measures ?? []);
+    const pageMeasures = (page.systems ?? []).flatMap((system: any) => system.measures ?? []);
     const pageComposites = [
       ...(page.header?.composites ?? []),
-      ...(page.systems ?? []).flatMap((system) => system.composites ?? []),
+      ...(page.systems ?? []).flatMap((system: any) => system.composites ?? []),
     ];
     measures += pageMeasures.length;
     items += pageItems.length;

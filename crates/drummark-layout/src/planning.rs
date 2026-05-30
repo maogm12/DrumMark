@@ -468,7 +468,7 @@ pub(crate) struct MeasureGeometryInput {
 }
 
 fn segment_offsets_for_group(
-    _start_fraction: Fraction,
+    start_fraction: Fraction,
     group_duration: Fraction,
     segment_boundaries: &[Fraction],
     group_hit_starts: &[Fraction],
@@ -530,12 +530,20 @@ fn segment_offsets_for_group(
         let first = group_hit_starts[0];
         let last = group_hit_starts[group_hit_starts.len() - 1];
         if compare_fractions(last, first) == std::cmp::Ordering::Greater {
-            let content_span = fraction_to_f32(subtract_fractions(last, first));
-            let fill = content_span / group_span;
-            if fill < 0.5 || fill >= 0.65 {
-                let span = content_span.max(1e-6);
+            let attack_span = fraction_to_f32(subtract_fractions(last, first));
+            let fill = attack_span / group_span;
+            if fill < 0.5 {
+                // Sparse: spread attacks across the group without reserving trailing metric time.
+                let span = attack_span.max(1e-6);
                 for (offset, boundary) in offsets.iter_mut().zip(segment_boundaries) {
                     *offset = (fraction_to_f32(subtract_fractions(*boundary, first)) / span)
+                        .clamp(0.0, 1.0);
+                }
+            } else if fill >= 0.65 {
+                // Dense: keep metric spacing through the full grouping span (matches earlier groups).
+                for (offset, boundary) in offsets.iter_mut().zip(segment_boundaries) {
+                    *offset = (fraction_to_f32(subtract_fractions(*boundary, start_fraction))
+                        / group_span)
                         .clamp(0.0, 1.0);
                 }
             }

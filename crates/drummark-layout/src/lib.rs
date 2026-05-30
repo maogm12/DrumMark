@@ -1611,6 +1611,60 @@ mod tests {
     }
 
     #[test]
+    fn test_uniform_eighth_notes_have_even_spacing_within_measure() {
+        let events: Vec<_> = (0..8)
+            .map(|i| {
+                test_hit(
+                    "HH",
+                    Fraction {
+                        numerator: i,
+                        denominator: 8,
+                    },
+                    Fraction {
+                        numerator: 1,
+                        denominator: 8,
+                    },
+                    1,
+                )
+            })
+            .collect();
+        let measure = RenderMeasure {
+            index: 0,
+            global_index: 0,
+            paragraph_index: 0,
+            measure_in_paragraph: 0,
+            source_line: 1,
+            events,
+            barline: Some("regular".into()),
+            closing_barline: Some("regular".into()),
+            start_nav: None,
+            end_nav: None,
+            volta_indices: None,
+            hairpins: vec![],
+            dynamics: vec![],
+            measure_repeat_slashes: None,
+            multi_rest_count: None,
+            note_value: 8,
+            volta_terminator: false,
+        };
+        let score = simple_layout_score(vec![measure]);
+        let scene = build_layout_scene(&score, &LayoutOptions::default());
+        let noteheads: Vec<_> = page_all_items(&scene.pages[0])
+            .filter(|item| item.role == "notehead")
+            .collect();
+        assert_eq!(noteheads.len(), 8);
+        let mut xs: Vec<f32> = noteheads.iter().map(|item| item_visual_center_x(item)).collect();
+        xs.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
+        let gaps: Vec<f32> = xs.windows(2).map(|pair| pair[1] - pair[0]).collect();
+        let min_gap = gaps.iter().copied().fold(f32::INFINITY, f32::min);
+        let max_gap = gaps.iter().copied().fold(f32::NEG_INFINITY, f32::max);
+        assert!(
+            max_gap - min_gap < 0.75,
+            "eighth-note gaps should be even: gaps={gaps:?} min={min_gap:.2} max={max_gap:.2}"
+        );
+    }
+
+    #[test]
     fn test_dense_eighth_row_has_equal_content_lane_margins() {
         let events: Vec<_> = (0..8)
             .map(|i| {
@@ -4255,6 +4309,143 @@ mod tests {
             (right_stem.1 - beam_end_y).abs() < 0.01,
             "tail shared stem should stop at beam: stem_tip_y={:.2} beam_end_y={beam_end_y:.2}",
             right_stem.1
+        );
+    }
+
+    #[test]
+    fn test_magic_token_row_interior_crash_stem_meets_beam() {
+        fn hit(track: &str, start_num: u32, start_den: u32) -> RenderEvent {
+            RenderEvent {
+                track: track.into(),
+                track_family: if track == "C" {
+                    "cymbal".into()
+                } else {
+                    "drum".into()
+                },
+                start: Fraction {
+                    numerator: start_num,
+                    denominator: start_den,
+                },
+                duration: Fraction {
+                    numerator: 1,
+                    denominator: 8,
+                },
+                visual_duration: Fraction {
+                    numerator: 1,
+                    denominator: 8,
+                },
+                kind: EventKind::Hit,
+                glyph: if track == "C" { "x".into() } else { "d".into() },
+                modifiers: vec![],
+                dot_count: 0,
+                modifier: None,
+                voice: 1,
+                beam: "none".into(),
+                tuplet: None,
+            }
+        }
+
+        let score = RenderScore {
+            version: RENDER_SCORE_VERSION.to_string(),
+            header: RenderHeader {
+                tempo: 115,
+                time_beats: 4,
+                time_beat_unit: 4,
+                divisions: 8,
+                note_value: 8,
+                grouping: vec![2, 2],
+                title: None,
+                subtitle: None,
+                composer: None,
+            },
+            tracks: vec![
+                RenderTrack {
+                    id: "T3".into(),
+                    family: "drum".into(),
+                },
+                RenderTrack {
+                    id: "C".into(),
+                    family: "cymbal".into(),
+                },
+                RenderTrack {
+                    id: "T1".into(),
+                    family: "drum".into(),
+                },
+                RenderTrack {
+                    id: "SD".into(),
+                    family: "drum".into(),
+                },
+            ],
+            measures: vec![RenderMeasure {
+                index: 0,
+                global_index: 0,
+                paragraph_index: 0,
+                measure_in_paragraph: 0,
+                source_line: 1,
+                events: vec![
+                    hit("T3", 0, 1),
+                    hit("C", 1, 8),
+                    hit("T1", 1, 4),
+                    hit("SD", 3, 8),
+                ],
+                barline: Some("regular".into()),
+                closing_barline: Some("final".into()),
+                start_nav: None,
+                end_nav: None,
+                volta_indices: None,
+                hairpins: vec![],
+                dynamics: vec![],
+                measure_repeat_slashes: None,
+                multi_rest_count: None,
+                note_value: 8,
+                volta_terminator: false,
+            }],
+            errors: vec![],
+            repeat_spans: vec![],
+        };
+
+        let scene = build_layout_scene(&score, &LayoutOptions::default());
+        let beam = items_by_role(&scene, "beam")
+            .into_iter()
+            .next()
+            .expect("expected beam");
+        let beam_path = match &beam.primitive {
+            ScenePrimitive::Path(path) => path.d.as_str(),
+            _ => panic!("expected beam path"),
+        };
+        let tokens = beam_path.split_whitespace().collect::<Vec<_>>();
+        let beam_x1: f32 = tokens[1].parse().expect("beam x1");
+        let beam_y1: f32 = tokens[2].parse().expect("beam y1");
+        let beam_x2: f32 = tokens[4].parse().expect("beam x2");
+        let beam_y2: f32 = tokens[5].parse().expect("beam y2");
+
+        // Crash (C) is the highest interior voice-1 note: smallest stem-tip y in the group.
+        let crash_stem = items_by_role(&scene, "stem")
+            .into_iter()
+            .filter_map(|item| match &item.primitive {
+                ScenePrimitive::LineSegment(line) => Some((line.x1_pt, line.y1_pt)),
+                _ => None,
+            })
+            .filter(|(x, _)| *x > beam_x1 + 20.0 && *x < beam_x2 - 20.0)
+            .min_by(|a, b| a.1.partial_cmp(&b.1).unwrap())
+            .expect("expected interior crash stem");
+
+        let all_stems = items_by_role(&scene, "stem")
+            .into_iter()
+            .filter_map(|item| match &item.primitive {
+                ScenePrimitive::LineSegment(line) => {
+                    Some((line.x1_pt, line.y1_pt, line.y2_pt))
+                }
+                _ => None,
+            })
+            .collect::<Vec<_>>();
+        let t = (crash_stem.0 - beam_x1) / (beam_x2 - beam_x1);
+        let beam_y = beam_y1 + (beam_y2 - beam_y1) * t;
+        assert!(
+            (crash_stem.1 - beam_y).abs() < 0.5,
+            "crash stem tip y={:.2} should sit on beam y={beam_y:.2} at x={:.2}; all stems={all_stems:?}",
+            crash_stem.1,
+            crash_stem.0
         );
     }
 

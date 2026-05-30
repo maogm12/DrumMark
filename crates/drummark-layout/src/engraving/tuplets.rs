@@ -3,7 +3,7 @@ use crate::fraction::{add_fractions, compare_fractions};
 use crate::metrics::{canonical_text_metric, canonical_text_width, TextRole};
 use crate::scene_builder::{LineItemSpec, SceneEmitSink, TextItemSpec};
 
-use super::notes::SlotEvent;
+use super::notes::{SlotEvent, SlotTopObstacle};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) struct TupletRunKey {
@@ -25,6 +25,7 @@ pub(crate) fn render_tuplet_groups(
     measure_id: &str,
     slot_events: &[SlotEvent<'_>],
     staff_top: f32,
+    top_obstacles: &[SlotTopObstacle],
 ) {
     let mut tuplet_events = slot_events
         .iter()
@@ -77,13 +78,24 @@ pub(crate) fn render_tuplet_groups(
         });
     }
 
+    let ss = sink.staff_space_pt;
     for run in &runs {
-        let y = staff_top - 30.0 - (run.key.voice.saturating_sub(1) as f32 * 12.0);
-        let left = run.start_x - 8.0;
-        let right = run.end_x + 8.0;
+        let mut obstacle_top = staff_top;
+        let run_left = run.start_x - ss * 1.5;
+        let run_right = run.end_x + ss * 1.5;
+        for obs in top_obstacles {
+            if obs.x >= run_left && obs.x <= run_right {
+                obstacle_top = obstacle_top.min(obs.top_y);
+            }
+        }
+        let baseline_y = staff_top - ss * 3.0;
+        let collision_y = obstacle_top - ss * 1.5;
+        let y = baseline_y.min(collision_y) - (run.key.voice.saturating_sub(1) as f32 * ss * 2.5);
+        let left = run.start_x - ss * 1.5;
+        let right = run.end_x + ss * 1.5;
         let label = run.key.count.to_string();
-        let label_width = canonical_text_width(TextRole::CountLabel, &label, sink.staff_space_pt);
-        let label_gap = (label_width + 8.0).max(16.0);
+        let label_width = canonical_text_width(TextRole::CountLabel, &label, ss);
+        let label_gap = (label_width + ss * 1.5).max(ss * 3.0);
         let center_x = (left + right) * 0.5;
         let gap_left = center_x - label_gap * 0.5;
         let gap_right = center_x + label_gap * 0.5;
@@ -115,7 +127,7 @@ pub(crate) fn render_tuplet_groups(
             x1: left,
             y1: y,
             x2: left,
-            y2: y + 5.0,
+            y2: y + ss,
             stroke: "#333",
             stroke_width: 1.0,
             stroke_line_cap: Some("butt"),
@@ -126,13 +138,13 @@ pub(crate) fn render_tuplet_groups(
             x1: right,
             y1: y,
             x2: right,
-            y2: y + 5.0,
+            y2: y + ss,
             stroke: "#333",
             stroke_width: 1.0,
             stroke_line_cap: Some("butt"),
         });
 
-        let metric = canonical_text_metric(TextRole::CountLabel, sink.staff_space_pt);
+        let metric = canonical_text_metric(TextRole::CountLabel, ss);
         sink.push_text_item(TextItemSpec {
             measure_id: Some(measure_id),
             role: "tuplet-label",
@@ -141,7 +153,7 @@ pub(crate) fn render_tuplet_groups(
             text_role: TextRole::CountLabel,
             text: label.clone(),
             font_family: "Academico",
-            font_size_pt: sink.staff_space_pt * 1.2,
+            font_size_pt: ss * 1.2,
             fill: "#333",
             text_anchor: Some("middle"),
             font_weight: Some("bold"),

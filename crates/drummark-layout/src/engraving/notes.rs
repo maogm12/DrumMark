@@ -97,6 +97,12 @@ pub(crate) struct HitClusterPlan {
     pub(crate) accent_glyphs: Vec<GlyphObstacle>,
 }
 
+pub(crate) struct SlotTopObstacle {
+    pub(crate) voice: u8,
+    pub(crate) x: f32,
+    pub(crate) top_y: f32,
+}
+
 #[derive(Clone, Copy, Debug)]
 pub(crate) struct RestPlacement {
     pub(crate) x: f32,
@@ -157,6 +163,7 @@ pub(crate) fn render_measure_events(
     let mut beam_states_by_voice: std::collections::BTreeMap<u8, BeamRunState> =
         std::collections::BTreeMap::new();
     let mut next_beam_group = 0_u32;
+    let mut all_top_obstacles: Vec<SlotTopObstacle> = Vec::new();
     while index < slot_events.len() {
         let start = slot_events[index].start;
         let event_x = slot_events[index].event_x;
@@ -174,7 +181,7 @@ pub(crate) fn render_measure_events(
             &mut beam_states_by_voice,
             &mut next_beam_group,
         );
-        render_slot_group(
+        all_top_obstacles.extend(render_slot_group(
             sink,
             RenderSlotGroupInput {
                 measure_id: input.measure_id,
@@ -188,10 +195,10 @@ pub(crate) fn render_measure_events(
                 dual_voice_rest_zones,
                 issues: input.issues,
             },
-        );
+        ));
     }
 
-    render_tuplet_groups(sink, input.measure_id, &slot_events, input.staff_top);
+    render_tuplet_groups(sink, input.measure_id, &slot_events, input.staff_top, &all_top_obstacles);
     render_beam_groups(
         sink,
         input.measure_id,
@@ -476,10 +483,11 @@ fn rest_is_hidden_by_slot_context(rest: &SlotEvent<'_>, slot_group: &[SlotEvent<
         })
 }
 
-pub(crate) fn render_slot_group(sink: &mut SceneEmitSink<'_>, input: RenderSlotGroupInput<'_, '_>) {
+pub(crate) fn render_slot_group(sink: &mut SceneEmitSink<'_>, input: RenderSlotGroupInput<'_, '_>) -> Vec<SlotTopObstacle> {
     let mut note_anchors_by_voice: std::collections::BTreeMap<u8, Vec<NotePlacement>> =
         std::collections::BTreeMap::new();
     let mut hit_cluster_plans = Vec::new();
+    let mut top_obstacles = Vec::new();
 
     for voice in input
         .slot_group
@@ -506,6 +514,18 @@ pub(crate) fn render_slot_group(sink: &mut SceneEmitSink<'_>, input: RenderSlotG
                     stem_len_pt: input.stem_len_pt,
                 },
             );
+            let mut top_y = input.staff_top;
+            if let Some(ref stem_plan) = cluster_plan.stem_plan {
+                top_y = top_y.min(stem_plan.y1).min(stem_plan.y2);
+            }
+            for accent in &cluster_plan.accent_glyphs {
+                top_y = top_y.min(rect_obstacle_from_glyph(accent.clone()).y1);
+            }
+            top_obstacles.push(SlotTopObstacle {
+                voice,
+                x: input.event_x,
+                top_y,
+            });
             note_anchors_by_voice.insert(voice, cluster_plan.note_placements.clone());
             hit_cluster_plans.push(cluster_plan);
         }
@@ -681,6 +701,8 @@ pub(crate) fn render_slot_group(sink: &mut SceneEmitSink<'_>, input: RenderSlotG
     for cluster_plan in hit_cluster_plans {
         render_hit_cluster_stem_and_accents(sink, cluster_plan, input.beam_anchors);
     }
+
+    top_obstacles
 }
 
 fn sticking_baseline_y_above_slot_content(

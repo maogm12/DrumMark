@@ -13,6 +13,6 @@ pub(crate) use notes::{
     render_hit_cluster_stem_and_accents, render_measure_events, render_slot_group,
     resolve_rest_placement, BeamAnchorPlan, BeamRunState, HitClusterPlan, NotePlacement,
     PreparedClusterNote, RenderMeasureEventsInput, RestPlacement, RestPlacementDiagnostic,
-    SlotEvent, StemLayout, StemRenderPlan,
+    SlotEvent, SlotTopObstacle, StemLayout, StemRenderPlan,
 };
 pub(crate) use tuplets::{TupletRun, TupletRunKey};

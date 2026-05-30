@@ -107,12 +107,9 @@ pub(crate) fn render_header_layout_box(
         });
     }
     if header.tempo > 0 {
-        let tempo_glyph_x = margin + 9.0;
-        let tempo_glyph_width =
-            canonical_glyph_metric(GlyphRole::MetNoteQuarterUp).width_ss() * tempo_glyph_position_pt(opts.staff_space_pt) / 4.0;
-        let tempo_equals_x = tempo_glyph_x + tempo_glyph_width + 8.0;
+        let (tempo_glyph_x, tempo_equals_x, tempo_value_x) =
+            tempo_item_x_positions(margin, opts.staff_space_pt);
         let tempo_value_text = header.tempo.to_string();
-        let tempo_value_x = tempo_equals_x + canonical_text_width(TextRole::Tempo, "=", opts.staff_space_pt) + 6.0;
         let tempo_glyph_id = sink.push_text_item(TextItemSpec {
             measure_id: None,
             role: "tempo-glyph",
@@ -380,12 +377,9 @@ pub fn build_layout_scene(score: &RenderScore, opts: &LayoutOptions) -> LayoutSc
             let first_measure_id = format!("measure-{}", system.measures[0].global_index);
             let tempo_metric = canonical_text_metric(TextRole::Tempo, opts.staff_space_pt);
             let tempo_y = sy + opts.tempo_offset_y;
-            let tempo_glyph_x = margin + 9.0;
-            let tempo_glyph_width =
-                canonical_glyph_metric(GlyphRole::MetNoteQuarterUp).width_ss() * tempo_glyph_position_pt(opts.staff_space_pt) / 4.0;
-            let tempo_equals_x = tempo_glyph_x + tempo_glyph_width + 8.0;
+            let (tempo_glyph_x, tempo_equals_x, tempo_value_x) =
+                tempo_item_x_positions(margin, opts.staff_space_pt);
             let tempo_value_text = score.header.tempo.to_string();
-            let tempo_value_x = tempo_equals_x + canonical_text_width(TextRole::Tempo, "=", opts.staff_space_pt) + 6.0;
             let tempo_glyph_id = sink.push_text_item(TextItemSpec {
                 measure_id: Some(&first_measure_id),
                 role: "tempo-glyph",
@@ -658,6 +652,21 @@ pub fn build_layout_scene(score: &RenderScore, opts: &LayoutOptions) -> LayoutSc
                             measure_width: *mw,
                             left_pad,
                             right_pad,
+                            content_lane_left_pt: compact_measure_inner_left(
+                                mx,
+                                mi,
+                                margin,
+                                is_first_system,
+                                measure.barline.as_deref(),
+                                opts.staff_space_pt,
+                            ),
+                            content_lane_right_pt: compact_measure_inner_right(
+                                mx,
+                                *mw,
+                                right_barline,
+                                opts.staff_space_pt,
+                            ),
+                            staff_space_pt: opts.staff_space_pt,
                             duration_compression: opts.duration_spacing_compression,
                         },
                         staff_top: s_top,

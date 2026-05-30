@@ -1,7 +1,7 @@
 use crate::display::DisplayMeasure;
 use crate::planning::{
-    measure_left_pad, rendered_glyph_width, VOLTA_LINE_HEIGHT_PT, VOLTA_LINE_THICKNESS_PT,
-    VOLTA_SKYLINE_GAP_PT, VOLTA_TEXT_SIZE_PT,
+    measure_left_pad, rendered_glyph_width, volta_label_baseline_gap_pt, volta_line_height_pt,
+    volta_skyline_gap_pt, volta_text_size_pt, VOLTA_LINE_THICKNESS_PT,
 };
 use crate::scene_builder::{GlyphItemSpec, LineItemSpec, SceneEmitSink, TextItemSpec};
 use crate::structural::skyline::{
@@ -174,7 +174,9 @@ fn volta_line_y_for_segment(
     let first_display = display_measure_for_scene(measures, first);
     let x1 = volta_segment_left_x(first, first_display, starts_at_system_left, is_first_system);
     let x2 = last.x_pt + last.width_pt;
-    let mut line_y = occupied_top - VOLTA_SKYLINE_GAP_PT - VOLTA_LINE_THICKNESS_PT;
+    let skyline_gap = volta_skyline_gap_pt(staff_space_pt);
+    let hook_height = volta_line_height_pt(staff_space_pt);
+    let mut line_y = occupied_top - skyline_gap - VOLTA_LINE_THICKNESS_PT;
 
     if show_left_hook {
         line_y = line_y.min(volta_line_y_for_child(
@@ -182,8 +184,9 @@ fn volta_line_y_for_segment(
             segment_measures,
             x1 - VOLTA_LINE_THICKNESS_PT,
             x1 + VOLTA_LINE_THICKNESS_PT,
-            VOLTA_LINE_HEIGHT_PT,
+            hook_height,
             staff_space_pt,
+            skyline_gap,
         ));
     }
     if show_right {
@@ -192,8 +195,9 @@ fn volta_line_y_for_segment(
             segment_measures,
             x2 - VOLTA_LINE_THICKNESS_PT,
             x2 + VOLTA_LINE_THICKNESS_PT,
-            VOLTA_LINE_HEIGHT_PT,
+            hook_height,
             staff_space_pt,
+            skyline_gap,
         ));
     }
     if show_label {
@@ -206,9 +210,13 @@ fn volta_line_y_for_segment(
                 .join(",")
         );
         let label_x = x1 + 5.0;
-        let label_width = canonical_text_width(TextRole::CountLabel, &label_text, staff_space_pt);
+        let text_size = volta_text_size_pt(staff_space_pt);
         let count_metric = canonical_text_metric(TextRole::CountLabel, staff_space_pt);
-        let label_bottom_extent = VOLTA_TEXT_SIZE_PT + 2.0 + count_metric.descent_pt;
+        let metric_scale = text_size / count_metric.font_size_pt.max(1e-6);
+        let label_width =
+            canonical_text_width(TextRole::CountLabel, &label_text, staff_space_pt) * metric_scale;
+        let label_bottom_extent =
+            text_size + volta_label_baseline_gap_pt(staff_space_pt) + count_metric.descent_pt * metric_scale;
         line_y = line_y.min(volta_line_y_for_child(
             items,
             segment_measures,
@@ -216,6 +224,7 @@ fn volta_line_y_for_segment(
             label_x + label_width,
             label_bottom_extent,
             staff_space_pt,
+            skyline_gap,
         ));
     }
 
@@ -229,9 +238,10 @@ fn volta_line_y_for_child(
     x2: f32,
     child_bottom_extent: f32,
     staff_space_pt: f32,
+    skyline_gap: f32,
 ) -> f32 {
     top_skyline_sample_optional(items, segment_measures, x1, x2, staff_space_pt)
-        .map(|top| top - VOLTA_SKYLINE_GAP_PT - child_bottom_extent)
+        .map(|top| top - skyline_gap - child_bottom_extent)
         .unwrap_or(f32::INFINITY)
 }
 
@@ -274,6 +284,10 @@ pub(crate) fn push_volta_segment(
         spec.is_first_system,
     );
     let x2 = last.x_pt + last.width_pt;
+    let staff_space_pt = sink.staff_space_pt;
+    let text_size = volta_text_size_pt(staff_space_pt);
+    let hook_height = volta_line_height_pt(staff_space_pt);
+    let label_gap = volta_label_baseline_gap_pt(staff_space_pt);
 
     let mut child_item_ids = Vec::new();
     child_item_ids.push(sink.push_line_item(LineItemSpec {
@@ -294,7 +308,7 @@ pub(crate) fn push_volta_segment(
             x1,
             y1: spec.line_y,
             x2: x1,
-            y2: spec.line_y + VOLTA_LINE_HEIGHT_PT,
+            y2: spec.line_y + hook_height,
             stroke: "#333",
             stroke_width: crate::ENGRAVING_STROKE_WIDTH_PT,
             stroke_line_cap: None,
@@ -305,11 +319,11 @@ pub(crate) fn push_volta_segment(
             measure_id: Some(&first.id),
             role: "volta-label",
             x: x1 + 5.0,
-            y: spec.line_y + VOLTA_TEXT_SIZE_PT + 2.0,
+            y: spec.line_y + text_size + label_gap,
             text_role: TextRole::CountLabel,
             text: label_text.clone(),
             font_family: "Academico",
-            font_size_pt: VOLTA_TEXT_SIZE_PT,
+            font_size_pt: text_size,
             fill: "#333",
             text_anchor: None,
             font_weight: None,
@@ -322,7 +336,7 @@ pub(crate) fn push_volta_segment(
             x1: x2,
             y1: spec.line_y,
             x2,
-            y2: spec.line_y + VOLTA_LINE_HEIGHT_PT,
+            y2: spec.line_y + hook_height,
             stroke: "#333",
             stroke_width: crate::ENGRAVING_STROKE_WIDTH_PT,
             stroke_line_cap: None,

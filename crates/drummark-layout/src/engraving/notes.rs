@@ -249,7 +249,7 @@ pub(crate) fn beam_stack_extent_from_stem_pt(beam_level: u8) -> f32 {
 }
 
 // Notehead positioning
-const NOTE_X_OFFSET_PT: f32 = 7.0;
+const NOTE_X_OFFSET_PT: f32 = crate::NOTE_METRIC_TO_DRAW_X_PT;
 // Augmentation dots
 const DOT_SPACING_PT: f32 = 5.0;
 const DOT_PAD_PT: f32 = 8.0;

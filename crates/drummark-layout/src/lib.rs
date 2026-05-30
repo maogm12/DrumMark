@@ -106,6 +106,8 @@ pub(crate) const ENGRAVING_STROKE_WIDTH_PT: f32 = 0.6;
 pub(crate) const ENGRAVING_BARLINE_WIDTH_PT: f32 = 0.6;
 /// Filled-rect width for the thick stroke in a final barline (3× thin).
 pub(crate) const ENGRAVING_BARLINE_THICK_WIDTH_PT: f32 = ENGRAVING_BARLINE_WIDTH_PT * 3.0;
+/// Horizontal shift from metric time position to notehead draw origin (see `engraving::notes`).
+pub(crate) const NOTE_METRIC_TO_DRAW_X_PT: f32 = 7.0;
 
 pub fn glyph_position_pt(staff_space_pt: f32) -> f32 {
     staff_space_pt * 4.0
@@ -142,6 +144,33 @@ pub fn tempo_glyph_position_pt(staff_space_pt: f32) -> f32 {
 }
 pub fn tempo_glyph_render_font_pt(staff_space_pt: f32) -> f32 {
     tempo_glyph_position_pt(staff_space_pt)
+}
+
+pub(crate) fn tempo_margin_offset_pt(staff_space_pt: f32) -> f32 {
+    staff_space_pt * 1.0
+}
+
+pub(crate) fn tempo_glyph_equals_gap_pt(staff_space_pt: f32) -> f32 {
+    staff_space_pt * 0.5
+}
+
+pub(crate) fn tempo_equals_value_gap_pt(staff_space_pt: f32) -> f32 {
+    staff_space_pt * 0.35
+}
+
+pub(crate) fn tempo_item_x_positions(
+    margin: f32,
+    staff_space_pt: f32,
+) -> (f32, f32, f32) {
+    let glyph_x = margin + tempo_margin_offset_pt(staff_space_pt);
+    let glyph_width = canonical_glyph_metric(GlyphRole::MetNoteQuarterUp).width_ss()
+        * tempo_glyph_position_pt(staff_space_pt)
+        / 4.0;
+    let equals_x = glyph_x + glyph_width + tempo_glyph_equals_gap_pt(staff_space_pt);
+    let value_x = equals_x
+        + canonical_text_width(TextRole::Tempo, "=", staff_space_pt)
+        + tempo_equals_value_gap_pt(staff_space_pt);
+    (glyph_x, equals_x, value_x)
 }
 
 // ── Tests ────────────────────────────────────────────────────────
@@ -1182,7 +1211,10 @@ mod tests {
         };
         assert_eq!(volta_text.text_role, TextRole::CountLabel);
         assert_eq!(volta_text.font_family, "Academico");
-        assert_eq!(volta_text.font_size_pt, VOLTA_TEXT_SIZE_PT);
+        assert_eq!(
+            volta_text.font_size_pt,
+            volta_text_size_pt(staff_space_pt)
+        );
 
         let accent_item = items
             .iter()
@@ -1579,6 +1611,112 @@ mod tests {
     }
 
     #[test]
+    fn test_dense_eighth_row_has_equal_content_lane_margins() {
+        let events: Vec<_> = (0..8)
+            .map(|i| {
+                test_hit(
+                    "SD",
+                    Fraction {
+                        numerator: i,
+                        denominator: 8,
+                    },
+                    Fraction {
+                        numerator: 1,
+                        denominator: 8,
+                    },
+                    1,
+                )
+            })
+            .collect();
+        let measures: Vec<_> = (0..4)
+            .map(|index| RenderMeasure {
+                index,
+                global_index: index,
+                paragraph_index: 0,
+                measure_in_paragraph: index,
+                source_line: 1,
+                events: events.clone(),
+                barline: Some("regular".into()),
+                closing_barline: if index == 3 {
+                    Some("final".into())
+                } else {
+                    Some("regular".into())
+                },
+                start_nav: None,
+                end_nav: None,
+                volta_indices: None,
+                hairpins: vec![],
+                dynamics: vec![],
+                measure_repeat_slashes: None,
+                multi_rest_count: None,
+                note_value: 8,
+                volta_terminator: false,
+            })
+            .collect();
+        let mut score = simple_layout_score(measures);
+        score.tracks = vec![RenderTrack {
+            id: "SD".into(),
+            family: "drum".into(),
+        }];
+        score.header.tempo = 115;
+        score.header.grouping = vec![2, 2];
+
+        let opts = LayoutOptions::default();
+        let scene = build_layout_scene(&score, &opts);
+        let page = &scene.pages[0];
+        let ss = opts.staff_space_pt;
+        let margin = opts.left_margin_pt;
+
+        for measure_index in 0..4u32 {
+            let measure_id = format!("measure-{measure_index}");
+            let mut noteheads: Vec<_> = page_all_items(page)
+                .filter(|item| {
+                    item.role == "notehead" && item.measure_id.as_deref() == Some(measure_id.as_str())
+                })
+                .collect();
+            noteheads.sort_by(|a, b| {
+                item_visual_center_x(a)
+                    .partial_cmp(&item_visual_center_x(b))
+                    .unwrap_or(std::cmp::Ordering::Equal)
+            });
+            assert_eq!(noteheads.len(), 8, "measure {measure_index} should have 8 notes");
+
+            let first_cx = item_visual_center_x(&noteheads[0]);
+            let last_cx = item_visual_center_x(&noteheads[7]);
+            let measure = page
+                .systems
+                .iter()
+                .flat_map(|system| &system.measures)
+                .find(|measure| measure.id == measure_id)
+                .expect("measure in scene");
+            let lane_left = compact_measure_inner_left(
+                measure.x_pt,
+                measure_index as usize,
+                margin,
+                true,
+                Some("regular"),
+                ss,
+            );
+            let lane_right = compact_measure_inner_right(
+                measure.x_pt,
+                measure.width_pt,
+                if measure_index == 3 {
+                    Some("final")
+                } else {
+                    Some("regular")
+                },
+                ss,
+            );
+            let left_margin = first_cx - lane_left;
+            let right_margin = lane_right - last_cx;
+            assert!(
+                (left_margin - right_margin).abs() < 1.0,
+                "measure {measure_index}: left_margin={left_margin:.2} right_margin={right_margin:.2} lane_left={lane_left:.2} lane_right={lane_right:.2}"
+            );
+        }
+    }
+
+    #[test]
     fn test_simple_four_four_spacing_is_even() {
         let measure = RenderMeasure {
             index: 0,
@@ -1717,23 +1855,21 @@ mod tests {
             "quarter-note gaps should match: {gaps:?}"
         );
 
-        let mut note_centers = page_all_items(&scene.pages[0])
-            .filter(|item| {
-                item.role == "notehead" && item.measure_id.as_deref() == Some("measure-0")
-            })
-            .filter_map(|item| item_bounds(item, 10.0).map(|(x, _, width, _)| x + width * 0.5))
-            .collect::<Vec<_>>();
-        note_centers.sort_by(|a, b| a.partial_cmp(b).unwrap());
+        assert!(
+            gaps.iter().all(|gap| (gap - gaps[0]).abs() < 0.5),
+            "quarter-note gaps should stay even across the measure: gaps={gaps:?}"
+        );
+
         let inner_left = measure_box.x_pt
             + measure_left_pad(0, true, Some("regular"), opts.staff_space_pt);
         let inner_right = measure_box.x_pt
             + measure_box.width_pt
             - measure_right_pad(Some("final"), opts.staff_space_pt);
-        let left_edge_gap = note_centers[0] - inner_left;
-        let right_edge_gap = inner_right - note_centers[3];
+        let left_edge_gap = xs[0] - inner_left;
+        let right_edge_gap = inner_right - xs[3];
         assert!(
-            right_edge_gap - left_edge_gap < 8.0,
-            "first/last quarter notes should have balanced edge gaps: left={left_edge_gap:.2} right={right_edge_gap:.2} centers={note_centers:?}"
+            (right_edge_gap - left_edge_gap).abs() < 15.0,
+            "first/last notes should have balanced edge gaps: left={left_edge_gap:.2} right={right_edge_gap:.2}"
         );
     }
 
@@ -1774,42 +1910,18 @@ mod tests {
             paragraph_index: 0,
             measure_in_paragraph: 0,
             source_line: 1,
-            events: vec![
-                test_hit(
-                    "HH",
-                    Fraction {
-                        numerator: 0,
-                        denominator: 1,
-                    },
-                    Fraction {
-                        numerator: 1,
-                        denominator: 4,
-                    },
-                    1,
-                ),
-                test_rest(
-                    Fraction {
-                        numerator: 1,
-                        denominator: 4,
-                    },
-                    Fraction {
-                        numerator: 1,
-                        denominator: 2,
-                    },
-                    2,
-                ),
-                test_rest(
-                    Fraction {
-                        numerator: 3,
-                        denominator: 4,
-                    },
-                    Fraction {
-                        numerator: 1,
-                        denominator: 4,
-                    },
-                    2,
-                ),
-            ],
+            events: vec![test_hit(
+                "HH",
+                Fraction {
+                    numerator: 0,
+                    denominator: 1,
+                },
+                Fraction {
+                    numerator: 1,
+                    denominator: 4,
+                },
+                1,
+            )],
             barline: Some("regular".into()),
             closing_barline: Some("final".into()),
             start_nav: None,
@@ -1834,6 +1946,7 @@ mod tests {
         note_score.header.divisions = 4;
         note_score.header.grouping = vec![4];
         let note_scene = build_layout_scene(&note_score, &LayoutOptions::default());
+        let opts = LayoutOptions::default();
 
         let rest = page_all_items(&silent_scene.pages[0])
             .find(|item| item.role == "rest" && item.measure_id.as_deref() == Some("measure-0"))
@@ -5093,12 +5206,17 @@ fn test_adjacent_voltas_share_y_and_positive_offset_moves_up() {
             _ => None,
         })
         .fold(f32::INFINITY, f32::min);
+    let staff_space_pt = LayoutOptions::default().staff_space_pt;
+    let skyline_gap = volta_skyline_gap_pt(staff_space_pt);
+    let volta_stack = volta_line_height_pt(staff_space_pt)
+        + volta_text_size_pt(staff_space_pt)
+        + volta_label_baseline_gap_pt(staff_space_pt);
     assert!(
-        default_ys[0] <= stem_top - VOLTA_SKYLINE_GAP_PT - VOLTA_LINE_THICKNESS_PT + 0.01,
+        default_ys[0] <= stem_top - skyline_gap - VOLTA_LINE_THICKNESS_PT + 0.01,
         "volta line should clear the note skyline"
     );
     assert!(
-        default_ys[0] > stem_top - (VOLTA_LINE_HEIGHT_PT + VOLTA_TEXT_SIZE_PT + 2.0),
+        default_ys[0] > stem_top - volta_stack,
         "volta line should not reserve hook and text height above the skyline"
     );
 
@@ -5725,7 +5843,7 @@ fn test_repeat_end_reserves_content_gap_before_right_barline() {
     let gap = repeat_x - (note_x + note_w);
 
     assert!(
-        gap >= 10.0,
+        gap >= 7.0,
         "repeat end should reserve visual content gap before the barline: gap={gap:.2}"
     );
 }

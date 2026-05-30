@@ -11,8 +11,8 @@ use crate::*;
 pub(crate) struct GroupGeometry {
     end_fraction: Fraction,
     width_pt: f32,
-    /// Position of each event start within the group, as fraction of group width.
-    /// Maps slot → cumulative offset fraction (0..1). Used by x_for_fraction.
+    /// Metric-time X fraction (0..1) for each segment boundary in the group.
+    /// When the group has multiple attacks, spans from first to last attack fill the width.
     segment_offsets: Vec<f32>,
     segment_boundaries: Vec<Fraction>,
 }
@@ -21,11 +21,16 @@ pub(crate) struct GroupGeometry {
 pub(crate) struct MeasureGeometry {
     inner_left_pt: f32,
     inner_width_pt: f32,
+    /// Inset content lane inside `[inner_left, inner_right]` with equal side gaps.
+    content_left_pt: f32,
+    content_width_pt: f32,
+    raw_anchor_first_x: f32,
+    raw_anchor_last_x: f32,
     groups: Vec<GroupGeometry>,
 }
 
 impl MeasureGeometry {
-    pub(crate) fn x_for_fraction(&self, _header: &RenderHeader, fraction: Fraction) -> f32 {
+    fn raw_x_for_fraction(&self, fraction: Fraction) -> f32 {
         if self.groups.is_empty() || self.inner_width_pt <= 0.0 {
             return self.inner_left_pt;
         }
@@ -52,6 +57,16 @@ impl MeasureGeometry {
 
         self.inner_left_pt + self.inner_width_pt
     }
+
+    pub(crate) fn x_for_fraction(&self, _header: &RenderHeader, fraction: Fraction) -> f32 {
+        let raw = self.raw_x_for_fraction(fraction);
+        let raw_span = self.raw_anchor_last_x - self.raw_anchor_first_x;
+        if raw_span <= 0.01 {
+            return self.content_left_pt;
+        }
+        let progress = (raw - self.raw_anchor_first_x) / raw_span;
+        self.content_left_pt + progress * self.content_width_pt
+    }
 }
 
 /// Gap from the page left margin to the clef, between clef and time signature, and
@@ -68,10 +83,25 @@ pub(crate) const COMPLEX_BARLINE_TRAILING_CONTENT_GAP_PT: f32 = 8.0;
 pub(crate) const SVG_POINT_TO_USER_UNIT: f32 = 1.0;
 pub(crate) const FIRST_MEASURE_START_REPEAT_PREAMBLE_PULL_PT: f32 = 10.0;
 pub(crate) const START_REPEAT_TRAILING_GAP_PT: f32 = 22.0;
-pub(crate) const VOLTA_TEXT_SIZE_PT: f32 = 12.0;
-pub(crate) const VOLTA_LINE_HEIGHT_PT: f32 = 15.0;
 pub(crate) const VOLTA_LINE_THICKNESS_PT: f32 = crate::ENGRAVING_STROKE_WIDTH_PT;
-pub(crate) const VOLTA_SKYLINE_GAP_PT: f32 = 4.0;
+
+/// Volta ending label size (Academico), scaled from staff spacing (~12pt at 7.5ss).
+pub(crate) fn volta_text_size_pt(staff_space_pt: f32) -> f32 {
+    staff_space_pt * 1.6
+}
+
+pub(crate) fn volta_line_height_pt(staff_space_pt: f32) -> f32 {
+    staff_space_pt * 2.0
+}
+
+/// Gap between the volta bracket line and the label baseline.
+pub(crate) fn volta_label_baseline_gap_pt(staff_space_pt: f32) -> f32 {
+    staff_space_pt * 0.4
+}
+
+pub(crate) fn volta_skyline_gap_pt(staff_space_pt: f32) -> f32 {
+    staff_space_pt * 0.8
+}
 
 pub(crate) fn clef_x_pt(page_margin_left: f32) -> f32 {
     page_margin_left + SYSTEM_PREAMBLE_SIDE_GAP_PT
@@ -430,7 +460,89 @@ pub(crate) struct MeasureGeometryInput {
     pub(crate) measure_width: f32,
     pub(crate) left_pad: f32,
     pub(crate) right_pad: f32,
+    /// Visual content lane after preamble glyphs / before barline glyphs.
+    pub(crate) content_lane_left_pt: f32,
+    pub(crate) content_lane_right_pt: f32,
+    pub(crate) staff_space_pt: f32,
     pub(crate) duration_compression: f32,
+}
+
+fn segment_offsets_for_group(
+    _start_fraction: Fraction,
+    group_duration: Fraction,
+    segment_boundaries: &[Fraction],
+    group_hit_starts: &[Fraction],
+    duration_compression: f32,
+    stretch_sparse_group: bool,
+    center_lone_attack: bool,
+) -> Vec<f32> {
+    if segment_boundaries.is_empty() {
+        return Vec::new();
+    }
+    if segment_boundaries.len() == 1 {
+        return vec![0.0];
+    }
+
+    let group_span = fraction_to_f32(group_duration).max(0.0001);
+    let mut offsets = if segment_boundaries.len() <= 1 {
+        vec![0.5]
+    } else {
+        let mut raw_weights = Vec::with_capacity(segment_boundaries.len() - 1);
+        for i in 0..segment_boundaries.len() - 1 {
+            let seg_duration = fraction_to_f32(subtract_fractions(
+                segment_boundaries[i + 1],
+                segment_boundaries[i],
+            )) / group_span;
+            raw_weights.push(seg_duration);
+        }
+
+        let min_dur = raw_weights
+            .iter()
+            .fold(f32::MAX, |a, &b| if b > 0.0 { a.min(b) } else { a });
+        let min_dur = min_dur.max(0.01);
+        let weights: Vec<f32> = raw_weights
+            .iter()
+            .map(|&d| {
+                let ratio = d / min_dur;
+                1.0 + duration_compression * (ratio + 1.0).log2()
+            })
+            .collect();
+
+        let total_weight = weights.iter().sum::<f32>().max(1e-6);
+        let mut cum = 0.0_f32;
+        let mut segment_offsets = Vec::with_capacity(segment_boundaries.len());
+        for &w in &weights {
+            segment_offsets.push(cum);
+            cum += w / total_weight;
+        }
+        segment_offsets.push(1.0);
+        segment_offsets
+    };
+
+    if center_lone_attack && group_hit_starts.len() == 1 {
+        let attack = group_hit_starts[0];
+        for (offset, boundary) in offsets.iter_mut().zip(segment_boundaries) {
+            if compare_fractions(*boundary, attack) == std::cmp::Ordering::Equal {
+                *offset = 0.5;
+            }
+        }
+    } else if stretch_sparse_group && group_hit_starts.len() >= 2 {
+        let first = group_hit_starts[0];
+        let last = group_hit_starts[group_hit_starts.len() - 1];
+        if compare_fractions(last, first) == std::cmp::Ordering::Greater {
+            let content_span = fraction_to_f32(subtract_fractions(last, first));
+            let fill = content_span / group_span;
+            if fill < 0.5 || fill >= 0.65 {
+                let span = content_span.max(1e-6);
+                for (offset, boundary) in offsets.iter_mut().zip(segment_boundaries) {
+                    *offset = (fraction_to_f32(subtract_fractions(*boundary, first)) / span)
+                        .clamp(0.0, 1.0);
+                }
+            }
+        }
+    }
+
+    offsets
 }
 
 pub(crate) fn measure_geometry(
@@ -481,7 +593,8 @@ pub(crate) fn measure_geometry(
         sort_and_dedup_fractions(&mut all_boundaries);
     }
 
-    for beat_units in grouping {
+    let grouping_len = grouping.len();
+    for (group_index, beat_units) in grouping.into_iter().enumerate() {
         let group_duration =
             measure_fraction_for_beat_units(beat_units.max(1), header.time_beat_unit);
         let end_fraction = add_fractions(start_fraction, group_duration);
@@ -496,6 +609,17 @@ pub(crate) fn measure_geometry(
                     && compare_fractions(*start, end_fraction) == std::cmp::Ordering::Less
             })
             .collect();
+        let mut group_hit_starts: Vec<Fraction> = measure
+            .events
+            .iter()
+            .filter(|event| !matches!(event.kind, EventKind::Rest))
+            .map(|event| event.start)
+            .filter(|start| {
+                compare_fractions(*start, start_fraction) != std::cmp::Ordering::Less
+                    && compare_fractions(*start, end_fraction) == std::cmp::Ordering::Less
+            })
+            .collect();
+        sort_and_dedup_fractions(&mut group_hit_starts);
         let segment_count = if group_starts.is_empty() {
             1
         } else {
@@ -530,40 +654,24 @@ pub(crate) fn measure_geometry(
             segment_boundaries.push(end_fraction);
         }
 
-        let mut segment_offsets = Vec::with_capacity(segment_boundaries.len());
-        if segment_boundaries.len() <= 1 {
-            segment_offsets.push(0.5);
+        let stretch_sparse_group = group_index + 1 == grouping_len;
+        let center_lone_attack = all_starts.len() <= 1
+            && group_hit_starts.len() == 1
+            && compare_fractions(group_hit_starts[0], start_fraction) != std::cmp::Ordering::Equal;
+        let attack_starts = if group_hit_starts.is_empty() {
+            &group_starts
         } else {
-            let group_span = fraction_to_f32(group_duration).max(0.0001);
-            let mut raw_weights = Vec::with_capacity(segment_boundaries.len() - 1);
-            for i in 0..segment_boundaries.len() - 1 {
-                let seg_duration = fraction_to_f32(subtract_fractions(
-                    segment_boundaries[i + 1],
-                    segment_boundaries[i],
-                )) / group_span;
-                raw_weights.push(seg_duration);
-            }
-
-            let min_dur = raw_weights
-                .iter()
-                .fold(f32::MAX, |a, &b| if b > 0.0 { a.min(b) } else { a });
-            let min_dur = min_dur.max(0.01);
-            let weights: Vec<f32> = raw_weights
-                .iter()
-                .map(|&d| {
-                    let ratio = d / min_dur;
-                    1.0 + input.duration_compression * (ratio + 1.0).log2()
-                })
-                .collect();
-
-            let total_weight = weights.iter().sum::<f32>().max(1e-6);
-            let mut cum = 0.0_f32;
-            for &w in &weights {
-                segment_offsets.push(cum + (w / total_weight) * 0.5);
-                cum += w / total_weight;
-            }
-            segment_offsets.push(1.0);
-        }
+            &group_hit_starts
+        };
+        let segment_offsets = segment_offsets_for_group(
+            start_fraction,
+            group_duration,
+            &segment_boundaries,
+            attack_starts,
+            input.duration_compression,
+            stretch_sparse_group,
+            center_lone_attack,
+        );
 
         groups.push(GroupGeometry {
             end_fraction,
@@ -579,11 +687,58 @@ pub(crate) fn measure_geometry(
         group.width_pt *= scale;
     }
 
-    MeasureGeometry {
+    let mut geometry = MeasureGeometry {
         inner_left_pt,
         inner_width_pt,
+        content_left_pt: inner_left_pt,
+        content_width_pt: inner_width_pt,
+        raw_anchor_first_x: inner_left_pt,
+        raw_anchor_last_x: inner_left_pt + inner_width_pt,
         groups,
+    };
+
+    if !all_starts.is_empty() {
+        let first_content = all_starts[0];
+        let last_content = all_starts[all_starts.len() - 1];
+        let raw_first = geometry.raw_x_for_fraction(first_content);
+        // Single attack/rest: anchor span is a point so left/right slack split evenly.
+        let raw_last = if all_starts.len() == 1 {
+            raw_first
+        } else {
+            geometry.raw_x_for_fraction(last_content)
+        };
+        let lane_left = input.content_lane_left_pt;
+        let lane_right = input.content_lane_right_pt;
+        let lane_width = (lane_right - lane_left).max(1.0);
+        let raw_span = (raw_last - raw_first).max(0.0);
+        let margin = if raw_span > lane_width {
+            0.0
+        } else {
+            (lane_width - raw_span) * 0.5
+        };
+        let notehead_center_shift = measure
+            .events
+            .iter()
+            .find(|event| matches!(event.kind, EventKind::Hit | EventKind::Rest))
+            .map(|event| {
+                let font_pt = notation_render_font_pt(input.staff_space_pt);
+                let reference_metric =
+                    notehead_glyph(&event.track, &event.modifiers, &event.glyph);
+                NOTE_METRIC_TO_DRAW_X_PT
+                    - glyph_bbox_center_x_offset(reference_metric, font_pt)
+            })
+            .unwrap_or(NOTE_METRIC_TO_DRAW_X_PT);
+        geometry.content_left_pt = lane_left + margin + notehead_center_shift;
+        geometry.content_width_pt = if raw_span > lane_width {
+            lane_width
+        } else {
+            raw_span.max(1.0)
+        };
+        geometry.raw_anchor_first_x = raw_first;
+        geometry.raw_anchor_last_x = raw_last;
     }
+
+    geometry
 }
 
 pub(crate) fn estimated_measure_width(

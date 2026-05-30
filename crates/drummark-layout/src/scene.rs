@@ -3,10 +3,12 @@ use crate::scene_page::{
     collect_page_measures, route_composites_to_systems, route_items_to_systems,
 };
 use crate::structural::spans::push_system_volta_composites;
+#[cfg(test)]
+use crate::scene_geometry::bounds_for_items;
 
 // ── Platform-Neutral Scene Output ───────────────────────────────
 
-#[allow(dead_code)]
+#[cfg(test)]
 pub(crate) fn render_header_layout_box(
     header: &RenderHeader,
     opts: &LayoutOptions,
@@ -326,7 +328,7 @@ pub fn build_layout_scene(score: &RenderScore, opts: &LayoutOptions) -> LayoutSc
                 x2: system_right,
                 y2: ly,
                 stroke: "#333",
-                stroke_width: 1.0,
+                stroke_width: crate::ENGRAVING_STROKE_WIDTH_PT,
                 stroke_line_cap: None,
             });
         }

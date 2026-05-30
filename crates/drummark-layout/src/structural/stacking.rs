@@ -99,7 +99,7 @@ pub(crate) fn stack_scene_structural_items(
         }
     }
 
-    groups.sort_by(|a, b| a.priority.cmp(&b.priority));
+    groups.sort_by_key(|a| a.priority);
     let mut shifted: Vec<EdgeGroup> = Vec::new();
     for mut group in groups {
         loop {
@@ -268,7 +268,7 @@ mod tests {
             text_role: TextRole::Tempo,
             text: "note".to_string(),
             font_family: "Bravura",
-            font_size_pt: 30.0,
+            font_size_pt: 40.0,
             fill: "#333",
             text_anchor: None,
             font_weight: None,
@@ -281,7 +281,7 @@ mod tests {
             x2: 205.675,
             y2: 218.0,
             stroke: "#333",
-            stroke_width: 1.5,
+            stroke_width: crate::ENGRAVING_STROKE_WIDTH_PT,
             stroke_line_cap: None,
         });
         sink.set_anchor_item_id(&stem_id, Some(note_id.clone()));
@@ -378,7 +378,7 @@ mod tests {
             text_role: TextRole::Tempo,
             text: "n".to_string(),
             font_family: "Bravura",
-            font_size_pt: 30.0,
+            font_size_pt: 40.0,
             fill: "#333",
             text_anchor: None,
             font_weight: None,
@@ -391,7 +391,7 @@ mod tests {
             x2: 111.0,
             y2: 218.0,
             stroke: "#333",
-            stroke_width: 1.5,
+            stroke_width: crate::ENGRAVING_STROKE_WIDTH_PT,
             stroke_line_cap: None,
         });
         let lower_note_id = sink.push_text_item(TextItemSpec {
@@ -402,7 +402,7 @@ mod tests {
             text_role: TextRole::Tempo,
             text: "n".to_string(),
             font_family: "Bravura",
-            font_size_pt: 30.0,
+            font_size_pt: 40.0,
             fill: "#333",
             text_anchor: None,
             font_weight: None,
@@ -415,7 +415,7 @@ mod tests {
             x2: 111.0,
             y2: 418.0,
             stroke: "#333",
-            stroke_width: 1.5,
+            stroke_width: crate::ENGRAVING_STROKE_WIDTH_PT,
             stroke_line_cap: None,
         });
         let sticking_id = sink.push_text_item(TextItemSpec {

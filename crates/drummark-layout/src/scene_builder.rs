@@ -30,11 +30,6 @@ impl<'a> SceneBuilder<'a> {
     }
 
     /// Temporary migration helper. Prefer item-id-targeted mutation helpers.
-    #[allow(dead_code)]
-    pub(crate) fn last_item_mut(&mut self) -> Option<&mut SceneItem> {
-        self.items.last_mut()
-    }
-
     fn next_id(&mut self) -> String {
         let id = format!("item-{}", self.counter);
         *self.counter += 1;
@@ -57,6 +52,7 @@ impl<'a> SceneBuilder<'a> {
         }
     }
 
+    #[cfg(test)]
     pub(crate) fn set_text_y(&mut self, item_id: &str, y_pt: f32) {
         if let Some(item) = self.item_mut(item_id) {
             if let ScenePrimitive::TextRun(text) = &mut item.primitive {
@@ -296,7 +292,7 @@ mod tests {
                 x2: 14.0,
                 y2: 8.0,
                 stroke: "#333",
-                stroke_width: 1.5,
+                stroke_width: crate::ENGRAVING_STROKE_WIDTH_PT,
                 stroke_line_cap: None,
             });
 
@@ -347,7 +343,7 @@ mod tests {
             x2: 32.0,
             y2: 16.0,
             stroke: "#333",
-            stroke_width: 1.5,
+            stroke_width: crate::ENGRAVING_STROKE_WIDTH_PT,
             stroke_line_cap: None,
         });
 

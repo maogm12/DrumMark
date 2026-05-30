@@ -80,7 +80,7 @@ mod tests {
             x: 100.0,
             y: 200.0,
             glyph_role: GlyphRole::NoteheadBlack,
-            font_size_pt: 30.0,
+            font_size_pt: 40.0,
             anchor_item_id: None,
         });
         let stem = rect_obstacle_from_line(LineObstacle {
@@ -88,7 +88,7 @@ mod tests {
             y1: 180.0,
             x2: 104.0,
             y2: 200.0,
-            stroke_width: 1.5,
+            stroke_width: crate::ENGRAVING_STROKE_WIDTH_PT,
         });
         assert!(rects_intersect(note, stem));
         assert!(rect_overlap_area(note, stem) > 0.0);
@@ -97,7 +97,7 @@ mod tests {
             x: 140.0,
             y: 220.0,
             glyph_role: GlyphRole::RestEighth,
-            font_size_pt: 30.0,
+            font_size_pt: 40.0,
             anchor_item_id: None,
         });
         assert!(!rects_intersect(note, rest));

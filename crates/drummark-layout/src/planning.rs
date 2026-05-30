@@ -60,19 +60,17 @@ pub(crate) const SYSTEM_PREAMBLE_SIDE_GAP_PT: f32 = 5.0;
 
 pub(crate) const MEASURE_RIGHT_PAD_PT: f32 = 14.0;
 pub(crate) const NON_INITIAL_MEASURE_LEFT_PAD_PT: f32 = 14.0;
-/// Kept for compact-measure edge spacing; first-measure note padding uses preamble side gaps.
-pub(crate) const SYSTEM_PREAMBLE_TRAILING_CONTENT_GAP_PT: f32 = 8.0;
 /// Visual gap between compact-measure content (multi-rest) and adjacent barlines/glyphs.
 pub(crate) const COMPACT_MEASURE_EDGE_GAP_PT: f32 = 8.0;
-pub(crate) const OPENING_BARLINE_THICKNESS_PT: f32 = 1.0;
+pub(crate) const OPENING_BARLINE_THICKNESS_PT: f32 = crate::ENGRAVING_BARLINE_WIDTH_PT;
 pub(crate) const COMPLEX_BARLINE_TRAILING_CONTENT_GAP_PT: f32 = 8.0;
-pub(crate) const SVG_POINT_TO_USER_UNIT: f32 = 4.0 / 3.0;
-pub(crate) const REPEAT_BARLINE_FONT_SIZE_PT: f32 = 30.0;
+/// Scene coordinates and SVG `font-size` both use layout points (1 user unit = 1 pt).
+pub(crate) const SVG_POINT_TO_USER_UNIT: f32 = 1.0;
 pub(crate) const FIRST_MEASURE_START_REPEAT_PREAMBLE_PULL_PT: f32 = 10.0;
 pub(crate) const START_REPEAT_TRAILING_GAP_PT: f32 = 22.0;
 pub(crate) const VOLTA_TEXT_SIZE_PT: f32 = 12.0;
 pub(crate) const VOLTA_LINE_HEIGHT_PT: f32 = 15.0;
-pub(crate) const VOLTA_LINE_THICKNESS_PT: f32 = 1.0;
+pub(crate) const VOLTA_LINE_THICKNESS_PT: f32 = crate::ENGRAVING_STROKE_WIDTH_PT;
 pub(crate) const VOLTA_SKYLINE_GAP_PT: f32 = 4.0;
 
 pub(crate) fn clef_x_pt(page_margin_left: f32) -> f32 {

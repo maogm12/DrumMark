@@ -408,3 +408,10 @@ When an older note conflicts with this file, treat this file plus the active spe
 - Staff lines are drawn at `sy + staff_space_pt * (1..5)`; `staff_bounding_height_pt = staff_space_pt * 5` drives `sys_y` advance together with `system_spacing_pt`. Pagination then re-stacks systems using each box `visual_height`, so below-staff hairpins/dynamics do not require inflating `sys_y` beyond the strict staff bbox.
 - `resolve_rest_placement()` must multiply rest lane indices (`lane_ss`) by `staff_space_pt`, not a hardcoded `10.0` pt step. When default `staff_space_pt` moved from `7.5`/`10` assumptions to `5.0`, rests landed between staff lines while noteheads stayed on-scale, which looked like broken staff spacing.
 - `system_box_from_page_system()` assigns `staff-line`, `percussion-clef`, and `time-signature-digit` items by overlap with `[staff_top, staff_bottom]` instead of only the Y midpoint band between systems, so tighter pre-pagination `sys_y` strides do not attach one system's lines to another system's layout box.
+
+## 2026-05-30 SMuFL Render Size And SVG Font Units
+
+- `notation_render_font_pt` must equal `glyph_position_pt` (`staff_space_pt × 4`) so `font_size_pt / 4` matches SMuFL staff-space bbox math and notehead ink height fills one staff space.
+- Secondary SMuFL render sizes (`flag_render_font_pt`, `grace_render_font_pt`, etc.) must match their `*_position_pt` partners; the old `× 0.75` render factors were compensating for the SVG `pt` suffix bug.
+- Scene SVG adapters (`src/renderer/svgRenderer.ts`, `crates/drummark-cli/src/svg.rs`) must emit unitless `font-size="{n}"`, not `font-size="{n}pt"`. With `viewBox` in layout points, CSS `pt` on `font-size` applies the `96/72` conversion and inflates glyphs ~33% relative to PDF (`SetFont` uses true points).
+- `planning::SVG_POINT_TO_USER_UNIT` is `1.0` after that fix; the previous `4/3` constant only mirrored the mistaken SVG `pt` suffix.

@@ -30,7 +30,7 @@ pub use contract::*;
 use display::*;
 #[allow(unused_imports)] // Re-exported for `scene` and integration tests.
 pub(crate) use engraving::{
-    glyph_role_for_codepoint, ledger_line_offsets_for_staff_position, render_hit_cluster,
+    ledger_line_offsets_for_staff_position, render_hit_cluster,
     render_hit_cluster_stem_and_accents, render_left_barline, render_measure_events,
     render_right_barline, render_right_left_repeat_barline, render_slot_group,
     render_start_repeat_barline, render_system_opening_barline, resolve_rest_placement, BeamAnchor,
@@ -52,19 +52,17 @@ pub use options::*;
 pub(crate) use pagination::{
     assemble_placed_system_box, header_box_from_page, layout_overflow_warning,
     page0_first_system_cursor, paginate_system_boxes, paginate_unpaginated_page,
-    system_box_from_page_system, system_boxes_from_page, BoxPaginationResult, HeaderLayoutBox,
-    PlacedSystemBox, SystemLayoutBox,
+    system_boxes_from_page, BoxPaginationResult, HeaderLayoutBox, PlacedSystemBox,
+    SystemLayoutBox,
 };
 #[allow(unused_imports)] // `scene` pulls these in via `super::*`.
 use planning::*;
 use scene_builder::{GlyphItemSpec, LineItemSpec, SceneEmitSink, TextItemSpec};
-use scene_geometry::bounds_for_items;
 #[cfg(test)]
 use scene_geometry::item_bounds;
 #[allow(unused_imports)] // `scene` pulls these in via `super::*`.
 use structural::spans::{
-    push_volta_composites, render_dynamic_marks, render_hairpin_fragments, render_nav_markers,
-    DeferredNavMarker,
+    render_dynamic_marks, render_hairpin_fragments, render_nav_markers, DeferredNavMarker,
 };
 #[cfg(test)]
 use structural::spans::{volta_type_for_measure, VoltaSegmentType};
@@ -85,6 +83,8 @@ use collision::{rect_obstacle_from_bounds, rects_intersect, RectObstacle};
 #[cfg(test)]
 use scene::render_header_layout_box;
 #[cfg(test)]
+use crate::engraving::notes::glyph_role_for_codepoint;
+#[cfg(test)]
 use validation::validate_layout_scene;
 
 /// Number of staff lines drawn per system (percussion staff).
@@ -100,41 +100,48 @@ pub(crate) fn staff_barline_height_pt(top: f32, bottom: f32) -> f32 {
     (bottom - top).max(0.0)
 }
 
+/// Stroke width for staff lines, stems, ledger lines, tuplets, voltas, and hairpins.
+pub(crate) const ENGRAVING_STROKE_WIDTH_PT: f32 = 0.6;
+/// Filled-rect width for regular, opening, and thin final barlines.
+pub(crate) const ENGRAVING_BARLINE_WIDTH_PT: f32 = 0.6;
+/// Filled-rect width for the thick stroke in a final barline (3× thin).
+pub(crate) const ENGRAVING_BARLINE_THICK_WIDTH_PT: f32 = ENGRAVING_BARLINE_WIDTH_PT * 3.0;
+
 pub fn glyph_position_pt(staff_space_pt: f32) -> f32 {
     staff_space_pt * 4.0
 }
 pub fn notation_render_font_pt(staff_space_pt: f32) -> f32 {
-    staff_space_pt * 3.0
+    glyph_position_pt(staff_space_pt)
 }
 pub fn flag_position_pt(staff_space_pt: f32) -> f32 {
     staff_space_pt * 2.933333
 }
 pub fn flag_render_font_pt(staff_space_pt: f32) -> f32 {
-    staff_space_pt * 2.2
+    flag_position_pt(staff_space_pt)
 }
 pub fn grace_position_pt(staff_space_pt: f32) -> f32 {
     staff_space_pt * 2.133333
 }
 pub fn grace_render_font_pt(staff_space_pt: f32) -> f32 {
-    staff_space_pt * 1.6
+    grace_position_pt(staff_space_pt)
 }
 pub fn nav_glyph_position_pt(staff_space_pt: f32) -> f32 {
     staff_space_pt * 2.666667
 }
 pub fn nav_glyph_render_font_pt(staff_space_pt: f32) -> f32 {
-    staff_space_pt * 2.0
+    nav_glyph_position_pt(staff_space_pt)
 }
 pub fn coda_glyph_position_pt(staff_space_pt: f32) -> f32 {
     staff_space_pt * 2.133333
 }
 pub fn coda_glyph_render_font_pt(staff_space_pt: f32) -> f32 {
-    staff_space_pt * 1.6
+    coda_glyph_position_pt(staff_space_pt)
 }
 pub fn tempo_glyph_position_pt(staff_space_pt: f32) -> f32 {
     staff_space_pt * 3.333333
 }
 pub fn tempo_glyph_render_font_pt(staff_space_pt: f32) -> f32 {
-    staff_space_pt * 2.5
+    tempo_glyph_position_pt(staff_space_pt)
 }
 
 // ── Tests ────────────────────────────────────────────────────────
@@ -392,12 +399,12 @@ mod tests {
         let clef_text_once = canonical_text_metric(TextRole::PercussionClef, 10.0);
         let clef_text_twice = canonical_text_metric(TextRole::PercussionClef, 10.0);
         assert_eq!(clef_text_once, clef_text_twice);
-        assert_eq!(clef_text_once.font_size_pt, 30.0);
+        assert_eq!(clef_text_once.font_size_pt, 40.0);
 
         let time_sig_text_once = canonical_text_metric(TextRole::TimeSignatureDigit, 10.0);
         let time_sig_text_twice = canonical_text_metric(TextRole::TimeSignatureDigit, 10.0);
         assert_eq!(time_sig_text_once, time_sig_text_twice);
-        assert_eq!(time_sig_text_once.font_size_pt, 30.0);
+        assert_eq!(time_sig_text_once.font_size_pt, 40.0);
     }
 
     #[test]
@@ -476,9 +483,11 @@ mod tests {
 
     #[test]
     fn test_stem_length_base_scales_offset_stays_in_pt() {
-        let mut opts = LayoutOptions::default();
-        opts.stem_len_offset_pt = 2.0;
-        opts.staff_space_pt = 5.0;
+        let mut opts = LayoutOptions {
+            stem_len_offset_pt: 2.0,
+            staff_space_pt: 5.0,
+            ..Default::default()
+        };
         assert!((stem_length_pt(&opts) - 22.0).abs() < 0.01);
         opts.staff_space_pt = 8.0;
         assert!((stem_length_pt(&opts) - 34.0).abs() < 0.01);
@@ -837,14 +846,14 @@ mod tests {
         let volta_fragments = scene
             .pages
             .iter()
-            .flat_map(|page| page_all_composites(page))
+            .flat_map(page_all_composites)
             .filter(|composite| composite.kind == CompositeKind::Volta)
             .map(|composite| composite.fragment)
             .collect::<Vec<_>>();
         let hairpin_fragments = scene
             .pages
             .iter()
-            .flat_map(|page| page_all_composites(page))
+            .flat_map(page_all_composites)
             .filter(|composite| composite.kind == CompositeKind::Hairpin)
             .map(|composite| composite.fragment)
             .collect::<Vec<_>>();
@@ -1056,12 +1065,12 @@ mod tests {
         let items = scene
             .pages
             .iter()
-            .flat_map(|page| page_all_items(page))
+            .flat_map(page_all_items)
             .collect::<Vec<_>>();
         let composites = scene
             .pages
             .iter()
-            .flat_map(|page| page_all_composites(page))
+            .flat_map(page_all_composites)
             .collect::<Vec<_>>();
 
         assert!(composites
@@ -1131,7 +1140,7 @@ mod tests {
         let items = scene
             .pages
             .iter()
-            .flat_map(|page| page_all_items(page))
+            .flat_map(page_all_items)
             .collect::<Vec<_>>();
         let staff_space_pt = LayoutOptions::default().staff_space_pt;
         let count_metric = canonical_text_metric(TextRole::CountLabel, staff_space_pt);
@@ -1293,19 +1302,19 @@ mod tests {
         let scene = build_layout_scene(&cross_system_fixture_score(), &LayoutOptions::default());
         let page = &scene.pages[0];
 
-        let measure_number = page_all_items(&page)
+        let measure_number = page_all_items(page)
             .find(|item| item.role == "measure-number")
             .expect("expected measure number item");
-        let nav_start = page_all_items(&page)
+        let nav_start = page_all_items(page)
             .find(|item| item.role == "nav-start")
             .expect("expected navigation start item");
-        let volta_label = page_all_items(&page)
+        let volta_label = page_all_items(page)
             .find(|item| item.role == "volta-label")
             .expect("expected volta label item");
-        let hairpin_top = page_all_items(&page)
+        let hairpin_top = page_all_items(page)
             .find(|item| item.role == "hairpin-top")
             .expect("expected hairpin item");
-        let notehead = page_all_items(&page)
+        let notehead = page_all_items(page)
             .find(|item| item.role == "notehead" && item.measure_id.as_deref() == Some("measure-0"))
             .expect("expected notehead item");
 
@@ -1333,7 +1342,7 @@ mod tests {
                 text_role: TextRole::Tempo,
                 text: "\u{E0A4}".to_string(),
                 font_family: "Bravura",
-                font_size_pt: 30.0,
+                font_size_pt: 40.0,
                 fill: "#333",
                 text_anchor: None,
                 font_weight: None,
@@ -3960,9 +3969,12 @@ mod tests {
 
         let upper_x = positioned[0].0;
         let lower_x = positioned[1].0;
+        let staff_space_pt = LayoutOptions::default().staff_space_pt;
+        let min_stagger =
+            rendered_glyph_width(GlyphRole::NoteheadBlack, glyph_position_pt(staff_space_pt));
         assert!(
-            upper_x > lower_x + 6.0,
-            "adjacent same-voice chord noteheads should stagger with the higher note on the right: upper_x={upper_x:.2} lower_x={lower_x:.2}"
+            upper_x > lower_x + min_stagger - 0.5,
+            "adjacent same-voice chord noteheads should stagger with the higher note on the right: upper_x={upper_x:.2} lower_x={lower_x:.2} min_stagger={min_stagger:.2}"
         );
 
         let stem = stems[0];
@@ -4703,7 +4715,7 @@ fn test_final_scene_validator_checks_ids_and_page_local_references() {
                         x2_pt: 110.0,
                         y2_pt: 50.0,
                         stroke: "#333".into(),
-                        stroke_width: 1.0,
+                        stroke_width: ENGRAVING_STROKE_WIDTH_PT,
                         stroke_line_cap: None,
                     }),
                 }],
@@ -4776,7 +4788,7 @@ fn test_final_scene_validator_suppresses_only_named_overflow_system_bounds() {
                             x2_pt: 80.0,
                             y2_pt: 150.0,
                             stroke: "#333".into(),
-                            stroke_width: 1.0,
+                            stroke_width: ENGRAVING_STROKE_WIDTH_PT,
                             stroke_line_cap: None,
                         }),
                     }],
@@ -4814,7 +4826,7 @@ fn test_final_scene_validator_suppresses_only_named_overflow_system_bounds() {
                             x2_pt: 80.0,
                             y2_pt: 120.0,
                             stroke: "#333".into(),
-                            stroke_width: 1.0,
+                            stroke_width: ENGRAVING_STROKE_WIDTH_PT,
                             stroke_line_cap: None,
                         }),
                     }],
@@ -5061,7 +5073,7 @@ fn test_adjacent_voltas_share_y_and_positive_offset_moves_up() {
         scene
             .pages
             .iter()
-            .flat_map(|page| page_all_items(page))
+            .flat_map(page_all_items)
             .filter(|item| item.role == "volta-line")
             .filter_map(|item| match &item.primitive {
                 ScenePrimitive::LineSegment(line) => Some(line.y1_pt),
@@ -5788,7 +5800,7 @@ fn test_adjacent_repeat_end_start_uses_smufl_right_left_glyph() {
     };
     let scene = build_layout_scene(&score, &LayoutOptions::default());
     let page = &scene.pages[0];
-    let shared_repeat = page_all_items(&page)
+    let shared_repeat = page_all_items(page)
         .find(|item| item.role == "repeat-end-start")
         .expect("expected shared repeat boundary glyph");
     let ScenePrimitive::GlyphRun(shared_glyph) = &shared_repeat.primitive else {

@@ -207,7 +207,7 @@ function renderScenePageToSvg(page: ScenePage, options?: RenderOptions): string 
           fill?: string;
         };
         const glyph = p.codepoint ? String.fromCodePoint(p.codepoint) : "";
-        svg += `<text${roleAttr}${measureAttr}${anchorAttr}${measureFractionAttr} x="${p.xPt}" y="${p.yPt}" font-family="${p.fontFamily || "Bravura"}" font-size="${p.fontSizePt || 12}pt" fill="${p.fill || "#333"}">${esc(glyph)}</text>`;
+        svg += `<text${roleAttr}${measureAttr}${anchorAttr}${measureFractionAttr} x="${p.xPt}" y="${p.yPt}" font-family="${p.fontFamily || "Bravura"}" font-size="${p.fontSizePt || 12}" fill="${p.fill || "#333"}">${esc(glyph)}</text>`;
         break;
       }
       case "lineSegment": {
@@ -221,7 +221,7 @@ function renderScenePageToSvg(page: ScenePage, options?: RenderOptions): string 
           strokeLineCap?: string;
         };
         const capAttr = p.strokeLineCap ? ` stroke-linecap="${p.strokeLineCap}"` : "";
-        svg += `<line${roleAttr}${measureAttr}${anchorAttr}${measureFractionAttr} x1="${p.x1Pt}" y1="${p.y1Pt}" x2="${p.x2Pt}" y2="${p.y2Pt}" stroke="${p.stroke || "#333"}" stroke-width="${p.strokeWidth || 1}"${capAttr}/>`;
+        svg += `<line${roleAttr}${measureAttr}${anchorAttr}${measureFractionAttr} x1="${p.x1Pt}" y1="${p.y1Pt}" x2="${p.x2Pt}" y2="${p.y2Pt}" stroke="${p.stroke || "#333"}" stroke-width="${p.strokeWidth ?? 0.6}"${capAttr}/>`;
         break;
       }
       case "rect": {
@@ -234,7 +234,7 @@ function renderScenePageToSvg(page: ScenePage, options?: RenderOptions): string 
           stroke?: string;
           strokeWidth?: number;
         };
-        const stroke = p.stroke ? ` stroke="${p.stroke}" stroke-width="${p.strokeWidth || 1}"` : "";
+        const stroke = p.stroke ? ` stroke="${p.stroke}" stroke-width="${p.strokeWidth ?? 0.6}"` : "";
         svg += `<rect${roleAttr}${measureAttr}${anchorAttr}${measureFractionAttr} x="${p.xPt}" y="${p.yPt}" width="${p.widthPt}" height="${p.heightPt}" fill="${p.fill || "none"}"${stroke}/>`;
         break;
       }
@@ -245,7 +245,7 @@ function renderScenePageToSvg(page: ScenePage, options?: RenderOptions): string 
           stroke?: string;
           strokeWidth?: number;
         };
-        const stroke = p.stroke ? ` stroke="${p.stroke}" stroke-width="${p.strokeWidth || 1}"` : "";
+        const stroke = p.stroke ? ` stroke="${p.stroke}" stroke-width="${p.strokeWidth ?? 0.6}"` : "";
         svg += `<path${roleAttr}${measureAttr}${anchorAttr}${measureFractionAttr} d="${esc(p.d)}" fill="${p.fill || "none"}"${stroke}/>`;
         break;
       }
@@ -254,7 +254,7 @@ function renderScenePageToSvg(page: ScenePage, options?: RenderOptions): string 
           pointsPt: Array<[number, number]>;
         };
         const points = (p.pointsPt || []).map(([x, y]) => `${x},${y}`).join(" ");
-        svg += `<polyline${roleAttr}${measureAttr}${anchorAttr}${measureFractionAttr} points="${points}" fill="none" stroke="#333" stroke-width="1"/>`;
+        svg += `<polyline${roleAttr}${measureAttr}${anchorAttr}${measureFractionAttr} points="${points}" fill="none" stroke="#333" stroke-width="0.6"/>`;
         break;
       }
       case "textRun": {
@@ -274,7 +274,7 @@ function renderScenePageToSvg(page: ScenePage, options?: RenderOptions): string 
         const weight = p.fontWeight ? ` font-weight="${p.fontWeight}"` : "";
         const style = p.fontStyle ? ` font-style="${p.fontStyle}"` : "";
         const aria = p.accessibleLabel ? ` aria-label="${esc(p.accessibleLabel)}"` : "";
-        svg += `<text${roleAttr}${measureAttr}${anchorAttr}${measureFractionAttr}${aria} x="${p.xPt}" y="${p.yPt}" font-family="${p.fontFamily || "Bravura"}" font-size="${p.fontSizePt || 12}pt" fill="${p.fill || "#333"}"${anchor}${weight}${style}>${esc(p.text)}</text>`;
+        svg += `<text${roleAttr}${measureAttr}${anchorAttr}${measureFractionAttr}${aria} x="${p.xPt}" y="${p.yPt}" font-family="${p.fontFamily || "Bravura"}" font-size="${p.fontSizePt || 12}" fill="${p.fill || "#333"}"${anchor}${weight}${style}>${esc(p.text)}</text>`;
         break;
       }
       default:
@@ -383,15 +383,15 @@ function renderRepeatSpanComposite(
       ? `${composite.count}x`
       : "";
   let svg = "";
-  svg += `<line data-role="repeat-span-line" x1="${x1}" y1="${y}" x2="${x2}" y2="${y}" stroke="#333" stroke-width="1.2"/>`;
+  svg += `<line data-role="repeat-span-line" x1="${x1}" y1="${y}" x2="${x2}" y2="${y}" stroke="#333" stroke-width="0.6"/>`;
   if (composite.fragment !== "continuation" && composite.fragment !== "end") {
-    svg += `<line data-role="repeat-span-start" x1="${x1}" y1="${y}" x2="${x1}" y2="${y + 8}" stroke="#333" stroke-width="1.2"/>`;
+    svg += `<line data-role="repeat-span-start" x1="${x1}" y1="${y}" x2="${x1}" y2="${y + 8}" stroke="#333" stroke-width="0.6"/>`;
   }
   if (composite.fragment === "singleSegment" || composite.fragment === "end") {
-    svg += `<line data-role="repeat-span-end" x1="${x2}" y1="${y}" x2="${x2}" y2="${y + 8}" stroke="#333" stroke-width="1.2"/>`;
+    svg += `<line data-role="repeat-span-end" x1="${x2}" y1="${y}" x2="${x2}" y2="${y + 8}" stroke="#333" stroke-width="0.6"/>`;
   }
   if (countText) {
-    svg += `<text data-role="repeat-span-count" x="${(x1 + x2) / 2}" y="${y - 4}" font-family="Bravura" font-size="10pt" fill="#333" text-anchor="middle">${esc(countText)}</text>`;
+    svg += `<text data-role="repeat-span-count" x="${(x1 + x2) / 2}" y="${y - 4}" font-family="Bravura" font-size="10" fill="#333" text-anchor="middle">${esc(countText)}</text>`;
   }
   return svg;
 }
@@ -405,15 +405,15 @@ function renderVoltaComposite(
   const x2 = end.xPt + end.widthPt - 2;
   const y = Math.min(start.yPt, end.yPt) - 10;
   let svg = "";
-  svg += `<line data-role="volta-line" x1="${x1}" y1="${y}" x2="${x2}" y2="${y}" stroke="#333" stroke-width="1.2"/>`;
+  svg += `<line data-role="volta-line" x1="${x1}" y1="${y}" x2="${x2}" y2="${y}" stroke="#333" stroke-width="0.6"/>`;
   if (composite.fragment !== "continuation") {
-    svg += `<line data-role="volta-start-hook" x1="${x1}" y1="${y}" x2="${x1}" y2="${y + 10}" stroke="#333" stroke-width="1.2"/>`;
+    svg += `<line data-role="volta-start-hook" x1="${x1}" y1="${y}" x2="${x1}" y2="${y + 10}" stroke="#333" stroke-width="0.6"/>`;
   }
   if (composite.fragment === "singleSegment" || composite.fragment === "end") {
-    svg += `<line data-role="volta-end-hook" x1="${x2}" y1="${y}" x2="${x2}" y2="${y + 10}" stroke="#333" stroke-width="1.2"/>`;
+    svg += `<line data-role="volta-end-hook" x1="${x2}" y1="${y}" x2="${x2}" y2="${y + 10}" stroke="#333" stroke-width="0.6"/>`;
   }
   if (composite.label && composite.fragment !== "continuation" && composite.fragment !== "end") {
-    svg += `<text data-role="volta-label" x="${x1 + 4}" y="${y - 4}" font-family="Bravura" font-size="10pt" fill="#333">${esc(composite.label)}</text>`;
+    svg += `<text data-role="volta-label" x="${x1 + 4}" y="${y - 4}" font-family="Bravura" font-size="10" fill="#333">${esc(composite.label)}</text>`;
   }
   return svg;
 }

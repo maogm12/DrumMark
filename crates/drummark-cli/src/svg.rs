@@ -55,7 +55,7 @@ fn render_item(item: &drummark_layout::SceneItem) -> String {
                 .map(|ch| ch.to_string())
                 .unwrap_or_default();
             format!(
-                r#"<text{}{} x="{:.3}" y="{:.3}" font-family="{}" font-size="{:.3}pt" fill="{}">{}</text>"#,
+                r#"<text{}{} x="{:.3}" y="{:.3}" font-family="{}" font-size="{:.3}" fill="{}">{}</text>"#,
                 role,
                 measure,
                 glyph.x_pt,
@@ -83,7 +83,7 @@ fn render_item(item: &drummark_layout::SceneItem) -> String {
                 .map(|style| format!(r#" font-style="{}""#, esc(style)))
                 .unwrap_or_default();
             format!(
-                r#"<text{}{} x="{:.3}" y="{:.3}" font-family="{}" font-size="{:.3}pt" fill="{}"{}{}{}>{}</text>"#,
+                r#"<text{}{} x="{:.3}" y="{:.3}" font-family="{}" font-size="{:.3}" fill="{}"{}{}{}>{}</text>"#,
                 role,
                 measure,
                 text.x_pt,
@@ -124,7 +124,7 @@ fn render_item(item: &drummark_layout::SceneItem) -> String {
                     format!(
                         r#" stroke="{}" stroke-width="{:.3}""#,
                         esc(stroke),
-                        rect.stroke_width.unwrap_or(1.0)
+                        rect.stroke_width.unwrap_or(0.6)
                     )
                 })
                 .unwrap_or_default();
@@ -148,7 +148,7 @@ fn render_item(item: &drummark_layout::SceneItem) -> String {
                 .collect::<Vec<_>>()
                 .join(" ");
             format!(
-                r##"<polyline{}{} points="{}" fill="none" stroke="#333" stroke-width="1" />"##,
+                r##"<polyline{}{} points="{}" fill="none" stroke="#333" stroke-width="0.6" />"##,
                 role, measure, points
             )
         }
@@ -160,7 +160,7 @@ fn render_item(item: &drummark_layout::SceneItem) -> String {
                     format!(
                         r#" stroke="{}" stroke-width="{:.3}""#,
                         esc(stroke),
-                        path.stroke_width.unwrap_or(1.0)
+                        path.stroke_width.unwrap_or(0.6)
                     )
                 })
                 .unwrap_or_default();

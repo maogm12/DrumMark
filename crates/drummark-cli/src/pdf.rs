@@ -172,7 +172,7 @@ fn emit_item(
                     col: parse_color(stroke),
                 });
                 ops.push(Op::SetOutlineThickness {
-                    pt: Pt(rect.stroke_width.unwrap_or(1.0)),
+                    pt: Pt(rect.stroke_width.unwrap_or(0.6)),
                 });
             }
             let mut shape = Rect::from_xywh(
@@ -214,7 +214,7 @@ fn emit_item(
                         col: parse_color(stroke),
                     });
                     ops.push(Op::SetOutlineThickness {
-                        pt: Pt(path.stroke_width.unwrap_or(1.0)),
+                        pt: Pt(path.stroke_width.unwrap_or(0.6)),
                     });
                 }
                 let mode = if path.stroke.is_some() && path.fill != "none" {

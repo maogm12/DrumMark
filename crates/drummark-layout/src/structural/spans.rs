@@ -10,36 +10,6 @@ use crate::structural::skyline::{
 };
 use crate::*;
 
-pub(crate) fn push_volta_composites(
-    sink: &mut SceneEmitSink<'_>,
-    composites: &mut Vec<SceneComposite>,
-    page_measures: &[SceneMeasure],
-    measures: &[DisplayMeasure<'_>],
-    opts: &LayoutOptions,
-) {
-    let mut system_start = 0usize;
-    while system_start < page_measures.len() {
-        let system_id = page_measures[system_start].system_id.clone();
-        let mut system_end = system_start;
-        while system_end + 1 < page_measures.len()
-            && page_measures[system_end + 1].system_id == system_id
-        {
-            system_end += 1;
-        }
-
-        push_system_volta_composites(
-            sink,
-            composites,
-            &page_measures[system_start..=system_end],
-            measures,
-            opts,
-            system_id == "system-0",
-        );
-
-        system_start = system_end + 1;
-    }
-}
-
 pub(crate) fn push_system_volta_composites(
     sink: &mut SceneEmitSink<'_>,
     composites: &mut Vec<SceneComposite>,
@@ -314,7 +284,7 @@ pub(crate) fn push_volta_segment(
         x2,
         y2: spec.line_y,
         stroke: "#333",
-        stroke_width: 1.0,
+        stroke_width: crate::ENGRAVING_STROKE_WIDTH_PT,
         stroke_line_cap: None,
     }));
     if spec.show_left_hook {
@@ -326,7 +296,7 @@ pub(crate) fn push_volta_segment(
             x2: x1,
             y2: spec.line_y + VOLTA_LINE_HEIGHT_PT,
             stroke: "#333",
-            stroke_width: 1.0,
+            stroke_width: crate::ENGRAVING_STROKE_WIDTH_PT,
             stroke_line_cap: None,
         }));
     }
@@ -354,7 +324,7 @@ pub(crate) fn push_volta_segment(
             x2,
             y2: spec.line_y + VOLTA_LINE_HEIGHT_PT,
             stroke: "#333",
-            stroke_width: 1.0,
+            stroke_width: crate::ENGRAVING_STROKE_WIDTH_PT,
             stroke_line_cap: None,
         }));
     }
@@ -755,7 +725,7 @@ pub(crate) fn render_hairpin_fragments(
                     x2: end_x,
                     y2: right_top_y,
                     stroke: "#333",
-                    stroke_width: 1.2,
+                    stroke_width: crate::ENGRAVING_STROKE_WIDTH_PT,
                     stroke_line_cap: None,
                 });
                 let bottom_id = sink.push_line_item(LineItemSpec {
@@ -766,7 +736,7 @@ pub(crate) fn render_hairpin_fragments(
                     x2: end_x,
                     y2: right_bottom_y,
                     stroke: "#333",
-                    stroke_width: 1.2,
+                    stroke_width: crate::ENGRAVING_STROKE_WIDTH_PT,
                     stroke_line_cap: None,
                 });
                 composites.push(SceneComposite {

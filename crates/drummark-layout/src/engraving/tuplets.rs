@@ -107,7 +107,7 @@ pub(crate) fn render_tuplet_groups(
             x2: gap_left.max(left),
             y2: y,
             stroke: "#333",
-            stroke_width: 1.0,
+            stroke_width: crate::ENGRAVING_STROKE_WIDTH_PT,
             stroke_line_cap: Some("butt"),
         });
         sink.push_line_item(LineItemSpec {
@@ -118,7 +118,7 @@ pub(crate) fn render_tuplet_groups(
             x2: right,
             y2: y,
             stroke: "#333",
-            stroke_width: 1.0,
+            stroke_width: crate::ENGRAVING_STROKE_WIDTH_PT,
             stroke_line_cap: Some("butt"),
         });
         sink.push_line_item(LineItemSpec {
@@ -129,7 +129,7 @@ pub(crate) fn render_tuplet_groups(
             x2: left,
             y2: y + ss,
             stroke: "#333",
-            stroke_width: 1.0,
+            stroke_width: crate::ENGRAVING_STROKE_WIDTH_PT,
             stroke_line_cap: Some("butt"),
         });
         sink.push_line_item(LineItemSpec {
@@ -140,7 +140,7 @@ pub(crate) fn render_tuplet_groups(
             x2: right,
             y2: y + ss,
             stroke: "#333",
-            stroke_width: 1.0,
+            stroke_width: crate::ENGRAVING_STROKE_WIDTH_PT,
             stroke_line_cap: Some("butt"),
         });
 

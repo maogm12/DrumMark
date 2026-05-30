@@ -26,7 +26,7 @@ fn stderr(output: &Output) -> String {
     String::from_utf8_lossy(&output.stderr).into_owned()
 }
 
-fn page_items<'a>(page: &'a serde_json::Value) -> Vec<&'a serde_json::Value> {
+fn page_items(page: &serde_json::Value) -> Vec<&serde_json::Value> {
     let mut items = Vec::new();
     if let Some(header) = page.get("header") {
         if let Some(header_items) = header.get("items").and_then(|value| value.as_array()) {
@@ -175,7 +175,7 @@ fn staff_size_affects_notehead_font_size() {
         .find(|i| i["role"] == "notehead")
         .and_then(|i| i["primitive"]["fontSizePt"].as_f64())
         .expect("notehead fontSizePt");
-    assert!((font_10 - 30.0).abs() < 1.0, "expected notehead fontSizePt ~30 at staff-size 10, got {font_10}");
+    assert!((font_10 - 40.0).abs() < 1.0, "expected notehead fontSizePt ~40 at staff-size 10, got {font_10}");
 
 
     let scene_at_8 = run(&[OVERVIEW, "--format", "scene", "--staff-size", "8"]);
@@ -186,7 +186,7 @@ fn staff_size_affects_notehead_font_size() {
         .find(|i| i["role"] == "notehead")
         .and_then(|i| i["primitive"]["fontSizePt"].as_f64())
         .expect("notehead fontSizePt");
-    assert!((font_8 - 24.0).abs() < 1.0, "expected notehead fontSizePt ~24 at staff-size 8, got {font_8}");
+    assert!((font_8 - 32.0).abs() < 1.0, "expected notehead fontSizePt ~32 at staff-size 8, got {font_8}");
 }
 
 fn fallback_font() -> Option<PathBuf> {

@@ -18,7 +18,10 @@ use crate::planning::{
 use crate::scene_builder::{
     GlyphItemSpec, LineItemSpec, PathItemSpec, SceneEmitSink, TextItemSpec,
 };
-use crate::{glyph_position_pt, notation_render_font_pt, grace_position_pt, grace_render_font_pt};
+use crate::{
+    glyph_position_pt, grace_position_pt, grace_render_font_pt, notation_render_font_pt,
+    ENGRAVING_STROKE_WIDTH_PT,
+};
 
 use super::beams::{render_beam_groups, BeamAnchor};
 use super::tuplets::render_tuplet_groups;
@@ -98,7 +101,6 @@ pub(crate) struct HitClusterPlan {
 }
 
 pub(crate) struct SlotTopObstacle {
-    pub(crate) voice: u8,
     pub(crate) x: f32,
     pub(crate) top_y: f32,
 }
@@ -227,7 +229,6 @@ const REST_LANES_VOICE_1_UP_SS: [f32; 8] = [1.0, 0.5, 0.0, -0.5, -1.0, -1.5, -2.
 const REST_LANES_VOICE_2_DOWN_SS: [f32; 8] = [3.5, 4.0, 4.5, 5.0, 5.5, 6.0, 6.5, 7.0];
 /// Single-voice collision fallback: expand symmetrically around the middle staff line.
 const REST_LANES_SINGLE_SS: [f32; 9] = [2.0, 1.5, 2.5, 1.0, 3.0, 0.5, 3.5, 0.0, 4.0];
-const STEM_STROKE_WIDTH_PT: f32 = 1.0;
 pub(crate) const BEAM_THICKNESS_PT: f32 = 3.0;
 /// Clear space between adjacent beam ribbons (not center-to-center).
 pub(crate) const SECONDARY_BEAM_GAP_PT: f32 = 2.0;
@@ -397,7 +398,7 @@ fn stem_obstacle(stem_plan: &StemRenderPlan) -> RectObstacle {
         y1: stem_plan.y1,
         x2: stem_plan.x,
         y2: stem_plan.y2,
-        stroke_width: STEM_STROKE_WIDTH_PT,
+        stroke_width: ENGRAVING_STROKE_WIDTH_PT,
     })
 }
 
@@ -427,6 +428,7 @@ fn beam_envelope_obstacle(
     })
 }
 
+#[allow(clippy::too_many_arguments)]
 pub(crate) fn resolve_rest_placement(
     rest: &SlotEvent<'_>,
     center_x: f32,
@@ -522,7 +524,6 @@ pub(crate) fn render_slot_group(sink: &mut SceneEmitSink<'_>, input: RenderSlotG
                 top_y = top_y.min(rect_obstacle_from_glyph(accent.clone()).y1);
             }
             top_obstacles.push(SlotTopObstacle {
-                voice,
                 x: input.event_x,
                 top_y,
             });
@@ -850,7 +851,7 @@ pub(crate) fn render_hit_cluster(
                 y1: ledger_y,
                 x2: ledger_x2,
                 y2: ledger_y,
-                stroke_width: 1.0,
+                stroke_width: ENGRAVING_STROKE_WIDTH_PT,
             });
             let ledger_id = sink.push_line_item(LineItemSpec {
                 measure_id: Some(input.measure_id),
@@ -860,7 +861,7 @@ pub(crate) fn render_hit_cluster(
                 x2: ledger_x2,
                 y2: ledger_y,
                 stroke: "#333",
-                stroke_width: 1.0,
+                stroke_width: ENGRAVING_STROKE_WIDTH_PT,
                 stroke_line_cap: None,
             });
             sink.set_anchor_item_id(&ledger_id, Some(note_id.clone()));
@@ -1031,9 +1032,9 @@ fn shared_stem_layout(
         stem_x: default_attach_note.note_x
             + stem_anchor.x_ss * smufl_ss
             + if stem_up {
-                -STEM_STROKE_WIDTH_PT / 2.0
+                -ENGRAVING_STROKE_WIDTH_PT / 2.0
             } else {
-                STEM_STROKE_WIDTH_PT / 2.0
+                ENGRAVING_STROKE_WIDTH_PT / 2.0
             },
         stem_attach_y: default_attach_note.note_y - stem_anchor.y_ss * smufl_ss,
         stem_body_min_y,
@@ -1083,7 +1084,7 @@ pub(crate) fn render_hit_cluster_stem_and_accents(
             x2: stem_plan.x,
             y2: stem_plan.y2,
             stroke: "#333",
-            stroke_width: STEM_STROKE_WIDTH_PT,
+            stroke_width: ENGRAVING_STROKE_WIDTH_PT,
             stroke_line_cap: None,
         });
         if let Some(anchor_note_id) = stem_plan.anchor_note_id.as_ref() {
@@ -1194,7 +1195,7 @@ pub(crate) fn render_grace_notes_for_hit(
         });
         sink.set_anchor_item_id(&note_id, Some(anchor_note_id.clone()));
 
-        let stem_x = grace_x + stem_anchor.x_ss * smufl_ss - STEM_STROKE_WIDTH_PT / 2.0;
+        let stem_x = grace_x + stem_anchor.x_ss * smufl_ss - ENGRAVING_STROKE_WIDTH_PT / 2.0;
         let stem_attach_y = main_note_y - stem_anchor.y_ss * smufl_ss;
         let (stem_y1, stem_y2) = if stem_up {
             (stem_attach_y - GRACE_STEM_LEN_PT, stem_attach_y)
@@ -1209,7 +1210,7 @@ pub(crate) fn render_grace_notes_for_hit(
             x2: stem_x,
             y2: stem_y2,
             stroke: "#333",
-            stroke_width: 1.0,
+            stroke_width: ENGRAVING_STROKE_WIDTH_PT,
             stroke_line_cap: None,
         });
         sink.set_anchor_item_id(&stem_id, Some(note_id.clone()));
@@ -1258,7 +1259,7 @@ pub(crate) fn render_grace_notes_for_hit(
                 x2: stem_x + FLAM_SLASH_RIGHT_PT,
                 y2: slash_mid_y - FLAM_SLASH_BOTTOM_PT,
                 stroke: "#333",
-                stroke_width: 1.0,
+                stroke_width: ENGRAVING_STROKE_WIDTH_PT,
                 stroke_line_cap: Some("round"),
             });
             sink.set_anchor_item_id(&slash_id, Some(stem_id));
@@ -1510,7 +1511,7 @@ fn build_accent_glyph_plans(
         .collect()
 }
 
-#[allow(dead_code)]
+#[cfg(test)]
 pub(crate) fn glyph_role_for_codepoint(codepoint: u32) -> GlyphRole {
     match codepoint {
         0xE0A9 => GlyphRole::NoteheadX,

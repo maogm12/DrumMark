@@ -1,5 +1,7 @@
 use crate::metrics::GlyphRole;
-use crate::staff_barline_height_pt;
+use crate::{
+    staff_barline_height_pt, ENGRAVING_BARLINE_THICK_WIDTH_PT, ENGRAVING_BARLINE_WIDTH_PT,
+};
 use crate::planning::{
     repeat_barline_rendered_width, start_repeat_vertical_origin,
 };
@@ -34,7 +36,7 @@ pub(crate) fn render_system_opening_barline(
         role: "opening-barline",
         x,
         y: top,
-        width: 1.0,
+        width: ENGRAVING_BARLINE_WIDTH_PT,
         height: staff_barline_height_pt(top, bottom),
         fill: "#333",
         stroke: None,
@@ -111,7 +113,7 @@ pub(crate) fn render_right_barline(sink: &mut SceneEmitSink<'_>, spec: RightBarl
                 role: "double-barline-left",
                 x: spec.x - 4.0,
                 y: spec.top,
-                width: 1.0,
+                width: ENGRAVING_BARLINE_WIDTH_PT,
                 height: h,
                 fill: "#333",
                 stroke: None,
@@ -120,9 +122,9 @@ pub(crate) fn render_right_barline(sink: &mut SceneEmitSink<'_>, spec: RightBarl
             sink.push_rect_item(RectItemSpec {
                 measure_id: spec.measure_id,
                 role: "double-barline-right",
-                x: spec.x - 1.0,
+                x: spec.x - ENGRAVING_BARLINE_WIDTH_PT,
                 y: spec.top,
-                width: 1.0,
+                width: ENGRAVING_BARLINE_WIDTH_PT,
                 height: h,
                 fill: "#333",
                 stroke: None,
@@ -135,7 +137,7 @@ pub(crate) fn render_right_barline(sink: &mut SceneEmitSink<'_>, spec: RightBarl
                 role: "final-barline-thin",
                 x: spec.x - 4.0,
                 y: spec.top,
-                width: 1.0,
+                width: ENGRAVING_BARLINE_WIDTH_PT,
                 height: h,
                 fill: "#333",
                 stroke: None,
@@ -144,9 +146,9 @@ pub(crate) fn render_right_barline(sink: &mut SceneEmitSink<'_>, spec: RightBarl
             sink.push_rect_item(RectItemSpec {
                 measure_id: spec.measure_id,
                 role: "final-barline-thick",
-                x: spec.x - 3.0,
+                x: spec.x - ENGRAVING_BARLINE_THICK_WIDTH_PT,
                 y: spec.top,
-                width: 3.0,
+                width: ENGRAVING_BARLINE_THICK_WIDTH_PT,
                 height: h,
                 fill: "#333",
                 stroke: None,
@@ -161,9 +163,9 @@ pub(crate) fn render_right_barline(sink: &mut SceneEmitSink<'_>, spec: RightBarl
                 } else {
                     "barline"
                 },
-                x: spec.x - 1.0,
+                x: spec.x - ENGRAVING_BARLINE_WIDTH_PT,
                 y: spec.top,
-                width: 1.0,
+                width: ENGRAVING_BARLINE_WIDTH_PT,
                 height: h,
                 fill: "#333",
                 stroke: None,
@@ -175,7 +177,7 @@ pub(crate) fn render_right_barline(sink: &mut SceneEmitSink<'_>, spec: RightBarl
                     role: "final-barline",
                     x: spec.x - 3.0,
                     y: spec.top,
-                    width: 3.0,
+                    width: ENGRAVING_BARLINE_THICK_WIDTH_PT,
                     height: h,
                     fill: "#333",
                     stroke: None,

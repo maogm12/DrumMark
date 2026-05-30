@@ -45,9 +45,11 @@ jobs:
       - name: Build WASM parser
         run: wasm-pack build --target web crates/drummark-core
 
-      - name: Test Rust crate
-        run: cargo test
-        working-directory: crates/drummark-core
+      - name: Lint Rust workspace
+        run: cargo clippy --all-targets --all-features --workspace -- -D warnings
+
+      - name: Test Rust workspace
+        run: cargo test --workspace
          
       - name: Type-check tests
         run: npm run typecheck:test

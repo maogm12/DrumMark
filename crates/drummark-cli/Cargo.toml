@@ -5,6 +5,9 @@ edition = "2021"
 license = "MIT"
 description = "Native DrumMark command line exporter"
 
+[lints]
+workspace = true
+
 [[bin]]
 name = "drummark"
 path = "src/main.rs"

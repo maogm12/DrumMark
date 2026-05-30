@@ -5,6 +5,9 @@ edition = "2021"
 license = "MIT"
 description = "DrumMark notation parser — source text to AST"
 
+[lints]
+workspace = true
+
 [lib]
 crate-type = ["cdylib", "rlib"]
 

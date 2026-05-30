@@ -1,4 +1,3 @@
-#![allow(dead_code)]
 #![allow(clippy::items_after_test_module)]
 #![allow(clippy::should_implement_trait)]
 #![allow(clippy::too_many_arguments)]

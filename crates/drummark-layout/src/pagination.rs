@@ -1,7 +1,7 @@
-use std::collections::{BTreeSet, HashMap};
+use std::collections::HashMap;
 
 use crate::scene_geometry::{bounds_for_items, translate_scene_item};
-use crate::scene_page::{dedupe_page_item_ids, page_header_composites, page_header_items};
+use crate::scene_page::{dedupe_page_item_ids, page_header_items};
 use crate::validation::validate_layout_scene;
 use crate::{
     CompositeKind, LayoutOptions, LayoutScene, SceneComposite, SceneItem, SceneMeasure, ScenePage,
@@ -9,7 +9,6 @@ use crate::{
 };
 
 #[derive(Debug, Clone, PartialEq)]
-#[allow(dead_code)]
 pub(crate) struct SystemLayoutBox {
     pub(crate) system_index: u32,
     pub(crate) system_id: String,
@@ -26,7 +25,6 @@ pub(crate) struct SystemLayoutBox {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-#[allow(dead_code)]
 pub(crate) struct HeaderLayoutBox {
     pub(crate) items: Vec<SceneItem>,
     pub(crate) composites: Vec<SceneComposite>,
@@ -35,7 +33,6 @@ pub(crate) struct HeaderLayoutBox {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-#[allow(dead_code)]
 pub(crate) struct PlacedSystemBox {
     pub(crate) system_index: u32,
     pub(crate) system_id: String,
@@ -48,13 +45,11 @@ pub(crate) struct PlacedSystemBox {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-#[allow(dead_code)]
 pub(crate) struct BoxPaginationResult {
     pub(crate) placements: Vec<PlacedSystemBox>,
     pub(crate) issues: Vec<String>,
 }
 
-#[allow(dead_code)]
 pub(crate) fn layout_overflow_warning(
     page_index: u32,
     system_id: &str,
@@ -66,7 +61,6 @@ pub(crate) fn layout_overflow_warning(
     )
 }
 
-#[allow(dead_code)]
 pub(crate) fn paginate_system_boxes(
     boxes: &[SystemLayoutBox],
     header: &HeaderLayoutBox,
@@ -121,7 +115,6 @@ pub(crate) fn paginate_system_boxes(
     BoxPaginationResult { placements, issues }
 }
 
-#[allow(dead_code)]
 pub(crate) fn page0_first_system_cursor(opts: &LayoutOptions, header: &HeaderLayoutBox) -> f32 {
     let fixed_cursor = opts.top_margin_pt + opts.header_height_pt + opts.header_staff_spacing_pt;
     let visual_cursor = header.visual_bottom + opts.header_staff_spacing_pt;
@@ -318,16 +311,4 @@ pub(crate) fn assemble_placed_system_box(
         })
         .collect();
     page.systems.push(final_system);
-}
-
-// Legacy name kept for tests that import `system_box_from_page_system`.
-pub(crate) fn system_box_from_page_system(
-    page: &ScenePage,
-    system: &SceneSystem,
-    opts: &LayoutOptions,
-    _previous_system_y: Option<f32>,
-    _next_system_y: Option<f32>,
-) -> SystemLayoutBox {
-    let _ = page;
-    system_box_from_nested_system(system, opts)
 }

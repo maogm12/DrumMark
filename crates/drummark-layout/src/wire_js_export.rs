@@ -1,23 +1,9 @@
-use crate::wire::{WireSceneComposite, WireSceneItem, WireSceneMeasure, WireScenePrimitive};
+use crate::wire::{WireSceneComposite, WireSceneItem, WireScenePrimitive};
 use js_sys::{Array, Object};
 use wasm_bindgen::prelude::*;
 
-pub(crate) fn wire_js_measure(measure: &WireSceneMeasure) -> Object {
-    let measure_obj = Object::new();
-    js_sys::Reflect::set(&measure_obj, &JsValue::from_str("id"), &JsValue::from_str(&measure.id)).unwrap();
-    js_sys::Reflect::set(&measure_obj, &JsValue::from_str("index"), &JsValue::from_f64(measure.index as f64)).unwrap();
-    js_sys::Reflect::set(&measure_obj, &JsValue::from_str("globalIndex"), &JsValue::from_f64(measure.global_index as f64)).unwrap();
-    js_sys::Reflect::set(&measure_obj, &JsValue::from_str("systemId"), &JsValue::from_str(&measure.system_id)).unwrap();
-    js_sys::Reflect::set(&measure_obj, &JsValue::from_str("xPt"), &JsValue::from_f64(measure.x_pt as f64)).unwrap();
-    js_sys::Reflect::set(&measure_obj, &JsValue::from_str("yPt"), &JsValue::from_f64(measure.y_pt as f64)).unwrap();
-    js_sys::Reflect::set(&measure_obj, &JsValue::from_str("widthPt"), &JsValue::from_f64(measure.width_pt as f64)).unwrap();
-    js_sys::Reflect::set(&measure_obj, &JsValue::from_str("heightPt"), &JsValue::from_f64(measure.height_pt as f64)).unwrap();
-    measure_obj
-}
-
 pub(crate) fn wire_js_item(item: &WireSceneItem) -> Object {
     let item_obj = Object::new();
-        let item_obj = Object::new();
         js_sys::Reflect::set(
             &item_obj,
             &JsValue::from_str("id"),
@@ -28,7 +14,7 @@ pub(crate) fn wire_js_item(item: &WireSceneItem) -> Object {
             js_sys::Reflect::set(
                 &item_obj,
                 &JsValue::from_str("measureId"),
-                &JsValue::from_str(&measure_id),
+                &JsValue::from_str(measure_id),
             )
             .unwrap();
         }
@@ -36,7 +22,7 @@ pub(crate) fn wire_js_item(item: &WireSceneItem) -> Object {
             js_sys::Reflect::set(
                 &item_obj,
                 &JsValue::from_str("anchorItemId"),
-                &JsValue::from_str(&anchor_item_id),
+                &JsValue::from_str(anchor_item_id),
             )
             .unwrap();
         }
@@ -126,7 +112,7 @@ pub(crate) fn wire_js_item(item: &WireSceneItem) -> Object {
                 js_sys::Reflect::set(
                     &primitive,
                     &JsValue::from_str("fontFamily"),
-                    &JsValue::from_str(&font_family),
+                    &JsValue::from_str(font_family),
                 )
                 .unwrap();
                 js_sys::Reflect::set(
@@ -138,7 +124,7 @@ pub(crate) fn wire_js_item(item: &WireSceneItem) -> Object {
                 js_sys::Reflect::set(
                     &primitive,
                     &JsValue::from_str("fill"),
-                    &JsValue::from_str(&fill),
+                    &JsValue::from_str(fill),
                 )
                 .unwrap();
             }
@@ -176,13 +162,13 @@ pub(crate) fn wire_js_item(item: &WireSceneItem) -> Object {
                 js_sys::Reflect::set(
                     &primitive,
                     &JsValue::from_str("text"),
-                    &JsValue::from_str(&text),
+                    &JsValue::from_str(text),
                 )
                 .unwrap();
                 js_sys::Reflect::set(
                     &primitive,
                     &JsValue::from_str("fontFamily"),
-                    &JsValue::from_str(&font_family),
+                    &JsValue::from_str(font_family),
                 )
                 .unwrap();
                 js_sys::Reflect::set(
@@ -194,14 +180,14 @@ pub(crate) fn wire_js_item(item: &WireSceneItem) -> Object {
                 js_sys::Reflect::set(
                     &primitive,
                     &JsValue::from_str("fill"),
-                    &JsValue::from_str(&fill),
+                    &JsValue::from_str(fill),
                 )
                 .unwrap();
                 if let Some(text_anchor) = text_anchor {
                     js_sys::Reflect::set(
                         &primitive,
                         &JsValue::from_str("textAnchor"),
-                        &JsValue::from_str(&text_anchor),
+                        &JsValue::from_str(text_anchor),
                     )
                     .unwrap();
                 }
@@ -209,7 +195,7 @@ pub(crate) fn wire_js_item(item: &WireSceneItem) -> Object {
                     js_sys::Reflect::set(
                         &primitive,
                         &JsValue::from_str("fontWeight"),
-                        &JsValue::from_str(&font_weight),
+                        &JsValue::from_str(font_weight),
                     )
                     .unwrap();
                 }
@@ -217,7 +203,7 @@ pub(crate) fn wire_js_item(item: &WireSceneItem) -> Object {
                     js_sys::Reflect::set(
                         &primitive,
                         &JsValue::from_str("fontStyle"),
-                        &JsValue::from_str(&font_style),
+                        &JsValue::from_str(font_style),
                     )
                     .unwrap();
                 }
@@ -225,7 +211,7 @@ pub(crate) fn wire_js_item(item: &WireSceneItem) -> Object {
                     js_sys::Reflect::set(
                         &primitive,
                         &JsValue::from_str("accessibleLabel"),
-                        &JsValue::from_str(&accessible_label),
+                        &JsValue::from_str(accessible_label),
                     )
                     .unwrap();
                 }
@@ -266,7 +252,7 @@ pub(crate) fn wire_js_item(item: &WireSceneItem) -> Object {
                 js_sys::Reflect::set(
                     &primitive,
                     &JsValue::from_str("stroke"),
-                    &JsValue::from_str(&stroke),
+                    &JsValue::from_str(stroke),
                 )
                 .unwrap();
                 js_sys::Reflect::set(
@@ -279,7 +265,7 @@ pub(crate) fn wire_js_item(item: &WireSceneItem) -> Object {
                     js_sys::Reflect::set(
                         &primitive,
                         &JsValue::from_str("strokeLineCap"),
-                        &JsValue::from_str(&cap),
+                        &JsValue::from_str(cap),
                     )
                     .unwrap();
                 }
@@ -320,14 +306,14 @@ pub(crate) fn wire_js_item(item: &WireSceneItem) -> Object {
                 js_sys::Reflect::set(
                     &primitive,
                     &JsValue::from_str("fill"),
-                    &JsValue::from_str(&fill),
+                    &JsValue::from_str(fill),
                 )
                 .unwrap();
                 if let Some(stroke) = stroke {
                     js_sys::Reflect::set(
                         &primitive,
                         &JsValue::from_str("stroke"),
-                        &JsValue::from_str(&stroke),
+                        &JsValue::from_str(stroke),
                     )
                     .unwrap();
                 }
@@ -364,20 +350,20 @@ pub(crate) fn wire_js_item(item: &WireSceneItem) -> Object {
                 js_sys::Reflect::set(
                     &primitive,
                     &JsValue::from_str("d"),
-                    &JsValue::from_str(&d),
+                    &JsValue::from_str(d),
                 )
                 .unwrap();
                 js_sys::Reflect::set(
                     &primitive,
                     &JsValue::from_str("fill"),
-                    &JsValue::from_str(&fill),
+                    &JsValue::from_str(fill),
                 )
                 .unwrap();
                 if let Some(stroke) = stroke {
                     js_sys::Reflect::set(
                         &primitive,
                         &JsValue::from_str("stroke"),
-                        &JsValue::from_str(&stroke),
+                        &JsValue::from_str(stroke),
                     )
                     .unwrap();
                 }

@@ -20,7 +20,6 @@ struct ExpandedSection {
     barline: Barline,
     barline_location: SourceLocation,
     closing_barline: Option<Barline>,
-    closing_barline_location: Option<SourceLocation>,
 }
 
 /// Split tokens into content and optional trailing InlineRepeat(n).
@@ -52,7 +51,6 @@ fn expand_line_sections(line: &TrackLine, errors: &mut Vec<String>) -> Vec<Expan
                     barline: section.barline.clone(),
                     barline_location: section.barline_location.clone(),
                     closing_barline: section.closing_barline.clone(),
-                    closing_barline_location: section.closing_barline_location.clone(),
                 });
             } else {
                 // Expand content into n total copies
@@ -72,11 +70,6 @@ fn expand_line_sections(line: &TrackLine, errors: &mut Vec<String>) -> Vec<Expan
                         } else {
                             None
                         },
-                        closing_barline_location: if is_last {
-                            section.closing_barline_location.clone()
-                        } else {
-                            None
-                        },
                     });
                 }
             }
@@ -90,7 +83,6 @@ fn expand_line_sections(line: &TrackLine, errors: &mut Vec<String>) -> Vec<Expan
                 barline: section.barline.clone(),
                 barline_location: section.barline_location.clone(),
                 closing_barline: section.closing_barline.clone(),
-                closing_barline_location: section.closing_barline_location.clone(),
             });
             if !section.tokens.is_empty() {
                 _prev_tokens = Some(section.tokens.clone());

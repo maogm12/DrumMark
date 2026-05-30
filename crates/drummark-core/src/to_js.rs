@@ -219,28 +219,6 @@ fn expr_to_js(e: &MeasureExpr) -> JsValue {
     obj.into()
 }
 
-fn notes_to_js(notes: &[NoteExpr]) -> JsValue {
-    let arr = Array::new();
-    for n in notes {
-        let obj = Object::new();
-        set(&obj, "glyph", &JsValue::from_str(&n.glyph));
-        if n.dots > 0 {
-            set(&obj, "dots", &JsValue::from_f64(n.dots as f64));
-        }
-        if n.halves > 0 {
-            set(&obj, "halves", &JsValue::from_f64(n.halves as f64));
-        }
-        if n.stars > 0 {
-            set(&obj, "stars", &JsValue::from_f64(n.stars as f64));
-        }
-        if !n.modifiers.is_empty() {
-            set(&obj, "modifiers", &strings_to_js(&n.modifiers));
-        }
-        arr.push(&obj);
-    }
-    arr.into()
-}
-
 fn barline_to_js(b: &Barline) -> JsValue {
     let obj = Object::new();
     match b {

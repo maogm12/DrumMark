@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::{PageHeader, SceneComposite, SceneItem, SceneMeasure, ScenePage, SceneSystem};
+use crate::{SceneComposite, SceneItem, SceneMeasure, ScenePage, SceneSystem};
 
 pub fn page_header_items(page: &ScenePage) -> &[SceneItem] {
     page.header
@@ -16,17 +16,17 @@ pub fn page_header_composites(page: &ScenePage) -> &[SceneComposite] {
         .unwrap_or(&[])
 }
 
-pub fn page_all_measures<'a>(page: &'a ScenePage) -> impl Iterator<Item = &'a SceneMeasure> {
+pub fn page_all_measures(page: &ScenePage) -> impl Iterator<Item = &SceneMeasure> {
     page.systems.iter().flat_map(|system| system.measures.iter())
 }
 
-pub fn page_all_items<'a>(page: &'a ScenePage) -> impl Iterator<Item = &'a SceneItem> {
+pub fn page_all_items(page: &ScenePage) -> impl Iterator<Item = &SceneItem> {
     page_header_items(page)
         .iter()
         .chain(page.systems.iter().flat_map(|system| system.items.iter()))
 }
 
-pub fn page_all_composites<'a>(page: &'a ScenePage) -> impl Iterator<Item = &'a SceneComposite> {
+pub fn page_all_composites(page: &ScenePage) -> impl Iterator<Item = &SceneComposite> {
     page_header_composites(page)
         .iter()
         .chain(
@@ -45,12 +45,6 @@ pub fn collect_page_measures(page: &ScenePage) -> Vec<SceneMeasure> {
         .iter()
         .flat_map(|system| system.measures.iter().cloned())
         .collect()
-}
-
-pub fn system_for_measure<'a>(page: &'a ScenePage, measure_id: &str) -> Option<&'a SceneSystem> {
-    page.systems
-        .iter()
-        .find(|system| system.measures.iter().any(|measure| measure.id == measure_id))
 }
 
 pub fn route_items_to_systems(systems: &mut [SceneSystem], items: Vec<SceneItem>) {

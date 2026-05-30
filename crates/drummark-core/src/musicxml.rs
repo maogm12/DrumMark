@@ -36,7 +36,6 @@ struct InstrumentSpec {
 #[derive(Clone)]
 enum VoiceEntry {
     Rest {
-        start: Fraction,
         duration: Fraction,
     },
     Notes {
@@ -354,7 +353,7 @@ fn build_voice_entries(measure: &NormalizedMeasure, voice: u8) -> Vec<VoiceEntry
         .into_iter()
         .map(|(start, duration, events)| {
             if events.iter().all(|event| event.kind == EventKind::Rest) {
-                VoiceEntry::Rest { start, duration }
+                VoiceEntry::Rest { duration }
             } else {
                 VoiceEntry::Notes {
                     start,

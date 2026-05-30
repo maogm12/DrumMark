@@ -1232,10 +1232,6 @@ impl<'a> Parser<'a> {
 // ── Token Extension Methods ──────────────────────────────────────
 
 impl Token {
-    fn is_newline_like(&self) -> bool {
-        matches!(self, Token::Newline)
-    }
-
     fn is_barline_like(&self) -> bool {
         matches!(
             self,

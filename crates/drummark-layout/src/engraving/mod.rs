@@ -9,10 +9,10 @@ pub(crate) use barlines::{
 };
 pub(crate) use beams::{BeamAnchor, BeamLineSegment};
 pub(crate) use notes::{
-    glyph_role_for_codepoint, ledger_line_offsets_for_staff_position, render_hit_cluster,
+    ledger_line_offsets_for_staff_position, render_hit_cluster,
     render_hit_cluster_stem_and_accents, render_measure_events, render_slot_group,
     resolve_rest_placement, BeamAnchorPlan, BeamRunState, HitClusterPlan, NotePlacement,
     PreparedClusterNote, RenderMeasureEventsInput, RestPlacement, RestPlacementDiagnostic,
-    SlotEvent, SlotTopObstacle, StemLayout, StemRenderPlan,
+    SlotEvent, StemLayout, StemRenderPlan,
 };
 pub(crate) use tuplets::{TupletRun, TupletRunKey};

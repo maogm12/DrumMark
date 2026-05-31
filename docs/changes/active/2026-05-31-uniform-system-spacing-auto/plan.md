@@ -215,7 +215,7 @@ Verification:
 
 ### Task 4: WASM and End-to-End App Wiring
 
-Status: Pending
+Status: Done
 
 Scope:
 - Generated WASM layout packages.

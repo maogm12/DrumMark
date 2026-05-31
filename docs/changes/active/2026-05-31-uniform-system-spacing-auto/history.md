@@ -360,3 +360,22 @@ Reviewer: user-directed design change
 - R4: open, pending sub-agent re-review because the approved Spec Delta changed materially.
 
 STATUS: CHANGES_REQUESTED
+
+---
+
+## Implementation Notes
+
+### Task 4 Verification
+
+Date: 2026-05-31
+
+Changes completed:
+- Rebuilt generated layout WASM packages after Rust layout changes.
+- Verified TypeScript render adapters compile with `systemSpacingOffsetPt` wiring.
+- Added append-only learning notes for the page-aware bounded spacing search and post-search offset semantics.
+
+Verification:
+- `npm run wasm:build` passed.
+- `npm run typecheck` passed.
+- `npm test -- --run src/hooks/useAppSettings.test.ts src/components/settings-panel.test.tsx src/renderer/svgSceneAdapter.test.ts` passed.
+- Browser smoke not run: the in-app browser URL policy blocked local `http://localhost:5175/DrumMark/` reload in this environment.

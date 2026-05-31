@@ -103,10 +103,6 @@ pub fn stem_length_pt(opts: &LayoutOptions) -> f32 {
     opts.staff_space_pt * DEFAULT_STEM_LEN_SS + opts.stem_len_offset_pt
 }
 
-pub fn default_system_spacing_with_offset_pt(opts: &LayoutOptions) -> f32 {
-    DEFAULT_SYSTEM_SPACING_PT + opts.system_spacing_offset_pt
-}
-
 impl StaffSpace {
     pub fn to_pixels(&self, staff_height_px: f32) -> f32 {
         staff_height_px / 4.0

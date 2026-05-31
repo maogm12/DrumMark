@@ -675,6 +675,27 @@ fn parse_layout_options(options: &JsValue) -> drummark_layout::LayoutOptions {
     if let Some(value) = get_optional_bool("hideVoice2Rests") {
         opts.hide_voice2_rests = value;
     }
+    if let Some(value) = get_optional_bool("hideTitle") {
+        opts.hide_title = value;
+    }
+    if let Some(value) = get_optional_bool("hideSubtitle") {
+        opts.hide_subtitle = value;
+    }
+    if let Some(value) = get_optional_bool("hideComposer") {
+        opts.hide_composer = value;
+    }
+    if let Some(value) = get_optional_bool("hideTempo") {
+        opts.hide_tempo = value;
+    }
+    if let Some(value) = get_optional_bool("hideTimeSignature") {
+        opts.hide_time_signature = value;
+    }
+    if let Some(value) = get_optional_bool("hideClef") {
+        opts.hide_clef = value;
+    }
+    if let Some(value) = get_optional_bool("hideMeasureNumber") {
+        opts.hide_measure_number = value;
+    }
 
     opts
 }

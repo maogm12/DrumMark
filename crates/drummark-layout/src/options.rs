@@ -26,6 +26,20 @@ pub struct LayoutOptions {
     pub stem_len_offset_pt: f32,
     pub system_spacing_pt: f32,
     pub hide_voice2_rests: bool,
+    /// Omit score title text from the page header.
+    pub hide_title: bool,
+    /// Omit score subtitle text from the page header.
+    pub hide_subtitle: bool,
+    /// Omit composer text from the page header.
+    pub hide_composer: bool,
+    /// Omit tempo markup (quarter-note glyph, equals, BPM value).
+    pub hide_tempo: bool,
+    /// Omit time signature digits on the first system.
+    pub hide_time_signature: bool,
+    /// Omit percussion clef glyphs on every system.
+    pub hide_clef: bool,
+    /// Omit per-system measure numbers (first measure of each system after the first).
+    pub hide_measure_number: bool,
     pub duration_spacing_compression: f32,
     pub measure_width_compression: f32,
 }
@@ -55,6 +69,13 @@ impl Default for LayoutOptions {
             stem_len_offset_pt: 0.0,
             system_spacing_pt: 30.0,
             hide_voice2_rests: false,
+            hide_title: false,
+            hide_subtitle: false,
+            hide_composer: false,
+            hide_tempo: false,
+            hide_time_signature: false,
+            hide_clef: false,
+            hide_measure_number: false,
             duration_spacing_compression: 0.6,
             measure_width_compression: 0.75,
         }

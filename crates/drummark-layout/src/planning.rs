@@ -73,8 +73,8 @@ impl MeasureGeometry {
 /// (on non-first systems) from the clef to the first measure's content.
 pub(crate) const SYSTEM_PREAMBLE_SIDE_GAP_PT: f32 = 5.0;
 
-pub(crate) const MEASURE_RIGHT_PAD_PT: f32 = 14.0;
-pub(crate) const NON_INITIAL_MEASURE_LEFT_PAD_PT: f32 = 14.0;
+pub(crate) const MEASURE_RIGHT_PAD_PT: f32 = 10.0;
+pub(crate) const NON_INITIAL_MEASURE_LEFT_PAD_PT: f32 = 10.0;
 /// Visual gap between compact-measure content (multi-rest) and adjacent barlines/glyphs.
 pub(crate) const COMPACT_MEASURE_EDGE_GAP_PT: f32 = 8.0;
 pub(crate) const OPENING_BARLINE_THICKNESS_PT: f32 = crate::ENGRAVING_BARLINE_WIDTH_PT;
@@ -82,7 +82,7 @@ pub(crate) const COMPLEX_BARLINE_TRAILING_CONTENT_GAP_PT: f32 = 8.0;
 /// Scene coordinates and SVG `font-size` both use layout points (1 user unit = 1 pt).
 pub(crate) const SVG_POINT_TO_USER_UNIT: f32 = 1.0;
 pub(crate) const FIRST_MEASURE_START_REPEAT_PREAMBLE_PULL_PT: f32 = 10.0;
-pub(crate) const START_REPEAT_TRAILING_GAP_PT: f32 = 22.0;
+pub(crate) const START_REPEAT_TRAILING_GAP_PT: f32 = 10.0;
 pub(crate) const VOLTA_LINE_THICKNESS_PT: f32 = crate::ENGRAVING_STROKE_WIDTH_PT;
 
 /// Volta ending label size (Academico), scaled from staff spacing (~12pt at 7.5ss).
@@ -111,25 +111,66 @@ pub(crate) fn clef_width_pt(staff_space_pt: f32) -> f32 {
     canonical_text_metric(TextRole::PercussionClef, staff_space_pt).average_advance_pt
 }
 
-pub(crate) fn time_signature_x_pt(page_margin_left: f32, staff_space_pt: f32) -> f32 {
-    clef_x_pt(page_margin_left) + clef_width_pt(staff_space_pt) + SYSTEM_PREAMBLE_SIDE_GAP_PT
+pub(crate) fn time_signature_x_pt(page_margin_left: f32, opts: &LayoutOptions) -> f32 {
+    if opts.hide_clef {
+        page_margin_left + SYSTEM_PREAMBLE_SIDE_GAP_PT
+    } else {
+        clef_x_pt(page_margin_left) + clef_width_pt(opts.staff_space_pt) + SYSTEM_PREAMBLE_SIDE_GAP_PT
+    }
 }
 
 pub(crate) fn time_signature_width_pt(staff_space_pt: f32) -> f32 {
     canonical_text_metric(TextRole::TimeSignatureDigit, staff_space_pt).average_advance_pt
 }
 
-pub(crate) fn system_content_preamble_width(is_first_system: bool, staff_space_pt: f32) -> f32 {
+pub(crate) fn system_content_preamble_width(is_first_system: bool, opts: &LayoutOptions) -> f32 {
+    let staff_space_pt = opts.staff_space_pt;
     let side = SYSTEM_PREAMBLE_SIDE_GAP_PT;
-    let mut width = side + clef_width_pt(staff_space_pt) + side;
-    if is_first_system {
+    let mut width = side;
+    if !opts.hide_clef {
+        width += clef_width_pt(staff_space_pt) + side;
+    }
+    if is_first_system && !opts.hide_time_signature {
         width += time_signature_width_pt(staff_space_pt) + side;
     }
     width
 }
 
-pub(crate) fn system_start_reserved_width(is_first_system: bool, staff_space_pt: f32) -> f32 {
-    OPENING_BARLINE_THICKNESS_PT + system_content_preamble_width(is_first_system, staff_space_pt)
+pub(crate) fn system_preamble_shows_clef_or_time_signature(
+    is_first_system: bool,
+    opts: &LayoutOptions,
+) -> bool {
+    !opts.hide_clef || (is_first_system && !opts.hide_time_signature)
+}
+
+pub(crate) fn skip_system_opening_barline(
+    is_first_system: bool,
+    barline: Option<&str>,
+    opts: &LayoutOptions,
+) -> bool {
+    is_start_repeat_barline(barline)
+        && !system_preamble_shows_clef_or_time_signature(is_first_system, opts)
+}
+
+pub(crate) fn opening_barline_reserved_width(
+    is_first_system: bool,
+    barline: Option<&str>,
+    opts: &LayoutOptions,
+) -> f32 {
+    if skip_system_opening_barline(is_first_system, barline, opts) {
+        0.0
+    } else {
+        OPENING_BARLINE_THICKNESS_PT
+    }
+}
+
+pub(crate) fn system_start_reserved_width(
+    is_first_system: bool,
+    opts: &LayoutOptions,
+    first_measure_barline: Option<&str>,
+) -> f32 {
+    opening_barline_reserved_width(is_first_system, first_measure_barline, opts)
+        + system_content_preamble_width(is_first_system, opts)
 }
 
 pub(crate) fn is_start_repeat_barline(barline: Option<&str>) -> bool {
@@ -150,18 +191,18 @@ pub(crate) fn end_repeat_reserved_width(staff_space_pt: f32) -> f32 {
 
 pub(crate) fn first_measure_start_repeat_left_pad(
     is_first_system: bool,
-    staff_space_pt: f32,
+    opts: &LayoutOptions,
 ) -> f32 {
+    if skip_system_opening_barline(is_first_system, Some("repeat-start"), opts) {
+        return start_repeat_reserved_width(opts.staff_space_pt);
+    }
     if is_first_system {
-        system_start_reserved_width(true, staff_space_pt)
-            + start_repeat_reserved_width(staff_space_pt)
+        system_start_reserved_width(true, opts, Some("repeat-start"))
+            + start_repeat_reserved_width(opts.staff_space_pt)
             - FIRST_MEASURE_START_REPEAT_PREAMBLE_PULL_PT
     } else {
-        OPENING_BARLINE_THICKNESS_PT
-            + SYSTEM_PREAMBLE_SIDE_GAP_PT
-            + clef_width_pt(staff_space_pt)
-            + SYSTEM_PREAMBLE_SIDE_GAP_PT
-            + start_repeat_reserved_width(staff_space_pt)
+        system_start_reserved_width(false, opts, Some("repeat-start"))
+            + start_repeat_reserved_width(opts.staff_space_pt)
     }
 }
 
@@ -169,13 +210,16 @@ pub(crate) fn first_measure_start_repeat_x(
     measure_x: f32,
     page_margin_left: f32,
     is_first_system: bool,
-    staff_space_pt: f32,
+    opts: &LayoutOptions,
 ) -> f32 {
-    let min_x = compact_measure_preamble_end_x(page_margin_left, is_first_system, staff_space_pt)
+    if skip_system_opening_barline(is_first_system, Some("repeat-start"), opts) {
+        return measure_x;
+    }
+    let min_x = compact_measure_preamble_end_x(page_margin_left, is_first_system, opts)
         + SYSTEM_PREAMBLE_SIDE_GAP_PT;
     if is_first_system {
         let pulled = measure_x
-            + system_start_reserved_width(is_first_system, staff_space_pt)
+            + system_start_reserved_width(is_first_system, opts, Some("repeat-start"))
             - FIRST_MEASURE_START_REPEAT_PREAMBLE_PULL_PT;
         pulled.max(min_x)
     } else {
@@ -227,20 +271,18 @@ pub(crate) fn measure_left_pad(
     measure_index_in_system: usize,
     is_first_system: bool,
     barline: Option<&str>,
-    staff_space_pt: f32,
+    opts: &LayoutOptions,
 ) -> f32 {
     if measure_index_in_system == 0 {
         if is_start_repeat_barline(barline) {
-            first_measure_start_repeat_left_pad(is_first_system, staff_space_pt)
+            first_measure_start_repeat_left_pad(is_first_system, opts)
         } else {
-            system_start_reserved_width(is_first_system, staff_space_pt)
+            system_start_reserved_width(is_first_system, opts, barline)
         }
+    } else if is_start_repeat_barline(barline) {
+        start_repeat_reserved_width(opts.staff_space_pt)
     } else {
-        if is_start_repeat_barline(barline) {
-            start_repeat_reserved_width(staff_space_pt)
-        } else {
-            NON_INITIAL_MEASURE_LEFT_PAD_PT
-        }
+        NON_INITIAL_MEASURE_LEFT_PAD_PT
     }
 }
 
@@ -261,13 +303,20 @@ pub(crate) fn measure_right_pad(barline: Option<&str>, staff_space_pt: f32) -> f
 pub(crate) fn compact_measure_preamble_end_x(
     page_margin_left: f32,
     is_first_system: bool,
-    staff_space_pt: f32,
+    opts: &LayoutOptions,
 ) -> f32 {
-    let clef_end = clef_x_pt(page_margin_left) + clef_width_pt(staff_space_pt);
-    if !is_first_system {
-        return clef_end;
+    let staff_space_pt = opts.staff_space_pt;
+    let mut x = page_margin_left + SYSTEM_PREAMBLE_SIDE_GAP_PT;
+    if !opts.hide_clef {
+        x += clef_width_pt(staff_space_pt);
     }
-    time_signature_x_pt(page_margin_left, staff_space_pt) + time_signature_width_pt(staff_space_pt)
+    if is_first_system && !opts.hide_time_signature {
+        if !opts.hide_clef {
+            x += SYSTEM_PREAMBLE_SIDE_GAP_PT;
+        }
+        x += time_signature_width_pt(staff_space_pt);
+    }
+    x
 }
 
 pub(crate) fn compact_measure_inner_left(
@@ -276,24 +325,31 @@ pub(crate) fn compact_measure_inner_left(
     page_margin_left: f32,
     is_first_system: bool,
     barline: Option<&str>,
-    staff_space_pt: f32,
+    opts: &LayoutOptions,
 ) -> f32 {
     if measure_index_in_system == 0 {
-        let mut left = compact_measure_preamble_end_x(page_margin_left, is_first_system, staff_space_pt)
+        if is_start_repeat_barline(barline)
+            && skip_system_opening_barline(is_first_system, barline, opts)
+        {
+            return measure_x
+                + repeat_barline_rendered_width(GlyphRole::RepeatLeft, opts.staff_space_pt)
+                + START_REPEAT_TRAILING_GAP_PT;
+        }
+        let mut left = compact_measure_preamble_end_x(page_margin_left, is_first_system, opts)
             + COMPACT_MEASURE_EDGE_GAP_PT;
         if is_start_repeat_barline(barline) {
             let repeat_left =
-                first_measure_start_repeat_x(measure_x, page_margin_left, is_first_system, staff_space_pt);
+                first_measure_start_repeat_x(measure_x, page_margin_left, is_first_system, opts);
             left = left.max(
                 repeat_left
-                    + repeat_barline_rendered_width(GlyphRole::RepeatLeft, staff_space_pt)
+                    + repeat_barline_rendered_width(GlyphRole::RepeatLeft, opts.staff_space_pt)
                     + COMPACT_MEASURE_EDGE_GAP_PT,
             );
         }
-        left.max(measure_x + OPENING_BARLINE_THICKNESS_PT)
+        left.max(measure_x + opening_barline_reserved_width(is_first_system, barline, opts))
     } else if is_start_repeat_barline(barline) {
         measure_x
-            + repeat_barline_rendered_width(GlyphRole::RepeatLeft, staff_space_pt)
+            + repeat_barline_rendered_width(GlyphRole::RepeatLeft, opts.staff_space_pt)
             + START_REPEAT_TRAILING_GAP_PT
     } else {
         measure_x + OPENING_BARLINE_THICKNESS_PT + COMPACT_MEASURE_EDGE_GAP_PT
@@ -463,6 +519,8 @@ pub(crate) struct MeasureGeometryInput {
     /// Visual content lane after preamble glyphs / before barline glyphs.
     pub(crate) content_lane_left_pt: f32,
     pub(crate) content_lane_right_pt: f32,
+    /// When true, attacks start at the content lane left edge instead of centering in the lane.
+    pub(crate) suppress_content_lane_centering: bool,
     pub(crate) staff_space_pt: f32,
     pub(crate) duration_compression: f32,
 }
@@ -719,7 +777,7 @@ pub(crate) fn measure_geometry(
         let lane_right = input.content_lane_right_pt;
         let lane_width = (lane_right - lane_left).max(1.0);
         let raw_span = (raw_last - raw_first).max(0.0);
-        let margin = if raw_span > lane_width {
+        let margin = if input.suppress_content_lane_centering || raw_span > lane_width {
             0.0
         } else {
             (lane_width - raw_span) * 0.5
@@ -793,7 +851,7 @@ pub(crate) fn finalize_planned_system<'a>(
     current_inner_estimates: Vec<f32>,
     is_first_system: bool,
     available_width: f32,
-    staff_space_pt: f32,
+    opts: &LayoutOptions,
 ) {
     if current_measures.is_empty() {
         return;
@@ -806,13 +864,13 @@ pub(crate) fn finalize_planned_system<'a>(
                 index,
                 is_first_system,
                 current_measures[index].measure.barline.as_deref(),
-                staff_space_pt,
+                opts,
             );
             let right_barline = current_measures[index]
                 .closing_barline
                 .as_deref()
                 .or(current_measures[index].barline.as_deref());
-            left + measure_right_pad(right_barline, staff_space_pt)
+            left + measure_right_pad(right_barline, opts.staff_space_pt)
         })
         .sum();
     let current_inner_sum: f32 = current_inner_estimates.iter().sum();
@@ -825,7 +883,7 @@ pub(crate) fn finalize_planned_system<'a>(
                 index,
                 is_first_system,
                 current_measures[index].barline.as_deref(),
-                staff_space_pt,
+                opts,
             );
             let right_barline = current_measures[index]
                 .closing_barline
@@ -834,7 +892,7 @@ pub(crate) fn finalize_planned_system<'a>(
             let is_compact = current_measures[index].measure.multi_rest_count.is_some()
                 || current_measures[index].measure.measure_repeat_slashes.is_some();
             let content_width = if is_compact { width.max(width * scale) } else { width * scale };
-            content_width + left + measure_right_pad(right_barline, staff_space_pt)
+            content_width + left + measure_right_pad(right_barline, opts.staff_space_pt)
         })
         .collect();
     systems.push(PlannedSystem {
@@ -873,7 +931,7 @@ pub(crate) fn plan_scene_systems<'a>(
                 current_inner_estimates,
                 next_is_first_system,
                 available_width,
-                opts.staff_space_pt,
+                opts,
             );
             current_measures = Vec::new();
             current_inner_estimates = Vec::new();
@@ -891,7 +949,7 @@ pub(crate) fn plan_scene_systems<'a>(
         current_inner_estimates,
         next_is_first_system,
         available_width,
-        opts.staff_space_pt,
+        opts,
     );
 
     systems

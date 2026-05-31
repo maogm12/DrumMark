@@ -31,82 +31,88 @@ pub(crate) fn render_header_layout_box(
     let composer_y = header_bottom_y + composer_metric.ascent_pt + 12.0;
     let tempo_y = header_bottom_y + opts.header_staff_spacing_pt + opts.tempo_offset_y;
 
-    if let Some(ref text) = header.title {
-        let title_id = sink.push_text_item(TextItemSpec {
-            measure_id: None,
-            role: "title",
-            x: center_x,
-            y: title_y,
-            text_role: TextRole::Title,
-            text: text.clone(),
-            font_family: title_metric.font_family,
-            font_size_pt: title_metric.font_size_pt,
-            fill: "#333",
-            text_anchor: Some("middle"),
-            font_weight: Some("bold"),
-        });
-        composites.push(SceneComposite {
-            id: "text-block-title".to_string(),
-            kind: CompositeKind::TextBlock,
-            fragment: SpanFragmentKind::SingleSegment,
-            child_item_ids: vec![title_id],
-            label: Some("title".to_string()),
-            count: None,
-            start_anchor_id: None,
-            end_anchor_id: None,
-        });
+    if !opts.hide_title {
+        if let Some(ref text) = header.title {
+            let title_id = sink.push_text_item(TextItemSpec {
+                measure_id: None,
+                role: "title",
+                x: center_x,
+                y: title_y,
+                text_role: TextRole::Title,
+                text: text.clone(),
+                font_family: title_metric.font_family,
+                font_size_pt: title_metric.font_size_pt,
+                fill: "#333",
+                text_anchor: Some("middle"),
+                font_weight: Some("bold"),
+            });
+            composites.push(SceneComposite {
+                id: "text-block-title".to_string(),
+                kind: CompositeKind::TextBlock,
+                fragment: SpanFragmentKind::SingleSegment,
+                child_item_ids: vec![title_id],
+                label: Some("title".to_string()),
+                count: None,
+                start_anchor_id: None,
+                end_anchor_id: None,
+            });
+        }
     }
-    if let Some(ref text) = header.subtitle {
-        let subtitle_id = sink.push_text_item(TextItemSpec {
-            measure_id: None,
-            role: "subtitle",
-            x: center_x,
-            y: subtitle_y,
-            text_role: TextRole::Subtitle,
-            text: text.clone(),
-            font_family: subtitle_metric.font_family,
-            font_size_pt: subtitle_metric.font_size_pt,
-            fill: "#333",
-            text_anchor: Some("middle"),
-            font_weight: None,
-        });
-        composites.push(SceneComposite {
-            id: "text-block-subtitle".to_string(),
-            kind: CompositeKind::TextBlock,
-            fragment: SpanFragmentKind::SingleSegment,
-            child_item_ids: vec![subtitle_id],
-            label: Some("subtitle".to_string()),
-            count: None,
-            start_anchor_id: None,
-            end_anchor_id: None,
-        });
+    if !opts.hide_subtitle {
+        if let Some(ref text) = header.subtitle {
+            let subtitle_id = sink.push_text_item(TextItemSpec {
+                measure_id: None,
+                role: "subtitle",
+                x: center_x,
+                y: subtitle_y,
+                text_role: TextRole::Subtitle,
+                text: text.clone(),
+                font_family: subtitle_metric.font_family,
+                font_size_pt: subtitle_metric.font_size_pt,
+                fill: "#333",
+                text_anchor: Some("middle"),
+                font_weight: None,
+            });
+            composites.push(SceneComposite {
+                id: "text-block-subtitle".to_string(),
+                kind: CompositeKind::TextBlock,
+                fragment: SpanFragmentKind::SingleSegment,
+                child_item_ids: vec![subtitle_id],
+                label: Some("subtitle".to_string()),
+                count: None,
+                start_anchor_id: None,
+                end_anchor_id: None,
+            });
+        }
     }
-    if let Some(ref text) = header.composer {
-        let composer_id = sink.push_text_item(TextItemSpec {
-            measure_id: None,
-            role: "composer",
-            x: page_w - margin,
-            y: composer_y,
-            text_role: TextRole::Composer,
-            text: text.clone(),
-            font_family: composer_metric.font_family,
-            font_size_pt: composer_metric.font_size_pt,
-            fill: "#333",
-            text_anchor: Some("end"),
-            font_weight: None,
-        });
-        composites.push(SceneComposite {
-            id: "text-block-composer".to_string(),
-            kind: CompositeKind::TextBlock,
-            fragment: SpanFragmentKind::SingleSegment,
-            child_item_ids: vec![composer_id],
-            label: Some("composer".to_string()),
-            count: None,
-            start_anchor_id: None,
-            end_anchor_id: None,
-        });
+    if !opts.hide_composer {
+        if let Some(ref text) = header.composer {
+            let composer_id = sink.push_text_item(TextItemSpec {
+                measure_id: None,
+                role: "composer",
+                x: page_w - margin,
+                y: composer_y,
+                text_role: TextRole::Composer,
+                text: text.clone(),
+                font_family: composer_metric.font_family,
+                font_size_pt: composer_metric.font_size_pt,
+                fill: "#333",
+                text_anchor: Some("end"),
+                font_weight: None,
+            });
+            composites.push(SceneComposite {
+                id: "text-block-composer".to_string(),
+                kind: CompositeKind::TextBlock,
+                fragment: SpanFragmentKind::SingleSegment,
+                child_item_ids: vec![composer_id],
+                label: Some("composer".to_string()),
+                count: None,
+                start_anchor_id: None,
+                end_anchor_id: None,
+            });
+        }
     }
-    if header.tempo > 0 {
+    if !opts.hide_tempo && header.tempo > 0 {
         let (tempo_glyph_x, tempo_equals_x, tempo_value_x) =
             tempo_item_x_positions(margin, opts.staff_space_pt);
         let tempo_value_text = header.tempo.to_string();
@@ -212,80 +218,86 @@ pub fn build_layout_scene(score: &RenderScore, opts: &LayoutOptions) -> LayoutSc
     let subtitle_y = header_bottom_y + subtitle_metric.ascent_pt + 12.0;
     let composer_y = header_bottom_y + composer_metric.ascent_pt + 12.0;
 
-    if let Some(ref text) = score.header.title {
-        let title_id = header_sink.push_text_item(TextItemSpec {
-            measure_id: None,
-            role: "title",
-            x: center_x,
-            y: title_y,
-            text_role: TextRole::Title,
-            text: text.clone(),
-            font_family: title_metric.font_family,
-            font_size_pt: title_metric.font_size_pt,
-            fill: "#333",
-            text_anchor: Some("middle"),
-            font_weight: Some("bold"),
-        });
-        header.composites.push(SceneComposite {
-            id: "text-block-title".to_string(),
-            kind: CompositeKind::TextBlock,
-            fragment: SpanFragmentKind::SingleSegment,
-            child_item_ids: vec![title_id],
-            label: Some("title".to_string()),
-            count: None,
-            start_anchor_id: None,
-            end_anchor_id: None,
-        });
+    if !opts.hide_title {
+        if let Some(ref text) = score.header.title {
+            let title_id = header_sink.push_text_item(TextItemSpec {
+                measure_id: None,
+                role: "title",
+                x: center_x,
+                y: title_y,
+                text_role: TextRole::Title,
+                text: text.clone(),
+                font_family: title_metric.font_family,
+                font_size_pt: title_metric.font_size_pt,
+                fill: "#333",
+                text_anchor: Some("middle"),
+                font_weight: Some("bold"),
+            });
+            header.composites.push(SceneComposite {
+                id: "text-block-title".to_string(),
+                kind: CompositeKind::TextBlock,
+                fragment: SpanFragmentKind::SingleSegment,
+                child_item_ids: vec![title_id],
+                label: Some("title".to_string()),
+                count: None,
+                start_anchor_id: None,
+                end_anchor_id: None,
+            });
+        }
     }
-    if let Some(ref text) = score.header.subtitle {
-        let subtitle_id = header_sink.push_text_item(TextItemSpec {
-            measure_id: None,
-            role: "subtitle",
-            x: center_x,
-            y: subtitle_y,
-            text_role: TextRole::Subtitle,
-            text: text.clone(),
-            font_family: subtitle_metric.font_family,
-            font_size_pt: subtitle_metric.font_size_pt,
-            fill: "#333",
-            text_anchor: Some("middle"),
-            font_weight: None,
-        });
-        header.composites.push(SceneComposite {
-            id: "text-block-subtitle".to_string(),
-            kind: CompositeKind::TextBlock,
-            fragment: SpanFragmentKind::SingleSegment,
-            child_item_ids: vec![subtitle_id],
-            label: Some("subtitle".to_string()),
-            count: None,
-            start_anchor_id: None,
-            end_anchor_id: None,
-        });
+    if !opts.hide_subtitle {
+        if let Some(ref text) = score.header.subtitle {
+            let subtitle_id = header_sink.push_text_item(TextItemSpec {
+                measure_id: None,
+                role: "subtitle",
+                x: center_x,
+                y: subtitle_y,
+                text_role: TextRole::Subtitle,
+                text: text.clone(),
+                font_family: subtitle_metric.font_family,
+                font_size_pt: subtitle_metric.font_size_pt,
+                fill: "#333",
+                text_anchor: Some("middle"),
+                font_weight: None,
+            });
+            header.composites.push(SceneComposite {
+                id: "text-block-subtitle".to_string(),
+                kind: CompositeKind::TextBlock,
+                fragment: SpanFragmentKind::SingleSegment,
+                child_item_ids: vec![subtitle_id],
+                label: Some("subtitle".to_string()),
+                count: None,
+                start_anchor_id: None,
+                end_anchor_id: None,
+            });
+        }
     }
-    if let Some(ref text) = score.header.composer {
-        let composer_id = header_sink.push_text_item(TextItemSpec {
-            measure_id: None,
-            role: "composer",
-            x: page_w - margin,
-            y: composer_y,
-            text_role: TextRole::Composer,
-            text: text.clone(),
-            font_family: composer_metric.font_family,
-            font_size_pt: composer_metric.font_size_pt,
-            fill: "#333",
-            text_anchor: Some("end"),
-            font_weight: None,
-        });
-        header.composites.push(SceneComposite {
-            id: "text-block-composer".to_string(),
-            kind: CompositeKind::TextBlock,
-            fragment: SpanFragmentKind::SingleSegment,
-            child_item_ids: vec![composer_id],
-            label: Some("composer".to_string()),
-            count: None,
-            start_anchor_id: None,
-            end_anchor_id: None,
-        });
+    if !opts.hide_composer {
+        if let Some(ref text) = score.header.composer {
+            let composer_id = header_sink.push_text_item(TextItemSpec {
+                measure_id: None,
+                role: "composer",
+                x: page_w - margin,
+                y: composer_y,
+                text_role: TextRole::Composer,
+                text: text.clone(),
+                font_family: composer_metric.font_family,
+                font_size_pt: composer_metric.font_size_pt,
+                fill: "#333",
+                text_anchor: Some("end"),
+                font_weight: None,
+            });
+            header.composites.push(SceneComposite {
+                id: "text-block-composer".to_string(),
+                kind: CompositeKind::TextBlock,
+                fragment: SpanFragmentKind::SingleSegment,
+                child_item_ids: vec![composer_id],
+                label: Some("composer".to_string()),
+                count: None,
+                start_anchor_id: None,
+                end_anchor_id: None,
+            });
+        }
     }
     let mut deferred_navs = Vec::new();
 
@@ -329,22 +341,24 @@ pub fn build_layout_scene(score: &RenderScore, opts: &LayoutOptions) -> LayoutSc
                 stroke_line_cap: None,
             });
         }
-        let clef_metric = canonical_text_metric(TextRole::PercussionClef, opts.staff_space_pt);
-        sink.push_text_item(TextItemSpec {
-            measure_id: None,
-            role: "percussion-clef",
-            x: clef_x_pt(margin),
-            y: s_mid,
-            text_role: TextRole::PercussionClef,
-            text: "\u{E069}".to_string(),
-            font_family: "Bravura",
-            font_size_pt: clef_metric.font_size_pt,
-            fill: "#333",
-            text_anchor: None,
-            font_weight: None,
-        });
-        if is_first_system {
-            let tsx = time_signature_x_pt(margin, opts.staff_space_pt);
+        if !opts.hide_clef {
+            let clef_metric = canonical_text_metric(TextRole::PercussionClef, opts.staff_space_pt);
+            sink.push_text_item(TextItemSpec {
+                measure_id: None,
+                role: "percussion-clef",
+                x: clef_x_pt(margin),
+                y: s_mid,
+                text_role: TextRole::PercussionClef,
+                text: "\u{E069}".to_string(),
+                font_family: "Bravura",
+                font_size_pt: clef_metric.font_size_pt,
+                fill: "#333",
+                text_anchor: None,
+                font_weight: None,
+            });
+        }
+        if is_first_system && !opts.hide_time_signature {
+            let tsx = time_signature_x_pt(margin, opts);
             let time_sig_metric = canonical_text_metric(TextRole::TimeSignatureDigit, opts.staff_space_pt);
             sink.push_text_item(TextItemSpec {
                 measure_id: None,
@@ -373,7 +387,7 @@ pub fn build_layout_scene(score: &RenderScore, opts: &LayoutOptions) -> LayoutSc
                 font_weight: None,
             });
         }
-        if is_first_system && score.header.tempo > 0 {
+        if is_first_system && !opts.hide_tempo && score.header.tempo > 0 {
             let first_measure_id = format!("measure-{}", system.measures[0].global_index);
             let tempo_metric = canonical_text_metric(TextRole::Tempo, opts.staff_space_pt);
             let tempo_y = sy + opts.tempo_offset_y;
@@ -430,8 +444,9 @@ pub fn build_layout_scene(score: &RenderScore, opts: &LayoutOptions) -> LayoutSc
                 end_anchor_id: None,
             });
         }
-        let measure_number_metric = canonical_text_metric(TextRole::MeasureNumber, opts.staff_space_pt);
-        if !is_first_system {
+        if !opts.hide_measure_number && !is_first_system {
+            let measure_number_metric =
+                canonical_text_metric(TextRole::MeasureNumber, opts.staff_space_pt);
             sink.push_text_item(TextItemSpec {
                 measure_id: None,
                 role: "measure-number",
@@ -449,7 +464,7 @@ pub fn build_layout_scene(score: &RenderScore, opts: &LayoutOptions) -> LayoutSc
 
         for (mi, (measure, mw)) in system.measures.iter().zip(system.widths.iter()).enumerate() {
             let measure_id = format!("measure-{}", measure.global_index);
-            let left_pad = measure_left_pad(mi, is_first_system, measure.barline.as_deref(), opts.staff_space_pt);
+            let left_pad = measure_left_pad(mi, is_first_system, measure.barline.as_deref(), opts);
             let right_barline = measure
                 .closing_barline
                 .as_deref()
@@ -467,12 +482,14 @@ pub fn build_layout_scene(score: &RenderScore, opts: &LayoutOptions) -> LayoutSc
                 });
 
             if mi == 0 {
-                render_system_opening_barline(&mut sink, Some(&measure_id), mx, s_top, s_bot);
+                if !skip_system_opening_barline(is_first_system, measure.barline.as_deref(), opts) {
+                    render_system_opening_barline(&mut sink, Some(&measure_id), mx, s_top, s_bot);
+                }
                 if is_start_repeat_barline(measure.barline.as_deref()) {
                     render_start_repeat_barline(
                         &mut sink,
                         Some(&measure_id),
-                        first_measure_start_repeat_x(mx, margin, is_first_system, opts.staff_space_pt),
+                        first_measure_start_repeat_x(mx, margin, is_first_system, opts),
                         s_top,
                         s_bot,
                     );
@@ -507,7 +524,7 @@ pub fn build_layout_scene(score: &RenderScore, opts: &LayoutOptions) -> LayoutSc
                     margin,
                     is_first_system,
                     measure.barline.as_deref(),
-                    opts.staff_space_pt,
+                    opts,
                 );
                 let inner_right = compact_measure_inner_right(
                     mx,
@@ -658,7 +675,7 @@ pub fn build_layout_scene(score: &RenderScore, opts: &LayoutOptions) -> LayoutSc
                                 margin,
                                 is_first_system,
                                 measure.barline.as_deref(),
-                                opts.staff_space_pt,
+                                opts,
                             ),
                             content_lane_right_pt: compact_measure_inner_right(
                                 mx,
@@ -666,6 +683,12 @@ pub fn build_layout_scene(score: &RenderScore, opts: &LayoutOptions) -> LayoutSc
                                 right_barline,
                                 opts.staff_space_pt,
                             ),
+                            suppress_content_lane_centering: mi == 0
+                                && skip_system_opening_barline(
+                                    is_first_system,
+                                    measure.barline.as_deref(),
+                                    opts,
+                                ),
                             staff_space_pt: opts.staff_space_pt,
                             duration_compression: opts.duration_spacing_compression,
                         },

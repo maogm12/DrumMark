@@ -1,7 +1,8 @@
 use crate::display::DisplayMeasure;
 use crate::planning::{
     measure_left_pad, rendered_glyph_width, volta_label_baseline_gap_pt, volta_line_height_pt,
-    volta_skyline_gap_pt, volta_text_size_pt, VOLTA_LINE_THICKNESS_PT,
+    volta_skyline_gap_pt, volta_text_size_pt, MEASURE_RIGHT_PAD_PT,
+    NON_INITIAL_MEASURE_LEFT_PAD_PT, VOLTA_LINE_THICKNESS_PT,
 };
 use crate::scene_builder::{GlyphItemSpec, LineItemSpec, SceneEmitSink, TextItemSpec};
 use crate::structural::skyline::{
@@ -42,6 +43,7 @@ pub(crate) fn push_system_volta_composites(
             display_measure_for_scene(measures, &system_measures[block_start]),
             block_start == 0,
             is_first_system,
+            opts,
         );
         let block_x2 = system_measures[block_end].x_pt + system_measures[block_end].width_pt;
         let occupied_top = top_skyline_sample(
@@ -110,7 +112,7 @@ pub(crate) fn push_system_volta_composites(
                 show_right,
                 index == 0,
                 is_first_system,
-                sink.staff_space_pt,
+                opts,
             );
             runs.push(PendingVoltaRun {
                 start: index,
@@ -144,6 +146,7 @@ pub(crate) fn push_system_volta_composites(
                     fragment: run.fragment,
                     starts_at_system_left: run.start == 0,
                     is_first_system,
+                    opts,
                 },
             );
         }
@@ -165,15 +168,16 @@ fn volta_line_y_for_segment(
     show_right: bool,
     starts_at_system_left: bool,
     is_first_system: bool,
-    staff_space_pt: f32,
+    opts: &LayoutOptions,
 ) -> f32 {
     let first = segment_measures
         .first()
         .expect("volta segment has measures");
     let last = segment_measures.last().expect("volta segment has measures");
     let first_display = display_measure_for_scene(measures, first);
-    let x1 = volta_segment_left_x(first, first_display, starts_at_system_left, is_first_system);
+    let x1 = volta_segment_left_x(first, first_display, starts_at_system_left, is_first_system, opts);
     let x2 = last.x_pt + last.width_pt;
+    let staff_space_pt = opts.staff_space_pt;
     let skyline_gap = volta_skyline_gap_pt(staff_space_pt);
     let hook_height = volta_line_height_pt(staff_space_pt);
     let mut line_y = occupied_top - skyline_gap - VOLTA_LINE_THICKNESS_PT;
@@ -256,6 +260,7 @@ pub(crate) struct VoltaSegmentSpec<'a> {
     fragment: SpanFragmentKind,
     starts_at_system_left: bool,
     is_first_system: bool,
+    opts: &'a LayoutOptions,
 }
 
 pub(crate) fn push_volta_segment(
@@ -282,6 +287,7 @@ pub(crate) fn push_volta_segment(
         first_display,
         spec.starts_at_system_left,
         spec.is_first_system,
+        spec.opts,
     );
     let x2 = last.x_pt + last.width_pt;
     let staff_space_pt = sink.staff_space_pt;
@@ -359,10 +365,11 @@ fn volta_segment_left_x(
     first_display: Option<&DisplayMeasure<'_>>,
     starts_at_system_left: bool,
     is_first_system: bool,
+    opts: &LayoutOptions,
 ) -> f32 {
     if starts_at_system_left {
         let barline = first_display.and_then(|measure| measure.barline.as_deref());
-        first.x_pt + measure_left_pad(0, is_first_system, barline, 7.5)
+        first.x_pt + measure_left_pad(0, is_first_system, barline, opts)
     } else {
         first.x_pt
     }
@@ -688,13 +695,19 @@ pub(crate) fn render_hairpin_fragments(
                 } else {
                     1.0
                 };
+                let measure_horizontal_inset =
+                    NON_INITIAL_MEASURE_LEFT_PAD_PT + MEASURE_RIGHT_PAD_PT;
                 let start_x = if fragment_index == 0 {
-                    first.x_pt + 14.0 + start_progress * (first.width_pt - 28.0)
+                    first.x_pt
+                        + NON_INITIAL_MEASURE_LEFT_PAD_PT
+                        + start_progress * (first.width_pt - measure_horizontal_inset)
                 } else {
-                    first.x_pt + 14.0
+                    first.x_pt + NON_INITIAL_MEASURE_LEFT_PAD_PT
                 };
                 let end_x = if fragment_index + 1 == fragment_total {
-                    last.x_pt + 14.0 + end_progress * (last.width_pt - 28.0)
+                    last.x_pt
+                        + NON_INITIAL_MEASURE_LEFT_PAD_PT
+                        + end_progress * (last.width_pt - measure_horizontal_inset)
                 } else {
                     last.x_pt + last.width_pt - 12.0
                 };
@@ -842,7 +855,10 @@ pub(crate) fn render_dynamic_marks(
 
 fn dynamic_anchor_x(measure: &SceneMeasure, _header: &RenderHeader, fraction: Fraction) -> f32 {
     let progress = crate::fraction_to_f32(fraction).clamp(0.0, 1.0);
-    measure.x_pt + 14.0 + progress * (measure.width_pt - 28.0).max(1.0)
+    measure.x_pt
+        + NON_INITIAL_MEASURE_LEFT_PAD_PT
+        + progress * (measure.width_pt - NON_INITIAL_MEASURE_LEFT_PAD_PT - MEASURE_RIGHT_PAD_PT)
+            .max(1.0)
 }
 
 fn hairpin_open_height_at_progress(kind: HairpinKind, progress: f32, max_height: f32) -> f32 {

@@ -1750,7 +1750,7 @@ mod tests {
                 margin,
                 true,
                 Some("regular"),
-                ss,
+                &opts,
             );
             let lane_right = compact_measure_inner_right(
                 measure.x_pt,
@@ -1916,7 +1916,7 @@ mod tests {
         );
 
         let inner_left = measure_box.x_pt
-            + measure_left_pad(0, true, Some("regular"), opts.staff_space_pt);
+            + measure_left_pad(0, true, Some("regular"), &opts);
         let inner_right = measure_box.x_pt
             + measure_box.width_pt
             - measure_right_pad(Some("final"), opts.staff_space_pt);
@@ -2498,6 +2498,255 @@ mod tests {
             .count();
         assert_eq!(visible_rests, 2);
         assert_eq!(hidden_rests, 1);
+    }
+
+    #[test]
+    fn test_layout_hides_score_metadata_independently() {
+        let score = cross_system_fixture_score();
+        let visible = build_layout_scene(&score, &LayoutOptions::default());
+        let hidden = build_layout_scene(
+            &score,
+            &LayoutOptions {
+                hide_title: true,
+                hide_subtitle: true,
+                hide_composer: true,
+                hide_tempo: true,
+                hide_time_signature: true,
+                hide_clef: true,
+                ..LayoutOptions::default()
+            },
+        );
+
+        let visible_roles: Vec<_> = page_all_items(&visible.pages[0])
+            .into_iter()
+            .map(|item| item.role.clone())
+            .collect();
+        assert!(visible_roles.iter().any(|role| role == "title"));
+        assert!(visible_roles.iter().any(|role| role == "subtitle"));
+        assert!(visible_roles.iter().any(|role| role == "composer"));
+        assert!(visible_roles.iter().any(|role| role == "percussion-clef"));
+        assert!(visible_roles.iter().any(|role| role == "time-signature-digit"));
+        assert!(visible_roles.iter().any(|role| role == "tempo"));
+
+        let hidden_roles: Vec<_> = page_all_items(&hidden.pages[0])
+            .into_iter()
+            .map(|item| item.role.clone())
+            .collect();
+        assert!(!hidden_roles.iter().any(|role| role == "title"));
+        assert!(!hidden_roles.iter().any(|role| role == "subtitle"));
+        assert!(!hidden_roles.iter().any(|role| role == "composer"));
+        assert!(!hidden_roles.iter().any(|role| role == "percussion-clef"));
+        assert!(!hidden_roles.iter().any(|role| role == "time-signature-digit"));
+        assert!(!hidden_roles.iter().any(|role| role == "tempo"));
+        assert!(!hidden_roles.iter().any(|role| role == "tempo-glyph"));
+        assert!(!hidden_roles.iter().any(|role| role == "tempo-equals"));
+    }
+
+    #[test]
+    fn test_hide_clef_and_time_signature_shrink_first_measure_preamble() {
+        let baseline_pad = system_start_reserved_width(true, &LayoutOptions::default(), Some("regular"));
+        let compact_pad = system_start_reserved_width(
+            true,
+            &LayoutOptions {
+                hide_clef: true,
+                hide_time_signature: true,
+                ..LayoutOptions::default()
+            },
+            Some("regular"),
+        );
+        assert!(
+            compact_pad < baseline_pad,
+            "baseline={baseline_pad:.2} compact={compact_pad:.2}"
+        );
+    }
+
+    #[test]
+    fn test_repeat_start_omits_opening_barline_when_preamble_compact() {
+        let score = RenderScore {
+            version: RENDER_SCORE_VERSION.to_string(),
+            header: RenderHeader {
+                tempo: 120,
+                time_beats: 4,
+                time_beat_unit: 4,
+                divisions: 16,
+                note_value: 8,
+                grouping: vec![1, 1, 1, 1],
+                title: None,
+                subtitle: None,
+                composer: None,
+            },
+            tracks: vec![RenderTrack {
+                id: "SD".into(),
+                family: "drum".into(),
+            }],
+            measures: vec![RenderMeasure {
+                index: 0,
+                global_index: 0,
+                paragraph_index: 0,
+                measure_in_paragraph: 0,
+                source_line: 1,
+                events: vec![RenderEvent {
+                    track: "SD".into(),
+                    track_family: "drum".into(),
+                    start: Fraction {
+                        numerator: 0,
+                        denominator: 1,
+                    },
+                    duration: Fraction {
+                        numerator: 1,
+                        denominator: 4,
+                    },
+                    visual_duration: Fraction {
+                        numerator: 1,
+                        denominator: 4,
+                    },
+                    kind: EventKind::Hit,
+                    glyph: "d".into(),
+                    modifiers: vec![],
+                    dot_count: 0,
+                    modifier: None,
+                    voice: 1,
+                    beam: "none".into(),
+                    tuplet: None,
+                }],
+                barline: Some("repeat-start".into()),
+                closing_barline: Some("final".into()),
+                start_nav: None,
+                end_nav: None,
+                volta_indices: None,
+                hairpins: vec![],
+                dynamics: vec![],
+                measure_repeat_slashes: None,
+                multi_rest_count: None,
+                note_value: 8,
+                volta_terminator: false,
+            }],
+            errors: vec![],
+            repeat_spans: vec![],
+        };
+
+        let opts = LayoutOptions {
+            hide_clef: true,
+            hide_time_signature: true,
+            ..LayoutOptions::default()
+        };
+        let scene = build_layout_scene(&score, &opts);
+        let roles: Vec<_> = page_all_items(&scene.pages[0])
+            .into_iter()
+            .map(|item| item.role.clone())
+            .collect();
+        assert!(
+            !roles.iter().any(|role| role == "opening-barline"),
+            "compact preamble repeat-start should not draw a separate opening barline"
+        );
+        assert!(
+            roles.iter().any(|role| role == "repeat-start"),
+            "expected repeat-start glyph"
+        );
+        let repeat_start = page_all_items(&scene.pages[0])
+            .into_iter()
+            .find(|item| item.role == "repeat-start")
+            .expect("repeat-start item");
+        let ScenePrimitive::GlyphRun(repeat_glyph) = &repeat_start.primitive else {
+            panic!("repeat-start should be a glyph");
+        };
+        assert!(
+            (repeat_glyph.x_pt - opts.left_margin_pt).abs() < 0.01,
+            "compact repeat-start should align with the measure left edge: x={:.2} margin={:.2}",
+            repeat_glyph.x_pt,
+            opts.left_margin_pt
+        );
+    }
+
+    #[test]
+    fn test_second_system_repeat_start_omits_opening_barline_when_clef_hidden() {
+        let mut second = edge_padding_measure(1, 16);
+        second.paragraph_index = 1;
+        second.measure_in_paragraph = 0;
+        second.barline = Some("repeat-start".into());
+        second.closing_barline = Some("final".into());
+
+        let opts = LayoutOptions {
+            hide_clef: true,
+            ..LayoutOptions::default()
+        };
+        let scene = build_layout_scene(
+            &edge_padding_score(vec![edge_padding_measure(0, 16), second]),
+            &opts,
+        );
+        let system = &scene.pages[0].systems[1];
+        assert!(
+            !system
+                .items
+                .iter()
+                .any(|item| item.role == "opening-barline"),
+            "hidden clef + repeat-start should not draw a separate opening barline"
+        );
+        assert!(
+            system.items.iter().any(|item| item.role == "repeat-start"),
+            "expected repeat-start glyph on second system"
+        );
+        let repeat_start = system
+            .items
+            .iter()
+            .find(|item| item.role == "repeat-start")
+            .expect("repeat-start item");
+        let ScenePrimitive::GlyphRun(repeat_glyph) = &repeat_start.primitive else {
+            panic!("repeat-start should be a glyph");
+        };
+        assert!(
+            (repeat_glyph.x_pt - opts.left_margin_pt).abs() < 0.01,
+            "compact repeat-start should align with the measure left edge: x={:.2} margin={:.2}",
+            repeat_glyph.x_pt,
+            opts.left_margin_pt
+        );
+    }
+
+    #[test]
+    fn test_compact_repeat_start_content_follows_repeat_glyph() {
+        let mut measure = edge_padding_measure(0, 4);
+        measure.barline = Some("repeat-start".into());
+        measure.closing_barline = Some("final".into());
+
+        let score = edge_padding_score(vec![measure]);
+
+        let opts = LayoutOptions {
+            hide_clef: true,
+            hide_time_signature: true,
+            ..LayoutOptions::default()
+        };
+        let left_pad = measure_left_pad(0, true, Some("repeat-start"), &opts);
+        assert!(
+            left_pad <= start_repeat_reserved_width(opts.staff_space_pt) + 0.01,
+            "left_pad={left_pad:.2}"
+        );
+
+        let scene = build_layout_scene(&score, &opts);
+        let repeat_start = page_all_items(&scene.pages[0])
+            .into_iter()
+            .find(|item| item.role == "repeat-start")
+            .expect("repeat-start");
+        let first_note = page_all_items(&scene.pages[0])
+            .into_iter()
+            .filter(|item| item.role == "notehead")
+            .min_by(|a, b| {
+                let ax = item_bounds(a, opts.staff_space_pt)
+                    .map(|(x, _, _, _)| x)
+                    .unwrap_or(f32::INFINITY);
+                let bx = item_bounds(b, opts.staff_space_pt)
+                    .map(|(x, _, _, _)| x)
+                    .unwrap_or(f32::INFINITY);
+                ax.partial_cmp(&bx).unwrap()
+            })
+            .expect("notehead");
+        let (repeat_x, _, repeat_w, _) =
+            item_bounds(&repeat_start, opts.staff_space_pt).expect("repeat bounds");
+        let (note_x, _, _, _) = item_bounds(&first_note, opts.staff_space_pt).expect("note bounds");
+        let gap = note_x - (repeat_x + repeat_w);
+        assert!(
+            gap <= START_REPEAT_TRAILING_GAP_PT + 12.0,
+            "repeat->content gap too wide: {gap:.2} (left_pad={left_pad:.2})"
+        );
     }
 
     #[test]
@@ -5905,7 +6154,7 @@ fn test_first_measure_repeat_start_sits_after_system_preamble() {
         repeat_glyph.font_size_pt,
         notation_render_font_pt(opts.staff_space_pt)
     );
-    let preamble_width = system_start_reserved_width(true, opts.staff_space_pt);
+    let preamble_width = system_start_reserved_width(true, &opts, Some("repeat-start"));
     assert!(
         repeat_glyph.x_pt > opening_rect.x_pt + preamble_width * 0.4,
         "repeat should sit in the system preamble (preamble_width={preamble_width:.2})"
@@ -6422,6 +6671,87 @@ fn test_later_system_measure_number_uses_absolute_measure_index() {
         panic!("measure number should be text");
     };
     assert_eq!(text.text, "8");
+}
+
+#[test]
+fn test_hide_measure_number_omits_system_labels() {
+    let score = RenderScore {
+        version: RENDER_SCORE_VERSION.to_string(),
+        header: RenderHeader {
+            tempo: 120,
+            time_beats: 4,
+            time_beat_unit: 4,
+            divisions: 16,
+            note_value: 8,
+            grouping: vec![1, 1, 1, 1],
+            title: None,
+            subtitle: None,
+            composer: None,
+        },
+        tracks: vec![RenderTrack {
+            id: "HH".into(),
+            family: "cymbal".into(),
+        }],
+        measures: (0..8)
+            .map(|index| RenderMeasure {
+                index,
+                global_index: index,
+                paragraph_index: 0,
+                measure_in_paragraph: index,
+                source_line: 1,
+                events: vec![RenderEvent {
+                    track: "HH".into(),
+                    track_family: "cymbal".into(),
+                    start: Fraction {
+                        numerator: 0,
+                        denominator: 1,
+                    },
+                    duration: Fraction {
+                        numerator: 1,
+                        denominator: 1,
+                    },
+                    visual_duration: Fraction {
+                        numerator: 1,
+                        denominator: 1,
+                    },
+                    kind: EventKind::Hit,
+                    glyph: "x".into(),
+                    modifiers: vec![],
+                    dot_count: 0,
+                    modifier: None,
+                    voice: 1,
+                    beam: "none".into(),
+                    tuplet: None,
+                }],
+                barline: Some("regular".into()),
+                closing_barline: Some("regular".into()),
+                start_nav: None,
+                end_nav: None,
+                volta_indices: None,
+                hairpins: vec![],
+                dynamics: vec![],
+                measure_repeat_slashes: None,
+                multi_rest_count: None,
+                note_value: 8,
+                volta_terminator: false,
+            })
+            .collect(),
+        errors: vec![],
+        repeat_spans: vec![],
+    };
+
+    let scene = build_layout_scene(
+        &score,
+        &LayoutOptions {
+            hide_measure_number: true,
+            ..LayoutOptions::default()
+        },
+    );
+    assert!(
+        page_all_items(&scene.pages[0])
+            .all(|item| item.role != "measure-number"),
+        "hide_measure_number should omit per-system measure labels"
+    );
 }
 
 #[test]

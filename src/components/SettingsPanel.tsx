@@ -116,7 +116,7 @@ export function SettingsPanel({
           <ToggleSetting labelKey="settings.hideTimeSignature" checked={settings.hideTimeSignature} onCheckedChange={(checked) => updateSetting("hideTimeSignature", checked)} />
           <ToggleSetting labelKey="settings.hideClef" checked={settings.hideClef} onCheckedChange={(checked) => updateSetting("hideClef", checked)} />
           <ToggleSetting labelKey="settings.hideMeasureNumber" checked={settings.hideMeasureNumber} onCheckedChange={(checked) => updateSetting("hideMeasureNumber", checked)} />
-          <Numeric labelKey="settings.staffSpacePt" value={Math.round(settings.staffSpacePt * 10)} min={10} max={100} step={5} unit="pt" onChange={(value) => updateSetting("staffSpacePt", value / 10)} />
+          <Numeric labelKey="settings.staffSpacePt" value={settings.staffSpacePt} min={SETTINGS_RANGES.staffSpacePt.min} max={SETTINGS_RANGES.staffSpacePt.max} step={0.5} unit="pt" onChange={(value) => updateSetting("staffSpacePt", value)} />
           <Numeric labelKey="settings.systemSpacing" value={settings.systemSpacing} min={SETTINGS_RANGES.systemSpacing.min} max={SETTINGS_RANGES.systemSpacing.max} step={1} onChange={(value) => updateSetting("systemSpacing", value)} />
           <Numeric labelKey="settings.titleHeight" value={settings.headerHeight} min={SETTINGS_RANGES.headerHeight.min} max={SETTINGS_RANGES.headerHeight.max} step={1} onChange={(value) => updateSetting("headerHeight", value)} />
           <Numeric labelKey="settings.titleGap" value={settings.headerStaffSpacing} min={SETTINGS_RANGES.headerStaffSpacing.min} max={SETTINGS_RANGES.headerStaffSpacing.max} step={1} onChange={(value) => updateSetting("headerStaffSpacing", value)} />

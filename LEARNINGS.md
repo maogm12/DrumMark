@@ -432,3 +432,4 @@ When an older note conflicts with this file, treat this file plus the active spe
 
 - Page-aware automatic system spacing must search candidate pagination results instead of jumping directly to the largest same-page visual overlap requirement. A small spacing increase can push a problematic tall pair across a page break, making the full same-page non-overlap spacing unnecessary.
 - `systemSpacingOffsetPt` is applied after the automatic base spacing search. The search itself uses pre-offset candidates so negative offsets can intentionally reintroduce overlap without changing what the engine considers the automatic non-overlap baseline.
+- Candidate validity for page-aware spacing is not monotonic: changing spacing can move a system to a new page and expose a different same-page adjacent pair. Use a tolerance-step bounded scan after establishing a valid upper bound; binary search can skip an earlier valid interval.

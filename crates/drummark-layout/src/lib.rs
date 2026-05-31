@@ -5670,6 +5670,31 @@ fn test_automatic_system_spacing_does_not_overshoot_page_break_threshold() {
 }
 
 #[test]
+fn test_automatic_system_spacing_handles_non_monotonic_candidate_validity() {
+    let opts = LayoutOptions {
+        page_height_pt: 140.0,
+        top_margin_pt: 20.0,
+        bottom_margin_pt: 20.0,
+        header_height_pt: 0.0,
+        header_staff_spacing_pt: 0.0,
+        ..LayoutOptions::default()
+    };
+    let boxes = vec![
+        spacing_mock_box(0, -10.0, 15.0),
+        spacing_mock_box(1, -5.0, 20.0),
+        spacing_mock_box(2, -80.0, -20.0),
+        spacing_mock_box(3, -60.0, -20.0),
+    ];
+    let header = spacing_test_header();
+
+    let spacing = automatic_system_spacing_pt(&boxes, &header, &opts);
+    assert!(
+        spacing <= DEFAULT_SYSTEM_SPACING_PT + SYSTEM_SPACING_SEARCH_TOLERANCE_PT,
+        "search should return the first valid candidate, not a later valid interval: {spacing}"
+    );
+}
+
+#[test]
 fn test_system_spacing_negative_offset_can_overlap() {
     let opts = LayoutOptions {
         page_height_pt: 500.0,

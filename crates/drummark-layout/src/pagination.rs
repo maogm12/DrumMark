@@ -105,18 +105,15 @@ pub(crate) fn automatic_system_spacing_pt(
         return upper;
     }
 
-    let mut lo = lower;
-    let mut hi = upper;
-    while hi - lo > SYSTEM_SPACING_SEARCH_TOLERANCE_PT {
-        let mid = (lo + hi) * 0.5;
-        let mid_eval = evaluate_system_spacing_candidate(boxes, header, opts, mid);
-        if mid_eval.is_valid {
-            hi = mid;
-        } else {
-            lo = mid;
+    let mut candidate = lower + SYSTEM_SPACING_SEARCH_TOLERANCE_PT;
+    while candidate < upper {
+        let candidate_eval = evaluate_system_spacing_candidate(boxes, header, opts, candidate);
+        if candidate_eval.is_valid {
+            return candidate;
         }
+        candidate += SYSTEM_SPACING_SEARCH_TOLERANCE_PT;
     }
-    hi
+    upper
 }
 
 #[derive(Debug, Clone)]

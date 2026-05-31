@@ -379,3 +379,52 @@ Verification:
 - `npm run typecheck` passed.
 - `npm test -- --run src/hooks/useAppSettings.test.ts src/components/settings-panel.test.tsx src/renderer/svgSceneAdapter.test.ts` passed.
 - Browser smoke not run: the in-app browser URL policy blocked local `http://localhost:5175/DrumMark/` reload in this environment.
+
+### Final Verification Before Implementation Review
+
+Date: 2026-05-31
+
+Verification:
+- `cargo test -p drummark-layout` passed.
+- `cargo test -p drummark-core` passed.
+- `npm test -- --run src/hooks/useAppSettings.test.ts src/components/settings-panel.test.tsx src/renderer/svgSceneAdapter.test.ts` passed.
+- `npm run typecheck` passed.
+- After removing an unused test variable, `cargo test -p drummark-layout` passed again with no layout warning.
+
+---
+
+## Implementation Review
+
+### Round 1 - Implementation Review
+
+Reviewer: Rawls (sub-agent)
+
+Findings:
+- P1: The binary search assumed candidate validity was monotonic, but same-page candidate validity can be non-monotonic because page breaks can expose different adjacent pairs at different spacing values. This could skip an earlier valid interval and return a larger candidate.
+- P2: `build-docs.ts` still used the old `systemSpacing` option key instead of `systemSpacingOffset`.
+
+Verification notes from reviewer:
+- `cargo test -p drummark-layout` passed.
+- `npm run typecheck` passed.
+- `npm run build-docs` passed.
+
+STATUS: CHANGES_REQUESTED
+
+### Round 1 Fixes
+
+Date: 2026-05-31
+
+Changes completed:
+- Replaced the pagination spacing binary search with a tolerance-step bounded scan after establishing a valid upper bound.
+- Added a layout test for non-monotonic candidate validity where `30pt` is invalid, `30.25pt` is valid, a later interval is invalid again, and a binary search would choose a larger valid interval.
+- Updated `build-docs.ts` to pass `systemSpacingOffset`.
+- Updated the active plan, layout contract addendum, golden snapshot, generated layout WASM, and append-only learning notes.
+
+Verification:
+- `cargo test -p drummark-layout write_cross_system_scene_golden -- --ignored` passed.
+- `npm run typecheck` passed after running `npm run wasm:build` sequentially.
+- `cargo test -p drummark-layout` passed.
+- `cargo test -p drummark-core` passed.
+- `npm test -- --run src/hooks/useAppSettings.test.ts src/components/settings-panel.test.tsx src/renderer/svgSceneAdapter.test.ts` passed.
+- `npm run build-docs` passed.
+- `npm run wasm:build` passed.

@@ -467,7 +467,7 @@ For each same-page adjacent pair under a candidate pagination:
 
 `requiredNonOverlapSpacing = max(0, requiredForPair...)`
 
-The automatic spacing algorithm treats a candidate as valid when paginating with that candidate leaves no same-page adjacent pair requiring more than `candidate - SYSTEM_COLLISION_GAP_PT`. Implementations must find the smallest valid candidate within a fixed tolerance, such as `0.25pt`, by establishing a valid upper bound and binary-searching between `DEFAULT_SYSTEM_SPACING_PT` and that upper bound. This bounded search is required so that a tall pair that becomes page-separated after a small spacing increase does not force the full non-overlap spacing it would need if kept on one page.
+The automatic spacing algorithm treats a candidate as valid when paginating with that candidate leaves no same-page adjacent pair requiring more than `candidate - SYSTEM_COLLISION_GAP_PT`. Implementations must find the smallest valid candidate within a fixed tolerance, such as `0.25pt`, by establishing a valid upper bound and scanning candidate values from `DEFAULT_SYSTEM_SPACING_PT` to that upper bound at the tolerance step. Candidate validity is not monotonic because page breaks can expose different same-page adjacent pairs at different spacing values, so binary search is not valid for this check. This bounded scan is required so that a tall pair that becomes page-separated after a small spacing increase does not force the full non-overlap spacing it would need if kept on one page.
 
 The automatic base spacing is the search result, not a direct formula from the final page's observed requirements:
 

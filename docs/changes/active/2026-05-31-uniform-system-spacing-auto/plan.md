@@ -55,9 +55,9 @@ requiredForPair =
 1. Start with lower bound `DEFAULT_SYSTEM_SPACING_PT`.
 2. If the lower bound is valid, use it.
 3. Otherwise establish a valid upper bound by using a conservative maximum requirement observed from candidate pagination, growing the upper bound as needed.
-4. Binary-search between lower and upper bounds to a fixed tolerance, such as `0.25pt`, using the smallest valid candidate found.
+4. Scan candidates from the lower bound to the valid upper bound at the fixed tolerance step, such as `0.25pt`, and use the first valid candidate found.
 
-This avoids overshooting when a small spacing increase pushes a tall adjacent pair across a page break. Header spacing remains independently governed by existing header cursor logic.
+Candidate validity is not assumed to be monotonic because page breaks can expose different same-page adjacent pairs at different spacing values. The tolerance-step scan avoids overshooting when a small spacing increase pushes a tall adjacent pair across a page break. Header spacing remains independently governed by existing header cursor logic.
 
 Use explicit option names:
 
@@ -95,7 +95,7 @@ For each same-page adjacent pair under a candidate pagination:
 
 `requiredNonOverlapSpacing = max(0, requiredForPair...)`
 
-The automatic spacing algorithm treats a candidate as valid when paginating with that candidate leaves no same-page adjacent pair requiring more than `candidate - SYSTEM_COLLISION_GAP_PT`. Implementations must find the smallest valid candidate within a fixed tolerance, such as `0.25pt`, by establishing a valid upper bound and binary-searching between `DEFAULT_SYSTEM_SPACING_PT` and that upper bound. This bounded search is required so that a tall pair that becomes page-separated after a small spacing increase does not force the full non-overlap spacing it would need if kept on one page.
+The automatic spacing algorithm treats a candidate as valid when paginating with that candidate leaves no same-page adjacent pair requiring more than `candidate - SYSTEM_COLLISION_GAP_PT`. Implementations must find the smallest valid candidate within a fixed tolerance, such as `0.25pt`, by establishing a valid upper bound and scanning candidate values from `DEFAULT_SYSTEM_SPACING_PT` to that upper bound at the tolerance step. Candidate validity is not monotonic because page breaks can expose different same-page adjacent pairs at different spacing values, so binary search is not valid for this check. This bounded scan is required so that a tall pair that becomes page-separated after a small spacing increase does not force the full non-overlap spacing it would need if kept on one page.
 
 The automatic base spacing is the search result, not a direct formula from the final page's observed requirements:
 
@@ -278,3 +278,4 @@ Verification:
 | 3 | 2026-05-31 | Changed spacing derivation to pagination-aware iteration so page-break-separated tall content does not inflate spacing |
 | 4 | 2026-05-31 | Replaced candidate-raise loop with bounded search to find the smallest valid pagination-aware spacing |
 | 5 | 2026-05-31 | Defined `autoBaseSpacing` as the bounded-search result rather than recomputing from final observed requirements |
+| 6 | 2026-05-31 | Replaced binary search with tolerance-step bounded scan because same-page candidate validity is not monotonic across page breaks |

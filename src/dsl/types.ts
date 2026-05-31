@@ -253,7 +253,7 @@ export type NormalizedHeader = {
   title?: string;
   subtitle?: string;
   composer?: string;
-  tempo: number;
+  tempo?: number;
   timeSignature: {
     beats: number;
     beatUnit: number;

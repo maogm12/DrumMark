@@ -163,7 +163,7 @@ fn measure_xml(
             if first { "<staves>1</staves>".to_string() } else { String::new() },
             if first { "<clef number=\"1\"><sign>percussion</sign><line>2</line></clef>".to_string() } else { String::new() },
             style_xml,
-            if first {
+            if first && score.header.tempo > 0 {
                 format!(
                     "<direction placement=\"above\"><direction-type><metronome><beat-unit>quarter</beat-unit><per-minute>{}</per-minute></metronome></direction-type><sound tempo=\"{}\"/></direction>",
                     score.header.tempo, score.header.tempo

@@ -4669,6 +4669,19 @@ mod tests {
         assert!((note_center - accent_center).abs() < 0.01);
         assert!(accent_glyph.y_pt < stem_line.y1_pt);
     }
+
+    #[test]
+    fn test_layout_omits_tempo_when_header_tempo_is_zero() {
+        let mut score = simple_layout_score(vec![regular_measure(0, 0, 4)]);
+        score.header.tempo = 0;
+        let scene = build_layout_scene(&score, &LayoutOptions::default());
+        assert!(items_by_role(&scene, "tempo").is_empty());
+        assert!(items_by_role(&scene, "tempo-glyph").is_empty());
+        assert!(items_by_role(&scene, "tempo-equals").is_empty());
+        assert!(!page_all_composites(&scene.pages[0]).any(|composite| {
+            composite.label.as_deref() == Some("tempo")
+        }));
+    }
 }
 
 // ── LayoutPlan Tests ─────────────────────────────────────────────

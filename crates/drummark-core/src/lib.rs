@@ -131,7 +131,9 @@ fn normalize_to_js(score: &normalize::NormalizedScore) -> JsValue {
     if let Some(ref t) = score.header.composer {
         set(&h, "composer", &JsValue::from_str(t));
     }
-    set(&h, "tempo", &JsValue::from_f64(score.header.tempo as f64));
+    if score.header.tempo > 0 {
+        set(&h, "tempo", &JsValue::from_f64(score.header.tempo as f64));
+    }
     let ts = Object::new();
     set(
         &ts,
@@ -363,11 +365,13 @@ fn render_score_to_js(score: &drummark_layout::RenderScore) -> JsValue {
     set(&obj, "version", &JsValue::from_str(&score.version));
 
     let header = Object::new();
-    set(
-        &header,
-        "tempo",
-        &JsValue::from_f64(score.header.tempo as f64),
-    );
+    if score.header.tempo > 0 {
+        set(
+            &header,
+            "tempo",
+            &JsValue::from_f64(score.header.tempo as f64),
+        );
+    }
     set(
         &header,
         "timeBeats",

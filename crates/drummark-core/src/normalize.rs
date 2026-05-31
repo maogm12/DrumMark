@@ -396,7 +396,7 @@ pub fn normalize_document(doc: &Document) -> NormalizedScore {
         title: hs.title.clone(),
         subtitle: hs.subtitle.clone(),
         composer: hs.composer.clone(),
-        tempo: hs.tempo.unwrap_or(120),
+        tempo: hs.tempo.unwrap_or(0),
         time_beats,
         time_beat_unit,
         divisions,
@@ -1029,6 +1029,27 @@ mod group_visual_test {
             sticking_starts,
             vec![Fraction::zero(), Fraction::new(1, 4)]
         );
+    }
+}
+
+#[cfg(test)]
+mod header_test {
+    use crate::normalize;
+    use crate::parser;
+
+    #[test]
+    fn test_missing_tempo_header_normalizes_to_zero() {
+        let doc = parser::Parser::new("time 4/4\nHH | x - x - |\n").parse().unwrap();
+        assert_eq!(doc.headers.tempo, None);
+        let score = normalize::normalize_document(&doc);
+        assert_eq!(score.header.tempo, 0);
+    }
+
+    #[test]
+    fn test_explicit_tempo_header_is_preserved() {
+        let doc = parser::Parser::new("tempo 96\ntime 4/4\nHH | x - x - |\n").parse().unwrap();
+        let score = normalize::normalize_document(&doc);
+        assert_eq!(score.header.tempo, 96);
     }
 }
 

@@ -254,13 +254,9 @@ pub(crate) fn beam_stack_extent_from_stem_pt(beam_level: u8) -> f32 {
 // Notehead positioning
 const NOTE_X_OFFSET_PT: f32 = crate::NOTE_METRIC_TO_DRAW_X_PT;
 // Augmentation dots
-const DOT_SPACING_PT: f32 = 5.0;
-const DOT_PAD_PT: f32 = 8.0;
 const DOT_ON_LINE_SHIFT_SS: f32 = 0.5;
 // Rest
 const REST_FALLBACK_CENTER_X_PT: f32 = 7.0;
-const REST_DOT_SPACING_PT: f32 = 5.0;
-const REST_DOT_PAD_PT: f32 = 8.0;
 // Ledger lines
 const LEDGER_HALF_OVERHANG_PT: f32 = 3.0;
 // Sticking
@@ -623,12 +619,13 @@ pub(crate) fn render_slot_group(sink: &mut SceneEmitSink<'_>, input: RenderSlotG
             let dot_glyph = char::from_u32(dot_metric.smufl_codepoint)
                 .unwrap_or('?')
                 .to_string();
-            let dot_spacing_x = REST_DOT_SPACING_PT;
+            let dot_scale = sink.staff_space_pt / 5.0;
+            let dot_spacing_x = 4.0 * dot_scale;
             for i in 0..rest_dot_count {
                 let dot_x = placement.x
                     + (i as f32) * dot_spacing_x
                     + rest_metric.width_ss() * rest_font_size / 4.0
-                    + REST_DOT_PAD_PT;
+                    + 5.0 * dot_scale;
                 sink.push_text_item(TextItemSpec {
                     measure_id: Some(input.measure_id),
                     role: "augmentation-dot",
@@ -876,12 +873,13 @@ pub(crate) fn render_hit_cluster(
             } else {
                 dot_ss
             };
-            let dot_spacing_x = DOT_SPACING_PT;
+            let dot_scale = sink.staff_space_pt / 5.0;
+            let dot_spacing_x = 4.0 * dot_scale;
             for i in 0..dot_count {
                 let dot_x = note_x
                     + (i as f32) * dot_spacing_x
                     + canonical_glyph_metric(placement.note_role).width_ss() * note_position_pt / 4.0
-                    + DOT_PAD_PT;
+                    + 5.0 * dot_scale;
                 let dot_y = input.staff_top + dot_y_ss * sink.staff_space_pt;
                 sink.push_text_item(TextItemSpec {
                     measure_id: Some(input.measure_id),
@@ -1154,8 +1152,8 @@ pub(crate) fn render_grace_notes_for_hit(
     let grace_render = grace_render_font_pt(sink.staff_space_pt);
     let grace_stem_len_pt = grace_stem_length_pt(sink.staff_space_pt);
     let grace_scale = sink.staff_space_pt / 5.0;
-    let grace_spacing = 8.0 * grace_scale;
-    let grace_gap = 9.0 * grace_scale;
+    let grace_spacing = 5.0 * grace_scale;
+    let grace_gap = 6.0 * grace_scale;
     let flam_slash_left_pt = 3.5 * grace_scale;
     let flam_slash_right_pt = 4.5 * grace_scale;
     let flam_slash_half_v = 3.0 * grace_scale;

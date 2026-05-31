@@ -8,6 +8,7 @@ pub(crate) struct BeamAnchor {
     pub(crate) x: f32,
     pub(crate) stem_x: f32,
     pub(crate) stem_tip_y: f32,
+    pub(crate) stem_attach_y: f32,
     pub(crate) voice: u8,
     pub(crate) group: u32,
     pub(crate) level: u8,
@@ -21,13 +22,23 @@ pub(crate) struct BeamLineSegment {
     pub(crate) end_x: f32,
 }
 
+/// Beamed stems may be shortened to meet the beam slope, but not below this
+/// fraction of the configured stem length.
+pub(crate) const MIN_BEAMED_STEM_LEN_FRACTION: f32 = 0.5;
+
+pub(crate) fn min_beamed_stem_length_pt(stem_len_pt: f32) -> f32 {
+    stem_len_pt * MIN_BEAMED_STEM_LEN_FRACTION
+}
+
 pub(crate) fn render_beam_groups(
     sink: &mut SceneEmitSink<'_>,
     measure_id: &str,
     mut anchors: Vec<BeamAnchor>,
     _measure_width: f32,
     _staff_bottom: f32,
+    stem_len_pt: f32,
 ) {
+    let min_stem_len_pt = min_beamed_stem_length_pt(stem_len_pt);
     anchors.sort_by(|a, b| {
         a.voice
             .cmp(&b.voice)
@@ -80,18 +91,34 @@ pub(crate) fn render_beam_groups(
 
         let first = group.first().unwrap().clone();
         let last = group.last().unwrap().clone();
-        let primary_y = first.stem_tip_y;
+        let mut primary_y = first.stem_tip_y;
         let raw_end_y = last.stem_tip_y;
         let beam_slope = best_beam_slope(first.stem_x, primary_y, last.stem_x, raw_end_y);
-        let end_y = primary_y + beam_slope * (last.stem_x - first.stem_x);
+        let mut end_y = primary_y + beam_slope * (last.stem_x - first.stem_x);
 
-        // After the final beam slope is chosen, every non-leading stem must terminate on that beam.
+        let x1 = first.stem_x;
+        let xn = last.stem_x;
+        let dx = xn - x1;
+        let beam_shift = max_beam_shift_for_min_stem_length(
+            group,
+            x1,
+            primary_y,
+            xn,
+            end_y,
+            min_stem_len_pt,
+        );
+        if first.up {
+            primary_y -= beam_shift;
+            end_y -= beam_shift;
+        } else {
+            primary_y += beam_shift;
+            end_y += beam_shift;
+        }
+
+        // After the final beam slope is chosen, every stem must terminate on that beam.
         if group.len() > 1 {
-            let x1 = first.stem_x;
-            let xn = last.stem_x;
-            let dx = xn - x1;
             let dy = end_y - primary_y;
-            for anchor in &group[1..] {
+            for anchor in group.iter() {
                 let t = if dx.abs() > 0.001 {
                     (anchor.stem_x - x1) / dx
                 } else {
@@ -198,6 +225,38 @@ fn best_beam_slope(x1: f32, y1: f32, x2: f32, y2: f32) -> f32 {
     }
 
     best_slope
+}
+
+/// How far to shift the beam (in pt) so every participating stem meets `min_stem_len_pt`.
+fn max_beam_shift_for_min_stem_length(
+    group: &[BeamAnchor],
+    x1: f32,
+    y1: f32,
+    x2: f32,
+    y2: f32,
+    min_stem_len_pt: f32,
+) -> f32 {
+    if min_stem_len_pt <= 0.0 {
+        return 0.0;
+    }
+    let mut max_shift = 0.0_f32;
+    for anchor in group {
+        let beam_y = beam_y_at_x(anchor.stem_x, x1, y1, x2, y2);
+        if anchor.up {
+            // Up stem: tip sits on the beam; length = attach_y - tip_y.
+            let max_beam_y = anchor.stem_attach_y - min_stem_len_pt;
+            if beam_y > max_beam_y {
+                max_shift = max_shift.max(beam_y - max_beam_y);
+            }
+        } else {
+            // Down stem: tip sits on the beam; length = tip_y - attach_y.
+            let min_beam_y = anchor.stem_attach_y + min_stem_len_pt;
+            if beam_y < min_beam_y {
+                max_shift = max_shift.max(min_beam_y - beam_y);
+            }
+        }
+    }
+    max_shift
 }
 
 fn beam_y_at_x(x: f32, x1: f32, y1: f32, x2: f32, y2: f32) -> f32 {

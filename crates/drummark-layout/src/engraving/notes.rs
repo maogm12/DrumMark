@@ -75,6 +75,7 @@ pub(crate) struct BeamAnchorPlan {
     pub(crate) x: f32,
     pub(crate) stem_x: f32,
     pub(crate) stem_tip_y: f32,
+    pub(crate) stem_attach_y: f32,
     pub(crate) voice: u8,
     pub(crate) group: u32,
     pub(crate) level: u8,
@@ -207,6 +208,7 @@ pub(crate) fn render_measure_events(
         beam_anchors,
         input.geometry.measure_width,
         input.staff_bottom,
+        input.stem_len_pt,
     );
 }
 
@@ -1096,6 +1098,7 @@ pub(crate) fn render_hit_cluster_stem_and_accents(
                 x: anchor_plan.x,
                 stem_x: anchor_plan.stem_x,
                 stem_tip_y: anchor_plan.stem_tip_y,
+                stem_attach_y: anchor_plan.stem_attach_y,
                 voice: anchor_plan.voice,
                 group: anchor_plan.group,
                 level: anchor_plan.level,
@@ -1455,6 +1458,7 @@ fn build_stem_render_plan(
                 x: event_x,
                 stem_x: stem_layout.stem_x,
                 stem_tip_y: if stem_up { stem_y1 } else { stem_y2 },
+                stem_attach_y,
                 voice,
                 group,
                 level: beam_level,

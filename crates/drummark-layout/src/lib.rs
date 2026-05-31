@@ -178,6 +178,7 @@ pub(crate) fn tempo_item_x_positions(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::engraving::beams::min_beamed_stem_length_pt;
 
     #[test]
     fn test_track_family() {
@@ -4447,6 +4448,117 @@ mod tests {
             crash_stem.1,
             crash_stem.0
         );
+    }
+
+    #[test]
+    fn test_beamed_mixed_height_row_respects_minimum_stem_length() {
+        fn hit(track: &str, start_num: u32, start_den: u32) -> RenderEvent {
+            RenderEvent {
+                track: track.into(),
+                track_family: if track == "C" {
+                    "cymbal".into()
+                } else {
+                    "drum".into()
+                },
+                start: Fraction {
+                    numerator: start_num,
+                    denominator: start_den,
+                },
+                duration: Fraction {
+                    numerator: 1,
+                    denominator: 8,
+                },
+                visual_duration: Fraction {
+                    numerator: 1,
+                    denominator: 8,
+                },
+                kind: EventKind::Hit,
+                glyph: if track == "C" { "x".into() } else { "d".into() },
+                modifiers: vec![],
+                dot_count: 0,
+                modifier: None,
+                voice: 1,
+                beam: "none".into(),
+                tuplet: None,
+            }
+        }
+
+        let score = RenderScore {
+            version: RENDER_SCORE_VERSION.to_string(),
+            header: RenderHeader {
+                tempo: 115,
+                time_beats: 4,
+                time_beat_unit: 4,
+                divisions: 8,
+                note_value: 8,
+                grouping: vec![4],
+                title: None,
+                subtitle: None,
+                composer: None,
+            },
+            tracks: vec![
+                RenderTrack {
+                    id: "T3".into(),
+                    family: "drum".into(),
+                },
+                RenderTrack {
+                    id: "C".into(),
+                    family: "cymbal".into(),
+                },
+                RenderTrack {
+                    id: "T1".into(),
+                    family: "drum".into(),
+                },
+                RenderTrack {
+                    id: "SD".into(),
+                    family: "drum".into(),
+                },
+            ],
+            measures: vec![RenderMeasure {
+                index: 0,
+                global_index: 0,
+                paragraph_index: 0,
+                measure_in_paragraph: 0,
+                source_line: 1,
+                events: vec![
+                    hit("T3", 0, 1),
+                    hit("C", 1, 8),
+                    hit("T1", 1, 4),
+                    hit("SD", 3, 8),
+                ],
+                barline: Some("regular".into()),
+                closing_barline: Some("final".into()),
+                start_nav: None,
+                end_nav: None,
+                volta_indices: None,
+                hairpins: vec![],
+                dynamics: vec![],
+                measure_repeat_slashes: None,
+                multi_rest_count: None,
+                note_value: 8,
+                volta_terminator: false,
+            }],
+            errors: vec![],
+            repeat_spans: vec![],
+        };
+
+        let opts = LayoutOptions::default();
+        let min_stem_len = min_beamed_stem_length_pt(stem_length_pt(&opts));
+        let scene = build_layout_scene(&score, &opts);
+        assert_eq!(items_by_role(&scene, "beam").len(), 1);
+
+        for item in items_by_role(&scene, "stem") {
+            let ScenePrimitive::LineSegment(line) = &item.primitive else {
+                continue;
+            };
+            let stem_len = (line.y2_pt - line.y1_pt).abs();
+            assert!(
+                stem_len + 0.01 >= min_stem_len,
+                "beamed stem length {stem_len:.2}pt should be at least {min_stem_len:.2}pt (50% of default): y1={:.2} y2={:.2}",
+                line.y1_pt,
+                line.y2_pt
+            );
+        }
     }
 
     #[test]

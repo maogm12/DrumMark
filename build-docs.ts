@@ -13,7 +13,6 @@ const docsRenderOptions = {
     staffSpacePt: DEFAULT_RENDER_OPTIONS.staffSpacePt,
     pageWidth: DEFAULT_RENDER_OPTIONS.pageWidth,
     pageHeight: DEFAULT_RENDER_OPTIONS.pageHeight,
-    showTitle: true,
     topMargin: DEFAULT_RENDER_OPTIONS.pagePadding.top,
     bottomMargin: DEFAULT_RENDER_OPTIONS.pagePadding.bottom,
     leftMargin: DEFAULT_RENDER_OPTIONS.pagePadding.left,

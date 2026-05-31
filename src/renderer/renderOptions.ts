@@ -17,6 +17,13 @@ export type ScoreRenderOptions = {
   voltaSpacing: number;
   hairpinOffsetY?: number;
   hideVoice2Rests: boolean;
+  hideTitle?: boolean;
+  hideSubtitle?: boolean;
+  hideComposer?: boolean;
+  hideTempo?: boolean;
+  hideTimeSignature?: boolean;
+  hideClef?: boolean;
+  hideMeasureNumber?: boolean;
   tempoOffsetX: number;
   tempoOffsetY: number;
   measureNumberOffsetX: number;

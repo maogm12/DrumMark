@@ -9,7 +9,7 @@ grouping 2+2
 
 async function render(dsl: string): Promise<string> {
   const score = buildNormalizedScore(dsl);
-  return renderScoreToSvg(score, { pageWidth: 612, showTitle: true }, { source: dsl, sourceRevision: 1 });
+    return renderScoreToSvg(score, { pageWidth: 612 }, { source: dsl, sourceRevision: 1 });
 }
 
 function countRe(svg: string, re: RegExp): number {

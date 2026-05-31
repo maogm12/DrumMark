@@ -4,8 +4,41 @@ import { SETTINGS_RANGES } from "../renderer/renderOptions";
 
 export type MainTab = "editor" | "page" | "xml";
 
+export type PagePreviewLayout = {
+  pagePadding: PagePadding;
+  staffSpacePt: number;
+  headerHeight: number;
+  headerStaffSpacing: number;
+  systemSpacing: number;
+  stemLength: number;
+  voltaSpacing: number;
+  hairpinOffsetY: number;
+  hideVoice2Rests: boolean;
+  hideTitle: boolean;
+  hideSubtitle: boolean;
+  hideComposer: boolean;
+  hideTempo: boolean;
+  hideTimeSignature: boolean;
+  hideClef: boolean;
+  hideMeasureNumber: boolean;
+  tempoOffsetX: number;
+  tempoOffsetY: number;
+  measureNumberOffsetX: number;
+  measureNumberOffsetY: number;
+  measureNumberFontSize: number;
+  durationSpacingCompression: number;
+  measureWidthCompression: number;
+};
+
 export interface AppSettings {
   hideVoice2Rests: boolean;
+  hideTitle: boolean;
+  hideSubtitle: boolean;
+  hideComposer: boolean;
+  hideTempo: boolean;
+  hideTimeSignature: boolean;
+  hideClef: boolean;
+  hideMeasureNumber: boolean;
   pagePadding: PagePadding;
   staffSpacePt: number;
   headerStaffSpacing: number;
@@ -24,8 +57,43 @@ export interface AppSettings {
   measureWidthCompression: number;
 }
 
+export function pickPagePreviewLayout(settings: AppSettings): PagePreviewLayout {
+  return {
+    pagePadding: settings.pagePadding,
+    staffSpacePt: settings.staffSpacePt,
+    headerHeight: settings.headerHeight,
+    headerStaffSpacing: settings.headerStaffSpacing,
+    systemSpacing: settings.systemSpacing,
+    stemLength: settings.stemLength,
+    voltaSpacing: settings.voltaSpacing,
+    hairpinOffsetY: settings.hairpinOffsetY,
+    hideVoice2Rests: settings.hideVoice2Rests,
+    hideTitle: settings.hideTitle,
+    hideSubtitle: settings.hideSubtitle,
+    hideComposer: settings.hideComposer,
+    hideTempo: settings.hideTempo,
+    hideTimeSignature: settings.hideTimeSignature,
+    hideClef: settings.hideClef,
+    hideMeasureNumber: settings.hideMeasureNumber,
+    tempoOffsetX: settings.tempoOffsetX,
+    tempoOffsetY: settings.tempoOffsetY,
+    measureNumberOffsetX: settings.measureNumberOffsetX,
+    measureNumberOffsetY: settings.measureNumberOffsetY,
+    measureNumberFontSize: settings.measureNumberFontSize,
+    durationSpacingCompression: settings.durationSpacingCompression,
+    measureWidthCompression: settings.measureWidthCompression,
+  };
+}
+
 export const defaultSettings: AppSettings = {
   hideVoice2Rests: false,
+  hideTitle: false,
+  hideSubtitle: false,
+  hideComposer: false,
+  hideTempo: false,
+  hideTimeSignature: false,
+  hideClef: false,
+  hideMeasureNumber: false,
   pagePadding: { top: 30, right: 50, bottom: 30, left: 50 },
   staffSpacePt: 5.0,
   headerStaffSpacing: 60,

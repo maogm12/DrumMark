@@ -1,9 +1,8 @@
-import { memo, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode, type UIEvent } from "preact/compat";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode, type UIEvent } from "preact/compat";
 import { buildNormalizedScore, type ParseError } from "./dsl";
 import { type NormalizedScore } from "./dsl";
-import type { PagePadding } from "./renderer/renderOptions";
 import { resolveDocumentTheme, subscribeToThemeChanges, type AppTheme } from "./theme";
-import { useAppSettings } from "./hooks/useAppSettings";
+import { pickPagePreviewLayout, useAppSettings, type PagePreviewLayout } from "./hooks/useAppSettings";
 import { SettingsPanel } from "./components/SettingsPanel";
 import { useT } from "./i18n/context";
 import { diagnosticRange } from "./editorDiagnostics";
@@ -377,24 +376,9 @@ function DslEditor({ value, onChange, errors, theme }: { value: string; onChange
   );
 }
 
-const PagePreview = memo(function PagePreview({
+function PagePreview({
   score,
-  pagePadding,
-  staffSpacePt,
-  headerHeight,
-  headerStaffSpacing,
-  systemSpacing,
-  stemLength,
-  voltaSpacing,
-  hairpinOffsetY,
-  hideVoice2Rests,
-  tempoOffsetX,
-  tempoOffsetY,
-  measureNumberOffsetX,
-  measureNumberOffsetY,
-  measureNumberFontSize,
-  durationSpacingCompression,
-  measureWidthCompression,
+  layout,
   active,
   theme,
   source,
@@ -402,25 +386,10 @@ const PagePreview = memo(function PagePreview({
   onRenderInput,
 }: {
   score: NormalizedScore | null;
+  layout: PagePreviewLayout;
   source: string;
   sourceRevision: number;
   onRenderInput?: (input: ParsedScoreState) => void;
-  pagePadding: PagePadding;
-  staffSpacePt: number;
-  headerHeight: number;
-  headerStaffSpacing: number;
-  systemSpacing: number;
-  stemLength: number;
-  voltaSpacing: number;
-  hairpinOffsetY: number;
-  hideVoice2Rests: boolean;
-  tempoOffsetX: number;
-  tempoOffsetY: number;
-  measureNumberOffsetX: number;
-  measureNumberOffsetY: number;
-  measureNumberFontSize: number;
-  durationSpacingCompression: number;
-  measureWidthCompression: number;
   active: boolean;
   theme: AppTheme;
 }) {
@@ -454,7 +423,31 @@ const PagePreview = memo(function PagePreview({
       .then(({ renderScorePagesToSvgs }) => {
         return renderScorePagesToSvgs(
           score,
-          { staffSpacePt, pageWidth: pdfPageWidth, pageHeight: pdfPageHeight, showTitle: true, topMargin: pagePadding.top, bottomMargin: pagePadding.bottom, leftMargin: pagePadding.left, rightMargin: pagePadding.right, stemLength, systemSpacing, headerHeight, headerStaffSpacing, voltaSpacing, hairpinOffsetY, hideVoice2Rests, durationSpacingCompression, measureWidthCompression },
+          {
+            staffSpacePt: layout.staffSpacePt,
+            pageWidth: pdfPageWidth,
+            pageHeight: pdfPageHeight,
+            topMargin: layout.pagePadding.top,
+            bottomMargin: layout.pagePadding.bottom,
+            leftMargin: layout.pagePadding.left,
+            rightMargin: layout.pagePadding.right,
+            stemLength: layout.stemLength,
+            systemSpacing: layout.systemSpacing,
+            headerHeight: layout.headerHeight,
+            headerStaffSpacing: layout.headerStaffSpacing,
+            voltaSpacing: layout.voltaSpacing,
+            hairpinOffsetY: layout.hairpinOffsetY,
+            hideVoice2Rests: layout.hideVoice2Rests,
+            hideTitle: layout.hideTitle,
+            hideSubtitle: layout.hideSubtitle,
+            hideComposer: layout.hideComposer,
+            hideTempo: layout.hideTempo,
+            hideTimeSignature: layout.hideTimeSignature,
+            hideClef: layout.hideClef,
+            hideMeasureNumber: layout.hideMeasureNumber,
+            durationSpacingCompression: layout.durationSpacingCompression,
+            measureWidthCompression: layout.measureWidthCompression,
+          },
           { source, sourceRevision },
         );
       })
@@ -472,7 +465,7 @@ const PagePreview = memo(function PagePreview({
         const msg = e instanceof Error ? e.message : String(e);
         setError(msg || t("preview.error"));
       });
-  }, [score, source, sourceRevision, systemSpacing, stemLength, voltaSpacing, hairpinOffsetY, headerStaffSpacing, headerHeight, active, hideVoice2Rests, pagePadding, staffSpacePt, tempoOffsetX, tempoOffsetY, measureNumberOffsetX, measureNumberOffsetY, measureNumberFontSize, durationSpacingCompression, measureWidthCompression, onRenderInput, theme, t]);
+  }, [score, source, sourceRevision, layout, active, onRenderInput, theme, t]);
 
   if (!source.trim()) {
     return (
@@ -491,17 +484,17 @@ const PagePreview = memo(function PagePreview({
   return (
     <div className={`staff-preview-shell${theme === "dark" ? " staff-preview-shell-dark" : ""}`} ref={shellRef} onScroll={handleScroll}>
       {error ? <div className="staff-error">{error}</div> : null}
-      {isRendering && !renderedMarkup ? (
+      {isRendering ? (
         <div className="staff-rendering">{t("preview.rendering")}</div>
       ) : null}
-      <div className="staff-printable-frame">
+      <div className={`staff-printable-frame${isRendering ? " staff-printable-frame-rendering" : ""}`}>
         <div className="staff-printable">
           <div className="staff-preview page-view" dangerouslySetInnerHTML={{ __html: renderedMarkup }} />
         </div>
       </div>
     </div>
   );
-});
+}
 
 function MusicXmlPreview({ xml, collapsed, toggle }: {
   xml: string;
@@ -694,6 +687,37 @@ export function App() {
   const debouncedAnalysisInput = useDebouncedValue(
     analysisInput,
     120,
+  );
+  const pagePreviewLayout = useMemo(
+    () => pickPagePreviewLayout(settings),
+    [
+      settings.pagePadding.top,
+      settings.pagePadding.right,
+      settings.pagePadding.bottom,
+      settings.pagePadding.left,
+      settings.staffSpacePt,
+      settings.headerHeight,
+      settings.headerStaffSpacing,
+      settings.systemSpacing,
+      settings.stemLength,
+      settings.voltaSpacing,
+      settings.hairpinOffsetY,
+      settings.hideVoice2Rests,
+      settings.hideTitle,
+      settings.hideSubtitle,
+      settings.hideComposer,
+      settings.hideTempo,
+      settings.hideTimeSignature,
+      settings.hideClef,
+      settings.hideMeasureNumber,
+      settings.tempoOffsetX,
+      settings.tempoOffsetY,
+      settings.measureNumberOffsetX,
+      settings.measureNumberOffsetY,
+      settings.measureNumberFontSize,
+      settings.durationSpacingCompression,
+      settings.measureWidthCompression,
+    ],
   );
   const canExport = !isScorePending && hasRenderableScore && score.errors.length === 0;
 
@@ -1235,25 +1259,10 @@ export function App() {
                       score={hasRenderableScore ? score : null}
                       source={debouncedAnalysisInput.dsl}
                       sourceRevision={analysis.sourceRevision}
-                      pagePadding={settings.pagePadding}
-                      staffSpacePt={settings.staffSpacePt}
-                      headerHeight={settings.headerHeight}
-                      headerStaffSpacing={settings.headerStaffSpacing}
-                      systemSpacing={settings.systemSpacing}
-                      stemLength={settings.stemLength}
-                      voltaSpacing={settings.voltaSpacing}
-                      hairpinOffsetY={settings.hairpinOffsetY}
-                      hideVoice2Rests={settings.hideVoice2Rests}
-                      tempoOffsetX={settings.tempoOffsetX}
-                      tempoOffsetY={settings.tempoOffsetY}
-                      measureNumberOffsetX={settings.measureNumberOffsetX}
-                      measureNumberOffsetY={settings.measureNumberOffsetY}
-                      measureNumberFontSize={settings.measureNumberFontSize}
-                      durationSpacingCompression={settings.durationSpacingCompression}
-                      measureWidthCompression={settings.measureWidthCompression}
-                       active={!suspendPreview}
-                       theme={resolvedTheme}
-                      />
+                      layout={pagePreviewLayout}
+                      active={!suspendPreview}
+                      theme={resolvedTheme}
+                    />
                   ) : null}
                 </div>
               </div>

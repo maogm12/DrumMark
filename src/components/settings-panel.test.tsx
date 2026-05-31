@@ -91,4 +91,20 @@ describe("SettingsPanel smoke", () => {
     expect(toggle).toBeTruthy();
     expect(toggle!.getAttribute("data-state")).toBe("unchecked");
   });
+
+  it("score header visibility toggles render inside Staff & Layout accordion", () => {
+    const container = renderSync(
+      <SettingsPanel
+        settings={defaultSettings}
+        updateSetting={noop}
+        updatePagePadding={noop}
+        debugMode={false}
+      />,
+    );
+    openAccordionItem(container, "Staff & Layout");
+    expect(container.innerHTML).toContain("Hide title");
+    expect(container.innerHTML).toContain("Hide clef");
+    expect(container.innerHTML).toContain("Hide measure numbers");
+    expect(container.querySelectorAll(".toggle-root").length).toBeGreaterThanOrEqual(8);
+  });
 });

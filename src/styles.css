@@ -1268,6 +1268,11 @@ button {
   box-shadow: var(--shadow-md);
 }
 
+.staff-printable-frame-rendering {
+  opacity: 0.72;
+  pointer-events: none;
+}
+
 .staff-rendering {
   position: absolute;
   top: 50%;

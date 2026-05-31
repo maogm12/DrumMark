@@ -9,7 +9,13 @@ type RenderOptions = {
   staffSpacePt?: number;
   pageWidth?: number;
   pageHeight?: number;
-  showTitle?: boolean;
+  hideTitle?: boolean;
+  hideSubtitle?: boolean;
+  hideComposer?: boolean;
+  hideTempo?: boolean;
+  hideTimeSignature?: boolean;
+  hideClef?: boolean;
+  hideMeasureNumber?: boolean;
   topMargin?: number;
   bottomMargin?: number;
   leftMargin?: number;
@@ -28,6 +34,21 @@ type RenderOptions = {
 
 type Scene = Parameters<typeof renderSceneToSvg>[0];
 
+function layoutVisibilityOptions(options?: Pick<
+  RenderOptions,
+  "hideTitle" | "hideSubtitle" | "hideComposer" | "hideTempo" | "hideTimeSignature" | "hideClef" | "hideMeasureNumber"
+>): Record<string, boolean> {
+  return {
+    hideTitle: options?.hideTitle ?? false,
+    hideSubtitle: options?.hideSubtitle ?? false,
+    hideComposer: options?.hideComposer ?? false,
+    hideTempo: options?.hideTempo ?? false,
+    hideTimeSignature: options?.hideTimeSignature ?? false,
+    hideClef: options?.hideClef ?? false,
+    hideMeasureNumber: options?.hideMeasureNumber ?? false,
+  };
+}
+
 function buildLayoutOptions(options?: RenderOptions): Record<string, unknown> {
   return {
     pageWidth: options?.pageWidth ?? 612,
@@ -45,6 +66,7 @@ function buildLayoutOptions(options?: RenderOptions): Record<string, unknown> {
     voltaSpacing: options?.voltaSpacing ?? SETTINGS_RANGES.voltaSpacing.default,
     hairpinOffsetY: options?.hairpinOffsetY ?? SETTINGS_RANGES.hairpinOffsetY.default,
     hideVoice2Rests: options?.hideVoice2Rests ?? false,
+    ...layoutVisibilityOptions(options),
     durationSpacingCompression: options?.durationSpacingCompression ?? SETTINGS_RANGES.durationSpacingCompression.default,
     measureWidthCompression: options?.measureWidthCompression ?? SETTINGS_RANGES.measureWidthCompression.default,
     debug: options?.debug ? 1 : 0,

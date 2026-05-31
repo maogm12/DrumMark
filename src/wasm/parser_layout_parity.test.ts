@@ -111,7 +111,6 @@ describe("parser/layout wasm semantic parity", () => {
       pageWidth: 612,
       pageHeight: 792,
       staffSpacePt: 10.0,
-      showTitle: true,
     });
 
     expect(score.errors).toEqual([]);
@@ -174,7 +173,6 @@ SD | d d d d | d d d d |
       pageWidth: 612,
       pageHeight: 792,
       staffSpacePt: 10.0,
-      showTitle: true,
     });
 
     expect(score.errors.length).toBeGreaterThan(0);

@@ -5,6 +5,7 @@ import type { AppSettings } from "../hooks/useAppSettings";
 import type { PagePadding } from "../renderer/renderOptions";
 import { SETTINGS_RANGES } from "../renderer/renderOptions";
 import { useT } from "../i18n/context";
+import type { I18nKey } from "../i18n/keys";
 
 function Numeric({
   labelKey,
@@ -15,7 +16,7 @@ function Numeric({
   onChange,
   unit,
 }: {
-  labelKey: string;
+  labelKey: I18nKey;
   value: number;
   min: number;
   max: number;
@@ -24,7 +25,7 @@ function Numeric({
   unit?: string;
 }) {
   const { t } = useT();
-  const label = t(labelKey as Parameters<typeof t>[0]);
+  const label = t(labelKey);
   return (
     <NumericSettingControl
       label={label}
@@ -37,6 +38,26 @@ function Numeric({
       ariaLabelDecrease={t("settings.decrease", { label })}
       ariaLabelIncrease={t("settings.increase", { label })}
     />
+  );
+}
+
+function ToggleSetting({
+  labelKey,
+  checked,
+  onCheckedChange,
+}: {
+  labelKey: I18nKey;
+  checked: boolean;
+  onCheckedChange: (checked: boolean) => void;
+}) {
+  const { t } = useT();
+  return (
+    <label className="setting-row toggle">
+      <span>{t(labelKey)}</span>
+      <Switch.Root className="toggle-root" checked={checked} onCheckedChange={onCheckedChange}>
+        <Switch.Thumb className="toggle-thumb" />
+      </Switch.Root>
+    </label>
   );
 }
 
@@ -73,16 +94,11 @@ export function SettingsPanel({
           <span className="settings-accordion-chevron" aria-hidden />
         </Accordion.Trigger>
         <Accordion.Content className="settings-content">
-          <label className="setting-row toggle">
-            <span>{t("settings.hideVoice2Rests")}</span>
-            <Switch.Root
-              className="toggle-root"
-              checked={settings.hideVoice2Rests}
-              onCheckedChange={(checked) => updateSetting("hideVoice2Rests", checked)}
-            >
-              <Switch.Thumb className="toggle-thumb" />
-            </Switch.Root>
-          </label>
+          <ToggleSetting
+            labelKey="settings.hideVoice2Rests"
+            checked={settings.hideVoice2Rests}
+            onCheckedChange={(checked) => updateSetting("hideVoice2Rests", checked)}
+          />
           <Numeric labelKey="settings.stemLength" value={settings.stemLength} min={-12} max={12} step={1} onChange={(value) => updateSetting("stemLength", value)} />
         </Accordion.Content>
       </Accordion.Item>
@@ -93,6 +109,13 @@ export function SettingsPanel({
           <span className="settings-accordion-chevron" aria-hidden />
         </Accordion.Trigger>
         <Accordion.Content className="settings-content">
+          <ToggleSetting labelKey="settings.hideTitle" checked={settings.hideTitle} onCheckedChange={(checked) => updateSetting("hideTitle", checked)} />
+          <ToggleSetting labelKey="settings.hideSubtitle" checked={settings.hideSubtitle} onCheckedChange={(checked) => updateSetting("hideSubtitle", checked)} />
+          <ToggleSetting labelKey="settings.hideComposer" checked={settings.hideComposer} onCheckedChange={(checked) => updateSetting("hideComposer", checked)} />
+          <ToggleSetting labelKey="settings.hideTempo" checked={settings.hideTempo} onCheckedChange={(checked) => updateSetting("hideTempo", checked)} />
+          <ToggleSetting labelKey="settings.hideTimeSignature" checked={settings.hideTimeSignature} onCheckedChange={(checked) => updateSetting("hideTimeSignature", checked)} />
+          <ToggleSetting labelKey="settings.hideClef" checked={settings.hideClef} onCheckedChange={(checked) => updateSetting("hideClef", checked)} />
+          <ToggleSetting labelKey="settings.hideMeasureNumber" checked={settings.hideMeasureNumber} onCheckedChange={(checked) => updateSetting("hideMeasureNumber", checked)} />
           <Numeric labelKey="settings.staffSpacePt" value={Math.round(settings.staffSpacePt * 10)} min={10} max={100} step={5} unit="pt" onChange={(value) => updateSetting("staffSpacePt", value / 10)} />
           <Numeric labelKey="settings.systemSpacing" value={settings.systemSpacing} min={SETTINGS_RANGES.systemSpacing.min} max={SETTINGS_RANGES.systemSpacing.max} step={1} onChange={(value) => updateSetting("systemSpacing", value)} />
           <Numeric labelKey="settings.titleHeight" value={settings.headerHeight} min={SETTINGS_RANGES.headerHeight.min} max={SETTINGS_RANGES.headerHeight.max} step={1} onChange={(value) => updateSetting("headerHeight", value)} />

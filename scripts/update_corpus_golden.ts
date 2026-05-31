@@ -98,10 +98,10 @@ async function main() {
 
   for (const file of EXAMPLE_CORPUS_FILES) {
     const source = readFileSync(join(REPO_ROOT, file), "utf8");
-    const scene = await buildLayoutSceneFromSourceNode(source, { staffSpacePt: 10.0, pageWidth: 612, showTitle: true });
+    const scene = await buildLayoutSceneFromSourceNode(source, { staffSpacePt: 10.0, pageWidth: 612 });
     sceneReport.push({ file, summary: sceneSummary(scene) });
 
-    const svg = (await renderSourcePagesToSvgsNode(source, { staffSpacePt: 10.0, pageWidth: 612, showTitle: true })).join("\n");
+    const svg = (await renderSourcePagesToSvgsNode(source, { staffSpacePt: 10.0, pageWidth: 612 })).join("\n");
     svgSemanticReport.push({ file, summary: svgSemanticSummary(svg) });
   }
 
@@ -115,7 +115,7 @@ async function main() {
   // Update scene snapshots
   for (const file of REPRESENTATIVE_SCENE_FILES) {
     const source = readFileSync(join(REPO_ROOT, file), "utf8");
-    const scene = await buildLayoutSceneFromSourceNode(source, { staffSpacePt: 10.0, pageWidth: 612, showTitle: true });
+    const scene = await buildLayoutSceneFromSourceNode(source, { staffSpacePt: 10.0, pageWidth: 612 });
     const snapshotPath = join(
       REPO_ROOT,
       "docs",

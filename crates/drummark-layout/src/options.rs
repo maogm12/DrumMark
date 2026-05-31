@@ -1,5 +1,5 @@
 /// Default stem length before user offset, in staff-space units.
-pub const DEFAULT_STEM_LEN_SS: f32 = 4.0;
+pub const DEFAULT_STEM_LEN_SS: f32 = 3.0;
 
 #[derive(Debug, Clone)]
 pub struct LayoutOptions {

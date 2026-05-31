@@ -404,7 +404,7 @@ When an older note conflicts with this file, treat this file plus the active spe
 
 ## 2026-05-29 Stem Length Fine Offset In Pt
 
-- `stem_len_offset_pt` fine-tunes the default span: `stem_length_pt = staff_space_pt × 4 + offset_pt`. WASM key `stemLenOffsetPt`; app slider −12…+12 pt step 0.5. Base still scales with staff space; offset stays in pt for finer control than staff-space steps.
+- `stem_len_offset_pt` fine-tunes the default span: `stem_length_pt = staff_space_pt × DEFAULT_STEM_LEN_SS + offset_pt`. WASM key `stemLenOffsetPt`; app slider −12…+12 pt step 0.5. Base still scales with staff space; offset stays in pt for finer control than staff-space steps.
 
 ## 2026-05-29 Barline Vertical Span And Continuation Repeat Start
 

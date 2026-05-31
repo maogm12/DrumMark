@@ -508,7 +508,7 @@ mod tests {
         assert_eq!(opts.header_staff_spacing_pt, 60.0);
         assert_eq!(opts.volta_offset_y, 0.0);
         assert_eq!(opts.stem_len_offset_pt, 0.0);
-        assert!((stem_length_pt(&opts) - 20.0).abs() < 0.01);
+        assert!((stem_length_pt(&opts) - 15.0).abs() < 0.01);
     }
 
     #[test]
@@ -518,9 +518,9 @@ mod tests {
             staff_space_pt: 5.0,
             ..Default::default()
         };
-        assert!((stem_length_pt(&opts) - 22.0).abs() < 0.01);
+        assert!((stem_length_pt(&opts) - 17.0).abs() < 0.01);
         opts.staff_space_pt = 8.0;
-        assert!((stem_length_pt(&opts) - 34.0).abs() < 0.01);
+        assert!((stem_length_pt(&opts) - 26.0).abs() < 0.01);
     }
 
     #[test]

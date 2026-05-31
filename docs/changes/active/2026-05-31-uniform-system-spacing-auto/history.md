@@ -112,3 +112,56 @@ Changes made:
 
 Resolution:
 - R2: addressed in `plan.md`; pending sub-agent re-review.
+
+---
+
+### Round 3 - Plan Review
+
+Reviewer: Rawls (sub-agent)
+
+### Review Checklist
+
+- [x] Problem clarity — Clear. The plan now states both the current uneven visual-height advance and the desired score-wide uniform spacing behavior.
+- [x] Goal and non-goals — Clear. It explicitly rejects modes, migration, and guaranteed non-overlap after negative offset.
+- [x] Scope reasonableness — Reasonable for a Spec / Contract Change. The affected layout, WASM/app settings, tests, and contract update are all in scope.
+- [x] Hidden compatibility risks — Adequately covered. The plan names old/new option keys and explicitly says old persisted `systemSpacing` is ignored/reset, not migrated.
+- [x] Task actionability — Good. The pagination formula, coordinate basis, option names, and test targets are concrete enough to implement.
+- [x] Task independence — Good. Option semantics, pagination behavior, and WASM/app wiring remain separable with sensible dependencies.
+- [x] Acceptance criteria verifiability — Good. The plan defines the measured gap as `next_origin - previous_origin - staff_bounding_height_pt`, which makes the uniform-spacing assertion testable.
+- [x] Test plan sufficiency — Sufficient. It now includes same-page, multi-page, negative offset, old setting reset, WASM build, typecheck, and golden handling.
+- [x] Unresolved design questions — None blocking. The score-wide pre-pagination rule and page-break behavior are specified.
+- [x] Spec Delta required? — Yes, and it is present.
+- [x] Spec Delta specificity (if present) — Specific enough. It defines the formula, coordinate basis, option mapping, negative offset behavior, and page-break semantics.
+- [x] ADR-worthy decision? — No. This is an important layout contract decision, but the contract addendum is enough; no separate ADR is needed.
+- [x] Human stamp required? — Yes. This remains a Spec / Contract Change and needs `APPROVED_FOR_IMPLEMENTATION` in `history.md` before implementation.
+
+### Comments
+
+1. The Round 2 revision addresses the earlier blockers. The most important fixes are the explicit score-wide pre-pagination calculation, the precise spacing basis, and the page-break rule.
+2. Systems split by a later page break still contribute to the score-wide maximum, which matches the user's “所有 system 都用这个间距” requirement and avoids per-page visual drift.
+3. Implementation caution: the plan says no fixed-point repagination should be needed unless rendering changes after pagination. Implementation review should verify that no elements get added, removed, or vertically resized only after page placement.
+
+### Agent Response
+
+- Agreed. The implementation review will explicitly check that pagination/page assembly does not add, remove, or vertically resize content after spacing measurement in a way that invalidates the one-pass score-wide spacing calculation.
+
+### Resolution
+
+- R3: approved.
+
+STATUS: APPROVED
+
+### Approved Plan
+
+Approved file: `docs/changes/active/2026-05-31-uniform-system-spacing-auto/plan.md`
+Approved commit: ae2c2b5
+Approved summary:
+- Compute one score-wide system spacing from logical adjacent unpaginated system boxes before pagination.
+- Define `finalSystemSpacing` as the extra same-page advance after `staff_bounding_height_pt`.
+- Use `requiredForPair = previous.visual_bottom - previous.local_system_origin_y - staff_bounding_height_pt - (next.visual_top - next.local_system_origin_y)` and take the score-wide max plus collision gap.
+- Apply `systemSpacingOffsetPt` / `system_spacing_offset_pt` after automatic spacing; negative offsets may intentionally permit overlap.
+- Ignore/reset old persisted `systemSpacing`; do not migrate old absolute values.
+- Append the `RENDER_LAYOUT_CONTRACT.md` addendum before implementation review.
+
+Open conditions:
+- Human stamp required before implementation.

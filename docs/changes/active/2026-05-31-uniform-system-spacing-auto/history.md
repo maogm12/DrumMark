@@ -165,3 +165,27 @@ Approved summary:
 
 Open conditions:
 - Human stamp required before implementation.
+
+---
+
+### Round 4 - Plan Revision
+
+Reviewer: user-directed design change
+
+### Comments
+
+1. The approved score-wide pre-pagination calculation over-constrains spacing when a tall element is split from the next logical system by a page break.
+2. The algorithm should instead find the smallest uniform spacing that prevents overlap among actual same-page adjacent systems after pagination.
+3. Tall content that lands across a page break should not inflate the final spacing.
+
+### Agent Response
+
+- Revised `plan.md` to replace score-wide pre-pagination adjacency with pagination-aware candidate iteration.
+- The new algorithm starts from `DEFAULT_SYSTEM_SPACING_PT`, paginates, checks same-page adjacent pairs only, raises the candidate when same-page overlap requires it, and repeats until stable.
+- Updated Spec Delta, Task 3 action/acceptance, tests, risks, and revision log.
+
+### Resolution
+
+- R4: open, pending sub-agent re-review because the approved Spec Delta changed materially.
+
+STATUS: CHANGES_REQUESTED

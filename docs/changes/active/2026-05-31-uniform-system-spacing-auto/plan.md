@@ -12,7 +12,7 @@ The requested behavior is a uniform system spacing model: find the smallest one 
 
 ## Goal
 
-- Use one score-wide final system spacing value for every non-first system placement on every page.
+- Use one final system spacing value for every non-first system placement on every page.
 - Compute that value from layout content:
   - `autoBaseSpacing = max(DEFAULT_SYSTEM_SPACING_PT, requiredNonOverlapSpacing + SYSTEM_COLLISION_GAP_PT)`
   - `finalSystemSpacing = autoBaseSpacing + systemSpacingOffsetPt`
@@ -32,7 +32,7 @@ The requested behavior is a uniform system spacing model: find the smallest one 
 
 ## Current Plan
 
-Introduce a layout-owned default spacing constant and rename the option internally from absolute `system_spacing_pt` to offset semantics. During pagination, compute all system boxes first, measure the required spacing for every logical adjacent system pair in score order, choose one score-wide spacing value, and paginate all systems with that value.
+Introduce a layout-owned default spacing constant and rename the option internally from absolute `system_spacing_pt` to offset semantics. During pagination, compute all system boxes first, then find the smallest one spacing value that prevents overlap for actual same-page adjacent systems after pagination. A very tall element that lands across a page break from the next logical system should not inflate spacing for the whole score.
 
 `finalSystemSpacing` keeps the existing spacing coordinate basis: it is the extra advance after the previous system's staff bounding height when placing another system on the same page. In other words, for a same-page pair:
 
@@ -50,7 +50,7 @@ requiredForPair =
   - (next.visual_top - next.local_system_origin_y)
 ```
 
-The score-wide `requiredNonOverlapSpacing` is `max(0, requiredForPair...)` across all logical adjacent systems before pagination. Logical adjacent systems that later land on different pages still contribute to this score-wide maximum; page breaks do not create pair-specific spacing and do not remove a pair from the calculation. Header spacing remains independently governed by existing header cursor logic.
+`requiredNonOverlapSpacing` is the maximum required spacing across actual same-page adjacent pairs for a candidate pagination. To find the automatic base spacing, start from `DEFAULT_SYSTEM_SPACING_PT`, paginate with the current candidate, inspect same-page adjacent systems only, raise the candidate to the largest observed `requiredForPair + SYSTEM_COLLISION_GAP_PT` when needed, and repeat until no same-page pair requires more spacing. Since increasing spacing can only keep or move systems to later pages, the loop should converge; the implementation should cap iterations and keep the largest candidate seen as a safety guard. Header spacing remains independently governed by existing header cursor logic.
 
 Use explicit option names:
 
@@ -72,21 +72,23 @@ Date: 2026-05-31
 Source change: `docs/changes/active/2026-05-31-uniform-system-spacing-auto/plan.md`
 Status: Accepted
 
-System pagination must use a single score-wide final spacing value between non-first systems rather than letting each system pair use the preceding system's full visual height as its stride.
+System pagination must use a single final spacing value between non-first systems rather than letting each system pair use the preceding system's full visual height as its stride.
 
 The layout engine owns a default system spacing constant. The public/app setting is a point offset applied after automatic spacing is computed. The offset option is named `systemSpacingOffsetPt` at the WASM/JS layout boundary and maps to `system_spacing_offset_pt` in Rust layout options.
 
-For an ordered set of rendered `SystemLayoutBox` records, pagination computes the largest spacing required by any logical adjacent pair in score order to keep the previous system's visual bottom from overlapping the next system's visual top, then adds a layout-owned collision gap. This calculation happens before pagination from unpaginated system boxes. Logical adjacent systems that later land on different pages still contribute to the score-wide maximum; page breaks do not create pair-specific spacing.
+For an ordered set of rendered `SystemLayoutBox` records, pagination must find the smallest uniform spacing that keeps actual same-page adjacent systems from overlapping before user offset is applied. Logical adjacent systems that land on different pages do not contribute to the required spacing for that pagination; page breaks may therefore prevent a tall element from inflating the final spacing.
 
 `finalSystemSpacing` and `requiredNonOverlapSpacing` use the existing system-spacing coordinate basis: the extra same-page advance after the previous system's staff bounding height. For a same-page pair:
 
 `next_system_origin_y = previous_system_origin_y + staff_bounding_height_pt + finalSystemSpacing`
 
-For each logical adjacent pair:
+For each same-page adjacent pair under a candidate pagination:
 
 `requiredForPair = previous.visual_bottom - previous.local_system_origin_y - staff_bounding_height_pt - (next.visual_top - next.local_system_origin_y)`
 
 `requiredNonOverlapSpacing = max(0, requiredForPair...)`
+
+The automatic spacing algorithm starts with `DEFAULT_SYSTEM_SPACING_PT`, paginates with that candidate, computes `requiredNonOverlapSpacing` from same-page adjacent pairs, raises the candidate to `max(candidate, requiredNonOverlapSpacing + SYSTEM_COLLISION_GAP_PT)` when needed, and repeats until the candidate no longer grows. Implementations must cap iteration count and preserve the largest candidate reached if the cap is hit.
 
 The automatic base spacing is:
 
@@ -98,7 +100,7 @@ The final spacing used between non-first systems is:
 
 `systemSpacingOffsetPt` may be negative. Negative offsets are allowed to make content overlap; the engine does not clamp the final spacing to the non-overlap requirement after applying the offset.
 
-Header-to-first-system placement keeps the existing header cursor behavior. The uniform final spacing applies to subsequent same-page systems and is used consistently during pagination and page assembly. First systems after a page break start from the page top margin/header cursor rules; they do not receive pair-specific spacing from the previous page.
+Header-to-first-system placement keeps the existing header cursor behavior. The uniform final spacing applies to subsequent same-page systems and is used consistently during pagination and page assembly. First systems after a page break start from the page top margin/header cursor rules; they do not receive page-crossing spacing from the previous page.
 
 Visual bounds remain authoritative for overflow diagnostics and validation; they no longer cause one individual system pair to receive a unique larger stride except through the global final spacing calculation.
 ```
@@ -181,12 +183,12 @@ Scope:
 
 Action:
 - Stop pre-spacing systems by user-controlled absolute spacing before pagination.
-- Compute system boxes and derive one score-wide final spacing from all logical adjacent visual-bound requirements before pagination.
+- Compute system boxes and derive one final spacing by iterating candidate pagination and same-page visual-bound requirements.
 - Use that final spacing for all non-first system placements.
 - Preserve header-first-system cursor behavior, first-system-after-page-break behavior, and overflow diagnostics.
 
 Input / Output Contract:
-- Input: ordered unpaginated `SystemLayoutBox` records with local system origins and visual bounds.
+- Input: ordered `SystemLayoutBox` records with local system origins and visual bounds.
 - Output: `PlacedSystemBox` records whose same-page non-first system origins follow `next_origin = previous_origin + staff_bounding_height_pt + finalSystemSpacing`, subject to page breaks.
 
 Dependencies:
@@ -194,7 +196,8 @@ Dependencies:
 
 Acceptance:
 - A fixture with one large hairpin/volta/navigation mark produces equal same-page spacing gaps, measured as `next_origin - previous_origin - staff_bounding_height_pt`.
-- Multi-page output uses the same final spacing for non-first systems after page breaks; systems separated by a page break still contributed to the score-wide spacing calculation but do not receive pair-specific page-crossing spacing.
+- A fixture where an otherwise spacing-inflating tall element lands across a page break does not inflate the final spacing beyond the default/candidate needed for same-page pairs.
+- Multi-page output uses the same final spacing for all non-first same-page systems after page breaks.
 - Negative offset reduces all same-page spacing gaps equally and may permit visual overlap.
 - Golden changes are intentional and explained.
 
@@ -240,13 +243,14 @@ Verification:
 - `npm run typecheck`
 - `npm run wasm:build`
 - Golden/snapshot update for any intentional layout output changes.
-- Layout tests for same-page uniform spacing, multi-page uniform spacing, negative offset overlap allowance, and old persisted `systemSpacing` reset.
+- Layout tests for same-page uniform spacing, page-break-separated tall content not inflating spacing, multi-page uniform spacing, negative offset overlap allowance, and old persisted `systemSpacing` reset.
 - Browser smoke against `http://localhost:5175/DrumMark/` if permitted by the in-app browser policy.
 
 ## Risks / Notes
 
 - The current pagination code uses visual height as the cursor advance. The new model must avoid losing overflow validation while no longer letting each system pair receive an independent stride.
-- Page breaks can change because final uniform spacing may be larger than some prior pair-specific gaps or smaller than the largest previous visual-height stride. The spacing calculation is score-wide and based on logical adjacency before pagination, so it should not need fixed-point repagination unless rendering itself changes after pagination.
+- Page breaks can change because final uniform spacing may be larger than some prior pair-specific gaps or smaller than the largest previous visual-height stride. The spacing calculation is pagination-aware and iterative because a tall adjacent pair may become harmless when split across pages.
+- Increasing the candidate spacing should converge because it can only preserve or reduce same-page adjacency by moving later systems down/pageward. The implementation still needs an iteration cap for safety.
 - Negative offsets intentionally allow overlap, so validators should not treat all system-to-system visual overlap as a hard layout error unless an existing contract already requires it.
 - Existing `systemSpacing` localStorage values will be dropped/reset, per user request: no migration.
 
@@ -263,3 +267,4 @@ Verification:
 |-------|------|--------------------|
 | 1 | 2026-05-31 | Initial draft |
 | 2 | 2026-05-31 | Clarified score-wide pre-pagination spacing, coordinate basis, page-break behavior, option names, and acceptance tests |
+| 3 | 2026-05-31 | Changed spacing derivation to pagination-aware iteration so page-break-separated tall content does not inflate spacing |

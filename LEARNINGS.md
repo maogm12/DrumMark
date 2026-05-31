@@ -218,6 +218,14 @@ When an older note conflicts with this file, treat this file plus the active spe
 ## 2026-05-22 Rest Layout Planning
 
 - Rest event generation is already reasonably musical in `crates/drummark-core/src/render_score.rs`: measure gaps are split at grouping boundaries and then decomposed into primitive rest durations before reaching layout.
+
+## 2026-05-31 Hairpin Bottom Skyline Placement
+
+- Hairpins are emitted as post-layer structural spans after system-owned note/stem/beam items have already been built. Hairpin skyline placement should therefore sample the target `SceneSystem.items`, not only the current post-layer sink.
+- `bottom_skyline_sample()` returns occupied content bottom, not a hairpin centerline. For open wedges, derive the center Y from `occupied_bottom + max_open_height / 2` so the top hairpin stroke, not merely the bottom stroke, clears voice-2 stems and beams.
+
+## 2026-05-22 Rest Layout Planning Continued
+
 - The remaining weakness is in `crates/drummark-layout/src/lib.rs`: `render_slot_group()` currently resolves rest X intelligently but still hardcodes rest Y to `staff_top + 20.0` for voice 1 and `staff_top + 30.0` for voice 2.
 - Because rest placement happens before any collision-aware lane selection, same-slot combinations like rest+notehead, rest+stem, rest+beam, and rest+accent can overlap even though the rhythmic slot center is correct.
 - A robust fix belongs in layout, not the SVG adapter: build slot-local obstacle geometry, choose from canonical rest lanes per voice, and preserve whole-measure rest alignment as a separate rule.

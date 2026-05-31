@@ -976,6 +976,83 @@ mod tests {
     }
 
     #[test]
+    fn test_hairpin_sits_below_voice2_stems() {
+        let mut measure = regular_measure(0, 0, 4);
+        for event in &mut measure.events {
+            event.track = "BD".into();
+            event.track_family = "drum".into();
+            event.glyph = "d".into();
+            event.voice = 2;
+        }
+        measure.hairpins = vec![HairpinSpan {
+            kind: HairpinKind::Decrescendo,
+            start: Fraction {
+                numerator: 0,
+                denominator: 1,
+            },
+            end: Fraction {
+                numerator: 1,
+                denominator: 1,
+            },
+            start_measure_index: 0,
+            end_measure_index: 0,
+        }];
+
+        let scene = build_layout_scene(
+            &RenderScore {
+                version: RENDER_SCORE_VERSION.to_string(),
+                header: RenderHeader {
+                    tempo: 120,
+                    time_beats: 4,
+                    time_beat_unit: 4,
+                    divisions: 8,
+                    note_value: 8,
+                    grouping: vec![2, 2],
+                    title: None,
+                    subtitle: None,
+                    composer: None,
+                },
+                tracks: vec![RenderTrack {
+                    id: "BD".into(),
+                    family: "drum".into(),
+                }],
+                measures: vec![measure],
+                errors: vec![],
+                repeat_spans: vec![],
+            },
+            &LayoutOptions::default(),
+        );
+        let page = &scene.pages[0];
+        let staff_space_pt = LayoutOptions::default().staff_space_pt;
+        let mut content_bottom = f32::NEG_INFINITY;
+        for item in page_all_items(page) {
+            if !matches!(item.role.as_str(), "notehead" | "stem" | "beam" | "beam-secondary") {
+                continue;
+            }
+            let Some((_, y, _, height)) = item_bounds(item, staff_space_pt) else {
+                continue;
+            };
+            content_bottom = content_bottom.max(y + height);
+        }
+        assert!(
+            content_bottom.is_finite(),
+            "expected voice-2 note content in fixture"
+        );
+
+        let hairpin_top = line_for_role(page, "hairpin-top");
+        let hairpin_bottom = line_for_role(page, "hairpin-bottom");
+        let hairpin_highest = hairpin_top
+            .y1_pt
+            .min(hairpin_top.y2_pt)
+            .min(hairpin_bottom.y1_pt)
+            .min(hairpin_bottom.y2_pt);
+        assert!(
+            hairpin_highest >= content_bottom - 0.5,
+            "hairpin top should clear voice-2 content: hairpin_highest={hairpin_highest:.2} content_bottom={content_bottom:.2}"
+        );
+    }
+
+    #[test]
     fn test_dynamic_marks_render_below_hairpins_as_text_runs() {
         let mut measure = regular_measure(0, 0, 4);
         measure.hairpins = vec![HairpinSpan {

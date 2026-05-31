@@ -428,3 +428,26 @@ Verification:
 - `npm test -- --run src/hooks/useAppSettings.test.ts src/components/settings-panel.test.tsx src/renderer/svgSceneAdapter.test.ts` passed.
 - `npm run build-docs` passed.
 - `npm run wasm:build` passed.
+
+### Round 2 - Implementation Review
+
+Reviewer: Rawls (sub-agent)
+
+Findings:
+- None blocking.
+
+Comments:
+- `pagination.rs` no longer relies on monotonic validity. It checks the lower bound, establishes a valid upper bound with a capped growth loop, scans candidate values at the tolerance step, and returns the first valid candidate.
+- Search uses pre-offset candidates; `system_spacing_offset_pt` is applied only in the final pagination pass, so negative offsets can reintroduce overlap as planned.
+- `build-docs.ts` now passes `systemSpacingOffset`.
+- Old active `systemSpacing` references are gone from app/render/docs paths except intentional legacy reset/tests and historical text superseded by the addendum.
+
+Open questions:
+- The non-monotonic regression test checks first-valid-candidate behavior near the default. A future stricter test could assert the later invalid interval more literally, but this is not blocking because the implementation no longer uses binary search.
+
+Verification notes:
+- Reviewer inspected commit `baa04ea`, current branch diff against `main`, pagination implementation, layout tests, app/WASM option wiring, docs builder, plan, contract addendum, history, LEARNINGS, and golden/WASM presence.
+- Reviewer did not rerun the full suite in Round 2; they reviewed the reported pass list and relevant files directly.
+- Worktree was clean except the two untracked Chinese example files.
+
+STATUS: APPROVED

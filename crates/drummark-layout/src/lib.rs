@@ -2116,8 +2116,6 @@ mod tests {
         note_score.header.divisions = 4;
         note_score.header.grouping = vec![4];
         let note_scene = build_layout_scene(&note_score, &LayoutOptions::default());
-        let opts = LayoutOptions::default();
-
         let rest = page_all_items(&silent_scene.pages[0])
             .find(|item| item.role == "rest" && item.measure_id.as_deref() == Some("measure-0"))
             .expect("expected whole-measure rest");

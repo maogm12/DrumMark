@@ -18,7 +18,7 @@ const docsRenderOptions = {
     leftMargin: DEFAULT_RENDER_OPTIONS.pagePadding.left,
     rightMargin: DEFAULT_RENDER_OPTIONS.pagePadding.right,
     stemLength: DEFAULT_RENDER_OPTIONS.stemLength,
-    systemSpacing: DEFAULT_RENDER_OPTIONS.systemSpacing,
+    systemSpacingOffset: DEFAULT_RENDER_OPTIONS.systemSpacingOffset,
     headerHeight: DEFAULT_RENDER_OPTIONS.headerHeight,
     headerStaffSpacing: DEFAULT_RENDER_OPTIONS.headerStaffSpacing,
     voltaSpacing: DEFAULT_RENDER_OPTIONS.voltaSpacing,

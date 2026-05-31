@@ -427,3 +427,9 @@ When an older note conflicts with this file, treat this file plus the active spe
 ## 2026-05-31 Stem Vertical Basis
 
 - Normal note stems should keep glyph-specific stem anchor X/Y for the rendered notehead-side endpoint, but their stem-tip length reference must use the resolved staff-position `note_y`. SMuFL anchor Y differs across notehead shapes (for example X noteheads anchor near the upper-right, circle-X anchors at center), so using anchor Y to choose the stem tip makes equal-track notes produce slightly different tip heights and sloped beams.
+
+## 2026-05-31 Uniform System Spacing
+
+- Page-aware automatic system spacing must search candidate pagination results instead of jumping directly to the largest same-page visual overlap requirement. A small spacing increase can push a problematic tall pair across a page break, making the full same-page non-overlap spacing unnecessary.
+- `systemSpacingOffsetPt` is applied after the automatic base spacing search. The search itself uses pre-offset candidates so negative offsets can intentionally reintroduce overlap without changing what the engine considers the automatic non-overlap baseline.
+- Candidate validity for page-aware spacing is not monotonic: changing spacing can move a system to a new page and expose a different same-page adjacent pair. Use a tolerance-step bounded scan after establishing a valid upper bound; binary search can skip an earlier valid interval.

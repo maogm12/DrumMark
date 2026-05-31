@@ -306,7 +306,7 @@ pub fn build_layout_scene(score: &RenderScore, opts: &LayoutOptions) -> LayoutSc
         let is_last = sys_idx + 1 == planned_systems.len();
         let system_id = format!("system-{sys_idx}");
         let sy = sys_y;
-        sys_y += staff_bounding_height_pt(staff_ss) + opts.system_spacing_pt;
+        sys_y += staff_bounding_height_pt(staff_ss) + DEFAULT_SYSTEM_SPACING_PT;
         let s_top = sy + staff_ss;
         let s_bot = sy + staff_bounding_height_pt(staff_ss);
         let s_mid = sy + staff_ss * 3.0;

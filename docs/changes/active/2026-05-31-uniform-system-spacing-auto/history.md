@@ -1,0 +1,453 @@
+# History
+
+## Path A — Full Plan Review
+
+### Round 1 - Plan Review
+
+Reviewer: self-review
+
+### Review Checklist
+
+- [x] Problem clarity — Clear. The plan identifies the current pair-specific visual-height stride and the desired uniform spacing derived from the maximum non-overlap need.
+- [x] Goal and non-goals — Clear. It explicitly removes mode choices, treats the setting as offset, allows overlap from negative offsets, and avoids changing individual span semantics.
+- [x] Scope reasonableness — Reasonable for a Spec / Contract Change. Scope spans layout pagination, options/WASM/app wiring, tests, goldens, and a contract addendum.
+- [x] Hidden compatibility risks — Identified. Dropping old persisted `systemSpacing` values is intentional per user request; page breaks and goldens may change.
+- [x] Task actionability — Actionable. Tasks have file scopes, behavior changes, acceptance criteria, and verification commands.
+- [x] Task independence — Mostly independent and ordered correctly: contract/approval, option semantics, pagination algorithm, then WASM/app wiring.
+- [x] Acceptance criteria verifiability — Verifiable. The plan asks for tests showing uniform gaps, offset behavior including negative overlap allowance, and settings reset behavior.
+- [x] Test plan sufficiency — Sufficient. It includes layout tests, app settings tests, typecheck, WASM rebuild, and golden handling.
+- [x] Unresolved design questions — None blocking. Formula and no-migration behavior match the user's latest decisions.
+- [x] Spec Delta required? — Yes, because this changes layout contract and option semantics.
+- [x] Spec Delta specificity (if present) — Specific enough. It gives formulas, scope of header behavior, negative offset semantics, and visual-bound diagnostic requirements.
+- [x] ADR-worthy decision? — No. This is a layout behavior contract change with clear product direction, not a broad architecture boundary decision requiring ADR.
+- [x] Human stamp required? — Yes. This is a Spec / Contract Change and changes user-visible layout behavior.
+
+### Comments
+
+1. The plan should keep `requiredNonOverlapSpacing` implementation focused on adjacent visual bounds relative to staff origins. It should avoid sampling item roles ad hoc; system boxes already carry visual bounds.
+2. The plan correctly notes that visual validation must remain available even though per-pair stride stops using visual height directly.
+3. The implementation should be careful with the unpaginated scene's preliminary `sys_y`; if those local origins are only staging coordinates, changing them should not leak into final page coordinates except through system-box relative measurements.
+
+### Agent Response
+
+- No plan changes required. The current tasks already call out system-box visual bounds, preservation of diagnostics, and removal of pre-spacing by user-controlled absolute spacing.
+
+### Resolution
+
+- R1: approved, no plan revision required.
+
+STATUS: APPROVED
+
+### Approved Plan
+
+Approved file: `docs/changes/active/2026-05-31-uniform-system-spacing-auto/plan.md`
+Approved commit: d053618
+Approved summary:
+- Implement uniform automatic system spacing with one final spacing value shared across systems.
+- Compute automatic base spacing as the maximum of a layout default and required non-overlap spacing plus a gap.
+- Apply the app/user setting as a final offset, allowing negative values to intentionally overlap systems.
+- Do not expose a mode toggle and do not migrate old `systemSpacing` saved values.
+- Append the layout contract addendum from the plan's Spec Delta.
+
+Open conditions:
+- Human stamp required before implementation.
+
+---
+
+## Human Stamp
+
+Date: 2026-05-31
+Approved by: user
+Approved plan: `docs/changes/active/2026-05-31-uniform-system-spacing-auto/plan.md`
+Approved plan commit: 6e1fde8
+Scope: Implement uniform page-aware automatic system spacing, offset setting semantics, WASM/app wiring, tests, and the layout contract addendum described by the approved plan.
+
+Approval text:
+
+> 开工吧
+
+Conditions:
+- None
+
+Status: APPROVED_FOR_IMPLEMENTATION
+
+---
+
+## Consolidated Changes
+
+Source:
+- `plan.md` > `## Spec Delta`
+
+Affected specs/contracts:
+- `docs/RENDER_LAYOUT_CONTRACT.md`
+
+Summary:
+- System pagination uses one uniform same-page system spacing rather than pair-specific visual-height stride.
+- Automatic base spacing is the smallest valid page-aware candidate found by bounded search before user offset.
+- Cross-page adjacent systems do not inflate spacing; negative user offsets may intentionally overlap systems.
+- Public/app offset naming is `systemSpacingOffsetPt` / `system_spacing_offset_pt`.
+
+Final addendum location:
+- Appended to `docs/RENDER_LAYOUT_CONTRACT.md` under `## Addendum: Uniform Auto System Spacing`
+
+---
+
+### Round 2 - Plan Review
+
+Reviewer: Rawls (sub-agent)
+
+### Review Checklist
+
+- [x] Problem clarity — Clear. The plan identifies the current pair-specific visual-height advance problem and the desired uniform spacing behavior.
+- [x] Goal and non-goals — Mostly clear. It explicitly chooses no mode toggle, no migration, offset semantics, and allows negative-offset overlap.
+- [ ] Scope reasonableness — Scope is right for a Spec / Contract Change, but the plan underestimates pagination complexity: computing one spacing before pagination can change page breaks, which can change adjacency sets, which can change required spacing.
+- [ ] Hidden compatibility risks — Not fully covered. Dropping old `systemSpacing` is stated, but the wire/WASM compatibility story is vague: “keep the wire option key stable only where needed” is not actionable enough.
+- [ ] Task actionability — Partially actionable. The high-level tasks are good, but Task 3 needs a concrete algorithm for document-wide vs page-local spacing, repagination convergence, and how first systems on new pages participate.
+- [x] Task independence — Reasonable. Option semantics, pagination, WASM/app wiring are separated enough, with clear dependencies.
+- [ ] Acceptance criteria verifiability — Needs tightening. “Uniform system-origin gaps” must define whether the measured gap is staff-origin-to-staff-origin, previous staff-bottom-to-next staff-top, or visual-bound spacing.
+- [ ] Test plan sufficiency — Good baseline commands, but insufficient pagination tests. Needs tests for page breaks after spacing expansion, multi-page documents, first system after page break, and negative offset intentionally causing overlap.
+- [ ] Unresolved design questions — Yes. Biggest open question: is the computed final spacing global for the whole score, per page, or per layout pass? User said “所有system都用这个间距”, which sounds score-wide, but pagination may require a fixed-point pass.
+- [x] Spec Delta required? — Yes. This changes layout contract behavior and option semantics; Spec Delta is correctly included.
+- [ ] Spec Delta specificity (if present) — Close, but not specific enough. It needs a precise definition of `requiredNonOverlapSpacing`, coordinate basis, page scope, and whether systems separated by a page break are excluded from adjacency calculations.
+- [ ] ADR-worthy decision? — Probably no ADR required. This is a layout contract behavior change, not a long-term architecture decision, as long as the algorithm is documented in the contract addendum.
+- [x] Human stamp required? — Yes. This is a Spec / Contract Change affecting layout contract and WASM/app behavior, so `APPROVED_FOR_IMPLEMENTATION` is required before coding.
+
+### Comments
+
+1. The plan has the right product direction, but the pagination algorithm is underspecified. The hard part is deciding when spacing computation happens relative to pagination.
+2. If spacing is score-wide, the engine likely needs a two-pass or fixed-point strategy: build unpaginated system boxes, compute uniform spacing from adjacent systems, paginate with that spacing, and ensure page boundaries do not introduce a different adjacency rule.
+3. The plan should explicitly say whether adjacent systems on different pages contribute to `requiredNonOverlapSpacing`. Recommendation: compute required spacing from logical adjacent systems in the score before pagination, then use that score-wide spacing everywhere; page boundaries do not add extra pair-specific spacing.
+4. The option rename needs sharper wording. If there is a Rust field rename, TS type rename, and localStorage reset, list the exact old/new names or state that implementation will discover them and update the plan before coding.
+5. Acceptance should include concrete cases: one system has a tall volta/hairpin and all same-page staff gaps become equal; multi-page output uses the same final spacing after page breaks; negative offset reduces all gaps equally and may overlap; old persisted `systemSpacing` is ignored.
+
+### Agent Response
+
+- Will revise the plan to define score-wide spacing computation before pagination.
+- Will define spacing as the gap between the previous system's staff-bottom boundary and the next system's staff-top boundary; origin-to-origin stride is derived from staff height plus this gap.
+- Will state that logical adjacent systems across future page breaks still contribute to the score-wide required spacing calculation, while actual page breaks do not create pair-specific spacing.
+- Will replace vague WASM compatibility wording with explicit old/new option names and localStorage reset behavior.
+- Will add multi-page, negative-offset, same-page uniformity, and old-setting-reset acceptance criteria.
+
+### Resolution
+
+- R2: open, plan revision pending.
+
+STATUS: CHANGES_REQUESTED
+
+---
+
+### Round 7 - Plan Review
+
+Reviewer: Rawls (sub-agent)
+
+### Review Checklist
+
+- [x] Problem clarity — Clear. The plan states the uneven spacing problem and the page-aware requirement that cross-page pairs must not inflate spacing.
+- [x] Goal and non-goals — Clear. The final spacing is now defined as search result plus offset; modes, migration, and guaranteed non-overlap after negative offset are explicitly out.
+- [x] Scope reasonableness — Reasonable. The scope matches the behavior change: layout pagination, option semantics, WASM/app wiring, tests, and contract addendum.
+- [x] Hidden compatibility risks — Adequately covered. The old `systemSpacing` reset and new Rust/WASM/app names are explicit.
+- [x] Task actionability — Good. Candidate validity, search tolerance, upper-bound search, and output placement rule are specific enough to implement.
+- [x] Task independence — Good. Plan/contract, option semantics, pagination, and WASM/app wiring are separable.
+- [x] Acceptance criteria verifiability — Good. It defines exact gap measurement and includes the no-overshoot threshold fixture.
+- [x] Test plan sufficiency — Sufficient. It covers same-page uniform spacing, cross-page tall content, threshold search behavior, multi-page consistency, negative offset, settings reset, WASM, typecheck, and golden updates.
+- [x] Unresolved design questions — None blocking. The search result is now the source of truth for `autoBaseSpacing`.
+- [x] Spec Delta required? — Yes, correctly included.
+- [x] Spec Delta specificity (if present) — Specific enough. It documents coordinate basis, candidate validity, tolerance-based bounded search, page-break semantics, offset behavior, and visual-bounds role.
+- [x] ADR-worthy decision? — No. This is a layout contract change, and the contract addendum is sufficient.
+- [x] Human stamp required? — Yes. This is still a Spec / Contract Change and needs `APPROVED_FOR_IMPLEMENTATION` recorded before coding.
+
+### Comments
+
+1. The formula conflict is fixed. Defining `autoBaseSpacing` as the bounded-search result makes the threshold/page-break case coherent.
+2. During implementation review, check that the valid upper-bound search cannot loop forever.
+3. During implementation review, check that the final layout pass uses `autoBaseSpacing + offset`, while the search itself uses pre-offset candidates.
+
+### Agent Response
+
+- Agreed. Implementation review will explicitly check bounded upper-bound termination and that user offset is applied only after the automatic base search.
+
+### Resolution
+
+- R7: approved.
+
+STATUS: APPROVED
+
+### Approved Plan
+
+Approved file: `docs/changes/active/2026-05-31-uniform-system-spacing-auto/plan.md`
+Approved commit: 6e1fde8
+Approved summary:
+- Replace pair-specific visual-height system advance with one final spacing value for same-page non-first systems.
+- Derive `autoBaseSpacing` through a page-aware bounded search for the smallest valid candidate at or above `DEFAULT_SYSTEM_SPACING_PT`.
+- Candidate validity is checked after pagination using actual same-page adjacent system pairs only; cross-page pairs do not inflate spacing.
+- Apply `systemSpacingOffsetPt` / `system_spacing_offset_pt` after the automatic base search, allowing negative offsets to intentionally overlap.
+- Drop/reset old persisted `systemSpacing`; do not migrate old absolute values.
+- Append the layout contract addendum before implementation review.
+
+Open conditions:
+- Human stamp required before implementation.
+
+---
+
+### Round 6 - Plan Review
+
+Reviewer: Rawls (sub-agent)
+
+### Review Checklist
+
+- [x] Problem clarity — Clear. The plan now captures both the uneven spacing problem and the page-break exception that should prevent irrelevant tall pairs from inflating spacing.
+- [x] Goal and non-goals — Mostly clear. The intent is right: no mode toggle, offset semantics, no migration, negative offsets may overlap.
+- [x] Scope reasonableness — Reasonable. This remains correctly scoped as a layout contract plus WASM/app setting change.
+- [x] Hidden compatibility risks — Adequately covered. Old/new option names and localStorage reset behavior are explicit.
+- [ ] Task actionability — Almost, but there is a conflicting formula that would mislead implementation.
+- [x] Task independence — Good. Option semantics, pagination search, and WASM/app wiring are independently staged.
+- [x] Acceptance criteria verifiability — Good. The threshold/no-overshoot fixture is the right test for the subtle page-break case.
+- [x] Test plan sufficiency — Sufficient once the formula conflict is fixed. It covers same-page, page-break-separated tall content, no-overshoot threshold behavior, multi-page spacing, negative offset, settings reset, WASM, and typecheck.
+- [ ] Unresolved design questions — One blocking ambiguity remains: whether `autoBaseSpacing` is the search result or recomputed from `requiredNonOverlapSpacing` after the final candidate pagination.
+- [x] Spec Delta required? — Yes, and present.
+- [ ] Spec Delta specificity (if present) — The search algorithm is specific enough, but the old formula contradicts it.
+- [x] ADR-worthy decision? — No. The contract addendum is the right home.
+- [x] Human stamp required? — Yes. This is still a Spec / Contract Change and requires `APPROVED_FOR_IMPLEMENTATION`.
+
+### Comments
+
+1. The bounded-search design fixes the overshoot problem.
+2. The plan still had the old `autoBaseSpacing = max(DEFAULT_SYSTEM_SPACING_PT, requiredNonOverlapSpacing + SYSTEM_COLLISION_GAP_PT)` formula, which contradicts the search algorithm. In a threshold case, final observed same-page requirements may drop to zero, which would incorrectly recompute the base back to the invalid default.
+3. `autoBaseSpacing` should be defined as the smallest valid candidate returned by bounded search. `requiredForPair` and `requiredNonOverlapSpacing` should only be candidate-validity measurements.
+
+### Agent Response
+
+- Revised `plan.md` to define `autoBaseSpacing` as `smallest valid candidate >= DEFAULT_SYSTEM_SPACING_PT within SYSTEM_SPACING_SEARCH_TOLERANCE_PT`.
+- Removed the obsolete direct formula from the Goal and Spec Delta.
+- Kept `requiredForPair` and `requiredNonOverlapSpacing` only as validity/search measurements.
+
+### Resolution
+
+- R6: open, pending sub-agent re-review.
+
+STATUS: CHANGES_REQUESTED
+
+---
+
+### Round 5 - Plan Review
+
+Reviewer: Rawls (sub-agent)
+
+### Review Checklist
+
+- [x] Problem clarity — Clear. The plan identifies the uneven pair-specific spacing problem and now correctly notes that page breaks should affect which pairs matter.
+- [x] Goal and non-goals — Mostly clear. It keeps one final spacing value, no mode toggle, offset semantics, and intentional overlap with negative offset.
+- [ ] Scope reasonableness — Scope is still right, but the revised algorithm is now more subtle than the tasks acknowledge. “Smallest spacing” plus pagination-aware exclusion needs an actual search strategy, not only candidate raising.
+- [x] Hidden compatibility risks — Adequately covered. Old `systemSpacing` is reset, new option names are explicit across Rust/WASM/app, and no migration is promised.
+- [ ] Task actionability — Not quite. The candidate-raise loop is implementable, but it does not necessarily find the smallest valid spacing. Task 3 needs a corrected algorithm.
+- [x] Task independence — Good. Option semantics, pagination, and WASM/app wiring are still cleanly separated.
+- [ ] Acceptance criteria verifiability — The criteria are measurable, but they do not catch overshoot. Add a test where a tall pair stops mattering because a small spacing increase pushes it across a page; the result should stay near that threshold, not jump to the pair’s full non-overlap requirement.
+- [ ] Test plan sufficiency — Better than before, but missing the overshoot/page-break-threshold case. Without that, the proposed iteration could pass tests while violating “smallest”.
+- [ ] Unresolved design questions — Yes. The plan needs to decide whether “smallest” is exact/minimal within a tolerance, or whether conservative overshoot is acceptable. The current text says smallest, so the algorithm must match that.
+- [x] Spec Delta required? — Yes, and present.
+- [ ] Spec Delta specificity (if present) — The page-aware behavior is specified, but the algorithm is not correct enough as normative text because the raise-to-required loop can overshoot.
+- [x] ADR-worthy decision? — No. This belongs in the layout contract, not a separate ADR.
+- [x] Human stamp required? — Yes. This remains a Spec / Contract Change and still requires `APPROVED_FOR_IMPLEMENTATION`.
+
+### Comments
+
+1. The design correction is right: a tall system whose next logical neighbor is forced onto the next page should not inflate uniform spacing.
+2. The proposed convergence loop can overshoot. At spacing `20`, A/B may overlap on the same page and require `100`, but spacing `24` might push B to the next page and make the document valid. Jumping to `100 + gap` would violate the “smallest” requirement.
+3. The plan should define candidate validity after pagination, establish upper/lower bounds, and use binary search or another bounded search to a tolerance.
+
+### Agent Response
+
+- Revised `plan.md` to define candidate validity after pagination and replace the candidate-raise loop with bounded search.
+- The new plan starts with `DEFAULT_SYSTEM_SPACING_PT`, establishes a valid upper bound when needed, and binary-searches to a fixed tolerance such as `0.25pt`.
+- Added threshold/no-overshoot acceptance and test requirements.
+
+### Resolution
+
+- R5: open, pending sub-agent re-review.
+
+STATUS: CHANGES_REQUESTED
+
+### Round 2 Follow-up
+
+Date: 2026-05-31
+
+Plan revision commit: pending
+
+Changes made:
+- Defined `finalSystemSpacing` as the extra same-page advance after `staff_bounding_height_pt`.
+- Defined `requiredForPair` and `requiredNonOverlapSpacing` from local `SystemLayoutBox` visual bounds and origins.
+- Clarified that spacing is score-wide and computed from logical adjacent systems before pagination.
+- Clarified that systems later split by a page break still contribute to the score-wide maximum, but page breaks do not receive pair-specific page-crossing spacing.
+- Replaced vague WASM compatibility language with explicit names: `system_spacing_offset_pt`, `systemSpacingOffsetPt`, and `systemSpacingOffset`.
+- Added acceptance/test coverage for same-page uniform spacing, multi-page spacing, negative offset overlap allowance, and old persisted `systemSpacing` reset.
+
+Resolution:
+- R2: addressed in `plan.md`; pending sub-agent re-review.
+
+---
+
+### Round 3 - Plan Review
+
+Reviewer: Rawls (sub-agent)
+
+### Review Checklist
+
+- [x] Problem clarity — Clear. The plan now states both the current uneven visual-height advance and the desired score-wide uniform spacing behavior.
+- [x] Goal and non-goals — Clear. It explicitly rejects modes, migration, and guaranteed non-overlap after negative offset.
+- [x] Scope reasonableness — Reasonable for a Spec / Contract Change. The affected layout, WASM/app settings, tests, and contract update are all in scope.
+- [x] Hidden compatibility risks — Adequately covered. The plan names old/new option keys and explicitly says old persisted `systemSpacing` is ignored/reset, not migrated.
+- [x] Task actionability — Good. The pagination formula, coordinate basis, option names, and test targets are concrete enough to implement.
+- [x] Task independence — Good. Option semantics, pagination behavior, and WASM/app wiring remain separable with sensible dependencies.
+- [x] Acceptance criteria verifiability — Good. The plan defines the measured gap as `next_origin - previous_origin - staff_bounding_height_pt`, which makes the uniform-spacing assertion testable.
+- [x] Test plan sufficiency — Sufficient. It now includes same-page, multi-page, negative offset, old setting reset, WASM build, typecheck, and golden handling.
+- [x] Unresolved design questions — None blocking. The score-wide pre-pagination rule and page-break behavior are specified.
+- [x] Spec Delta required? — Yes, and it is present.
+- [x] Spec Delta specificity (if present) — Specific enough. It defines the formula, coordinate basis, option mapping, negative offset behavior, and page-break semantics.
+- [x] ADR-worthy decision? — No. This is an important layout contract decision, but the contract addendum is enough; no separate ADR is needed.
+- [x] Human stamp required? — Yes. This remains a Spec / Contract Change and needs `APPROVED_FOR_IMPLEMENTATION` in `history.md` before implementation.
+
+### Comments
+
+1. The Round 2 revision addresses the earlier blockers. The most important fixes are the explicit score-wide pre-pagination calculation, the precise spacing basis, and the page-break rule.
+2. Systems split by a later page break still contribute to the score-wide maximum, which matches the user's “所有 system 都用这个间距” requirement and avoids per-page visual drift.
+3. Implementation caution: the plan says no fixed-point repagination should be needed unless rendering changes after pagination. Implementation review should verify that no elements get added, removed, or vertically resized only after page placement.
+
+### Agent Response
+
+- Agreed. The implementation review will explicitly check that pagination/page assembly does not add, remove, or vertically resize content after spacing measurement in a way that invalidates the one-pass score-wide spacing calculation.
+
+### Resolution
+
+- R3: approved.
+
+STATUS: APPROVED
+
+### Approved Plan
+
+Approved file: `docs/changes/active/2026-05-31-uniform-system-spacing-auto/plan.md`
+Approved commit: ae2c2b5
+Approved summary:
+- Compute one score-wide system spacing from logical adjacent unpaginated system boxes before pagination.
+- Define `finalSystemSpacing` as the extra same-page advance after `staff_bounding_height_pt`.
+- Use `requiredForPair = previous.visual_bottom - previous.local_system_origin_y - staff_bounding_height_pt - (next.visual_top - next.local_system_origin_y)` and take the score-wide max plus collision gap.
+- Apply `systemSpacingOffsetPt` / `system_spacing_offset_pt` after automatic spacing; negative offsets may intentionally permit overlap.
+- Ignore/reset old persisted `systemSpacing`; do not migrate old absolute values.
+- Append the `RENDER_LAYOUT_CONTRACT.md` addendum before implementation review.
+
+Open conditions:
+- Human stamp required before implementation.
+
+---
+
+### Round 4 - Plan Revision
+
+Reviewer: user-directed design change
+
+### Comments
+
+1. The approved score-wide pre-pagination calculation over-constrains spacing when a tall element is split from the next logical system by a page break.
+2. The algorithm should instead find the smallest uniform spacing that prevents overlap among actual same-page adjacent systems after pagination.
+3. Tall content that lands across a page break should not inflate the final spacing.
+
+### Agent Response
+
+- Revised `plan.md` to replace score-wide pre-pagination adjacency with pagination-aware candidate iteration.
+- The new algorithm starts from `DEFAULT_SYSTEM_SPACING_PT`, paginates, checks same-page adjacent pairs only, raises the candidate when same-page overlap requires it, and repeats until stable.
+- Updated Spec Delta, Task 3 action/acceptance, tests, risks, and revision log.
+
+### Resolution
+
+- R4: open, pending sub-agent re-review because the approved Spec Delta changed materially.
+
+STATUS: CHANGES_REQUESTED
+
+---
+
+## Implementation Notes
+
+### Task 4 Verification
+
+Date: 2026-05-31
+
+Changes completed:
+- Rebuilt generated layout WASM packages after Rust layout changes.
+- Verified TypeScript render adapters compile with `systemSpacingOffsetPt` wiring.
+- Added append-only learning notes for the page-aware bounded spacing search and post-search offset semantics.
+
+Verification:
+- `npm run wasm:build` passed.
+- `npm run typecheck` passed.
+- `npm test -- --run src/hooks/useAppSettings.test.ts src/components/settings-panel.test.tsx src/renderer/svgSceneAdapter.test.ts` passed.
+- Browser smoke not run: the in-app browser URL policy blocked local `http://localhost:5175/DrumMark/` reload in this environment.
+
+### Final Verification Before Implementation Review
+
+Date: 2026-05-31
+
+Verification:
+- `cargo test -p drummark-layout` passed.
+- `cargo test -p drummark-core` passed.
+- `npm test -- --run src/hooks/useAppSettings.test.ts src/components/settings-panel.test.tsx src/renderer/svgSceneAdapter.test.ts` passed.
+- `npm run typecheck` passed.
+- After removing an unused test variable, `cargo test -p drummark-layout` passed again with no layout warning.
+
+---
+
+## Implementation Review
+
+### Round 1 - Implementation Review
+
+Reviewer: Rawls (sub-agent)
+
+Findings:
+- P1: The binary search assumed candidate validity was monotonic, but same-page candidate validity can be non-monotonic because page breaks can expose different adjacent pairs at different spacing values. This could skip an earlier valid interval and return a larger candidate.
+- P2: `build-docs.ts` still used the old `systemSpacing` option key instead of `systemSpacingOffset`.
+
+Verification notes from reviewer:
+- `cargo test -p drummark-layout` passed.
+- `npm run typecheck` passed.
+- `npm run build-docs` passed.
+
+STATUS: CHANGES_REQUESTED
+
+### Round 1 Fixes
+
+Date: 2026-05-31
+
+Changes completed:
+- Replaced the pagination spacing binary search with a tolerance-step bounded scan after establishing a valid upper bound.
+- Added a layout test for non-monotonic candidate validity where `30pt` is invalid, `30.25pt` is valid, a later interval is invalid again, and a binary search would choose a larger valid interval.
+- Updated `build-docs.ts` to pass `systemSpacingOffset`.
+- Updated the active plan, layout contract addendum, golden snapshot, generated layout WASM, and append-only learning notes.
+
+Verification:
+- `cargo test -p drummark-layout write_cross_system_scene_golden -- --ignored` passed.
+- `npm run typecheck` passed after running `npm run wasm:build` sequentially.
+- `cargo test -p drummark-layout` passed.
+- `cargo test -p drummark-core` passed.
+- `npm test -- --run src/hooks/useAppSettings.test.ts src/components/settings-panel.test.tsx src/renderer/svgSceneAdapter.test.ts` passed.
+- `npm run build-docs` passed.
+- `npm run wasm:build` passed.
+
+### Round 2 - Implementation Review
+
+Reviewer: Rawls (sub-agent)
+
+Findings:
+- None blocking.
+
+Comments:
+- `pagination.rs` no longer relies on monotonic validity. It checks the lower bound, establishes a valid upper bound with a capped growth loop, scans candidate values at the tolerance step, and returns the first valid candidate.
+- Search uses pre-offset candidates; `system_spacing_offset_pt` is applied only in the final pagination pass, so negative offsets can reintroduce overlap as planned.
+- `build-docs.ts` now passes `systemSpacingOffset`.
+- Old active `systemSpacing` references are gone from app/render/docs paths except intentional legacy reset/tests and historical text superseded by the addendum.
+
+Open questions:
+- The non-monotonic regression test checks first-valid-candidate behavior near the default. A future stricter test could assert the later invalid interval more literally, but this is not blocking because the implementation no longer uses binary search.
+
+Verification notes:
+- Reviewer inspected commit `baa04ea`, current branch diff against `main`, pagination implementation, layout tests, app/WASM option wiring, docs builder, plan, contract addendum, history, LEARNINGS, and golden/WASM presence.
+- Reviewer did not rerun the full suite in Round 2; they reviewed the reported pass list and relevant files directly.
+- Worktree was clean except the two untracked Chinese example files.
+
+STATUS: APPROVED

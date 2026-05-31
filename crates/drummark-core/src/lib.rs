@@ -659,7 +659,7 @@ fn parse_layout_options(options: &JsValue) -> drummark_layout::LayoutOptions {
     assign_positive(&mut opts.staff_space_pt, "staffSpacePt");
     assign_positive(&mut opts.px_per_quarter, "pxPerQuarter");
     assign_any(&mut opts.stem_len_offset_pt, "stemLenOffsetPt");
-    assign_any(&mut opts.system_spacing_pt, "systemSpacing");
+    assign_any(&mut opts.system_spacing_offset_pt, "systemSpacingOffsetPt");
     assign_any(&mut opts.header_height_pt, "headerHeight");
     assign_any(&mut opts.header_staff_spacing_pt, "headerStaffSpacing");
     assign_any(&mut opts.volta_offset_y, "voltaSpacing");

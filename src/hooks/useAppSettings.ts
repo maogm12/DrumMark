@@ -9,7 +9,7 @@ export type PagePreviewLayout = {
   staffSpacePt: number;
   headerHeight: number;
   headerStaffSpacing: number;
-  systemSpacing: number;
+  systemSpacingOffset: number;
   stemLength: number;
   voltaSpacing: number;
   hairpinOffsetY: number;
@@ -35,7 +35,7 @@ export interface AppSettings {
   pagePadding: PagePadding;
   staffSpacePt: number;
   headerStaffSpacing: number;
-  systemSpacing: number;
+  systemSpacingOffset: number;
   stemLength: number;
   voltaSpacing: number;
   hairpinOffsetY: number;
@@ -49,7 +49,7 @@ export function pickPagePreviewLayout(settings: AppSettings): PagePreviewLayout 
     staffSpacePt: settings.staffSpacePt,
     headerHeight: settings.headerHeight,
     headerStaffSpacing: settings.headerStaffSpacing,
-    systemSpacing: settings.systemSpacing,
+    systemSpacingOffset: settings.systemSpacingOffset,
     stemLength: settings.stemLength,
     voltaSpacing: settings.voltaSpacing,
     hairpinOffsetY: settings.hairpinOffsetY,
@@ -77,7 +77,7 @@ export const defaultSettings: AppSettings = {
   staffSpacePt: 5.0,
   headerStaffSpacing: 60,
   headerHeight: 50,
-  systemSpacing: 30,
+  systemSpacingOffset: 0,
   stemLength: 0,
   voltaSpacing: 0,
   hairpinOffsetY: 0,
@@ -98,6 +98,7 @@ export function resolveAppSettings(saved: string | null): AppSettings {
       measureNumberFontSize: _legacyMeasureNumberFontSize,
       durationSpacingCompression: _legacyDurationSpacingCompression,
       measureWidthCompression: _legacyMeasureWidthCompression,
+      systemSpacing: _legacySystemSpacing,
       ...rendererNeutralSettings
     } = parsed as Partial<AppSettings> & {
       useLayoutEngine?: unknown;
@@ -109,6 +110,7 @@ export function resolveAppSettings(saved: string | null): AppSettings {
       measureNumberFontSize?: unknown;
       durationSpacingCompression?: unknown;
       measureWidthCompression?: unknown;
+      systemSpacing?: unknown;
     };
     void _legacyRenderer;
     void _legacyTempoOffsetX;
@@ -118,6 +120,7 @@ export function resolveAppSettings(saved: string | null): AppSettings {
     void _legacyMeasureNumberFontSize;
     void _legacyDurationSpacingCompression;
     void _legacyMeasureWidthCompression;
+    void _legacySystemSpacing;
     if (legacyStaffScale !== undefined) {
       rendererNeutralSettings.staffSpacePt = 5.0 * legacyStaffScale / 0.75;
     }
@@ -154,6 +157,9 @@ export function resolveAppSettings(saved: string | null): AppSettings {
     }
     if (rendererNeutralSettings.headerHeight === undefined || rendererNeutralSettings.headerHeight < r.headerHeight.min || rendererNeutralSettings.headerHeight > r.headerHeight.max) {
       rendererNeutralSettings.headerHeight = r.headerHeight.default;
+    }
+    if (rendererNeutralSettings.systemSpacingOffset === undefined || rendererNeutralSettings.systemSpacingOffset < r.systemSpacingOffset.min || rendererNeutralSettings.systemSpacingOffset > r.systemSpacingOffset.max) {
+      rendererNeutralSettings.systemSpacingOffset = r.systemSpacingOffset.default;
     }
     return { ...defaultSettings, ...rendererNeutralSettings };
   } catch {

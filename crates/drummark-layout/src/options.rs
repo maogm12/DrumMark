@@ -1,5 +1,11 @@
 /// Default stem length before user offset, in staff-space units.
 pub const DEFAULT_STEM_LEN_SS: f32 = 3.0;
+/// Default uniform system spacing before automatic collision expansion and user offset.
+pub const DEFAULT_SYSTEM_SPACING_PT: f32 = 30.0;
+/// Gap added when automatic system spacing prevents same-page visual overlap.
+pub const SYSTEM_COLLISION_GAP_PT: f32 = 4.0;
+/// Tolerance for page-aware system-spacing search.
+pub const SYSTEM_SPACING_SEARCH_TOLERANCE_PT: f32 = 0.25;
 
 #[derive(Debug, Clone)]
 pub struct LayoutOptions {
@@ -24,7 +30,7 @@ pub struct LayoutOptions {
     pub edge_padding: f32,
     /// Fine adjustment in pt added to [`DEFAULT_STEM_LEN_SS`] × [`staff_space_pt`].
     pub stem_len_offset_pt: f32,
-    pub system_spacing_pt: f32,
+    pub system_spacing_offset_pt: f32,
     pub hide_voice2_rests: bool,
     /// Omit score title text from the page header.
     pub hide_title: bool,
@@ -67,7 +73,7 @@ impl Default for LayoutOptions {
             measure_num_offset_y: -4.0,
             edge_padding: 4.0,
             stem_len_offset_pt: 0.0,
-            system_spacing_pt: 30.0,
+            system_spacing_offset_pt: 0.0,
             hide_voice2_rests: false,
             hide_title: false,
             hide_subtitle: false,

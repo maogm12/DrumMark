@@ -444,3 +444,41 @@ Implementation must preserve the approved task plan in `docs/proposals/ARCHITECT
 **Versioning**
 
 - Layout scene `version` is `"2"` for this wire shape. Consumers must not assume flat `page.items`, `page.measures`, or `page.composites`.
+
+## Addendum: Uniform Auto System Spacing
+
+Date: 2026-05-31
+Source change: `docs/changes/active/2026-05-31-uniform-system-spacing-auto/plan.md`
+Status: Accepted
+
+System pagination must use a single final spacing value between non-first systems rather than letting each system pair use the preceding system's full visual height as its stride.
+
+The layout engine owns a default system spacing constant. The public/app setting is a point offset applied after automatic spacing is computed. The offset option is named `systemSpacingOffsetPt` at the WASM/JS layout boundary and maps to `system_spacing_offset_pt` in Rust layout options.
+
+For an ordered set of rendered `SystemLayoutBox` records, pagination must find the smallest uniform spacing that keeps actual same-page adjacent systems from overlapping before user offset is applied. Logical adjacent systems that land on different pages do not contribute to the required spacing for that pagination; page breaks may therefore prevent a tall element from inflating the final spacing.
+
+`finalSystemSpacing` and `requiredNonOverlapSpacing` use the existing system-spacing coordinate basis: the extra same-page advance after the previous system's staff bounding height. For a same-page pair:
+
+`next_system_origin_y = previous_system_origin_y + staff_bounding_height_pt + finalSystemSpacing`
+
+For each same-page adjacent pair under a candidate pagination:
+
+`requiredForPair = previous.visual_bottom - previous.local_system_origin_y - staff_bounding_height_pt - (next.visual_top - next.local_system_origin_y)`
+
+`requiredNonOverlapSpacing = max(0, requiredForPair...)`
+
+The automatic spacing algorithm treats a candidate as valid when paginating with that candidate leaves no same-page adjacent pair requiring more than `candidate - SYSTEM_COLLISION_GAP_PT`. Implementations must find the smallest valid candidate within a fixed tolerance, such as `0.25pt`, by establishing a valid upper bound and scanning candidate values from `DEFAULT_SYSTEM_SPACING_PT` to that upper bound at the tolerance step. Candidate validity is not monotonic because page breaks can expose different same-page adjacent pairs at different spacing values, so binary search is not valid for this check. This bounded scan is required so that a tall pair that becomes page-separated after a small spacing increase does not force the full non-overlap spacing it would need if kept on one page.
+
+The automatic base spacing is the search result, not a direct formula from the final page's observed requirements:
+
+`autoBaseSpacing = smallest valid candidate >= DEFAULT_SYSTEM_SPACING_PT within SYSTEM_SPACING_SEARCH_TOLERANCE_PT`
+
+The final spacing used between non-first systems is:
+
+`finalSystemSpacing = autoBaseSpacing + systemSpacingOffsetPt`
+
+`systemSpacingOffsetPt` may be negative. Negative offsets are allowed to make content overlap; the engine does not clamp the final spacing to the non-overlap requirement after applying the offset.
+
+Header-to-first-system placement keeps the existing header cursor behavior. The uniform final spacing applies to subsequent same-page systems and is used consistently during pagination and page assembly. First systems after a page break start from the page top margin/header cursor rules; they do not receive page-crossing spacing from the previous page.
+
+Visual bounds remain authoritative for overflow diagnostics and validation; they no longer cause one individual system pair to receive a unique larger stride except through the global final spacing calculation.

@@ -53,7 +53,7 @@ export const I18N_KEYS = [
   "settings.hideMeasureNumber",
   "settings.stemLength",
   "settings.staffSpacePt",
-  "settings.systemSpacing",
+  "settings.systemSpacingOffset",
   "settings.titleHeight",
   "settings.titleGap",
   "settings.voltaOffset",

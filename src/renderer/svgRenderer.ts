@@ -16,7 +16,7 @@ type RenderOptions = {
   leftMargin?: number;
   rightMargin?: number;
   stemLength?: number;
-  systemSpacing?: number;
+  systemSpacingOffset?: number;
   headerHeight?: number;
   headerStaffSpacing?: number;
   voltaSpacing?: number;
@@ -163,7 +163,7 @@ export async function buildLayoutSceneFromSource(source: string, options?: Rende
     staffSpacePt: options?.staffSpacePt ?? DEFAULT_RENDER_OPTIONS.staffSpacePt,
     pxPerQuarter: 80,
     stemLenOffsetPt: options?.stemLength ?? SETTINGS_RANGES.stemLength.default,
-    systemSpacing: options?.systemSpacing ?? SETTINGS_RANGES.systemSpacing.default,
+    systemSpacingOffsetPt: options?.systemSpacingOffset ?? SETTINGS_RANGES.systemSpacingOffset.default,
     headerHeight: options?.headerHeight ?? SETTINGS_RANGES.headerHeight.default,
     headerStaffSpacing: options?.headerStaffSpacing ?? SETTINGS_RANGES.headerStaffSpacing.default,
     voltaSpacing: options?.voltaSpacing ?? SETTINGS_RANGES.voltaSpacing.default,

@@ -4,8 +4,9 @@ use crate::scene_geometry::{bounds_for_items, translate_scene_item};
 use crate::scene_page::{dedupe_page_item_ids, page_header_items};
 use crate::validation::validate_layout_scene;
 use crate::{
-    CompositeKind, LayoutOptions, LayoutScene, SceneComposite, SceneItem, SceneMeasure, ScenePage,
-    SceneSystem,
+    staff_bounding_height_pt, CompositeKind, LayoutOptions, LayoutScene, SceneComposite, SceneItem,
+    SceneMeasure, ScenePage, SceneSystem, DEFAULT_SYSTEM_SPACING_PT, SYSTEM_COLLISION_GAP_PT,
+    SYSTEM_SPACING_SEARCH_TOLERANCE_PT,
 };
 
 #[derive(Debug, Clone, PartialEq)]
@@ -66,6 +67,116 @@ pub(crate) fn paginate_system_boxes(
     header: &HeaderLayoutBox,
     opts: &LayoutOptions,
 ) -> BoxPaginationResult {
+    let auto_spacing = automatic_system_spacing_pt(boxes, header, opts);
+    paginate_system_boxes_with_spacing(
+        boxes,
+        header,
+        opts,
+        auto_spacing + opts.system_spacing_offset_pt,
+    )
+}
+
+pub(crate) fn automatic_system_spacing_pt(
+    boxes: &[SystemLayoutBox],
+    header: &HeaderLayoutBox,
+    opts: &LayoutOptions,
+) -> f32 {
+    if boxes.len() < 2 {
+        return DEFAULT_SYSTEM_SPACING_PT;
+    }
+
+    let lower = DEFAULT_SYSTEM_SPACING_PT;
+    let lower_eval = evaluate_system_spacing_candidate(boxes, header, opts, lower);
+    if lower_eval.is_valid {
+        return lower;
+    }
+
+    let mut upper = lower_eval
+        .required_spacing_pt
+        .max(lower + SYSTEM_SPACING_SEARCH_TOLERANCE_PT);
+    let mut upper_eval = evaluate_system_spacing_candidate(boxes, header, opts, upper);
+    let mut attempts = 0;
+    while !upper_eval.is_valid && attempts < 16 {
+        upper = (upper * 2.0).max(upper_eval.required_spacing_pt);
+        upper_eval = evaluate_system_spacing_candidate(boxes, header, opts, upper);
+        attempts += 1;
+    }
+    if !upper_eval.is_valid {
+        return upper;
+    }
+
+    let mut candidate = lower + SYSTEM_SPACING_SEARCH_TOLERANCE_PT;
+    while candidate < upper {
+        let candidate_eval = evaluate_system_spacing_candidate(boxes, header, opts, candidate);
+        if candidate_eval.is_valid {
+            return candidate;
+        }
+        candidate += SYSTEM_SPACING_SEARCH_TOLERANCE_PT;
+    }
+    upper
+}
+
+#[derive(Debug, Clone)]
+struct SystemSpacingCandidate {
+    required_spacing_pt: f32,
+    is_valid: bool,
+}
+
+fn evaluate_system_spacing_candidate(
+    boxes: &[SystemLayoutBox],
+    header: &HeaderLayoutBox,
+    opts: &LayoutOptions,
+    candidate_spacing_pt: f32,
+) -> SystemSpacingCandidate {
+    let pagination = paginate_system_boxes_with_spacing(boxes, header, opts, candidate_spacing_pt);
+    let mut required_spacing_pt = DEFAULT_SYSTEM_SPACING_PT;
+    for pair in pagination.placements.windows(2) {
+        let previous = &pair[0];
+        let next = &pair[1];
+        if previous.page_index != next.page_index {
+            continue;
+        }
+        let Some(previous_box) = boxes
+            .iter()
+            .find(|candidate| candidate.system_id == previous.system_id)
+        else {
+            continue;
+        };
+        let Some(next_box) = boxes
+            .iter()
+            .find(|candidate| candidate.system_id == next.system_id)
+        else {
+            continue;
+        };
+        let staff_height = staff_bounding_height_pt(opts.staff_space_pt);
+        required_spacing_pt = required_spacing_pt.max(
+            required_spacing_for_pair_pt(previous_box, next_box, staff_height)
+                + SYSTEM_COLLISION_GAP_PT,
+        );
+    }
+
+    SystemSpacingCandidate {
+        required_spacing_pt,
+        is_valid: required_spacing_pt <= candidate_spacing_pt + SYSTEM_SPACING_SEARCH_TOLERANCE_PT,
+    }
+}
+
+fn required_spacing_for_pair_pt(
+    previous: &SystemLayoutBox,
+    next: &SystemLayoutBox,
+    staff_height: f32,
+) -> f32 {
+    let previous_visual_bottom = previous.visual_bottom - previous.local_system_origin_y;
+    let next_visual_top = next.visual_top - next.local_system_origin_y;
+    (previous_visual_bottom - staff_height - next_visual_top).max(0.0)
+}
+
+fn paginate_system_boxes_with_spacing(
+    boxes: &[SystemLayoutBox],
+    header: &HeaderLayoutBox,
+    opts: &LayoutOptions,
+    system_spacing_pt: f32,
+) -> BoxPaginationResult {
     let mut placements = Vec::new();
     let mut issues = Vec::new();
     let content_bottom = opts.page_height_pt - opts.bottom_margin_pt;
@@ -73,20 +184,25 @@ pub(crate) fn paginate_system_boxes(
     let mut page_index = 0_u32;
     let mut cursor_y = page0_first_system_cursor(opts, header);
     let mut systems_on_page = 0usize;
+    let mut previous_origin_y = 0.0;
+    let staff_height = staff_bounding_height_pt(opts.staff_space_pt);
 
     for system_box in boxes {
         let visual_height = system_box.visual_bottom - system_box.visual_top;
-        let mut placement_y = cursor_y
-            + if systems_on_page == 0 {
-                0.0
-            } else {
-                opts.system_spacing_pt
-            };
+        let local_visual_top = system_box.visual_top - system_box.local_system_origin_y;
+        let first_system_on_page = systems_on_page == 0;
+        let mut origin_y = if first_system_on_page {
+            cursor_y - local_visual_top
+        } else {
+            previous_origin_y + staff_height + system_spacing_pt
+        };
+        let mut placement_y = origin_y + local_visual_top;
         if systems_on_page > 0 && placement_y + visual_height > content_bottom {
             page_index += 1;
             systems_on_page = 0;
             cursor_y = opts.top_margin_pt;
-            placement_y = cursor_y;
+            origin_y = cursor_y - local_visual_top;
+            placement_y = origin_y + local_visual_top;
         }
 
         if systems_on_page == 0 && placement_y + visual_height > content_bottom {
@@ -109,6 +225,7 @@ pub(crate) fn paginate_system_boxes(
             width_pt: system_box.width_pt,
         });
         cursor_y = placement_y + visual_height;
+        previous_origin_y = origin_y;
         systems_on_page += 1;
     }
 

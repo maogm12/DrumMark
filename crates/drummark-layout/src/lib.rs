@@ -50,7 +50,7 @@ pub use names::{
 pub use options::*;
 #[allow(unused_imports)] // `scene` and integration tests.
 pub(crate) use pagination::{
-    assemble_placed_system_box, header_box_from_page, layout_overflow_warning,
+    assemble_placed_system_box, automatic_system_spacing_pt, header_box_from_page, layout_overflow_warning,
     page0_first_system_cursor, paginate_system_boxes, paginate_unpaginated_page,
     system_boxes_from_page, BoxPaginationResult, HeaderLayoutBox, PlacedSystemBox,
     SystemLayoutBox,
@@ -2116,8 +2116,6 @@ mod tests {
         note_score.header.divisions = 4;
         note_score.header.grouping = vec![4];
         let note_scene = build_layout_scene(&note_score, &LayoutOptions::default());
-        let opts = LayoutOptions::default();
-
         let rest = page_all_items(&silent_scene.pages[0])
             .find(|item| item.role == "rest" && item.measure_id.as_deref() == Some("measure-0"))
             .expect("expected whole-measure rest");
@@ -5525,7 +5523,7 @@ fn test_paginate_system_boxes_with_mock_boxes() {
         left_margin_pt: 12.0,
         header_height_pt: 30.0,
         header_staff_spacing_pt: 10.0,
-        system_spacing_pt: 8.0,
+        system_spacing_offset_pt: 8.0 - DEFAULT_SYSTEM_SPACING_PT,
         ..LayoutOptions::default()
     };
     let header = HeaderLayoutBox {
@@ -5535,17 +5533,25 @@ fn test_paginate_system_boxes_with_mock_boxes() {
         visual_bottom: 80.0,
     };
 
-    let result = paginate_system_boxes(
-        &[mock_box(0, 40.0), mock_box(1, 60.0), mock_box(2, 60.0)],
-        &header,
-        &opts,
-    );
+    let boxes = [mock_box(0, 40.0), mock_box(1, 60.0), mock_box(2, 60.0)];
+    let result = paginate_system_boxes(&boxes, &header, &opts);
     assert_eq!(result.issues, Vec::<String>::new());
     assert_eq!(result.placements[0].page_index, 0);
     assert_eq!(result.placements[0].page_y, 90.0);
     assert_eq!(result.placements[0].page_x, 12.0);
     assert_eq!(result.placements[1].page_index, 0);
-    assert_eq!(result.placements[1].page_y, 138.0);
+    let first_origin = result.placements[0].page_y
+        - (boxes[0].visual_top - boxes[0].local_system_origin_y);
+    let second_origin = result.placements[1].page_y
+        - (boxes[1].visual_top - boxes[1].local_system_origin_y);
+    let expected_gap = automatic_system_spacing_pt(&boxes, &header, &opts)
+        + opts.system_spacing_offset_pt;
+    assert!(
+        (second_origin - first_origin - staff_bounding_height_pt(opts.staff_space_pt)
+            - expected_gap)
+            .abs()
+            < 0.01
+    );
     assert_eq!(result.placements[2].page_index, 1);
     assert_eq!(result.placements[2].page_y, 20.0);
 
@@ -5554,6 +5560,163 @@ fn test_paginate_system_boxes_with_mock_boxes() {
     assert_eq!(
         overflow.issues,
         ["LAYOUT_WARNING overflow page=0 system=system-9 visualHeight=250.00 availableHeight=180.00"]
+    );
+}
+
+#[cfg(test)]
+fn spacing_mock_box(index: u32, visual_top: f32, visual_bottom: f32) -> SystemLayoutBox {
+    let measure_id = format!("measure-{index}");
+    SystemLayoutBox {
+        system_index: index,
+        system_id: format!("system-{index}"),
+        local_system_origin_y: 0.0,
+        staff_top: 5.0,
+        staff_bottom: 25.0,
+        visual_top,
+        visual_bottom,
+        width_pt: 160.0,
+        measures: vec![SceneMeasure {
+            id: measure_id.clone(),
+            index,
+            global_index: index,
+            system_id: format!("system-{index}"),
+            x_pt: 0.0,
+            y_pt: 0.0,
+            width_pt: 160.0,
+            height_pt: 25.0,
+        }],
+        systems: Vec::new(),
+        items: Vec::new(),
+        composites: Vec::new(),
+    }
+}
+
+#[cfg(test)]
+fn spacing_test_header() -> HeaderLayoutBox {
+    HeaderLayoutBox {
+        items: Vec::new(),
+        composites: Vec::new(),
+        visual_top: 0.0,
+        visual_bottom: 0.0,
+    }
+}
+
+#[test]
+fn test_automatic_system_spacing_uses_uniform_same_page_gap() {
+    let opts = LayoutOptions {
+        page_height_pt: 500.0,
+        top_margin_pt: 20.0,
+        bottom_margin_pt: 20.0,
+        header_height_pt: 0.0,
+        header_staff_spacing_pt: 0.0,
+        ..LayoutOptions::default()
+    };
+    let boxes = vec![
+        spacing_mock_box(0, 0.0, 80.0),
+        spacing_mock_box(1, -5.0, 30.0),
+        spacing_mock_box(2, 0.0, 25.0),
+    ];
+    let header = spacing_test_header();
+
+    let spacing = automatic_system_spacing_pt(&boxes, &header, &opts);
+    assert!(
+        (spacing - 64.0).abs() <= SYSTEM_SPACING_SEARCH_TOLERANCE_PT,
+        "expected auto spacing near the same-page non-overlap requirement, got {spacing}"
+    );
+
+    let result = paginate_system_boxes(&boxes, &header, &opts);
+    let origins = result
+        .placements
+        .iter()
+        .zip(boxes.iter())
+        .map(|(placement, system_box)| {
+            placement.page_y - (system_box.visual_top - system_box.local_system_origin_y)
+        })
+        .collect::<Vec<_>>();
+    let staff_height = staff_bounding_height_pt(opts.staff_space_pt);
+    let first_gap = origins[1] - origins[0] - staff_height;
+    let second_gap = origins[2] - origins[1] - staff_height;
+    assert!((first_gap - second_gap).abs() < 0.01);
+}
+
+#[test]
+fn test_automatic_system_spacing_does_not_overshoot_page_break_threshold() {
+    let opts = LayoutOptions {
+        page_height_pt: 170.0,
+        top_margin_pt: 20.0,
+        bottom_margin_pt: 20.0,
+        header_height_pt: 0.0,
+        header_staff_spacing_pt: 0.0,
+        ..LayoutOptions::default()
+    };
+    let boxes = vec![
+        spacing_mock_box(0, 0.0, 110.0),
+        spacing_mock_box(1, -5.0, 25.0),
+        spacing_mock_box(2, 0.0, 25.0),
+    ];
+    let header = spacing_test_header();
+
+    let spacing = automatic_system_spacing_pt(&boxes, &header, &opts);
+    assert!(
+        spacing < 90.0,
+        "spacing should not jump to the full same-page requirement once the tall pair splits pages: {spacing}"
+    );
+
+    let result = paginate_system_boxes(&boxes, &header, &opts);
+    assert_ne!(
+        result.placements[0].page_index, result.placements[1].page_index,
+        "the tall first pair should be split across pages"
+    );
+}
+
+#[test]
+fn test_automatic_system_spacing_handles_non_monotonic_candidate_validity() {
+    let opts = LayoutOptions {
+        page_height_pt: 140.0,
+        top_margin_pt: 20.0,
+        bottom_margin_pt: 20.0,
+        header_height_pt: 0.0,
+        header_staff_spacing_pt: 0.0,
+        ..LayoutOptions::default()
+    };
+    let boxes = vec![
+        spacing_mock_box(0, -10.0, 15.0),
+        spacing_mock_box(1, -5.0, 20.0),
+        spacing_mock_box(2, -80.0, -20.0),
+        spacing_mock_box(3, -60.0, -20.0),
+    ];
+    let header = spacing_test_header();
+
+    let spacing = automatic_system_spacing_pt(&boxes, &header, &opts);
+    assert!(
+        spacing <= DEFAULT_SYSTEM_SPACING_PT + SYSTEM_SPACING_SEARCH_TOLERANCE_PT,
+        "search should return the first valid candidate, not a later valid interval: {spacing}"
+    );
+}
+
+#[test]
+fn test_system_spacing_negative_offset_can_overlap() {
+    let opts = LayoutOptions {
+        page_height_pt: 500.0,
+        top_margin_pt: 20.0,
+        bottom_margin_pt: 20.0,
+        header_height_pt: 0.0,
+        header_staff_spacing_pt: 0.0,
+        system_spacing_offset_pt: -20.0,
+        ..LayoutOptions::default()
+    };
+    let boxes = vec![
+        spacing_mock_box(0, 0.0, 80.0),
+        spacing_mock_box(1, -5.0, 25.0),
+    ];
+    let header = spacing_test_header();
+    let result = paginate_system_boxes(&boxes, &header, &opts);
+
+    assert_eq!(result.placements[0].page_index, result.placements[1].page_index);
+    let first_bottom = result.placements[0].page_y + (boxes[0].visual_bottom - boxes[0].visual_top);
+    assert!(
+        first_bottom > result.placements[1].page_y,
+        "negative offset should be allowed to reintroduce overlap"
     );
 }
 

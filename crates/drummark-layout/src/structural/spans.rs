@@ -661,8 +661,9 @@ pub(crate) fn render_hairpin_fragments(
     measures: &[DisplayMeasure<'_>],
     hairpin_offset_y: f32,
 ) {
-    const HAIRPIN_OPEN_HEIGHT_PT: f32 = 10.0;
+    const HAIRPIN_OPEN_HEIGHT_STAFF_SPACES: f32 = 2.0;
     const HAIRPIN_GAP_BELOW_PT: f32 = 0.0;
+    let hairpin_open_height_pt = sink.staff_space_pt * HAIRPIN_OPEN_HEIGHT_STAFF_SPACES;
 
     for measure in measures {
         for hairpin in &measure.hairpins {
@@ -724,12 +725,12 @@ pub(crate) fn render_hairpin_fragments(
                 let left_open_height = hairpin_open_height_at_progress(
                     hairpin.kind,
                     left_progress,
-                    HAIRPIN_OPEN_HEIGHT_PT,
+                    hairpin_open_height_pt,
                 );
                 let right_open_height = hairpin_open_height_at_progress(
                     hairpin.kind,
                     right_progress,
-                    HAIRPIN_OPEN_HEIGHT_PT,
+                    hairpin_open_height_pt,
                 );
                 let occupied_bottom = bottom_skyline_sample(
                     system_items_for_fragment(systems, fragment),

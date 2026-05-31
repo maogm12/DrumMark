@@ -937,6 +937,43 @@ mod tests {
     }
 
     #[test]
+    fn test_hairpin_open_height_scales_with_staff_space() {
+        let mut measure = regular_measure(0, 0, 4);
+        measure.hairpins = vec![HairpinSpan {
+            kind: HairpinKind::Crescendo,
+            start: Fraction {
+                numerator: 0,
+                denominator: 1,
+            },
+            end: Fraction {
+                numerator: 1,
+                denominator: 1,
+            },
+            start_measure_index: 0,
+            end_measure_index: 0,
+        }];
+        let score = simple_layout_score(vec![measure]);
+
+        for staff_space_pt in [4.0, 8.0] {
+            let scene = build_layout_scene(
+                &score,
+                &LayoutOptions {
+                    staff_space_pt,
+                    ..LayoutOptions::default()
+                },
+            );
+            let top = line_for_role(&scene.pages[0], "hairpin-top");
+            let bottom = line_for_role(&scene.pages[0], "hairpin-bottom");
+            let open_height = bottom.y2_pt - top.y2_pt;
+
+            assert!(
+                (open_height - staff_space_pt * 2.0).abs() < 0.01,
+                "hairpin open height should be 2 staff spaces: open_height={open_height:.2} staff_space_pt={staff_space_pt:.2}"
+            );
+        }
+    }
+
+    #[test]
     fn test_hairpin_vertical_offset_moves_down_when_positive() {
         let mut measure = regular_measure(0, 0, 4);
         measure.hairpins = vec![HairpinSpan {

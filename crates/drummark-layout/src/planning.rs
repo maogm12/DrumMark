@@ -859,7 +859,7 @@ pub(crate) fn finalize_planned_system<'a>(
     let fixed_width: f32 = current_inner_estimates
         .iter()
         .enumerate()
-        .map(|(index, _)| {
+        .map(|(index, width)| {
             let left = measure_left_pad(
                 index,
                 is_first_system,
@@ -870,11 +870,26 @@ pub(crate) fn finalize_planned_system<'a>(
                 .closing_barline
                 .as_deref()
                 .or(current_measures[index].barline.as_deref());
-            left + measure_right_pad(right_barline, opts.staff_space_pt)
+            let is_compact = current_measures[index].measure.multi_rest_count.is_some()
+                || current_measures[index].measure.measure_repeat_slashes.is_some();
+            let compact_content_width = if is_compact { *width } else { 0.0 };
+            compact_content_width + left + measure_right_pad(right_barline, opts.staff_space_pt)
         })
         .sum();
-    let current_inner_sum: f32 = current_inner_estimates.iter().sum();
-    let scale = ((available_width - fixed_width).max(1.0) / current_inner_sum.max(1.0)).max(0.01);
+    let scalable_inner_sum: f32 = current_inner_estimates
+        .iter()
+        .enumerate()
+        .filter_map(|(index, width)| {
+            let is_compact = current_measures[index].measure.multi_rest_count.is_some()
+                || current_measures[index].measure.measure_repeat_slashes.is_some();
+            if is_compact {
+                None
+            } else {
+                Some(*width)
+            }
+        })
+        .sum();
+    let scale = ((available_width - fixed_width).max(1.0) / scalable_inner_sum.max(1.0)).max(0.01);
     let widths = current_inner_estimates
         .into_iter()
         .enumerate()

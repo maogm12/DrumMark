@@ -1629,6 +1629,41 @@ mod tests {
         assert!(compact_width < regular_width);
     }
 
+    #[test]
+    fn test_trailing_multi_rest_stays_inside_system_after_compaction() {
+        let mut repeat = regular_measure(1, 0, 1);
+        repeat.events.clear();
+        repeat.measure_repeat_slashes = Some(1);
+
+        let mut multi_rest = regular_measure(2, 0, 1);
+        multi_rest.events.clear();
+        multi_rest.multi_rest_count = Some(16);
+        multi_rest.closing_barline = Some("final".into());
+
+        let mut score = simple_layout_score(vec![regular_measure(0, 0, 6), repeat, multi_rest]);
+        score.header.time_beats = 6;
+        score.header.time_beat_unit = 8;
+        score.header.divisions = 6;
+        score.header.note_value = 8;
+        score.header.grouping = vec![3, 3];
+
+        let opts = LayoutOptions::default();
+        let scene = build_layout_scene(&score, &opts);
+        let final_thick = page_all_items(&scene.pages[0])
+            .find(|item| item.role == "final-barline-thick")
+            .expect("expected final thick barline");
+
+        let ScenePrimitive::Rect(final_rect) = &final_thick.primitive else {
+            panic!("final barline should be a rectangle");
+        };
+        let final_right = final_rect.x_pt + final_rect.width_pt;
+        let system_right = opts.page_width_pt - opts.right_margin_pt;
+        assert!(
+            final_right <= system_right + 0.01,
+            "trailing multi-rest final barline should stay inside system: final_right={final_right:.2} system_right={system_right:.2}"
+        );
+    }
+
     fn notehead_positions(scene: &LayoutScene, measure_id: &str) -> Vec<f32> {
         let mut positions = page_all_items(&scene.pages[0])
             .filter(|item| {

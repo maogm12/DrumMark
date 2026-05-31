@@ -662,8 +662,9 @@ pub(crate) fn render_hairpin_fragments(
     hairpin_offset_y: f32,
 ) {
     const HAIRPIN_OPEN_HEIGHT_STAFF_SPACES: f32 = 2.0;
-    const HAIRPIN_GAP_BELOW_PT: f32 = 0.0;
+    const HAIRPIN_GAP_BELOW_STAFF_SPACES: f32 = 0.4;
     let hairpin_open_height_pt = sink.staff_space_pt * HAIRPIN_OPEN_HEIGHT_STAFF_SPACES;
+    let hairpin_gap_below_pt = sink.staff_space_pt * HAIRPIN_GAP_BELOW_STAFF_SPACES;
 
     for measure in measures {
         for hairpin in &measure.hairpins {
@@ -739,7 +740,7 @@ pub(crate) fn render_hairpin_fragments(
                     end_x,
                     first.y_pt + first.height_pt,
                     sink.staff_space_pt,
-                ) + HAIRPIN_GAP_BELOW_PT
+                ) + hairpin_gap_below_pt
                     + hairpin_offset_y;
                 let center_y =
                     occupied_bottom + left_open_height.max(right_open_height) * 0.5;

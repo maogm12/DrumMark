@@ -1083,9 +1083,10 @@ mod tests {
             .min(hairpin_top.y2_pt)
             .min(hairpin_bottom.y1_pt)
             .min(hairpin_bottom.y2_pt);
+        let expected_gap = staff_space_pt * 0.4;
         assert!(
-            hairpin_highest >= content_bottom - 0.5,
-            "hairpin top should clear voice-2 content: hairpin_highest={hairpin_highest:.2} content_bottom={content_bottom:.2}"
+            hairpin_highest >= content_bottom + expected_gap - 0.5,
+            "hairpin top should leave a small gap below voice-2 content: hairpin_highest={hairpin_highest:.2} content_bottom={content_bottom:.2} expected_gap={expected_gap:.2}"
         );
     }
 

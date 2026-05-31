@@ -330,20 +330,63 @@ impl<'a> Parser<'a> {
 
     fn parse_headers(&mut self) -> HeaderSection {
         let mut hs = HeaderSection::default();
-        while matches!(
-            self.peek(),
-            Some(Token::KwTitle)
-                | Some(Token::KwSubtitle)
-                | Some(Token::KwComposer)
-                | Some(Token::KwTempo)
-                | Some(Token::KwTime)
-                | Some(Token::KwGrouping)
-                | Some(Token::KwNote)
-                | Some(Token::KwDivisions)
-        ) {
+        loop {
+            self.skip_header_continuation_trivia();
+            if !matches!(
+                self.peek(),
+                Some(Token::KwTitle)
+                    | Some(Token::KwSubtitle)
+                    | Some(Token::KwComposer)
+                    | Some(Token::KwTempo)
+                    | Some(Token::KwTime)
+                    | Some(Token::KwGrouping)
+                    | Some(Token::KwNote)
+                    | Some(Token::KwDivisions)
+            ) {
+                break;
+            }
             self.parse_header_line(&mut hs);
         }
         hs
+    }
+
+    fn skip_header_continuation_trivia(&mut self) {
+        loop {
+            match self.peek() {
+                Some(Token::Comment) => {
+                    self.next().ok();
+                }
+                Some(Token::Newline) => {
+                    if self.peek_n(1) == Some(Token::Newline) {
+                        return;
+                    }
+                    if self.peek_n(1) == Some(Token::KwNote)
+                        && !self.is_complete_header_note_line(1)
+                    {
+                        return;
+                    }
+                    self.next().ok();
+                }
+                _ => return,
+            }
+        }
+    }
+
+    fn is_complete_header_note_line(&mut self, note_index: usize) -> bool {
+        matches!(
+            (
+                self.peek_n(note_index),
+                self.peek_n(note_index + 1),
+                self.peek_n(note_index + 2),
+                self.peek_n(note_index + 3),
+            ),
+            (
+                Some(Token::KwNote),
+                Some(Token::Integer(_)),
+                Some(Token::Slash),
+                Some(Token::Integer(_)),
+            )
+        )
     }
 
     fn parse_header_line(&mut self, hs: &mut HeaderSection) {
@@ -1388,6 +1431,15 @@ mod tests {
     fn test_header_time() {
         let doc = parse_ok("time 4/4\n");
         assert_eq!(doc.headers.time, Some((4, 4)));
+    }
+
+    #[test]
+    fn test_header_lines_continue_after_comment_only_line() {
+        let doc = parse_ok("tempo 115\n# time 4/4\nnote 1/8\n\n| s |\n");
+        assert_eq!(doc.headers.tempo, Some(115));
+        assert_eq!(doc.headers.time, None);
+        assert_eq!(doc.headers.note, Some((1, 8)));
+        assert!(doc.paragraphs[0].note.is_none());
     }
 
     #[test]

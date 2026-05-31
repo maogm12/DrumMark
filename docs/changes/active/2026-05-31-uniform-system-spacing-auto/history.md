@@ -54,6 +54,44 @@ Open conditions:
 
 ---
 
+## Human Stamp
+
+Date: 2026-05-31
+Approved by: user
+Approved plan: `docs/changes/active/2026-05-31-uniform-system-spacing-auto/plan.md`
+Approved plan commit: 6e1fde8
+Scope: Implement uniform page-aware automatic system spacing, offset setting semantics, WASM/app wiring, tests, and the layout contract addendum described by the approved plan.
+
+Approval text:
+
+> 开工吧
+
+Conditions:
+- None
+
+Status: APPROVED_FOR_IMPLEMENTATION
+
+---
+
+## Consolidated Changes
+
+Source:
+- `plan.md` > `## Spec Delta`
+
+Affected specs/contracts:
+- `docs/RENDER_LAYOUT_CONTRACT.md`
+
+Summary:
+- System pagination uses one uniform same-page system spacing rather than pair-specific visual-height stride.
+- Automatic base spacing is the smallest valid page-aware candidate found by bounded search before user offset.
+- Cross-page adjacent systems do not inflate spacing; negative user offsets may intentionally overlap systems.
+- Public/app offset naming is `systemSpacingOffsetPt` / `system_spacing_offset_pt`.
+
+Final addendum location:
+- Appended to `docs/RENDER_LAYOUT_CONTRACT.md` under `## Addendum: Uniform Auto System Spacing`
+
+---
+
 ### Round 2 - Plan Review
 
 Reviewer: Rawls (sub-agent)

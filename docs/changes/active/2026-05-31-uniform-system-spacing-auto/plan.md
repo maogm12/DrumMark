@@ -120,7 +120,7 @@ Visual bounds remain authoritative for overflow diagnostics and validation; they
 
 ### Task 1: Plan and Contract Setup
 
-Status: Pending
+Status: Done
 
 Scope:
 - `docs/changes/active/2026-05-31-uniform-system-spacing-auto/plan.md`

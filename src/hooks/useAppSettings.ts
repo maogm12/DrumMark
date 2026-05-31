@@ -21,13 +21,6 @@ export type PagePreviewLayout = {
   hideTimeSignature: boolean;
   hideClef: boolean;
   hideMeasureNumber: boolean;
-  tempoOffsetX: number;
-  tempoOffsetY: number;
-  measureNumberOffsetX: number;
-  measureNumberOffsetY: number;
-  measureNumberFontSize: number;
-  durationSpacingCompression: number;
-  measureWidthCompression: number;
 };
 
 export interface AppSettings {
@@ -48,13 +41,6 @@ export interface AppSettings {
   hairpinOffsetY: number;
   headerHeight: number;
   activeTab: MainTab;
-  tempoOffsetX: number;
-  tempoOffsetY: number;
-  measureNumberOffsetX: number;
-  measureNumberOffsetY: number;
-  measureNumberFontSize: number;
-  durationSpacingCompression: number;
-  measureWidthCompression: number;
 }
 
 export function pickPagePreviewLayout(settings: AppSettings): PagePreviewLayout {
@@ -75,13 +61,6 @@ export function pickPagePreviewLayout(settings: AppSettings): PagePreviewLayout 
     hideTimeSignature: settings.hideTimeSignature,
     hideClef: settings.hideClef,
     hideMeasureNumber: settings.hideMeasureNumber,
-    tempoOffsetX: settings.tempoOffsetX,
-    tempoOffsetY: settings.tempoOffsetY,
-    measureNumberOffsetX: settings.measureNumberOffsetX,
-    measureNumberOffsetY: settings.measureNumberOffsetY,
-    measureNumberFontSize: settings.measureNumberFontSize,
-    durationSpacingCompression: settings.durationSpacingCompression,
-    measureWidthCompression: settings.measureWidthCompression,
   };
 }
 
@@ -103,21 +82,42 @@ export const defaultSettings: AppSettings = {
   voltaSpacing: 0,
   hairpinOffsetY: 0,
   activeTab: "page",
-  tempoOffsetX: 0,
-  tempoOffsetY: 0,
-  measureNumberOffsetX: 0,
-  measureNumberOffsetY: 8,
-  measureNumberFontSize: 10,
-  durationSpacingCompression: 0.6,
-  measureWidthCompression: 0.75,
 };
 
 export function resolveAppSettings(saved: string | null): AppSettings {
   if (!saved) return defaultSettings;
   try {
     const parsed = JSON.parse(saved) as Partial<AppSettings> & { useLayoutEngine?: unknown; staffScale?: number };
-    const { useLayoutEngine: _legacyRenderer, staffScale: legacyStaffScale, ...rendererNeutralSettings } = parsed;
+    const {
+      useLayoutEngine: _legacyRenderer,
+      staffScale: legacyStaffScale,
+      tempoOffsetX: _legacyTempoOffsetX,
+      tempoOffsetY: _legacyTempoOffsetY,
+      measureNumberOffsetX: _legacyMeasureNumberOffsetX,
+      measureNumberOffsetY: _legacyMeasureNumberOffsetY,
+      measureNumberFontSize: _legacyMeasureNumberFontSize,
+      durationSpacingCompression: _legacyDurationSpacingCompression,
+      measureWidthCompression: _legacyMeasureWidthCompression,
+      ...rendererNeutralSettings
+    } = parsed as Partial<AppSettings> & {
+      useLayoutEngine?: unknown;
+      staffScale?: number;
+      tempoOffsetX?: unknown;
+      tempoOffsetY?: unknown;
+      measureNumberOffsetX?: unknown;
+      measureNumberOffsetY?: unknown;
+      measureNumberFontSize?: unknown;
+      durationSpacingCompression?: unknown;
+      measureWidthCompression?: unknown;
+    };
     void _legacyRenderer;
+    void _legacyTempoOffsetX;
+    void _legacyTempoOffsetY;
+    void _legacyMeasureNumberOffsetX;
+    void _legacyMeasureNumberOffsetY;
+    void _legacyMeasureNumberFontSize;
+    void _legacyDurationSpacingCompression;
+    void _legacyMeasureWidthCompression;
     if (legacyStaffScale !== undefined) {
       rendererNeutralSettings.staffSpacePt = 5.0 * legacyStaffScale / 0.75;
     }
@@ -154,12 +154,6 @@ export function resolveAppSettings(saved: string | null): AppSettings {
     }
     if (rendererNeutralSettings.headerHeight === undefined || rendererNeutralSettings.headerHeight < r.headerHeight.min || rendererNeutralSettings.headerHeight > r.headerHeight.max) {
       rendererNeutralSettings.headerHeight = r.headerHeight.default;
-    }
-    if (rendererNeutralSettings.durationSpacingCompression === undefined || rendererNeutralSettings.durationSpacingCompression < r.durationSpacingCompression.min || rendererNeutralSettings.durationSpacingCompression > r.durationSpacingCompression.max) {
-      rendererNeutralSettings.durationSpacingCompression = r.durationSpacingCompression.default;
-    }
-    if (rendererNeutralSettings.measureWidthCompression === undefined || rendererNeutralSettings.measureWidthCompression < r.measureWidthCompression.min || rendererNeutralSettings.measureWidthCompression > r.measureWidthCompression.max) {
-      rendererNeutralSettings.measureWidthCompression = r.measureWidthCompression.default;
     }
     return { ...defaultSettings, ...rendererNeutralSettings };
   } catch {

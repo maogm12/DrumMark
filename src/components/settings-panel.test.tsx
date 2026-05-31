@@ -40,30 +40,17 @@ function openAccordionItem(container: HTMLElement, triggerText: string) {
 describe("SettingsPanel smoke", () => {
   const noop = (() => {}) as (value: any) => void;
 
-  it("renders without crashing (debugMode=false)", () => {
+  it("renders without crashing", () => {
     const container = renderSync(
       <SettingsPanel
         settings={defaultSettings}
         updateSetting={noop}
         updatePagePadding={noop}
-        debugMode={false}
       />,
     );
     expect(container.innerHTML).toContain("Notes");
     expect(container.innerHTML).toContain("Page Layout");
     expect(container.innerHTML).toContain("Staff &amp; Layout");
-  });
-
-  it("renders debug sections when debugMode=true", () => {
-    const container = renderSync(
-      <SettingsPanel
-        settings={defaultSettings}
-        updateSetting={noop}
-        updatePagePadding={noop}
-        debugMode={true}
-      />,
-    );
-    expect(container.innerHTML).toContain("Advanced Debugging");
   });
 
   it("hideVoice2Rests toggle renders inside Notation accordion", () => {
@@ -72,7 +59,6 @@ describe("SettingsPanel smoke", () => {
         settings={{ ...defaultSettings, hideVoice2Rests: true }}
         updateSetting={noop}
         updatePagePadding={noop}
-        debugMode={false}
       />,
     );
     expect(container.querySelector(".toggle-root")).toBeTruthy();
@@ -84,7 +70,6 @@ describe("SettingsPanel smoke", () => {
         settings={{ ...defaultSettings, hideVoice2Rests: false }}
         updateSetting={noop}
         updatePagePadding={noop}
-        debugMode={false}
       />,
     );
     const toggle = container.querySelector(".toggle-root");
@@ -98,7 +83,6 @@ describe("SettingsPanel smoke", () => {
         settings={defaultSettings}
         updateSetting={noop}
         updatePagePadding={noop}
-        debugMode={false}
       />,
     );
     openAccordionItem(container, "Staff & Layout");

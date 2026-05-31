@@ -24,11 +24,6 @@ export type ScoreRenderOptions = {
   hideTimeSignature?: boolean;
   hideClef?: boolean;
   hideMeasureNumber?: boolean;
-  tempoOffsetX: number;
-  tempoOffsetY: number;
-  measureNumberOffsetX: number;
-  measureNumberOffsetY: number;
-  measureNumberFontSize: number;
   durationSpacingCompression: number;
   measureWidthCompression: number;
 };
@@ -45,11 +40,6 @@ export const DEFAULT_RENDER_OPTIONS: ScoreRenderOptions = {
   voltaSpacing: 0,
   hairpinOffsetY: 0,
   hideVoice2Rests: false,
-  tempoOffsetX: 0,
-  tempoOffsetY: 0,
-  measureNumberOffsetX: 0,
-  measureNumberOffsetY: 8,
-  measureNumberFontSize: 10,
   durationSpacingCompression: 0.6,
   measureWidthCompression: 0.75,
 };
@@ -65,11 +55,6 @@ export const SETTINGS_RANGES = {
   headerStaffSpacing: { min: 0, max: 100, default: 60 },
   durationSpacingCompression: { min: 0, max: 1.5, default: 0.6 },
   measureWidthCompression: { min: 0, max: 1.5, default: 0.75 },
-  tempoOffsetX: { min: -100, max: 100, default: 0 },
-  tempoOffsetY: { min: -100, max: 100, default: 0 },
-  measureNumberOffsetX: { min: -100, max: 100, default: 0 },
-  measureNumberOffsetY: { min: -100, max: 100, default: 8 },
-  measureNumberFontSize: { min: 6, max: 20, default: 10 },
 } as const;
 
 export type ScoreRenderResult = {

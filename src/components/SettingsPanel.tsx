@@ -65,12 +65,10 @@ export function SettingsPanel({
   settings,
   updateSetting,
   updatePagePadding,
-  debugMode,
 }: {
   settings: AppSettings;
   updateSetting: <K extends keyof AppSettings>(key: K, value: AppSettings[K]) => void;
   updatePagePadding: (key: keyof PagePadding, value: number) => void;
-  debugMode: boolean;
 }) {
   const { t } = useT();
   return (
@@ -125,74 +123,6 @@ export function SettingsPanel({
         </Accordion.Content>
       </Accordion.Item>
 
-      {debugMode && (
-        <Accordion.Item value="debug" className="settings-debug-section">
-          <Accordion.Trigger className="settings-trigger debug-trigger">
-            Advanced Debugging
-            <span className="settings-accordion-chevron" aria-hidden />
-          </Accordion.Trigger>
-          <Accordion.Content className="settings-content">
-            <div className="settings-group-label">Coordinate Offsets</div>
-            <NumericSettingControl
-              label="Tempo X"
-              value={settings.tempoOffsetX}
-              min={-100}
-              max={100}
-              step={1}
-              onChange={(value) => updateSetting("tempoOffsetX", value)}
-            />
-            <NumericSettingControl
-              label="Tempo Y"
-              value={settings.tempoOffsetY}
-              min={-100}
-              max={100}
-              step={1}
-              onChange={(value) => updateSetting("tempoOffsetY", value)}
-            />
-            <NumericSettingControl
-              label="Measure Num X"
-              value={settings.measureNumberOffsetX}
-              min={-100}
-              max={100}
-              step={1}
-              onChange={(value) => updateSetting("measureNumberOffsetX", value)}
-            />
-            <NumericSettingControl
-              label="Measure Num Y"
-              value={settings.measureNumberOffsetY}
-              min={-100}
-              max={100}
-              step={1}
-              onChange={(value) => updateSetting("measureNumberOffsetY", value)}
-            />
-            <NumericSettingControl
-              label="Measure Num Size"
-              value={settings.measureNumberFontSize}
-              min={4}
-              max={24}
-              step={1}
-              onChange={(value) => updateSetting("measureNumberFontSize", value)}
-            />
-            <div className="settings-group-label">Experimental</div>
-            <NumericSettingControl
-              label="Note Spacing Compression"
-              value={settings.durationSpacingCompression}
-              min={0}
-              max={1.5}
-              step={0.05}
-              onChange={(value) => updateSetting("durationSpacingCompression", value)}
-            />
-            <NumericSettingControl
-              label="Measure Width Compression"
-              value={settings.measureWidthCompression}
-              min={0}
-              max={1.5}
-              step={0.05}
-              onChange={(value) => updateSetting("measureWidthCompression", value)}
-            />
-          </Accordion.Content>
-        </Accordion.Item>
-      )}
     </Accordion.Root>
   );
 }

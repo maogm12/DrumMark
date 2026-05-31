@@ -50,7 +50,14 @@ requiredForPair =
   - (next.visual_top - next.local_system_origin_y)
 ```
 
-`requiredNonOverlapSpacing` is the maximum required spacing across actual same-page adjacent pairs for a candidate pagination. To find the automatic base spacing, start from `DEFAULT_SYSTEM_SPACING_PT`, paginate with the current candidate, inspect same-page adjacent systems only, raise the candidate to the largest observed `requiredForPair + SYSTEM_COLLISION_GAP_PT` when needed, and repeat until no same-page pair requires more spacing. Since increasing spacing can only keep or move systems to later pages, the loop should converge; the implementation should cap iterations and keep the largest candidate seen as a safety guard. Header spacing remains independently governed by existing header cursor logic.
+`requiredNonOverlapSpacing` is the maximum required spacing across actual same-page adjacent pairs for a candidate pagination. A candidate is valid when, after paginating with that candidate, no actual same-page adjacent pair requires more than `candidate - SYSTEM_COLLISION_GAP_PT`. To find the automatic base spacing, use a bounded search:
+
+1. Start with lower bound `DEFAULT_SYSTEM_SPACING_PT`.
+2. If the lower bound is valid, use it.
+3. Otherwise establish a valid upper bound by using a conservative maximum requirement observed from candidate pagination, growing the upper bound as needed.
+4. Binary-search between lower and upper bounds to a fixed tolerance, such as `0.25pt`, using the smallest valid candidate found.
+
+This avoids overshooting when a small spacing increase pushes a tall adjacent pair across a page break. Header spacing remains independently governed by existing header cursor logic.
 
 Use explicit option names:
 
@@ -88,7 +95,7 @@ For each same-page adjacent pair under a candidate pagination:
 
 `requiredNonOverlapSpacing = max(0, requiredForPair...)`
 
-The automatic spacing algorithm starts with `DEFAULT_SYSTEM_SPACING_PT`, paginates with that candidate, computes `requiredNonOverlapSpacing` from same-page adjacent pairs, raises the candidate to `max(candidate, requiredNonOverlapSpacing + SYSTEM_COLLISION_GAP_PT)` when needed, and repeats until the candidate no longer grows. Implementations must cap iteration count and preserve the largest candidate reached if the cap is hit.
+The automatic spacing algorithm treats a candidate as valid when paginating with that candidate leaves no same-page adjacent pair requiring more than `candidate - SYSTEM_COLLISION_GAP_PT`. Implementations must find the smallest valid candidate within a fixed tolerance, such as `0.25pt`, by establishing a valid upper bound and binary-searching between `DEFAULT_SYSTEM_SPACING_PT` and that upper bound. This bounded search is required so that a tall pair that becomes page-separated after a small spacing increase does not force the full non-overlap spacing it would need if kept on one page.
 
 The automatic base spacing is:
 
@@ -183,7 +190,7 @@ Scope:
 
 Action:
 - Stop pre-spacing systems by user-controlled absolute spacing before pagination.
-- Compute system boxes and derive one final spacing by iterating candidate pagination and same-page visual-bound requirements.
+- Compute system boxes and derive one final spacing by bounded search over candidate pagination validity and same-page visual-bound requirements.
 - Use that final spacing for all non-first system placements.
 - Preserve header-first-system cursor behavior, first-system-after-page-break behavior, and overflow diagnostics.
 
@@ -197,6 +204,7 @@ Dependencies:
 Acceptance:
 - A fixture with one large hairpin/volta/navigation mark produces equal same-page spacing gaps, measured as `next_origin - previous_origin - staff_bounding_height_pt`.
 - A fixture where an otherwise spacing-inflating tall element lands across a page break does not inflate the final spacing beyond the default/candidate needed for same-page pairs.
+- A threshold fixture proves the algorithm does not overshoot to the full same-page non-overlap requirement when a much smaller spacing increase moves the problematic pair across a page break.
 - Multi-page output uses the same final spacing for all non-first same-page systems after page breaks.
 - Negative offset reduces all same-page spacing gaps equally and may permit visual overlap.
 - Golden changes are intentional and explained.
@@ -243,14 +251,14 @@ Verification:
 - `npm run typecheck`
 - `npm run wasm:build`
 - Golden/snapshot update for any intentional layout output changes.
-- Layout tests for same-page uniform spacing, page-break-separated tall content not inflating spacing, multi-page uniform spacing, negative offset overlap allowance, and old persisted `systemSpacing` reset.
+- Layout tests for same-page uniform spacing, page-break-separated tall content not inflating spacing, threshold/no-overshoot search behavior, multi-page uniform spacing, negative offset overlap allowance, and old persisted `systemSpacing` reset.
 - Browser smoke against `http://localhost:5175/DrumMark/` if permitted by the in-app browser policy.
 
 ## Risks / Notes
 
 - The current pagination code uses visual height as the cursor advance. The new model must avoid losing overflow validation while no longer letting each system pair receive an independent stride.
-- Page breaks can change because final uniform spacing may be larger than some prior pair-specific gaps or smaller than the largest previous visual-height stride. The spacing calculation is pagination-aware and iterative because a tall adjacent pair may become harmless when split across pages.
-- Increasing the candidate spacing should converge because it can only preserve or reduce same-page adjacency by moving later systems down/pageward. The implementation still needs an iteration cap for safety.
+- Page breaks can change because final uniform spacing may be larger than some prior pair-specific gaps or smaller than the largest previous visual-height stride. The spacing calculation is pagination-aware and uses bounded search because a tall adjacent pair may become harmless when split across pages.
+- Candidate validity is not equivalent to jumping directly to the largest observed requirement; the implementation must avoid overshoot by searching for the smallest valid candidate within tolerance.
 - Negative offsets intentionally allow overlap, so validators should not treat all system-to-system visual overlap as a hard layout error unless an existing contract already requires it.
 - Existing `systemSpacing` localStorage values will be dropped/reset, per user request: no migration.
 
@@ -268,3 +276,4 @@ Verification:
 | 1 | 2026-05-31 | Initial draft |
 | 2 | 2026-05-31 | Clarified score-wide pre-pagination spacing, coordinate basis, page-break behavior, option names, and acceptance tests |
 | 3 | 2026-05-31 | Changed spacing derivation to pagination-aware iteration so page-break-separated tall content does not inflate spacing |
+| 4 | 2026-05-31 | Replaced candidate-raise loop with bounded search to find the smallest valid pagination-aware spacing |

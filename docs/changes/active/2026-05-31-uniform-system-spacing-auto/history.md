@@ -96,6 +96,46 @@ Reviewer: Rawls (sub-agent)
 
 STATUS: CHANGES_REQUESTED
 
+---
+
+### Round 5 - Plan Review
+
+Reviewer: Rawls (sub-agent)
+
+### Review Checklist
+
+- [x] Problem clarity — Clear. The plan identifies the uneven pair-specific spacing problem and now correctly notes that page breaks should affect which pairs matter.
+- [x] Goal and non-goals — Mostly clear. It keeps one final spacing value, no mode toggle, offset semantics, and intentional overlap with negative offset.
+- [ ] Scope reasonableness — Scope is still right, but the revised algorithm is now more subtle than the tasks acknowledge. “Smallest spacing” plus pagination-aware exclusion needs an actual search strategy, not only candidate raising.
+- [x] Hidden compatibility risks — Adequately covered. Old `systemSpacing` is reset, new option names are explicit across Rust/WASM/app, and no migration is promised.
+- [ ] Task actionability — Not quite. The candidate-raise loop is implementable, but it does not necessarily find the smallest valid spacing. Task 3 needs a corrected algorithm.
+- [x] Task independence — Good. Option semantics, pagination, and WASM/app wiring are still cleanly separated.
+- [ ] Acceptance criteria verifiability — The criteria are measurable, but they do not catch overshoot. Add a test where a tall pair stops mattering because a small spacing increase pushes it across a page; the result should stay near that threshold, not jump to the pair’s full non-overlap requirement.
+- [ ] Test plan sufficiency — Better than before, but missing the overshoot/page-break-threshold case. Without that, the proposed iteration could pass tests while violating “smallest”.
+- [ ] Unresolved design questions — Yes. The plan needs to decide whether “smallest” is exact/minimal within a tolerance, or whether conservative overshoot is acceptable. The current text says smallest, so the algorithm must match that.
+- [x] Spec Delta required? — Yes, and present.
+- [ ] Spec Delta specificity (if present) — The page-aware behavior is specified, but the algorithm is not correct enough as normative text because the raise-to-required loop can overshoot.
+- [x] ADR-worthy decision? — No. This belongs in the layout contract, not a separate ADR.
+- [x] Human stamp required? — Yes. This remains a Spec / Contract Change and still requires `APPROVED_FOR_IMPLEMENTATION`.
+
+### Comments
+
+1. The design correction is right: a tall system whose next logical neighbor is forced onto the next page should not inflate uniform spacing.
+2. The proposed convergence loop can overshoot. At spacing `20`, A/B may overlap on the same page and require `100`, but spacing `24` might push B to the next page and make the document valid. Jumping to `100 + gap` would violate the “smallest” requirement.
+3. The plan should define candidate validity after pagination, establish upper/lower bounds, and use binary search or another bounded search to a tolerance.
+
+### Agent Response
+
+- Revised `plan.md` to define candidate validity after pagination and replace the candidate-raise loop with bounded search.
+- The new plan starts with `DEFAULT_SYSTEM_SPACING_PT`, establishes a valid upper bound when needed, and binary-searches to a fixed tolerance such as `0.25pt`.
+- Added threshold/no-overshoot acceptance and test requirements.
+
+### Resolution
+
+- R5: open, pending sub-agent re-review.
+
+STATUS: CHANGES_REQUESTED
+
 ### Round 2 Follow-up
 
 Date: 2026-05-31

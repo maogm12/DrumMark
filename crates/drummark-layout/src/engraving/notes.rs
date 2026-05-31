@@ -19,8 +19,8 @@ use crate::scene_builder::{
     GlyphItemSpec, LineItemSpec, PathItemSpec, SceneEmitSink, TextItemSpec,
 };
 use crate::{
-    glyph_position_pt, grace_position_pt, grace_render_font_pt, notation_render_font_pt,
-    ENGRAVING_STROKE_WIDTH_PT,
+    glyph_position_pt, grace_position_pt, grace_render_font_pt, grace_stem_length_pt,
+    notation_render_font_pt, ENGRAVING_STROKE_WIDTH_PT,
 };
 
 use super::beams::{render_beam_groups, BeamAnchor};
@@ -265,24 +265,11 @@ const REST_DOT_PAD_PT: f32 = 8.0;
 const LEDGER_HALF_OVERHANG_PT: f32 = 3.0;
 // Sticking
 const STICKING_PADDING_PT: f32 = 4.0;
-// Grace notes
-const GRACE_SPACING_PT: f32 = 8.0;
-const GRACE_GAP_PT: f32 = 9.0;
-const GRACE_STEM_LEN_PT: f32 = 18.0;
 // Accent
 const ACCENT_GAP_PT: f32 = 4.0;
 const ACCENT_FALLBACK_Y_PT: f32 = 18.0;
 // Beam envelope
 const BEAM_ENVELOPE_PAD_X_PT: f32 = 12.0;
-// Flam slash
-const FLAM_SLASH_Y_OFFSET_PT: f32 = 9.0;
-const FLAM_SLASH_LEFT_PT: f32 = 3.5;
-const FLAM_SLASH_RIGHT_PT: f32 = 4.5;
-const FLAM_SLASH_TOP_PT: f32 = 4.0;
-const FLAM_SLASH_BOTTOM_PT: f32 = 4.0;
-// Grace beam
-const GRACE_SECONDARY_BEAM_OFFSET_PT: f32 = 4.0;
-const GRACE_BEAM_THICKNESS_PT: f32 = 2.0;
 // Collision epsilon
 const CHORD_DISPLACE_EPSILON: f32 = 0.01;
 // Rest overlap
@@ -1165,8 +1152,16 @@ pub(crate) fn render_grace_notes_for_hit(
     };
 
     let grace_render = grace_render_font_pt(sink.staff_space_pt);
-    let grace_spacing = GRACE_SPACING_PT;
-    let grace_gap = GRACE_GAP_PT;
+    let grace_stem_len_pt = grace_stem_length_pt(sink.staff_space_pt);
+    let grace_scale = sink.staff_space_pt / 5.0;
+    let grace_spacing = 8.0 * grace_scale;
+    let grace_gap = 9.0 * grace_scale;
+    let flam_slash_left_pt = 3.5 * grace_scale;
+    let flam_slash_right_pt = 4.5 * grace_scale;
+    let flam_slash_half_v = 3.0 * grace_scale;
+    let flam_slash_shift = grace_stem_len_pt * 0.4;
+    let grace_secondary_beam_offset_pt = 4.0 * grace_scale;
+    let grace_beam_thickness_pt = 2.0 * grace_scale;
     let note_metric = canonical_glyph_metric(note_role);
     let note_glyph = note_metric.render_text();
     let total_grace_width = (grace_count as f32 - 1.0) * grace_spacing;
@@ -1205,9 +1200,9 @@ pub(crate) fn render_grace_notes_for_hit(
         let stem_x = grace_x + stem_anchor.x_ss * smufl_ss - ENGRAVING_STROKE_WIDTH_PT / 2.0;
         let stem_attach_y = main_note_y - stem_anchor.y_ss * smufl_ss;
         let (stem_y1, stem_y2) = if stem_up {
-            (stem_attach_y - GRACE_STEM_LEN_PT, stem_attach_y)
+            (stem_attach_y - grace_stem_len_pt, stem_attach_y)
         } else {
-            (stem_attach_y, stem_attach_y + GRACE_STEM_LEN_PT)
+            (stem_attach_y, stem_attach_y + grace_stem_len_pt)
         };
         let stem_id = sink.push_line_item(LineItemSpec {
             measure_id: Some(measure_id),
@@ -1253,18 +1248,24 @@ pub(crate) fn render_grace_notes_for_hit(
         }
 
         if has_flam {
-            let slash_mid_y = if stem_up {
-                stem_y1 + FLAM_SLASH_Y_OFFSET_PT
+            let stem_tip_y = if stem_up { stem_y1 } else { stem_y2 };
+            let slash_ref_y = if stem_up {
+                stem_tip_y + flam_slash_shift
             } else {
-                stem_y2 - FLAM_SLASH_Y_OFFSET_PT
+                stem_tip_y - flam_slash_shift
+            };
+            let (slash_y1, slash_y2) = if stem_up {
+                (slash_ref_y + flam_slash_half_v, slash_ref_y - flam_slash_half_v)
+            } else {
+                (slash_ref_y - flam_slash_half_v, slash_ref_y + flam_slash_half_v)
             };
             let slash_id = sink.push_line_item(LineItemSpec {
                 measure_id: Some(measure_id),
                 role: "grace-slash",
-                x1: stem_x - FLAM_SLASH_LEFT_PT,
-                y1: slash_mid_y + FLAM_SLASH_TOP_PT,
-                x2: stem_x + FLAM_SLASH_RIGHT_PT,
-                y2: slash_mid_y - FLAM_SLASH_BOTTOM_PT,
+                x1: stem_x - flam_slash_left_pt,
+                y1: slash_y1,
+                x2: stem_x + flam_slash_right_pt,
+                y2: slash_y2,
                 stroke: "#333",
                 stroke_width: ENGRAVING_STROKE_WIDTH_PT,
                 stroke_line_cap: Some("round"),
@@ -1279,14 +1280,14 @@ pub(crate) fn render_grace_notes_for_hit(
         let primary_id = sink.push_path_item(PathItemSpec {
             measure_id: Some(measure_id),
             role: "grace-beam",
-            d: grace_beam_path_d(first_x, first_y, last_x, last_y, stem_up),
+            d: grace_beam_path_d(first_x, first_y, last_x, last_y, stem_up, grace_beam_thickness_pt),
             fill: "#333",
             stroke: None,
             stroke_width: None,
         });
         sink.set_anchor_item_id(&primary_id, Some(first_stem_id.clone()));
 
-        let secondary_offset = if stem_up { GRACE_SECONDARY_BEAM_OFFSET_PT } else { -GRACE_SECONDARY_BEAM_OFFSET_PT };
+        let secondary_offset = if stem_up { grace_secondary_beam_offset_pt } else { -grace_secondary_beam_offset_pt };
         let secondary_id = sink.push_path_item(PathItemSpec {
             measure_id: Some(measure_id),
             role: "grace-beam-secondary",
@@ -1296,6 +1297,7 @@ pub(crate) fn render_grace_notes_for_hit(
                 last_x,
                 last_y + secondary_offset,
                 stem_up,
+                grace_beam_thickness_pt,
             ),
             fill: "#333",
             stroke: None,
@@ -1305,8 +1307,7 @@ pub(crate) fn render_grace_notes_for_hit(
     }
 }
 
-fn grace_beam_path_d(x1: f32, y1: f32, x2: f32, y2: f32, up: bool) -> String {
-    let thickness = GRACE_BEAM_THICKNESS_PT;
+fn grace_beam_path_d(x1: f32, y1: f32, x2: f32, y2: f32, up: bool, thickness: f32) -> String {
     let offset = if up { thickness } else { -thickness };
     format!(
         "M {:.3} {:.3} L {:.3} {:.3} L {:.3} {:.3} L {:.3} {:.3} Z",

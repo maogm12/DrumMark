@@ -127,6 +127,9 @@ pub fn grace_position_pt(staff_space_pt: f32) -> f32 {
 pub fn grace_render_font_pt(staff_space_pt: f32) -> f32 {
     grace_position_pt(staff_space_pt)
 }
+pub fn grace_stem_length_pt(staff_space_pt: f32) -> f32 {
+    staff_space_pt * options::DEFAULT_STEM_LEN_SS * grace_position_pt(staff_space_pt) / glyph_position_pt(staff_space_pt)
+}
 pub fn nav_glyph_position_pt(staff_space_pt: f32) -> f32 {
     staff_space_pt * 2.666667
 }

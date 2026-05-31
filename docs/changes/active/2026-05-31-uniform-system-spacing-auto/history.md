@@ -98,6 +98,59 @@ STATUS: CHANGES_REQUESTED
 
 ---
 
+### Round 7 - Plan Review
+
+Reviewer: Rawls (sub-agent)
+
+### Review Checklist
+
+- [x] Problem clarity — Clear. The plan states the uneven spacing problem and the page-aware requirement that cross-page pairs must not inflate spacing.
+- [x] Goal and non-goals — Clear. The final spacing is now defined as search result plus offset; modes, migration, and guaranteed non-overlap after negative offset are explicitly out.
+- [x] Scope reasonableness — Reasonable. The scope matches the behavior change: layout pagination, option semantics, WASM/app wiring, tests, and contract addendum.
+- [x] Hidden compatibility risks — Adequately covered. The old `systemSpacing` reset and new Rust/WASM/app names are explicit.
+- [x] Task actionability — Good. Candidate validity, search tolerance, upper-bound search, and output placement rule are specific enough to implement.
+- [x] Task independence — Good. Plan/contract, option semantics, pagination, and WASM/app wiring are separable.
+- [x] Acceptance criteria verifiability — Good. It defines exact gap measurement and includes the no-overshoot threshold fixture.
+- [x] Test plan sufficiency — Sufficient. It covers same-page uniform spacing, cross-page tall content, threshold search behavior, multi-page consistency, negative offset, settings reset, WASM, typecheck, and golden updates.
+- [x] Unresolved design questions — None blocking. The search result is now the source of truth for `autoBaseSpacing`.
+- [x] Spec Delta required? — Yes, correctly included.
+- [x] Spec Delta specificity (if present) — Specific enough. It documents coordinate basis, candidate validity, tolerance-based bounded search, page-break semantics, offset behavior, and visual-bounds role.
+- [x] ADR-worthy decision? — No. This is a layout contract change, and the contract addendum is sufficient.
+- [x] Human stamp required? — Yes. This is still a Spec / Contract Change and needs `APPROVED_FOR_IMPLEMENTATION` recorded before coding.
+
+### Comments
+
+1. The formula conflict is fixed. Defining `autoBaseSpacing` as the bounded-search result makes the threshold/page-break case coherent.
+2. During implementation review, check that the valid upper-bound search cannot loop forever.
+3. During implementation review, check that the final layout pass uses `autoBaseSpacing + offset`, while the search itself uses pre-offset candidates.
+
+### Agent Response
+
+- Agreed. Implementation review will explicitly check bounded upper-bound termination and that user offset is applied only after the automatic base search.
+
+### Resolution
+
+- R7: approved.
+
+STATUS: APPROVED
+
+### Approved Plan
+
+Approved file: `docs/changes/active/2026-05-31-uniform-system-spacing-auto/plan.md`
+Approved commit: 6e1fde8
+Approved summary:
+- Replace pair-specific visual-height system advance with one final spacing value for same-page non-first systems.
+- Derive `autoBaseSpacing` through a page-aware bounded search for the smallest valid candidate at or above `DEFAULT_SYSTEM_SPACING_PT`.
+- Candidate validity is checked after pagination using actual same-page adjacent system pairs only; cross-page pairs do not inflate spacing.
+- Apply `systemSpacingOffsetPt` / `system_spacing_offset_pt` after the automatic base search, allowing negative offsets to intentionally overlap.
+- Drop/reset old persisted `systemSpacing`; do not migrate old absolute values.
+- Append the layout contract addendum before implementation review.
+
+Open conditions:
+- Human stamp required before implementation.
+
+---
+
 ### Round 6 - Plan Review
 
 Reviewer: Rawls (sub-agent)

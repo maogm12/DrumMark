@@ -98,6 +98,46 @@ STATUS: CHANGES_REQUESTED
 
 ---
 
+### Round 6 - Plan Review
+
+Reviewer: Rawls (sub-agent)
+
+### Review Checklist
+
+- [x] Problem clarity — Clear. The plan now captures both the uneven spacing problem and the page-break exception that should prevent irrelevant tall pairs from inflating spacing.
+- [x] Goal and non-goals — Mostly clear. The intent is right: no mode toggle, offset semantics, no migration, negative offsets may overlap.
+- [x] Scope reasonableness — Reasonable. This remains correctly scoped as a layout contract plus WASM/app setting change.
+- [x] Hidden compatibility risks — Adequately covered. Old/new option names and localStorage reset behavior are explicit.
+- [ ] Task actionability — Almost, but there is a conflicting formula that would mislead implementation.
+- [x] Task independence — Good. Option semantics, pagination search, and WASM/app wiring are independently staged.
+- [x] Acceptance criteria verifiability — Good. The threshold/no-overshoot fixture is the right test for the subtle page-break case.
+- [x] Test plan sufficiency — Sufficient once the formula conflict is fixed. It covers same-page, page-break-separated tall content, no-overshoot threshold behavior, multi-page spacing, negative offset, settings reset, WASM, and typecheck.
+- [ ] Unresolved design questions — One blocking ambiguity remains: whether `autoBaseSpacing` is the search result or recomputed from `requiredNonOverlapSpacing` after the final candidate pagination.
+- [x] Spec Delta required? — Yes, and present.
+- [ ] Spec Delta specificity (if present) — The search algorithm is specific enough, but the old formula contradicts it.
+- [x] ADR-worthy decision? — No. The contract addendum is the right home.
+- [x] Human stamp required? — Yes. This is still a Spec / Contract Change and requires `APPROVED_FOR_IMPLEMENTATION`.
+
+### Comments
+
+1. The bounded-search design fixes the overshoot problem.
+2. The plan still had the old `autoBaseSpacing = max(DEFAULT_SYSTEM_SPACING_PT, requiredNonOverlapSpacing + SYSTEM_COLLISION_GAP_PT)` formula, which contradicts the search algorithm. In a threshold case, final observed same-page requirements may drop to zero, which would incorrectly recompute the base back to the invalid default.
+3. `autoBaseSpacing` should be defined as the smallest valid candidate returned by bounded search. `requiredForPair` and `requiredNonOverlapSpacing` should only be candidate-validity measurements.
+
+### Agent Response
+
+- Revised `plan.md` to define `autoBaseSpacing` as `smallest valid candidate >= DEFAULT_SYSTEM_SPACING_PT within SYSTEM_SPACING_SEARCH_TOLERANCE_PT`.
+- Removed the obsolete direct formula from the Goal and Spec Delta.
+- Kept `requiredForPair` and `requiredNonOverlapSpacing` only as validity/search measurements.
+
+### Resolution
+
+- R6: open, pending sub-agent re-review.
+
+STATUS: CHANGES_REQUESTED
+
+---
+
 ### Round 5 - Plan Review
 
 Reviewer: Rawls (sub-agent)

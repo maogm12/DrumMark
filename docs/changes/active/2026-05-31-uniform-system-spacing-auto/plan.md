@@ -14,7 +14,7 @@ The requested behavior is a uniform system spacing model: find the smallest one 
 
 - Use one final system spacing value for every non-first system placement on every page.
 - Compute that value from layout content:
-  - `autoBaseSpacing = max(DEFAULT_SYSTEM_SPACING_PT, requiredNonOverlapSpacing + SYSTEM_COLLISION_GAP_PT)`
+  - `autoBaseSpacing = smallest valid candidate >= DEFAULT_SYSTEM_SPACING_PT within SYSTEM_SPACING_SEARCH_TOLERANCE_PT`
   - `finalSystemSpacing = autoBaseSpacing + systemSpacingOffsetPt`
 - Preserve user control by treating the existing app option as an offset, not an absolute spacing.
 - Do not provide a mode toggle.
@@ -97,9 +97,9 @@ For each same-page adjacent pair under a candidate pagination:
 
 The automatic spacing algorithm treats a candidate as valid when paginating with that candidate leaves no same-page adjacent pair requiring more than `candidate - SYSTEM_COLLISION_GAP_PT`. Implementations must find the smallest valid candidate within a fixed tolerance, such as `0.25pt`, by establishing a valid upper bound and binary-searching between `DEFAULT_SYSTEM_SPACING_PT` and that upper bound. This bounded search is required so that a tall pair that becomes page-separated after a small spacing increase does not force the full non-overlap spacing it would need if kept on one page.
 
-The automatic base spacing is:
+The automatic base spacing is the search result, not a direct formula from the final page's observed requirements:
 
-`autoBaseSpacing = max(DEFAULT_SYSTEM_SPACING_PT, requiredNonOverlapSpacing + SYSTEM_COLLISION_GAP_PT)`
+`autoBaseSpacing = smallest valid candidate >= DEFAULT_SYSTEM_SPACING_PT within SYSTEM_SPACING_SEARCH_TOLERANCE_PT`
 
 The final spacing used between non-first systems is:
 
@@ -277,3 +277,4 @@ Verification:
 | 2 | 2026-05-31 | Clarified score-wide pre-pagination spacing, coordinate basis, page-break behavior, option names, and acceptance tests |
 | 3 | 2026-05-31 | Changed spacing derivation to pagination-aware iteration so page-break-separated tall content does not inflate spacing |
 | 4 | 2026-05-31 | Replaced candidate-raise loop with bounded search to find the smallest valid pagination-aware spacing |
+| 5 | 2026-05-31 | Defined `autoBaseSpacing` as the bounded-search result rather than recomputing from final observed requirements |

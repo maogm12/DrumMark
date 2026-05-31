@@ -65,12 +65,10 @@ export function SettingsPanel({
   settings,
   updateSetting,
   updatePagePadding,
-  debugMode,
 }: {
   settings: AppSettings;
   updateSetting: <K extends keyof AppSettings>(key: K, value: AppSettings[K]) => void;
   updatePagePadding: (key: keyof PagePadding, value: number) => void;
-  debugMode: boolean;
 }) {
   const { t } = useT();
   return (
@@ -116,7 +114,7 @@ export function SettingsPanel({
           <ToggleSetting labelKey="settings.hideTimeSignature" checked={settings.hideTimeSignature} onCheckedChange={(checked) => updateSetting("hideTimeSignature", checked)} />
           <ToggleSetting labelKey="settings.hideClef" checked={settings.hideClef} onCheckedChange={(checked) => updateSetting("hideClef", checked)} />
           <ToggleSetting labelKey="settings.hideMeasureNumber" checked={settings.hideMeasureNumber} onCheckedChange={(checked) => updateSetting("hideMeasureNumber", checked)} />
-          <Numeric labelKey="settings.staffSpacePt" value={Math.round(settings.staffSpacePt * 10)} min={10} max={100} step={5} unit="pt" onChange={(value) => updateSetting("staffSpacePt", value / 10)} />
+          <Numeric labelKey="settings.staffSpacePt" value={settings.staffSpacePt} min={SETTINGS_RANGES.staffSpacePt.min} max={SETTINGS_RANGES.staffSpacePt.max} step={0.5} unit="pt" onChange={(value) => updateSetting("staffSpacePt", value)} />
           <Numeric labelKey="settings.systemSpacing" value={settings.systemSpacing} min={SETTINGS_RANGES.systemSpacing.min} max={SETTINGS_RANGES.systemSpacing.max} step={1} onChange={(value) => updateSetting("systemSpacing", value)} />
           <Numeric labelKey="settings.titleHeight" value={settings.headerHeight} min={SETTINGS_RANGES.headerHeight.min} max={SETTINGS_RANGES.headerHeight.max} step={1} onChange={(value) => updateSetting("headerHeight", value)} />
           <Numeric labelKey="settings.titleGap" value={settings.headerStaffSpacing} min={SETTINGS_RANGES.headerStaffSpacing.min} max={SETTINGS_RANGES.headerStaffSpacing.max} step={1} onChange={(value) => updateSetting("headerStaffSpacing", value)} />
@@ -125,74 +123,6 @@ export function SettingsPanel({
         </Accordion.Content>
       </Accordion.Item>
 
-      {debugMode && (
-        <Accordion.Item value="debug" className="settings-debug-section">
-          <Accordion.Trigger className="settings-trigger debug-trigger">
-            Advanced Debugging
-            <span className="settings-accordion-chevron" aria-hidden />
-          </Accordion.Trigger>
-          <Accordion.Content className="settings-content">
-            <div className="settings-group-label">Coordinate Offsets</div>
-            <NumericSettingControl
-              label="Tempo X"
-              value={settings.tempoOffsetX}
-              min={-100}
-              max={100}
-              step={1}
-              onChange={(value) => updateSetting("tempoOffsetX", value)}
-            />
-            <NumericSettingControl
-              label="Tempo Y"
-              value={settings.tempoOffsetY}
-              min={-100}
-              max={100}
-              step={1}
-              onChange={(value) => updateSetting("tempoOffsetY", value)}
-            />
-            <NumericSettingControl
-              label="Measure Num X"
-              value={settings.measureNumberOffsetX}
-              min={-100}
-              max={100}
-              step={1}
-              onChange={(value) => updateSetting("measureNumberOffsetX", value)}
-            />
-            <NumericSettingControl
-              label="Measure Num Y"
-              value={settings.measureNumberOffsetY}
-              min={-100}
-              max={100}
-              step={1}
-              onChange={(value) => updateSetting("measureNumberOffsetY", value)}
-            />
-            <NumericSettingControl
-              label="Measure Num Size"
-              value={settings.measureNumberFontSize}
-              min={4}
-              max={24}
-              step={1}
-              onChange={(value) => updateSetting("measureNumberFontSize", value)}
-            />
-            <div className="settings-group-label">Experimental</div>
-            <NumericSettingControl
-              label="Note Spacing Compression"
-              value={settings.durationSpacingCompression}
-              min={0}
-              max={1.5}
-              step={0.05}
-              onChange={(value) => updateSetting("durationSpacingCompression", value)}
-            />
-            <NumericSettingControl
-              label="Measure Width Compression"
-              value={settings.measureWidthCompression}
-              min={0}
-              max={1.5}
-              step={0.05}
-              onChange={(value) => updateSetting("measureWidthCompression", value)}
-            />
-          </Accordion.Content>
-        </Accordion.Item>
-      )}
     </Accordion.Root>
   );
 }

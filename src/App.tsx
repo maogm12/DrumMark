@@ -445,8 +445,6 @@ function PagePreview({
             hideTimeSignature: layout.hideTimeSignature,
             hideClef: layout.hideClef,
             hideMeasureNumber: layout.hideMeasureNumber,
-            durationSpacingCompression: layout.durationSpacingCompression,
-            measureWidthCompression: layout.measureWidthCompression,
           },
           { source, sourceRevision },
         );
@@ -625,7 +623,6 @@ export function App() {
   const pageZoomMenuOpenRef = useRef(pageZoomMenuOpen);
   useEffect(() => { pageZoomMenuOpenRef.current = pageZoomMenuOpen; }, [pageZoomMenuOpen]);
   const [xmlCollapsed, setXmlCollapsed] = useState<Set<string>>(new Set());
-  const debugMode = new URLSearchParams(window.location.search).has("debug");
   const suspendPreview = new URLSearchParams(window.location.search).has("suspendPreview");
 
   const xmlToggle = (path: string) => {
@@ -710,13 +707,6 @@ export function App() {
       settings.hideTimeSignature,
       settings.hideClef,
       settings.hideMeasureNumber,
-      settings.tempoOffsetX,
-      settings.tempoOffsetY,
-      settings.measureNumberOffsetX,
-      settings.measureNumberOffsetY,
-      settings.measureNumberFontSize,
-      settings.durationSpacingCompression,
-      settings.measureWidthCompression,
     ],
   );
   const canExport = !isScorePending && hasRenderableScore && score.errors.length === 0;
@@ -1298,7 +1288,6 @@ export function App() {
                 settings={settings}
                 updateSetting={updateSetting}
                 updatePagePadding={updatePagePadding}
-                debugMode={debugMode}
               />
             </aside>
           </div>

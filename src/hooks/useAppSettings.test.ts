@@ -29,4 +29,24 @@ describe("resolveAppSettings", () => {
   it("converts legacy staff-space stem offset to pt", () => {
     expect(resolveAppSettings(JSON.stringify({ stemLength: 1, staffSpacePt: 5 })).stemLength).toBe(5);
   });
+
+  it("drops removed debug and experimental settings from saved settings", () => {
+    const settings = resolveAppSettings(JSON.stringify({
+      tempoOffsetX: 20,
+      tempoOffsetY: -10,
+      measureNumberOffsetX: 5,
+      measureNumberOffsetY: 12,
+      measureNumberFontSize: 18,
+      durationSpacingCompression: 1.2,
+      measureWidthCompression: 1.1,
+    }));
+
+    expect(settings).not.toHaveProperty("tempoOffsetX");
+    expect(settings).not.toHaveProperty("tempoOffsetY");
+    expect(settings).not.toHaveProperty("measureNumberOffsetX");
+    expect(settings).not.toHaveProperty("measureNumberOffsetY");
+    expect(settings).not.toHaveProperty("measureNumberFontSize");
+    expect(settings).not.toHaveProperty("durationSpacingCompression");
+    expect(settings).not.toHaveProperty("measureWidthCompression");
+  });
 });

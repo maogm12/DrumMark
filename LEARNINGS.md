@@ -218,6 +218,14 @@ When an older note conflicts with this file, treat this file plus the active spe
 ## 2026-05-22 Rest Layout Planning
 
 - Rest event generation is already reasonably musical in `crates/drummark-core/src/render_score.rs`: measure gaps are split at grouping boundaries and then decomposed into primitive rest durations before reaching layout.
+
+## 2026-05-31 Hairpin Bottom Skyline Placement
+
+- Hairpins are emitted as post-layer structural spans after system-owned note/stem/beam items have already been built. Hairpin skyline placement should therefore sample the target `SceneSystem.items`, not only the current post-layer sink.
+- `bottom_skyline_sample()` returns occupied content bottom, not a hairpin centerline. For open wedges, derive the center Y from `occupied_bottom + max_open_height / 2` so the top hairpin stroke, not merely the bottom stroke, clears voice-2 stems and beams.
+
+## 2026-05-22 Rest Layout Planning Continued
+
 - The remaining weakness is in `crates/drummark-layout/src/lib.rs`: `render_slot_group()` currently resolves rest X intelligently but still hardcodes rest Y to `staff_top + 20.0` for voice 1 and `staff_top + 30.0` for voice 2.
 - Because rest placement happens before any collision-aware lane selection, same-slot combinations like rest+notehead, rest+stem, rest+beam, and rest+accent can overlap even though the rhythmic slot center is correct.
 - A robust fix belongs in layout, not the SVG adapter: build slot-local obstacle geometry, choose from canonical rest lanes per voice, and preserve whole-measure rest alignment as a separate rule.
@@ -396,7 +404,7 @@ When an older note conflicts with this file, treat this file plus the active spe
 
 ## 2026-05-29 Stem Length Fine Offset In Pt
 
-- `stem_len_offset_pt` fine-tunes the default span: `stem_length_pt = staff_space_pt × 4 + offset_pt`. WASM key `stemLenOffsetPt`; app slider −12…+12 pt step 0.5. Base still scales with staff space; offset stays in pt for finer control than staff-space steps.
+- `stem_len_offset_pt` fine-tunes the default span: `stem_length_pt = staff_space_pt × DEFAULT_STEM_LEN_SS + offset_pt`. WASM key `stemLenOffsetPt`; app slider −12…+12 pt step 0.5. Base still scales with staff space; offset stays in pt for finer control than staff-space steps.
 
 ## 2026-05-29 Barline Vertical Span And Continuation Repeat Start
 
@@ -415,3 +423,7 @@ When an older note conflicts with this file, treat this file plus the active spe
 - Secondary SMuFL render sizes (`flag_render_font_pt`, `grace_render_font_pt`, etc.) must match their `*_position_pt` partners; the old `× 0.75` render factors were compensating for the SVG `pt` suffix bug.
 - Scene SVG adapters (`src/renderer/svgRenderer.ts`, `crates/drummark-cli/src/svg.rs`) must emit unitless `font-size="{n}"`, not `font-size="{n}pt"`. With `viewBox` in layout points, CSS `pt` on `font-size` applies the `96/72` conversion and inflates glyphs ~33% relative to PDF (`SetFont` uses true points).
 - `planning::SVG_POINT_TO_USER_UNIT` is `1.0` after that fix; the previous `4/3` constant only mirrored the mistaken SVG `pt` suffix.
+
+## 2026-05-31 Stem Vertical Basis
+
+- Normal note stems should keep glyph-specific stem anchor X/Y for the rendered notehead-side endpoint, but their stem-tip length reference must use the resolved staff-position `note_y`. SMuFL anchor Y differs across notehead shapes (for example X noteheads anchor near the upper-right, circle-X anchors at center), so using anchor Y to choose the stem tip makes equal-track notes produce slightly different tip heights and sloped beams.

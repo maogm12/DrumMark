@@ -508,7 +508,7 @@ mod tests {
         assert_eq!(opts.header_staff_spacing_pt, 60.0);
         assert_eq!(opts.volta_offset_y, 0.0);
         assert_eq!(opts.stem_len_offset_pt, 0.0);
-        assert!((stem_length_pt(&opts) - 20.0).abs() < 0.01);
+        assert!((stem_length_pt(&opts) - 15.0).abs() < 0.01);
     }
 
     #[test]
@@ -518,9 +518,9 @@ mod tests {
             staff_space_pt: 5.0,
             ..Default::default()
         };
-        assert!((stem_length_pt(&opts) - 22.0).abs() < 0.01);
+        assert!((stem_length_pt(&opts) - 17.0).abs() < 0.01);
         opts.staff_space_pt = 8.0;
-        assert!((stem_length_pt(&opts) - 34.0).abs() < 0.01);
+        assert!((stem_length_pt(&opts) - 26.0).abs() < 0.01);
     }
 
     #[test]
@@ -937,6 +937,43 @@ mod tests {
     }
 
     #[test]
+    fn test_hairpin_open_height_scales_with_staff_space() {
+        let mut measure = regular_measure(0, 0, 4);
+        measure.hairpins = vec![HairpinSpan {
+            kind: HairpinKind::Crescendo,
+            start: Fraction {
+                numerator: 0,
+                denominator: 1,
+            },
+            end: Fraction {
+                numerator: 1,
+                denominator: 1,
+            },
+            start_measure_index: 0,
+            end_measure_index: 0,
+        }];
+        let score = simple_layout_score(vec![measure]);
+
+        for staff_space_pt in [4.0, 8.0] {
+            let scene = build_layout_scene(
+                &score,
+                &LayoutOptions {
+                    staff_space_pt,
+                    ..LayoutOptions::default()
+                },
+            );
+            let top = line_for_role(&scene.pages[0], "hairpin-top");
+            let bottom = line_for_role(&scene.pages[0], "hairpin-bottom");
+            let open_height = bottom.y2_pt - top.y2_pt;
+
+            assert!(
+                (open_height - staff_space_pt * 2.0).abs() < 0.01,
+                "hairpin open height should be 2 staff spaces: open_height={open_height:.2} staff_space_pt={staff_space_pt:.2}"
+            );
+        }
+    }
+
+    #[test]
     fn test_hairpin_vertical_offset_moves_down_when_positive() {
         let mut measure = regular_measure(0, 0, 4);
         measure.hairpins = vec![HairpinSpan {
@@ -973,6 +1010,84 @@ mod tests {
         let baseline_y = hairpin_center_y(&baseline.pages[0]);
         assert!((hairpin_center_y(&below.pages[0]) - baseline_y - 10.0).abs() < 0.01);
         assert!((hairpin_center_y(&above.pages[0]) - baseline_y + 5.0).abs() < 0.01);
+    }
+
+    #[test]
+    fn test_hairpin_sits_below_voice2_stems() {
+        let mut measure = regular_measure(0, 0, 4);
+        for event in &mut measure.events {
+            event.track = "BD".into();
+            event.track_family = "drum".into();
+            event.glyph = "d".into();
+            event.voice = 2;
+        }
+        measure.hairpins = vec![HairpinSpan {
+            kind: HairpinKind::Decrescendo,
+            start: Fraction {
+                numerator: 0,
+                denominator: 1,
+            },
+            end: Fraction {
+                numerator: 1,
+                denominator: 1,
+            },
+            start_measure_index: 0,
+            end_measure_index: 0,
+        }];
+
+        let scene = build_layout_scene(
+            &RenderScore {
+                version: RENDER_SCORE_VERSION.to_string(),
+                header: RenderHeader {
+                    tempo: 120,
+                    time_beats: 4,
+                    time_beat_unit: 4,
+                    divisions: 8,
+                    note_value: 8,
+                    grouping: vec![2, 2],
+                    title: None,
+                    subtitle: None,
+                    composer: None,
+                },
+                tracks: vec![RenderTrack {
+                    id: "BD".into(),
+                    family: "drum".into(),
+                }],
+                measures: vec![measure],
+                errors: vec![],
+                repeat_spans: vec![],
+            },
+            &LayoutOptions::default(),
+        );
+        let page = &scene.pages[0];
+        let staff_space_pt = LayoutOptions::default().staff_space_pt;
+        let mut content_bottom = f32::NEG_INFINITY;
+        for item in page_all_items(page) {
+            if !matches!(item.role.as_str(), "notehead" | "stem" | "beam" | "beam-secondary") {
+                continue;
+            }
+            let Some((_, y, _, height)) = item_bounds(item, staff_space_pt) else {
+                continue;
+            };
+            content_bottom = content_bottom.max(y + height);
+        }
+        assert!(
+            content_bottom.is_finite(),
+            "expected voice-2 note content in fixture"
+        );
+
+        let hairpin_top = line_for_role(page, "hairpin-top");
+        let hairpin_bottom = line_for_role(page, "hairpin-bottom");
+        let hairpin_highest = hairpin_top
+            .y1_pt
+            .min(hairpin_top.y2_pt)
+            .min(hairpin_bottom.y1_pt)
+            .min(hairpin_bottom.y2_pt);
+        let expected_gap = staff_space_pt * 0.4;
+        assert!(
+            hairpin_highest >= content_bottom + expected_gap - 0.5,
+            "hairpin top should leave a small gap below voice-2 content: hairpin_highest={hairpin_highest:.2} content_bottom={content_bottom:.2} expected_gap={expected_gap:.2}"
+        );
     }
 
     #[test]
@@ -3907,6 +4022,97 @@ mod tests {
         assert!(
             (xs[0] - xs[1]).abs() < 0.01,
             "same-position hits should not split horizontally: {xs:?}"
+        );
+    }
+
+    #[test]
+    fn test_same_track_beamed_stems_ignore_notehead_anchor_y() {
+        let measure = RenderMeasure {
+            index: 0,
+            global_index: 0,
+            paragraph_index: 0,
+            measure_in_paragraph: 0,
+            source_line: 1,
+            events: vec![
+                RenderEvent {
+                    track: "HH".into(),
+                    track_family: "cymbal".into(),
+                    start: Fraction {
+                        numerator: 0,
+                        denominator: 1,
+                    },
+                    duration: Fraction {
+                        numerator: 1,
+                        denominator: 8,
+                    },
+                    visual_duration: Fraction {
+                        numerator: 1,
+                        denominator: 8,
+                    },
+                    kind: EventKind::Hit,
+                    glyph: "x".into(),
+                    modifiers: vec![],
+                    dot_count: 0,
+                    modifier: None,
+                    voice: 1,
+                    beam: "begin".into(),
+                    tuplet: None,
+                },
+                RenderEvent {
+                    track: "HH".into(),
+                    track_family: "cymbal".into(),
+                    start: Fraction {
+                        numerator: 1,
+                        denominator: 8,
+                    },
+                    duration: Fraction {
+                        numerator: 1,
+                        denominator: 8,
+                    },
+                    visual_duration: Fraction {
+                        numerator: 1,
+                        denominator: 8,
+                    },
+                    kind: EventKind::Hit,
+                    glyph: "x".into(),
+                    modifiers: vec!["open".into()],
+                    dot_count: 0,
+                    modifier: None,
+                    voice: 1,
+                    beam: "end".into(),
+                    tuplet: None,
+                },
+            ],
+            barline: Some("regular".into()),
+            closing_barline: Some("final".into()),
+            start_nav: None,
+            end_nav: None,
+            volta_indices: None,
+            hairpins: vec![],
+            dynamics: vec![],
+            measure_repeat_slashes: None,
+            multi_rest_count: None,
+            note_value: 8,
+            volta_terminator: false,
+        };
+        let scene = build_layout_scene(
+            &simple_layout_score(vec![measure]),
+            &LayoutOptions::default(),
+        );
+        let stems = items_by_role(&scene, "stem");
+        assert_eq!(stems.len(), 2);
+
+        let mut stem_tips = stems
+            .iter()
+            .map(|stem| match &stem.primitive {
+                ScenePrimitive::LineSegment(line) => line.y1_pt,
+                _ => panic!("stem should be a line"),
+            })
+            .collect::<Vec<_>>();
+        stem_tips.sort_by(|a, b| a.partial_cmp(b).unwrap());
+        assert!(
+            (stem_tips[1] - stem_tips[0]).abs() < 0.01,
+            "same-track x and circle-x noteheads should produce level stem tips: {stem_tips:?}"
         );
     }
 

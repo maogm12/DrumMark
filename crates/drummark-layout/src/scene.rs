@@ -761,11 +761,18 @@ pub fn build_layout_scene(score: &RenderScore, opts: &LayoutOptions) -> LayoutSc
     render_hairpin_fragments(
         &mut post_sink,
         &mut post_composites,
+        &page.systems,
         &page_measures,
         &expanded.measures,
         opts.hairpin_offset_y,
     );
-    render_dynamic_marks(&mut post_sink, &page_measures, &expanded.measures, &score.header);
+    render_dynamic_marks(
+        &mut post_sink,
+        &page.systems,
+        &page_measures,
+        &expanded.measures,
+        &score.header,
+    );
     for nav_spec in &deferred_navs {
         render_nav_markers(&mut post_sink, &mut post_composites, nav_spec);
     }

@@ -65,6 +65,7 @@ pub(crate) struct PreparedClusterNote<'a> {
 pub(crate) struct StemLayout {
     pub(crate) stem_x: f32,
     pub(crate) stem_attach_y: f32,
+    pub(crate) stem_length_reference_y: f32,
     pub(crate) stem_body_min_y: f32,
     pub(crate) stem_body_max_y: f32,
     pub(crate) anchor_note_id: Option<usize>,
@@ -998,6 +999,7 @@ fn shared_stem_layout(
                 return StemLayout {
                     stem_x,
                     stem_attach_y: anchor_note.note_y - stem_anchor.y_ss * smufl_ss,
+                    stem_length_reference_y: anchor_note.note_y,
                     stem_body_min_y,
                     stem_body_max_y,
                     anchor_note_id: Some(anchor_note_index),
@@ -1018,6 +1020,7 @@ fn shared_stem_layout(
             return StemLayout {
                 stem_x,
                 stem_attach_y: anchor_note.note_y - stem_anchor.y_ss * smufl_ss,
+                stem_length_reference_y: anchor_note.note_y,
                 stem_body_min_y,
                 stem_body_max_y,
                 anchor_note_id: Some(anchor_note_index),
@@ -1039,6 +1042,7 @@ fn shared_stem_layout(
                 ENGRAVING_STROKE_WIDTH_PT / 2.0
             },
         stem_attach_y: default_attach_note.note_y - stem_anchor.y_ss * smufl_ss,
+        stem_length_reference_y: default_attach_note.note_y,
         stem_body_min_y,
         stem_body_max_y,
         anchor_note_id: anchor_note_index,
@@ -1436,14 +1440,14 @@ fn build_stem_render_plan(
         shared_stem_layout(note_placements, attach_note, stem_up, stem_anchor, smufl_ss);
     let stem_attach_y = stem_layout.stem_attach_y;
     let stem_y1 = if stem_up {
-        stem_attach_y - stem_len_pt
+        stem_layout.stem_length_reference_y - stem_len_pt
     } else {
         stem_layout.stem_body_min_y
     };
     let stem_y2 = if stem_up {
         stem_layout.stem_body_max_y
     } else {
-        stem_attach_y + stem_len_pt
+        stem_layout.stem_length_reference_y + stem_len_pt
     };
     Some(StemRenderPlan {
         x: stem_layout.stem_x,

@@ -656,12 +656,15 @@ pub(crate) fn render_nav_markers(
 pub(crate) fn render_hairpin_fragments(
     sink: &mut SceneEmitSink<'_>,
     composites: &mut Vec<SceneComposite>,
+    systems: &[SceneSystem],
     page_measures: &[SceneMeasure],
     measures: &[DisplayMeasure<'_>],
     hairpin_offset_y: f32,
 ) {
-    const HAIRPIN_OPEN_HEIGHT_PT: f32 = 10.0;
-    const HAIRPIN_GAP_BELOW_PT: f32 = 0.0;
+    const HAIRPIN_OPEN_HEIGHT_STAFF_SPACES: f32 = 2.0;
+    const HAIRPIN_GAP_BELOW_STAFF_SPACES: f32 = 0.4;
+    let hairpin_open_height_pt = sink.staff_space_pt * HAIRPIN_OPEN_HEIGHT_STAFF_SPACES;
+    let hairpin_gap_below_pt = sink.staff_space_pt * HAIRPIN_GAP_BELOW_STAFF_SPACES;
 
     for measure in measures {
         for hairpin in &measure.hairpins {
@@ -723,23 +726,24 @@ pub(crate) fn render_hairpin_fragments(
                 let left_open_height = hairpin_open_height_at_progress(
                     hairpin.kind,
                     left_progress,
-                    HAIRPIN_OPEN_HEIGHT_PT,
+                    hairpin_open_height_pt,
                 );
                 let right_open_height = hairpin_open_height_at_progress(
                     hairpin.kind,
                     right_progress,
-                    HAIRPIN_OPEN_HEIGHT_PT,
+                    hairpin_open_height_pt,
                 );
-                let top_y = bottom_skyline_sample(
-                    sink.items(),
+                let occupied_bottom = bottom_skyline_sample(
+                    system_items_for_fragment(systems, fragment),
                     fragment,
                     start_x,
                     end_x,
                     first.y_pt + first.height_pt,
                     sink.staff_space_pt,
-                ) + HAIRPIN_GAP_BELOW_PT
+                ) + hairpin_gap_below_pt
                     + hairpin_offset_y;
-                let center_y = top_y + HAIRPIN_OPEN_HEIGHT_PT * 0.5;
+                let center_y =
+                    occupied_bottom + left_open_height.max(right_open_height) * 0.5;
                 let left_top_y = center_y - left_open_height * 0.5;
                 let left_bottom_y = center_y + left_open_height * 0.5;
                 let right_top_y = center_y - right_open_height * 0.5;
@@ -789,6 +793,7 @@ pub(crate) fn render_hairpin_fragments(
 
 pub(crate) fn render_dynamic_marks(
     sink: &mut SceneEmitSink<'_>,
+    systems: &[SceneSystem],
     page_measures: &[SceneMeasure],
     measures: &[DisplayMeasure<'_>],
     header: &RenderHeader,
@@ -823,8 +828,20 @@ pub(crate) fn render_dynamic_marks(
             } else {
                 (left_bound + right_bound) * 0.5
             };
+            let mut expression_skyline_items =
+                system_items_for_measure(systems, scene_measure).to_vec();
+            expression_skyline_items.extend(
+                sink.items()
+                    .iter()
+                    .filter(|item| {
+                        item.measure_id.as_deref().is_some_and(|measure_id| {
+                            measure_belongs_to_system(systems, measure_id, &scene_measure.system_id)
+                        })
+                    })
+                    .cloned(),
+            );
             let occupied_bottom = bottom_skyline_sample_including_hairpins(
-                sink.items(),
+                &expression_skyline_items,
                 &[scene_measure],
                 x - half_width - DYNAMIC_TEXT_PADDING_X_PT,
                 x + half_width + DYNAMIC_TEXT_PADDING_X_PT,
@@ -851,6 +868,41 @@ pub(crate) fn render_dynamic_marks(
             sink.set_measure_local_fraction(&item_id, dynamic.at);
         }
     }
+}
+
+fn system_items_for_fragment<'a>(
+    systems: &'a [SceneSystem],
+    fragment: &[&SceneMeasure],
+) -> &'a [SceneItem] {
+    let Some(first) = fragment.first() else {
+        return &[];
+    };
+    systems
+        .iter()
+        .find(|system| system.id == first.system_id)
+        .map(|system| system.items.as_slice())
+        .unwrap_or(&[])
+}
+
+fn system_items_for_measure<'a>(
+    systems: &'a [SceneSystem],
+    measure: &SceneMeasure,
+) -> &'a [SceneItem] {
+    systems
+        .iter()
+        .find(|system| system.id == measure.system_id)
+        .map(|system| system.items.as_slice())
+        .unwrap_or(&[])
+}
+
+fn measure_belongs_to_system(systems: &[SceneSystem], measure_id: &str, system_id: &str) -> bool {
+    systems.iter().any(|system| {
+        system.id == system_id
+            && system
+                .measures
+                .iter()
+                .any(|measure| measure.id == measure_id)
+    })
 }
 
 fn dynamic_anchor_x(measure: &SceneMeasure, _header: &RenderHeader, fraction: Fraction) -> f32 {

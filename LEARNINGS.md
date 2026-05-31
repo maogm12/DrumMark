@@ -423,3 +423,7 @@ When an older note conflicts with this file, treat this file plus the active spe
 - Secondary SMuFL render sizes (`flag_render_font_pt`, `grace_render_font_pt`, etc.) must match their `*_position_pt` partners; the old `× 0.75` render factors were compensating for the SVG `pt` suffix bug.
 - Scene SVG adapters (`src/renderer/svgRenderer.ts`, `crates/drummark-cli/src/svg.rs`) must emit unitless `font-size="{n}"`, not `font-size="{n}pt"`. With `viewBox` in layout points, CSS `pt` on `font-size` applies the `96/72` conversion and inflates glyphs ~33% relative to PDF (`SetFont` uses true points).
 - `planning::SVG_POINT_TO_USER_UNIT` is `1.0` after that fix; the previous `4/3` constant only mirrored the mistaken SVG `pt` suffix.
+
+## 2026-05-31 Stem Vertical Basis
+
+- Normal note stems should keep glyph-specific stem anchor X/Y for the rendered notehead-side endpoint, but their stem-tip length reference must use the resolved staff-position `note_y`. SMuFL anchor Y differs across notehead shapes (for example X noteheads anchor near the upper-right, circle-X anchors at center), so using anchor Y to choose the stem tip makes equal-track notes produce slightly different tip heights and sloped beams.

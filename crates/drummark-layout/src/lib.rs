@@ -4026,6 +4026,97 @@ mod tests {
     }
 
     #[test]
+    fn test_same_track_beamed_stems_ignore_notehead_anchor_y() {
+        let measure = RenderMeasure {
+            index: 0,
+            global_index: 0,
+            paragraph_index: 0,
+            measure_in_paragraph: 0,
+            source_line: 1,
+            events: vec![
+                RenderEvent {
+                    track: "HH".into(),
+                    track_family: "cymbal".into(),
+                    start: Fraction {
+                        numerator: 0,
+                        denominator: 1,
+                    },
+                    duration: Fraction {
+                        numerator: 1,
+                        denominator: 8,
+                    },
+                    visual_duration: Fraction {
+                        numerator: 1,
+                        denominator: 8,
+                    },
+                    kind: EventKind::Hit,
+                    glyph: "x".into(),
+                    modifiers: vec![],
+                    dot_count: 0,
+                    modifier: None,
+                    voice: 1,
+                    beam: "begin".into(),
+                    tuplet: None,
+                },
+                RenderEvent {
+                    track: "HH".into(),
+                    track_family: "cymbal".into(),
+                    start: Fraction {
+                        numerator: 1,
+                        denominator: 8,
+                    },
+                    duration: Fraction {
+                        numerator: 1,
+                        denominator: 8,
+                    },
+                    visual_duration: Fraction {
+                        numerator: 1,
+                        denominator: 8,
+                    },
+                    kind: EventKind::Hit,
+                    glyph: "x".into(),
+                    modifiers: vec!["open".into()],
+                    dot_count: 0,
+                    modifier: None,
+                    voice: 1,
+                    beam: "end".into(),
+                    tuplet: None,
+                },
+            ],
+            barline: Some("regular".into()),
+            closing_barline: Some("final".into()),
+            start_nav: None,
+            end_nav: None,
+            volta_indices: None,
+            hairpins: vec![],
+            dynamics: vec![],
+            measure_repeat_slashes: None,
+            multi_rest_count: None,
+            note_value: 8,
+            volta_terminator: false,
+        };
+        let scene = build_layout_scene(
+            &simple_layout_score(vec![measure]),
+            &LayoutOptions::default(),
+        );
+        let stems = items_by_role(&scene, "stem");
+        assert_eq!(stems.len(), 2);
+
+        let mut stem_tips = stems
+            .iter()
+            .map(|stem| match &stem.primitive {
+                ScenePrimitive::LineSegment(line) => line.y1_pt,
+                _ => panic!("stem should be a line"),
+            })
+            .collect::<Vec<_>>();
+        stem_tips.sort_by(|a, b| a.partial_cmp(b).unwrap());
+        assert!(
+            (stem_tips[1] - stem_tips[0]).abs() < 0.01,
+            "same-track x and circle-x noteheads should produce level stem tips: {stem_tips:?}"
+        );
+    }
+
+    #[test]
     fn test_two_voice_collision_case_preserves_attachment_anchors() {
         let measure = RenderMeasure {
             index: 0,

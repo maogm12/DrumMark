@@ -53,7 +53,7 @@
   "settings.hideMeasureNumber": "隐藏小节号",
   "settings.stemLength": "符干偏移 (pt)",
   "settings.staffSpacePt": "谱表空间",
-  "settings.systemSpacing": "谱行间距",
+  "settings.systemSpacingOffset": "系统间距微调 (pt)",
   "settings.titleHeight": "标题区高度",
   "settings.titleGap": "标题间距",
   "settings.voltaOffset": "房子偏移",

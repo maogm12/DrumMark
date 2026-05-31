@@ -89,6 +89,7 @@ describe("SettingsPanel smoke", () => {
     expect(container.innerHTML).toContain("Hide title");
     expect(container.innerHTML).toContain("Hide clef");
     expect(container.innerHTML).toContain("Hide measure numbers");
+    expect(container.innerHTML).toContain("System Gap Offset");
     expect(container.querySelectorAll(".toggle-root").length).toBeGreaterThanOrEqual(8);
   });
 });

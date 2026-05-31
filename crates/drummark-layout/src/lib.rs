@@ -5525,7 +5525,7 @@ fn test_paginate_system_boxes_with_mock_boxes() {
         left_margin_pt: 12.0,
         header_height_pt: 30.0,
         header_staff_spacing_pt: 10.0,
-        system_spacing_pt: 8.0,
+        system_spacing_offset_pt: 8.0 - DEFAULT_SYSTEM_SPACING_PT,
         ..LayoutOptions::default()
     };
     let header = HeaderLayoutBox {

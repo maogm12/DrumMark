@@ -149,7 +149,7 @@ Verification:
 
 ### Task 2: Layout Option Semantics
 
-Status: Pending
+Status: Done
 
 Scope:
 - `crates/drummark-layout/src/options.rs`

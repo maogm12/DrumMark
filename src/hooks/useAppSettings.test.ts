@@ -49,4 +49,16 @@ describe("resolveAppSettings", () => {
     expect(settings).not.toHaveProperty("durationSpacingCompression");
     expect(settings).not.toHaveProperty("measureWidthCompression");
   });
+
+  it("resets old absolute system spacing instead of migrating it", () => {
+    const settings = resolveAppSettings(JSON.stringify({ systemSpacing: 72 }));
+
+    expect(settings.systemSpacingOffset).toBe(0);
+    expect(settings).not.toHaveProperty("systemSpacing");
+  });
+
+  it("preserves valid system spacing offsets", () => {
+    expect(resolveAppSettings(JSON.stringify({ systemSpacingOffset: -12 })).systemSpacingOffset).toBe(-12);
+    expect(resolveAppSettings(JSON.stringify({ systemSpacingOffset: 999 })).systemSpacingOffset).toBe(0);
+  });
 });

@@ -274,7 +274,7 @@ ${paragraphs}
       bottomMargin: 20,
       headerHeight: 40,
       headerStaffSpacing: 20,
-      systemSpacing: 24,
+      systemSpacingOffset: -6,
     }, { source: multiPageSource, sourceRevision: 1 });
 
     expect(pages.length).toBeGreaterThan(1);

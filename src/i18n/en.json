@@ -53,7 +53,7 @@
   "settings.hideMeasureNumber": "Hide measure numbers",
   "settings.stemLength": "Stem Offset (pt)",
   "settings.staffSpacePt": "Staff Space",
-  "settings.systemSpacing": "System Spacing",
+  "settings.systemSpacingOffset": "System Gap Offset (pt)",
   "settings.titleHeight": "Title Area Height",
   "settings.titleGap": "Title Gap",
   "settings.voltaOffset": "Volta Offset",

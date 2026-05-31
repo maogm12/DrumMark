@@ -4,8 +4,8 @@ use crate::scene_geometry::{bounds_for_items, translate_scene_item};
 use crate::scene_page::{dedupe_page_item_ids, page_header_items};
 use crate::validation::validate_layout_scene;
 use crate::{
-    CompositeKind, LayoutOptions, LayoutScene, SceneComposite, SceneItem, SceneMeasure, ScenePage,
-    SceneSystem,
+    default_system_spacing_with_offset_pt, CompositeKind, LayoutOptions, LayoutScene,
+    SceneComposite, SceneItem, SceneMeasure, ScenePage, SceneSystem,
 };
 
 #[derive(Debug, Clone, PartialEq)]
@@ -80,7 +80,7 @@ pub(crate) fn paginate_system_boxes(
             + if systems_on_page == 0 {
                 0.0
             } else {
-                opts.system_spacing_pt
+                default_system_spacing_with_offset_pt(opts)
             };
         if systems_on_page > 0 && placement_y + visual_height > content_bottom {
             page_index += 1;

@@ -12,7 +12,7 @@ export type ScoreRenderOptions = {
   staffSpacePt: number;
   headerHeight: number;
   headerStaffSpacing: number;
-  systemSpacing: number;
+  systemSpacingOffset: number;
   stemLength: number;
   voltaSpacing: number;
   hairpinOffsetY?: number;
@@ -35,7 +35,7 @@ export const DEFAULT_RENDER_OPTIONS: ScoreRenderOptions = {
   staffSpacePt: 5.0,
   headerHeight: 50,
   headerStaffSpacing: 60,
-  systemSpacing: 30,
+  systemSpacingOffset: 0,
   stemLength: 0,
   voltaSpacing: 0,
   hairpinOffsetY: 0,
@@ -48,9 +48,9 @@ export const SETTINGS_RANGES = {
   hairpinOffsetY: { min: -20, max: 20, default: 0 },
   voltaSpacing: { min: -20, max: 20, default: 0 },
   staffSpacePt: { min: 1, max: 10, default: 5 },
-  /** Fine adjustment in pt added to the default stem span (4 × staff space). */
+  /** Fine adjustment in pt added to the default stem span (3 × staff space). */
   stemLength: { min: -12, max: 12, default: 0 },
-  systemSpacing: { min: 0, max: 100, default: 30 },
+  systemSpacingOffset: { min: -40, max: 80, default: 0 },
   headerHeight: { min: 10, max: 300, default: 50 },
   headerStaffSpacing: { min: 0, max: 100, default: 60 },
   durationSpacingCompression: { min: 0, max: 1.5, default: 0.6 },

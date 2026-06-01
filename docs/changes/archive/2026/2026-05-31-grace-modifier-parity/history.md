@@ -28,3 +28,8 @@ Verification:
 - `npm run drummark -- /tmp/grace-review.drum --format xml`
 - `npm test -- --run src/wasm/parser_layout_parity.test.ts src/renderer/svgSceneAdapter.test.ts`
 
+### Archived
+
+Archived after approved implementation review.
+
+Archive path: `docs/changes/archive/2026/2026-05-31-grace-modifier-parity/`

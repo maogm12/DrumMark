@@ -37,8 +37,8 @@ Implement the missing modifier rendering in `drummark-layout`, keep adapters thi
 Priority order:
 1. `dead`: map to a dead/muted x notehead in layout, matching current MusicXML notehead behavior.
 2. `roll`: render one or more tremolo/stem slashes anchored to the resolved stem; keep current MusicXML `<tremolo type="single">3</tremolo>`.
-3. `choke`: render a small above-note `+` or SMuFL-supported choke-like mark; export as `other-technical` unless a better MusicXML primitive is chosen during implementation.
-4. `half-open`: render a half-open hi-hat mark above the note; keep MusicXML `other-technical` unless a stable standard element is verified.
+3. `choke`: render a small above-note `+` or SMuFL-supported choke-like mark; keep MusicXML export as deterministic `other-technical` text for v1.
+4. `half-open`: render a half-open hi-hat mark above the note; keep MusicXML export as deterministic `other-technical` text for v1.
 
 ## Spec Delta
 
@@ -63,6 +63,11 @@ Scope:
 Action:
 - Produce a small matrix of parser legality, layout rendering, MusicXML export, and examples for every supported modifier.
 - Confirm SMuFL glyph choices for `dead`, `roll`, `choke`, and `half-open`.
+- Record the exact scene roles and MusicXML export form before Task 2 or Task 3 source edits. Initial intended roles are:
+  - `dead` continues to emit scene `role: "notehead"` and differs through the existing notehead `glyphRole` surface, e.g. `noteheadX`; existing consumers must still count it as a notehead.
+  - `roll` additive slash scene items use `role: "roll-slash"`.
+  - `choke` additive mark scene items use `role: "choke"`.
+  - `half-open` additive mark scene items use `role: "half-open"`.
 
 Input / Output Contract:
 - No source behavior changes yet.
@@ -76,7 +81,7 @@ Acceptance:
 
 Verification:
 - `rg` over modifier handling code.
-- Focused CLI outputs for `docs/examples/common-articulations.drum`.
+- Focused CLI outputs for `docs/examples/modifiers.drum`.
 
 ### Task 2: Implement Layout Rendering
 
@@ -95,7 +100,7 @@ Action:
 
 Input / Output Contract:
 - `RenderScore` remains unchanged.
-- `LayoutScene` gains only ordinary scene items with stable roles.
+- `LayoutScene` gains only ordinary scene items with stable roles named in Task 1.
 
 Dependencies:
 - Task 1 glyph choices.
@@ -107,7 +112,7 @@ Acceptance:
 
 Verification:
 - Focused Rust layout tests for each new visual role.
-- `npm run drummark -- docs/examples/common-articulations.drum --format svg`
+- `npm run drummark -- docs/examples/modifiers.drum --format svg`
 
 ### Task 3: Align MusicXML Export Tests
 
@@ -118,7 +123,7 @@ Scope:
 - MusicXML unit/corpus tests
 
 Action:
-- Keep current stable MusicXML output for `roll`, `dead`, `choke`, `half-open`, or improve where safe.
+- Keep current stable MusicXML output for `roll`, `dead`, `choke`, `half-open`.
 - Add tests that lock the chosen export behavior.
 
 Input / Output Contract:
@@ -130,7 +135,7 @@ Dependencies:
 
 Acceptance:
 - MusicXML tests cover each completed modifier.
-- Any intentionally lossy export behavior is explicitly documented in tests or plan notes.
+- `choke` and `half-open` remain explicitly documented as `other-technical` exports for v1.
 
 Verification:
 - `cargo test -p drummark-core musicxml -- --nocapture`
@@ -159,7 +164,7 @@ Acceptance:
 
 Verification:
 - `npm run wasm:build`
-- `npm test -- --run src/wasm/parser_layout_parity.test.ts src/renderer/svgSceneAdapter.test.ts`
+- `npm test -- --run src/wasm/parser_layout_parity.test.ts src/renderer/svgSceneAdapter.test.ts src/renderer/corpusGate.test.ts`
 
 ## Test Plan
 
@@ -167,9 +172,9 @@ Verification:
 - `cargo test -p drummark-layout -- --nocapture` if collision/stacking changes are broad.
 - `cargo test -p drummark-core musicxml -- --nocapture`
 - `npm run wasm:build`
-- `npm run drummark -- docs/examples/common-articulations.drum --format svg`
-- `npm run drummark -- docs/examples/common-articulations.drum --format xml`
-- `npm test -- --run src/wasm/parser_layout_parity.test.ts src/renderer/svgSceneAdapter.test.ts`
+- `npm run drummark -- docs/examples/modifiers.drum --format svg`
+- `npm run drummark -- docs/examples/modifiers.drum --format xml`
+- `npm test -- --run src/wasm/parser_layout_parity.test.ts src/renderer/svgSceneAdapter.test.ts src/renderer/corpusGate.test.ts`
 
 ## Risks / Notes
 
@@ -190,3 +195,5 @@ Verification:
 | Round | Date | Summary of changes |
 |-------|------|--------------------|
 | 1 | 2026-06-01 | Initial draft |
+| 2 | 2026-06-01 | Addressed plan review: corrected modifier fixture path, locked v1 `other-technical` MusicXML behavior for choke/half-open, named intended scene roles, and added corpus gate verification. |
+| 3 | 2026-06-01 | Addressed re-review: kept dead-note scene role as `notehead` with glyph-role variation and switched additive modifier roles to existing role-string style. |

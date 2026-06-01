@@ -37,6 +37,8 @@ Both are zero-duration measure directives. They attach to the logical measure wh
 - `@mark` is short, boxed rehearsal-mark style.
 - `@section` is text/words style.
 
+For v1, anchors always attach to the left edge of the logical measure regardless of where the directive appears inside the measure. Source location is retained only for diagnostics.
+
 Example:
 
 ```txt
@@ -68,11 +70,31 @@ DrumMark supports two zero-duration measure directives for rendered section anch
 
 The quoted text must be non-empty after trimming. The text may contain spaces. Literal quote characters must use the parser's supported quoted-string escaping rules.
 
-The directive applies to the logical measure in which it appears and does not advance rhythmic time. It may appear in ordinary measure content or routed blocks, but declarations are global per logical measure.
+Quoted text grammar is exact for v1:
+- A payload begins with `"` and ends at the next unescaped `"`.
+- `\"` encodes a literal quote and `\\` encodes a literal backslash.
+- Newlines are forbidden inside quoted text.
+- Comment delimiters inside quoted text are literal text, not comments.
+- Unknown escape sequences are hard errors.
+- The decoded string is trimmed for emptiness validation and stored in trimmed form.
+
+The directive applies to the logical measure in which it appears and does not advance rhythmic time. It may appear in ordinary measure content, inline groups, or routed blocks. Normalization must recursively scan nested measure content and merge declarations globally per logical measure.
+
+Canonical normalized JSON IR measure shape:
+
+```json
+"sectionAnchor": {
+  "kind": "mark",
+  "text": "A",
+  "anchor": "measure-start"
+}
+```
+
+`kind` is `"mark"` or `"section"`. `text` is the decoded, trimmed text. `anchor` is always `"measure-start"` in v1. The `sectionAnchor` field is omitted when absent. Measure-repeat shorthand and multi-rest expansion do not copy a section anchor unless the source measure being normalized explicitly declares one.
 
 In v1, a measure may contain at most one rendered section anchor total. Multiple identical declarations collapse to one anchor. Conflicting declarations in the same logical measure are a hard error.
 
-Layout renders `@mark` above the measure start as a boxed or otherwise distinct rehearsal mark. Layout renders `@section` above the measure start as section text. Both participate in structural stacking and collision avoidance.
+Layout renders `@mark` above the measure left edge as a boxed or otherwise distinct rehearsal mark. Layout renders `@section` above the measure left edge as section text. Both participate in structural stacking and collision avoidance.
 
 MusicXML export maps `@mark` to a rehearsal direction and `@section` to direction words.
 
@@ -88,7 +110,21 @@ Date: 2026-06-01
 Source change: `docs/changes/active/2026-06-01-rehearsal-section-marks/plan.md`
 Status: Accepted
 
-`RenderMeasure` may carry at most one section anchor with kind `mark` or `section`, text, source measure identity, and measure-local anchor position. The layout engine owns placement, stacking, and collision avoidance for section anchors. Adapters may only draw the emitted `LayoutScene` items or composites.
+`RenderMeasure` may carry `section_anchor: Option<SectionAnchor>`.
+
+`SectionAnchor` has:
+- `kind: "mark" | "section"`
+- `text: string`
+- `anchor: "measure-start"`
+
+The `anchor` value is a render-facing placement hint, not a source offset. Absence means the measure has no rendered section anchor. Serialized WASM JSON omits `section_anchor` when it is `None`.
+
+The layout engine owns placement, stacking, and collision avoidance for section anchors. Layout emits stable semantic scene roles:
+- `sectionAnchor.mark`
+- `sectionAnchor.section`
+- `sectionAnchor.text`
+
+For v1, layout emits ordinary text/rect/path scene items with these roles and does not add a new serialized composite kind. Adapters may only draw the emitted `LayoutScene` items. This field requires a `RenderScore` version bump.
 ```
 
 ## Affected Specs / Contracts
@@ -110,6 +146,7 @@ Scope:
 Action:
 - Add explicit tokens/directives for `@mark` and `@section`.
 - Parse a required quoted text payload.
+- Implement or reuse a small quoted-text parser with the exact v1 escape grammar from `## Spec Delta`.
 - Preserve source locations.
 - Reject empty text and malformed quotes.
 
@@ -137,11 +174,12 @@ Scope:
 
 Action:
 - Normalize section anchors into measure-level metadata.
-- Merge identical declarations across tracks.
+- Recursively scan ordinary content, routed blocks, inline groups, and other nested measure content that can legally contain zero-duration directives.
+- Merge identical declarations across tracks and nested content.
 - Reject conflicting declarations in the same logical measure.
 
 Input / Output Contract:
-- Normalized measure exposes optional section anchor `{ kind, text, at }`.
+- Normalized measure exposes optional section anchor `{ kind, text, anchor: "measure-start" }`.
 
 Dependencies:
 - Task 1.
@@ -149,6 +187,8 @@ Dependencies:
 Acceptance:
 - Repeated identical `@mark "A"` on multiple tracks collapses.
 - `@mark "A"` plus `@section "Verse"` in one measure errors.
+- Nested declarations such as `| @SD { @mark "A" d d } |` normalize to the same measure-level anchor.
+- Section anchors are not copied from measure-repeat shorthand or multi-rest expansion unless explicitly present in the source measure being normalized.
 
 Verification:
 - `cargo test -p drummark-core normalize -- --nocapture`
@@ -165,7 +205,8 @@ Scope:
 
 Action:
 - Add section-anchor data to `RenderScore`.
-- Emit semantic `LayoutScene` items/composites for marks and sections.
+- Add `RenderMeasure.section_anchor: Option<SectionAnchor>` and bump the `RenderScore` contract version.
+- Emit semantic `LayoutScene` text/rect/path items for marks and sections with roles `sectionAnchor.mark`, `sectionAnchor.section`, and `sectionAnchor.text`; do not add a new serialized composite kind for v1.
 - Stack them above notes, voltas/navigation as appropriate without overlap.
 
 Input / Output Contract:
@@ -195,6 +236,7 @@ Scope:
 Action:
 - Export `@mark` as rehearsal direction.
 - Export `@section` as words direction.
+- Emit both at the measure start; source offsets inside the measure do not produce MusicXML offsets in v1.
 - Preserve measure ordering with existing tempo, dynamics, hairpins, and navigation directions.
 
 Input / Output Contract:
@@ -243,6 +285,9 @@ Verification:
 - `cargo test -p drummark-core normalize -- --nocapture`
 - `cargo test -p drummark-core musicxml -- --nocapture`
 - `cargo test -p drummark-layout section -- --nocapture`
+- Parser fixtures: escaped quote, escaped backslash, literal comment delimiter inside quotes, empty-after-trim text, missing close quote, unknown escape, newline in quote.
+- Normalization fixtures: duplicate identical declarations in separate tracks, conflicting same-kind different text, conflicting mark-vs-section, nested/routed declaration, inline grouped declaration.
+- Interaction fixtures: measure-repeat/multi-rest behavior, stacking with existing navigation markers, section anchor plus tempo/dynamic direction ordering.
 - `npm run drummark -- docs/examples/section-marks.drum --format ast`
 - `npm run drummark -- docs/examples/section-marks.drum --format ir`
 - `npm run drummark -- docs/examples/section-marks.drum --format svg`
@@ -268,3 +313,5 @@ Verification:
 | Round | Date | Summary of changes |
 |-------|------|--------------------|
 | 1 | 2026-06-01 | Initial draft |
+| 2 | 2026-06-01 | Addressed plan review: pinned quoted-string grammar, made anchors measure-start only, required recursive normalization for nested/routed content, defined `RenderMeasure.section_anchor`, named scene roles, and expanded conflict/placement tests. |
+| 3 | 2026-06-01 | Addressed re-review: added canonical normalized JSON IR field shape and pinned LayoutScene output to ordinary items with no new composite kind. |

@@ -39,6 +39,12 @@ pub(crate) struct BeamRunState {
     pub(crate) group: u32,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum GraceModifierKind {
+    Flam,
+    Drag,
+}
+
 #[derive(Clone)]
 pub(crate) struct NotePlacement {
     pub(crate) note_id: String,
@@ -1134,16 +1140,14 @@ pub(crate) fn render_grace_notes_for_hit(
     note_role: GlyphRole,
     stem_up: bool,
 ) {
-    let grace_count = if event.modifiers.iter().any(|modifier| modifier == "drag") {
-        2
-    } else if event.modifiers.iter().any(|modifier| modifier == "flam") {
-        1
-    } else {
+    let Some(grace_kind) = grace_modifier_kind(&event.modifiers) else {
         return;
     };
-    let has_flam = event.modifiers.iter().any(|modifier| modifier == "flam");
-    let has_drag = event.modifiers.iter().any(|modifier| modifier == "drag");
-    let grace_flag_role = if has_flam {
+    let grace_count = match grace_kind {
+        GraceModifierKind::Flam => 1,
+        GraceModifierKind::Drag => 2,
+    };
+    let grace_flag_role = if grace_kind == GraceModifierKind::Flam {
         Some(grace_flag_role_for_event(event, stem_up))
     } else {
         None
@@ -1214,7 +1218,7 @@ pub(crate) fn render_grace_notes_for_hit(
             stroke_line_cap: None,
         });
         sink.set_anchor_item_id(&stem_id, Some(note_id.clone()));
-        if has_drag {
+        if grace_kind == GraceModifierKind::Drag {
             drag_beam_points.push((
                 stem_x,
                 if stem_up { stem_y1 } else { stem_y2 },
@@ -1245,7 +1249,7 @@ pub(crate) fn render_grace_notes_for_hit(
             sink.set_anchor_item_id(&flag_id, Some(stem_id.clone()));
         }
 
-        if has_flam {
+        if grace_kind == GraceModifierKind::Flam {
             let stem_tip_y = if stem_up { stem_y1 } else { stem_y2 };
             let slash_ref_y = if stem_up {
                 stem_tip_y + flam_slash_shift
@@ -1318,6 +1322,16 @@ fn grace_beam_path_d(x1: f32, y1: f32, x2: f32, y2: f32, up: bool, thickness: f3
         x1,
         y1 + offset,
     )
+}
+
+fn grace_modifier_kind(modifiers: &[String]) -> Option<GraceModifierKind> {
+    if modifiers.iter().any(|modifier| modifier == "drag") {
+        Some(GraceModifierKind::Drag)
+    } else if modifiers.iter().any(|modifier| modifier == "flam") {
+        Some(GraceModifierKind::Flam)
+    } else {
+        None
+    }
 }
 
 fn grace_flag_role_for_event(event: &RenderEvent, stem_up: bool) -> GlyphRole {

@@ -7684,6 +7684,53 @@ fn test_drag_renders_two_beamed_sixteenth_grace_notes_without_slashes() {
     );
 }
 
+#[test]
+fn test_drag_takes_precedence_over_flam_for_grace_rendering() {
+    let mut score = grace_modifier_score(
+        "flam",
+        Fraction {
+            numerator: 1,
+            denominator: 16,
+        },
+    );
+    let event = &mut score.measures[0].events[0];
+    event.modifiers = vec!["flam".into(), "drag".into()];
+    event.modifier = Some("flam".into());
+
+    let scene = build_layout_scene(&score, &LayoutOptions::default());
+
+    assert_eq!(
+        page_all_items(&scene.pages[0])
+            .filter(|item| item.role == "grace-notehead")
+            .count(),
+        2
+    );
+    assert_eq!(
+        page_all_items(&scene.pages[0])
+            .filter(|item| item.role == "grace-slash")
+            .count(),
+        0
+    );
+    assert_eq!(
+        page_all_items(&scene.pages[0])
+            .filter(|item| item.role == "grace-flag")
+            .count(),
+        0
+    );
+    assert_eq!(
+        page_all_items(&scene.pages[0])
+            .filter(|item| item.role == "grace-beam")
+            .count(),
+        1
+    );
+    assert_eq!(
+        page_all_items(&scene.pages[0])
+            .filter(|item| item.role == "grace-beam-secondary")
+            .count(),
+        1
+    );
+}
+
 #[cfg(test)]
 fn grace_modifier_score(modifier: &str, visual_duration: Fraction) -> RenderScore {
     RenderScore {

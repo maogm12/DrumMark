@@ -11,6 +11,12 @@ struct VoiceTrack {
     stem: &'static str,
 }
 
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum GraceModifierKind {
+    Flam,
+    Drag,
+}
+
 #[derive(Clone)]
 struct ExportMeasure {
     measure: NormalizedMeasure,
@@ -301,12 +307,15 @@ fn process_voice_entries(
                     .find(|(s, _)| s.compare(*start) == Ordering::Equal)
                     .map(|(_, value)| value.as_str());
                 for (event_index, event) in events.iter().enumerate() {
-                    if event.modifiers.iter().any(|m| m == "flam") {
-                        result.push(grace_note_xml(event, voice, true));
-                    }
-                    if event.modifiers.iter().any(|m| m == "drag") {
-                        result.push(grace_note_xml(event, voice, false));
-                        result.push(grace_note_xml(event, voice, false));
+                    match grace_modifier_kind(&event.modifiers) {
+                        Some(GraceModifierKind::Flam) => {
+                            result.push(grace_note_xml(event, voice, true, &[]));
+                        }
+                        Some(GraceModifierKind::Drag) => {
+                            result.push(grace_note_xml(event, voice, false, &["begin", "begin"]));
+                            result.push(grace_note_xml(event, voice, false, &["end", "end"]));
+                        }
+                        None => {}
                     }
                     result.push(note_xml(
                         event,
@@ -479,18 +488,35 @@ fn forward_xml(duration: u64) -> String {
     format!("<forward><duration>{}</duration></forward>", duration)
 }
 
-fn grace_note_xml(event: &NormalizedEvent, voice: VoiceTrack, slash: bool) -> String {
+fn grace_note_xml(event: &NormalizedEvent, voice: VoiceTrack, slash: bool, beams: &[&str]) -> String {
     let instrument = instrument_for_track(&event.track);
     let slash_attr = if slash { " slash=\"yes\"" } else { "" };
+    let beam_xml = beams
+        .iter()
+        .enumerate()
+        .map(|(index, state)| format!("<beam number=\"{}\">{}</beam>", index + 1, state))
+        .collect::<Vec<_>>()
+        .join("");
     format!(
-        "<note><grace{}/><unpitched><display-step>{}</display-step><display-octave>{}</display-octave></unpitched><instrument id=\"P1-I1\"/><voice>{}</voice><type>16th</type><stem>{}</stem>{}<staff>1</staff></note>",
+        "<note><grace{}/><unpitched><display-step>{}</display-step><display-octave>{}</display-octave></unpitched><instrument id=\"P1-I1\"/><voice>{}</voice><type>16th</type><stem>{}</stem>{}<staff>1</staff>{}</note>",
         slash_attr,
         instrument.display_step,
         instrument.display_octave,
         voice.voice,
         voice.stem,
-        notehead_xml(event, instrument)
+        notehead_xml(event, instrument),
+        beam_xml
     )
+}
+
+fn grace_modifier_kind(modifiers: &[String]) -> Option<GraceModifierKind> {
+    if modifiers.iter().any(|modifier| modifier == "drag") {
+        Some(GraceModifierKind::Drag)
+    } else if modifiers.iter().any(|modifier| modifier == "flam") {
+        Some(GraceModifierKind::Flam)
+    } else {
+        None
+    }
 }
 
 fn notehead_xml(event: &NormalizedEvent, instrument: InstrumentSpec) -> String {
@@ -960,6 +986,31 @@ mod tests {
         assert_eq!(xml.matches("<note><grace/>").count(), 2);
         assert!(!xml.contains("<grace slash=\"yes\"/>"));
         assert_eq!(xml.matches("<type>16th</type>").count(), 2);
+        assert_eq!(xml.matches("<beam number=\"1\">begin</beam>").count(), 1);
+        assert_eq!(xml.matches("<beam number=\"2\">begin</beam>").count(), 1);
+        assert_eq!(xml.matches("<beam number=\"1\">end</beam>").count(), 1);
+        assert_eq!(xml.matches("<beam number=\"2\">end</beam>").count(), 1);
+    }
+
+    #[test]
+    fn exports_combined_flam_drag_as_drag_grace_notes() {
+        let doc = Parser::new(
+            "time 4/4\n\
+             note 1/4\n\
+             grouping 4\n\n\
+             SD | d:flam:drag - - - |",
+        )
+        .parse_lossy();
+        let score = crate::normalize::normalize_document(&doc);
+        let xml = build_music_xml(&score, false);
+
+        assert_eq!(xml.matches("<note><grace/>").count(), 2);
+        assert!(!xml.contains("<grace slash=\"yes\"/>"));
+        assert_eq!(xml.matches("<type>16th</type>").count(), 2);
+        assert_eq!(xml.matches("<beam number=\"1\">begin</beam>").count(), 1);
+        assert_eq!(xml.matches("<beam number=\"2\">begin</beam>").count(), 1);
+        assert_eq!(xml.matches("<beam number=\"1\">end</beam>").count(), 1);
+        assert_eq!(xml.matches("<beam number=\"2\">end</beam>").count(), 1);
     }
 
     #[test]

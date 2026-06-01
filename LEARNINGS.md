@@ -129,6 +129,11 @@ When an older note conflicts with this file, treat this file plus the active spe
 - For significant DSL or architecture changes, use proposal files under `docs/proposals/`, sub-agent review, tasks files, explicit human stamp, implementation branch, pre-merge review, and archival.
 - After this cleanup, append only concise, current-route learnings here. If a note is mainly historical context, place it in an archived document instead of bloating the active baseline.
 
+## 2026-06-01 Note Unit Terminology
+
+- `divisions` appears in older sections of `docs/DRUMMARK_SPEC.md`, but the later Base Rhythmic Unit addendum deprecates it in favor of `note 1/N`.
+- New DSL/spec work should define rhythmic slot-like values as active Note Units under the effective `note 1/N` setting. Treat `divisions` as backward-compatibility input or a derived consumer field, not the normative source for new syntax.
+
 ## 2026-05-20 Tempo Layout Contract
 
 - First-system tempo text is measure-owned layout content, not header-owned content.

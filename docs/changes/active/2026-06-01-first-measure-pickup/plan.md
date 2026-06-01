@@ -2,7 +2,7 @@
 
 ## Status
 
-draft - pending plan review and human stamp
+draft - pending corrected plan review and human stamp
 
 ## Problem
 
@@ -13,7 +13,7 @@ Many real drum charts start with a pickup/anacrusis measure. Today DrumMark requ
 Add a conservative v1 pickup feature:
 - one optional pickup declaration,
 - first measure only,
-- duration expressed in token-weight slots where one full measure equals the active `divisions`,
+- duration expressed in active Note Units under `note 1/N`,
 - validated exactly,
 - rendered and exported as a short opening measure without changing the global time signature.
 
@@ -21,14 +21,14 @@ Add a conservative v1 pickup feature:
 
 - No mid-score partial measures.
 - No mid-score time signature changes.
-- No inline divisions changes.
+- No new note-value override mechanism beyond existing global and paragraph-level `note 1/N`.
 - No pickup support after repeats, codas, or section breaks.
 - No automatic upbeat detection.
 - No playback repeat-unfolding changes.
 
 ## Current Plan
 
-Introduce `@partial:<N>` as a zero-duration measure directive that may appear in the first logical measure before or among its content. `N` means "this measure has N token-weight slots"; the normal full measure has `divisions` slots under the active header. This keeps pickup validation in the same model already used for measure completion.
+Introduce `@partial:<N>` as a zero-duration measure directive that may appear in the first logical measure before or among its content. `N` means "this measure has N active Note Units"; one Note Unit is the duration defined by the effective `note 1/N` setting for that first logical measure. The normal full-measure Note Unit count is derived as `MeasureDuration / NoteUnitDuration`.
 
 Example:
 
@@ -42,7 +42,7 @@ SD | - - d - - - d - |
 BD | b - - - b - - - |
 ```
 
-The first measure validates against 1 slot instead of the full `divisions` value. Later measures validate normally.
+The first measure validates against 1 Note Unit instead of the full-measure Note Unit count. Later measures validate normally.
 
 ## Spec Delta
 
@@ -59,15 +59,15 @@ DrumMark supports an optional first-measure pickup directive:
 
 `@partial:<N>`
 
-`N` is a positive integer count of token-weight slots. A normal full measure contains exactly the active header `divisions` value in token-weight slots. The directive is legal only in the first logical measure of the score. A score may contain at most one pickup directive.
+`N` is a positive integer count of active Note Units. One Note Unit is the duration defined by the effective `note 1/N` setting for the first logical measure, including an existing paragraph-level note override if that override applies to the first paragraph. A normal full measure contains `MeasureDuration / NoteUnitDuration` Note Units. The deprecated `divisions` header may continue to map to a derived `note 1/N` for backward compatibility, but `@partial:<N>` is specified in Note Units, not `divisions`. The directive is legal only in the first logical measure of the score. A score may contain at most one pickup directive.
 
-The first logical measure's expected duration is `N` token-weight slots. All explicit tracks and auto-filled omitted tracks in the first measure validate against that shortened duration. An omitted registered track in the pickup measure receives a whole-measure rest whose duration is the pickup duration, not the header full-measure duration. Every later measure validates against the full time signature duration.
+The first logical measure's expected duration is `N * NoteUnitDuration`. All explicit tracks and auto-filled omitted tracks in the first measure validate against that shortened duration. An omitted registered track in the pickup measure receives a whole-measure rest whose duration is the pickup duration, not the header full-measure duration. Every later measure validates against the full time signature duration.
 
 `@partial:<N>` is a zero-duration measure directive. It does not create a note, rest, dynamic mark, or navigation mark.
 
 Pickup duration may end inside a normal grouping segment. Tokens in the pickup measure must not cross the pickup end; grouping geometry and validation are truncated to the pickup duration for the first measure only.
 
-The pickup directive must not be combined with measure-repeat shorthand, multi-measure rest shorthand, or an empty pure-navigation first measure. Duplicate pickup directives, pickup directives after the first logical measure, malformed values, and conflicting slot counts are hard errors.
+The pickup directive must not be combined with measure-repeat shorthand, multi-measure rest shorthand, or an empty pure-navigation first measure. Duplicate pickup directives, pickup directives after the first logical measure, malformed values, and conflicting Note Unit counts are hard errors.
 
 MusicXML export preserves the global time signature and emits the first measure with the shortened total duration, no emitted time-signature change, and deterministic pickup-specific measure metadata in the XML golden. Layout renders the pickup as a proportionally compact opening measure while preserving normal system preamble rendering.
 ```
@@ -107,10 +107,10 @@ Action:
 - Add `@partial:<N>` tokenization and parsing as a measure expression.
 - Preserve source location for diagnostics.
 - Reject malformed forms such as `@partial`, `@partial:0`, `@partial:-1`, `@partial:x`.
-- Reject duplicate pickup declarations and conflicting duplicate slot counts if the parser can observe them before normalization.
+- Reject duplicate pickup declarations and conflicting duplicate Note Unit counts if the parser can observe them before normalization.
 
 Input / Output Contract:
-- AST can represent a pickup directive with `slots: u32`.
+- AST can represent a pickup directive with `note_units: u32`.
 
 Dependencies:
 - Human stamp for spec change before implementation.
@@ -132,15 +132,15 @@ Scope:
 - validation helpers
 
 Action:
-- Store first-measure expected duration in normalized measure data as token-weight slots.
+- Store first-measure expected duration in normalized measure data as an exact musical duration derived from `note_units * effective NoteUnitDuration`.
 - Validate that only the first logical measure may use `@partial:<N>`.
-- Validate all first-measure tracks against the shortened slot count.
+- Validate all first-measure tracks against the shortened expected duration.
 - Ensure auto-filled omitted tracks in the pickup measure receive a pickup-duration whole-measure rest.
 - Allow pickup durations that end inside a grouping segment, while rejecting tokens that cross the pickup end.
 - Reject combination with measure repeat, multi-rest, and pure-navigation-only first measures.
 
 Input / Output Contract:
-- Normalized measure exposes the shortened expected duration or pickup slot count.
+- Normalized measure exposes the shortened expected duration and may retain the pickup Note Unit count for diagnostics/IR.
 
 Dependencies:
 - Task 1.
@@ -250,8 +250,9 @@ Verification:
 - `cargo test -p drummark-layout pickup -- --nocapture`
 - Normalization and IR fixture: pickup with an omitted registered track auto-filled as a pickup-duration rest.
 - Layout fixture: `@partial:1`, `@partial:3`, and a token-crossing-pickup-end negative case.
+- Paragraph-override fixture: first paragraph uses a paragraph-level `note 1/N` override and `@partial:<N>` is interpreted in that effective Note Unit.
 - MusicXML golden: first-measure XML attributes, backup/forward duration, whole-measure pickup rests, and no emitted time-signature change.
-- Negative fixtures: duplicate pickup declarations, conflicting duplicate slot counts if parsed, pickup after first logical measure, pickup with `%`, pickup with multi-rest shorthand, pickup with pure navigation, malformed values.
+- Negative fixtures: duplicate pickup declarations, conflicting duplicate Note Unit counts if parsed, pickup after first logical measure, pickup with `%`, pickup with multi-rest shorthand, pickup with pure navigation, malformed values.
 - `npm run drummark -- docs/examples/pickup.drum --format ast`
 - `npm run drummark -- docs/examples/pickup.drum --format ir`
 - `npm run drummark -- docs/examples/pickup.drum --format svg`
@@ -262,7 +263,7 @@ Verification:
 ## Risks / Notes
 
 - This is intentionally first-measure-only. Supporting arbitrary partial bars would pull in time-map and repeat semantics that are too large for v1.
-- Measure geometry currently assumes header-derived duration in several places; this must be changed through `RenderScore`, not patched in SVG adapters.
+- Measure geometry currently assumes header/full-measure-derived duration in several places; this must be changed through `RenderScore`, not patched in SVG adapters.
 - MusicXML readers vary in pickup interpretation. The safest v1 behavior is a short first measure under the declared global time signature.
 - Because this is a Spec / Contract Change, implementation requires plan approval and a human stamp recorded in `history.md`.
 
@@ -279,3 +280,4 @@ Verification:
 |-------|------|--------------------|
 | 1 | 2026-06-01 | Initial draft |
 | 2 | 2026-06-01 | Addressed plan review: defined pickup units as token-weight slots, specified auto-filled omitted-track rests, allowed truncated grouping with crossing-end rejection, named `RenderMeasure.expected_duration`, and tightened MusicXML/negative test gates. |
+| 3 | 2026-06-01 | Corrected deprecated `divisions` terminology: `@partial:<N>` is defined in active Note Units under `note 1/N`, with exact duration derived from the effective note value. |

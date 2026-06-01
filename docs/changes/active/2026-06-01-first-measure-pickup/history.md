@@ -45,3 +45,38 @@ Plan file: `docs/changes/active/2026-06-01-first-measure-pickup/plan.md`
 Status: APPROVED
 
 Implementation remains blocked until a human stamp records `Status: APPROVED_FOR_IMPLEMENTATION` because this is a Spec / Contract Change.
+
+### Approval Invalidated By Spec Correction
+
+Reviewer: user
+
+Status: CHANGES_REQUESTED
+
+Finding:
+- High: The approved Round 2 plan incorrectly used deprecated `divisions` as the normative unit model. Current active spec addenda define `note 1/N` and Note Units as the replacement model, with `divisions` retained only for backward compatibility/derived consumers.
+
+Resolution:
+- Revised `plan.md` so `@partial:<N>` is defined in active Note Units under the effective `note 1/N` setting for the first logical measure.
+- Derived pickup expected duration as `N * NoteUnitDuration`.
+- Replaced remaining active-plan `divisions`/slot-count wording with Note Unit or exact-duration terminology where applicable.
+- Marked the plan status as pending corrected plan review.
+
+### Corrected Plan Review
+
+Reviewer: subagent `019e818e-ec0c-7d10-b9d0-43008eed0956`
+
+Status: APPROVED
+
+Summary:
+- Corrected plan now defines `@partial:<N>` in active Note Units, not `divisions`.
+- Pickup duration is specified as exact musical duration derived from `N * NoteUnitDuration`.
+- Paragraph-level `note 1/N` override behavior is included in the spec delta and test plan.
+- Remaining `divisions` mention is explicitly backward-compatibility context, not normative semantics.
+
+### Approved Plan
+
+Plan file: `docs/changes/active/2026-06-01-first-measure-pickup/plan.md`
+
+Status: APPROVED
+
+Implementation remains blocked until a human stamp records `Status: APPROVED_FOR_IMPLEMENTATION` because this is a Spec / Contract Change.

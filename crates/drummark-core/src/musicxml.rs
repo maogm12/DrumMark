@@ -1026,7 +1026,7 @@ mod tests {
     fn groups_same_start_events_as_chords_and_preserves_explicit_rests() {
         let doc = Parser::new(
             "time 4/4\n\
-             divisions 4\n\n\
+             note 1/4\n\n\
              HH | x - x - |\n\
              SD | d - d - |",
         )
@@ -1044,7 +1044,7 @@ mod tests {
     fn hide_voice2_rests_converts_secondary_rests_to_forwards() {
         let doc = Parser::new(
             "time 4/4\n\
-             divisions 4\n\n\
+             note 1/4\n\n\
              HH | x - x - |\n\
              BD | - b - b |",
         )

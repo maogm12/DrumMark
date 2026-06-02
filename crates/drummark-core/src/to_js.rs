@@ -46,9 +46,6 @@ fn headers_to_js(h: &HeaderSection) -> JsValue {
     if let Some((b, u)) = h.note {
         set(&obj, "note", &frac_to_js(b, u));
     }
-    if let Some(v) = h.divisions {
-        set(&obj, "divisions", &JsValue::from_f64(v as f64));
-    }
     obj.into()
 }
 

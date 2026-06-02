@@ -28,7 +28,6 @@ pub struct RenderHeader {
     pub tempo: u32,
     pub time_beats: u32,
     pub time_beat_unit: u32,
-    pub divisions: u32,
     pub note_value: u32,
     pub grouping: Vec<u32>,
     pub title: Option<String>,

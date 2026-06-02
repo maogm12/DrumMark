@@ -53,10 +53,15 @@ pub fn build_music_xml(source: &str, hide_voice2_rests: bool) -> JsValue {
     let doc = parser.parse_lossy();
     let score = normalize::normalize_document(&doc);
     let output = Object::new();
+    let xml = if parser::has_legacy_divisions_error(&doc) {
+        String::new()
+    } else {
+        musicxml::build_music_xml(&score, hide_voice2_rests)
+    };
     set(
         &output,
         "xml",
-        &JsValue::from_str(&musicxml::build_music_xml(&score, hide_voice2_rests)),
+        &JsValue::from_str(&xml),
     );
     let errors = Array::new();
     for error in &score.errors {
@@ -107,6 +112,9 @@ pub fn build_layout_scene(source: &str, options: JsValue) -> JsValue {
     let opts = parse_layout_options(&options);
     let parser = parser::Parser::new(source);
     let doc = parser.parse_lossy();
+    if parser::has_legacy_divisions_error(&doc) {
+        return legacy_layout_issue_scene(&doc);
+    }
     let score = normalize::normalize_document(&doc);
     let render_score = render_score::derive_render_score(&score);
     let scene = drummark_layout::build_layout_scene(&render_score, &opts);
@@ -146,11 +154,6 @@ fn normalize_to_js(score: &normalize::NormalizedScore) -> JsValue {
         &JsValue::from_f64(score.header.time_beat_unit as f64),
     );
     set(&h, "timeSignature", &ts.into());
-    set(
-        &h,
-        "divisions",
-        &JsValue::from_f64(score.header.divisions as f64),
-    );
     set(
         &h,
         "noteValue",
@@ -381,11 +384,6 @@ fn render_score_to_js(score: &drummark_layout::RenderScore) -> JsValue {
         &header,
         "timeBeatUnit",
         &JsValue::from_f64(score.header.time_beat_unit as f64),
-    );
-    set(
-        &header,
-        "divisions",
-        &JsValue::from_f64(score.header.divisions as f64),
     );
     set(
         &header,
@@ -703,4 +701,34 @@ fn parse_layout_options(options: &JsValue) -> drummark_layout::LayoutOptions {
 #[cfg(feature = "layout-wasm")]
 fn layout_scene_to_js(scene: &drummark_layout::LayoutScene) -> JsValue {
     drummark_layout::layout_scene_to_js(scene)
+}
+
+#[cfg(feature = "layout-wasm")]
+fn legacy_layout_issue_scene(doc: &ast::Document) -> JsValue {
+    use js_sys::{Array, Object};
+
+    let obj = Object::new();
+    set(
+        &obj,
+        "version",
+        &JsValue::from_str(drummark_layout::LAYOUT_SCENE_VERSION),
+    );
+    set(
+        &obj,
+        "metricsVersion",
+        &JsValue::from_str(drummark_layout::CANONICAL_METRICS_VERSION),
+    );
+    set(&obj, "pages", &Array::new().into());
+
+    let issues = Array::new();
+    for error in &doc.errors {
+        if error.message == parser::LEGACY_DIVISIONS_HEADER_REMOVED_MESSAGE {
+            issues.push(&JsValue::from_str(&format!(
+                "Line {}, Col {}: {}",
+                error.line, error.column, error.message
+            )));
+        }
+    }
+    set(&obj, "issues", &issues.into());
+    obj.into()
 }

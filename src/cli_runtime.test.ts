@@ -45,6 +45,29 @@ HH | x |`, "ast");
     ]);
   });
 
+  it("refuses legacy divisions in normalized and xml outputs", async () => {
+    const legacy = `time 4/4
+divisions 4
+
+HH | x x x x |`;
+
+    const ir = await buildCliOutput(legacy, "ir");
+    expect(ir.errors).toContainEqual({
+      line: 2,
+      column: 1,
+      message: "legacy `divisions` header has been removed; use `note 1/N` instead",
+    });
+    expect(ir.score?.measures).toEqual([]);
+
+    const xml = await buildCliOutput(legacy, "xml");
+    expect(xml.errors).toContainEqual({
+      line: 2,
+      column: 1,
+      message: "legacy `divisions` header has been removed; use `note 1/N` instead",
+    });
+    expect(xml.result).toBe("");
+  });
+
   it("builds AST output", async () => {
     const { result } = await buildCliOutput(SIMPLE_SOURCE, "ast");
     const parsed = JSON.parse(result);

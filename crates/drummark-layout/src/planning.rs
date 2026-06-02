@@ -402,11 +402,8 @@ pub(crate) fn measure_fraction_for_beat_units(beat_units: u32, beat_unit: u32) -
 
 pub(crate) fn measure_fraction_for_division_slot(header: &RenderHeader, slot: u32) -> Fraction {
     reduce_fraction(Fraction {
-        numerator: slot.saturating_mul(header.time_beats.max(1)),
-        denominator: header
-            .divisions
-            .max(1)
-            .saturating_mul(header.time_beat_unit.max(1)),
+        numerator: slot,
+        denominator: header.note_value.max(1),
     })
 }
 

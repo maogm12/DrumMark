@@ -1,4 +1,4 @@
-export const HEADER_FIELDS = ["title", "subtitle", "composer", "tempo", "time", "divisions", "note", "grouping"] as const;
+export const HEADER_FIELDS = ["title", "subtitle", "composer", "tempo", "time", "note", "grouping"] as const;
 
 export type HeaderField = (typeof HEADER_FIELDS)[number];
 
@@ -258,7 +258,6 @@ export type NormalizedHeader = {
     beats: number;
     beatUnit: number;
   };
-  divisions: number;
   noteValue: number;
   grouping: number[];
 };

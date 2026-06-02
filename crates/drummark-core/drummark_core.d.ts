@@ -15,7 +15,6 @@ export interface HeaderSection {
   time?: [number, number];
   grouping?: number[];
   note?: [number, number];
-  divisions?: number;
 }
 
 export interface Paragraph {

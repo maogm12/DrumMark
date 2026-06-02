@@ -163,7 +163,7 @@ describe("parser/layout wasm semantic parity", () => {
 
   it("keeps layout pages for recoverable bad measures", async () => {
     const source = `time 4/4
-divisions 4
+note 1/4
 
 HH | x x ? x | x x x x |
 SD | d d d d | d d d d |

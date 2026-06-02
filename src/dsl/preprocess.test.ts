@@ -3,7 +3,7 @@ import { preprocessSource } from "./preprocess";
 
 describe("preprocessSource", () => {
   it("normalizes line endings and strips comments", () => {
-    const lines = preprocessSource("tempo 96\r\ntime 4/4 # meter\r\ndivisions 16\r\n");
+    const lines = preprocessSource("tempo 96\r\ntime 4/4 # meter\r\nnote 1/16\r\n");
 
     expect(lines).toHaveLength(4);
     expect(lines[0]).toMatchObject({
@@ -20,7 +20,7 @@ describe("preprocessSource", () => {
     expect(lines[2]).toMatchObject({
       kind: "content",
       lineNumber: 3,
-      content: "divisions 16",
+      content: "note 1/16",
     });
     expect(lines[3]).toMatchObject({
       kind: "blank",

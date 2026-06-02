@@ -21,7 +21,6 @@ pub fn ast_json(doc: &Document) -> Result<String, String> {
             "time": doc.headers.time.map(|(beats, unit)| json!([beats, unit])),
             "grouping": doc.headers.grouping,
             "note": doc.headers.note.map(|(num, den)| json!([num, den])),
-            "divisions": doc.headers.divisions,
         },
         "paragraphs": doc.paragraphs.iter().map(|paragraph| json!({
             "note": paragraph.note.map(|(num, den)| json!([num, den])),
@@ -49,7 +48,6 @@ pub fn normalized_json(score: &NormalizedScore) -> Result<String, String> {
             "tempo": score.header.tempo,
             "timeBeats": score.header.time_beats,
             "timeBeatUnit": score.header.time_beat_unit,
-            "divisions": score.header.divisions,
             "noteValue": score.header.note_value,
             "grouping": score.header.grouping,
         },

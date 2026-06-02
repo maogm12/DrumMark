@@ -12,6 +12,9 @@ pub struct Parser<'a> {
     last_end: usize,
 }
 
+pub const LEGACY_DIVISIONS_HEADER_REMOVED_MESSAGE: &str =
+    "legacy `divisions` header has been removed; use `note 1/N` instead";
+
 impl<'a> Parser<'a> {
     fn is_supported_note_denominator(value: u32) -> bool {
         matches!(value, 1 | 2 | 4 | 8 | 16 | 32 | 64 | 128)
@@ -391,6 +394,7 @@ impl<'a> Parser<'a> {
 
     fn parse_header_line(&mut self, hs: &mut HeaderSection) {
         let kw = self.next().unwrap();
+        let kw_start = self.last_start;
         match kw {
             Token::KwTitle => {
                 hs.title = Some(self.parse_header_value());
@@ -515,25 +519,9 @@ impl<'a> Parser<'a> {
                 }
             }
             Token::KwDivisions => {
-                if let Some(Token::Integer(n)) = self.peek() {
-                    self.next().ok();
-                    if self.line_has_trailing_content() {
-                        self.push_error(
-                            self.last_end,
-                            "invalid divisions header; expected `divisions <int>`",
-                        );
-                        self.consume_line_remainder();
-                        return;
-                    }
-                    hs.divisions = Some(n);
-                } else {
-                    self.push_error(
-                        self.last_end,
-                        "invalid divisions header; expected `divisions <int>`",
-                    );
-                    self.consume_line_remainder();
-                    return;
-                }
+                self.consume_line_remainder();
+                self.push_error(kw_start, LEGACY_DIVISIONS_HEADER_REMOVED_MESSAGE);
+                return;
             }
             _ => unreachable!(),
         }
@@ -1272,6 +1260,12 @@ impl<'a> Parser<'a> {
     }
 }
 
+pub fn has_legacy_divisions_error(doc: &Document) -> bool {
+    doc.errors
+        .iter()
+        .any(|error| error.message == LEGACY_DIVISIONS_HEADER_REMOVED_MESSAGE)
+}
+
 // ── Token Extension Methods ──────────────────────────────────────
 
 impl Token {
@@ -1477,7 +1471,7 @@ mod tests {
 
     #[test]
     fn test_lossy_parse_recovers_after_bad_measure_token() {
-        let doc = parse_lossy("time 4/4\ndivisions 4\n\nHH | x x ? x | x x x x |\n");
+        let doc = parse_lossy("time 4/4\nnote 1/4\n\nHH | x x ? x | x x x x |\n");
         let line = &doc.paragraphs[0].lines[0];
         assert_eq!(doc.errors.len(), 1);
         assert_eq!(line.measures.len(), 2);
@@ -1487,12 +1481,23 @@ mod tests {
 
     #[test]
     fn test_lossy_parse_keeps_following_measure_after_unclosed_group() {
-        let doc = parse_lossy("time 4/4\ndivisions 4\n\nHH | [x x - - | x x x x |\n");
+        let doc = parse_lossy("time 4/4\nnote 1/4\n\nHH | [x x - - | x x x x |\n");
         let line = &doc.paragraphs[0].lines[0];
         assert_eq!(doc.errors.len(), 1);
         assert_eq!(line.measures.len(), 2);
         assert!(line.measures[0].tokens.is_empty());
         assert_eq!(line.measures[1].tokens.len(), 4);
+    }
+
+    #[test]
+    fn test_divisions_header_reports_migration_diagnostic() {
+        let doc = parse_lossy("time 4/4\ndivisions 4\n\nHH | x x x x |\n");
+        assert_eq!(doc.errors.len(), 1);
+        assert_eq!(
+            doc.errors[0].message,
+            "legacy `divisions` header has been removed; use `note 1/N` instead"
+        );
+        assert_eq!(doc.paragraphs.len(), 1);
     }
 
     #[test]

@@ -112,7 +112,6 @@ pub struct NormalizedHeader {
     pub tempo: u32,
     pub time_beats: u32,
     pub time_beat_unit: u32,
-    pub divisions: u32,
     pub note_value: u32,
     pub grouping: Vec<u32>,
 }
@@ -312,9 +311,6 @@ fn default_note_value(headers: &HeaderSection) -> u32 {
     if let Some((_, denominator)) = headers.note {
         return denominator;
     }
-    if let (Some(divisions), Some((beats, beat_unit))) = (headers.divisions, headers.time) {
-        return divisions.saturating_mul(beat_unit) / beats.max(1);
-    }
     16
 }
 
@@ -381,11 +377,32 @@ pub fn normalize_document(doc: &Document) -> NormalizedScore {
     let time_beats = hs.time.unwrap_or((4, 4)).0;
     let time_beat_unit = hs.time.unwrap_or((4, 4)).1;
     let note_value = default_note_value(hs);
-    let divisions = time_beats.saturating_mul(note_value) / time_beat_unit.max(1);
     let grouping = hs
         .grouping
         .clone()
         .unwrap_or_else(|| default_grouping(time_beats, time_beat_unit));
+
+    if crate::parser::has_legacy_divisions_error(doc) {
+        return NormalizedScore {
+            version: "1.0".to_string(),
+            header: NormalizedHeader {
+                title: hs.title.clone(),
+                subtitle: hs.subtitle.clone(),
+                composer: hs.composer.clone(),
+                tempo: hs.tempo.unwrap_or(0),
+                time_beats,
+                time_beat_unit,
+                note_value,
+                grouping,
+            },
+            tracks: Vec::new(),
+            measures: Vec::new(),
+            errors,
+            repeat_spans: Vec::new(),
+        };
+    }
+
+    let divisions = time_beats.saturating_mul(note_value) / time_beat_unit.max(1);
 
     // Validate grouping
     if let Some(err) = validate_grouping(&grouping, time_beats, time_beat_unit, divisions) {
@@ -399,7 +416,6 @@ pub fn normalize_document(doc: &Document) -> NormalizedScore {
         tempo: hs.tempo.unwrap_or(0),
         time_beats,
         time_beat_unit,
-        divisions,
         note_value,
         grouping: grouping.clone(),
     };
@@ -911,7 +927,7 @@ mod dynamic_test {
     #[test]
     fn normalizes_and_sorts_explicit_dynamics() {
         let p =
-            parser::Parser::new("time 4/4\ndivisions 4\ngrouping 2+2\nSD | @p d d @f d d @ff |\n");
+            parser::Parser::new("time 4/4\nnote 1/4\ngrouping 2+2\nSD | @p d d @f d d @ff |\n");
         let doc = p.parse().unwrap();
         let score = normalize::normalize_document(&doc);
 
@@ -928,7 +944,7 @@ mod dynamic_test {
     #[test]
     fn deduplicates_same_level_and_rejects_conflicts() {
         let same = parser::Parser::new(
-            "time 4/4\ndivisions 4\ngrouping 2+2\nHH | @p x x x x |\nSD | @p d d d d |\n",
+            "time 4/4\nnote 1/4\ngrouping 2+2\nHH | @p x x x x |\nSD | @p d d d d |\n",
         )
         .parse()
         .unwrap();
@@ -938,7 +954,7 @@ mod dynamic_test {
         assert_eq!(same_score.measures[0].dynamics[0].level, DynamicLevel::P);
 
         let conflict = parser::Parser::new(
-            "time 4/4\ndivisions 4\ngrouping 2+2\nHH | @p x x x x |\nSD | @f d d d d |\n",
+            "time 4/4\nnote 1/4\ngrouping 2+2\nHH | @p x x x x |\nSD | @f d d d d |\n",
         )
         .parse()
         .unwrap();
@@ -951,7 +967,7 @@ mod dynamic_test {
 
     #[test]
     fn normalizes_routed_and_group_dynamic_positions() {
-        let p = parser::Parser::new("time 5/4\ndivisions 5\ngrouping 2+3\n| @SD { @p d d } @BD { @p b b } @mp d [2: @f d d] |\n");
+        let p = parser::Parser::new("time 5/4\nnote 1/4\ngrouping 2+3\n| @SD { @p d d } @BD { @p b b } @mp d [2: @f d d] |\n");
         let doc = p.parse().unwrap();
         let score = normalize::normalize_document(&doc);
 
@@ -1050,6 +1066,18 @@ mod header_test {
         let doc = parser::Parser::new("tempo 96\ntime 4/4\nHH | x - x - |\n").parse().unwrap();
         let score = normalize::normalize_document(&doc);
         assert_eq!(score.header.tempo, 96);
+    }
+
+    #[test]
+    fn legacy_divisions_error_short_circuits_normalization() {
+        let doc = parser::Parser::new("time 4/4\ndivisions 4\n\nHH | x x x x |\n").parse_lossy();
+        let score = normalize::normalize_document(&doc);
+
+        assert!(score.measures.is_empty());
+        assert!(score
+            .errors
+            .iter()
+            .any(|message| message.contains(crate::parser::LEGACY_DIVISIONS_HEADER_REMOVED_MESSAGE)));
     }
 }
 

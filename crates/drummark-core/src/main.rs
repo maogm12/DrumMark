@@ -72,9 +72,6 @@ fn main() {
                 if let Some(ref g) = doc.headers.grouping {
                     println!("    \"grouping\": {:?},", g);
                 }
-                if let Some(d) = doc.headers.divisions {
-                    println!("    \"divisions\": {},", d);
-                }
                 println!("    \"_ok\": true");
                 println!("  }},");
                 println!("  \"paragraphs_count\": {},", doc.paragraphs.len());

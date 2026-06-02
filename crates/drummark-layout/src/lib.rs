@@ -540,7 +540,6 @@ mod tests {
                 tempo: 120,
                 time_beats: 4,
                 time_beat_unit: 4,
-                divisions: 16,
                 note_value: 8,
                 grouping: vec![2, 2],
                 title: Some("Fixture".into()),
@@ -830,7 +829,6 @@ mod tests {
                 tempo: 120,
                 time_beats: 4,
                 time_beat_unit: 4,
-                divisions: 16,
                 note_value: 8,
                 grouping: vec![2, 2],
                 title: None,
@@ -1045,7 +1043,6 @@ mod tests {
                     tempo: 120,
                     time_beats: 4,
                     time_beat_unit: 4,
-                    divisions: 8,
                     note_value: 8,
                     grouping: vec![2, 2],
                     title: None,
@@ -1353,7 +1350,6 @@ mod tests {
                 tempo: 0,
                 time_beats: 4,
                 time_beat_unit: 4,
-                divisions: 16,
                 note_value: 8,
                 grouping: vec![1, 1, 1, 1],
                 title: None,
@@ -1646,7 +1642,6 @@ mod tests {
         let mut score = simple_layout_score(vec![regular_measure(0, 0, 6), repeat, multi_rest]);
         score.header.time_beats = 6;
         score.header.time_beat_unit = 8;
-        score.header.divisions = 6;
         score.header.note_value = 8;
         score.header.grouping = vec![3, 3];
 
@@ -2145,13 +2140,11 @@ mod tests {
 
         let mut silent_score = simple_layout_score(vec![silent_measure]);
         silent_score.header.note_value = 4;
-        silent_score.header.divisions = 4;
         silent_score.header.grouping = vec![4];
         let silent_scene = build_layout_scene(&silent_score, &LayoutOptions::default());
 
         let mut note_score = simple_layout_score(vec![note_measure]);
         note_score.header.note_value = 4;
-        note_score.header.divisions = 4;
         note_score.header.grouping = vec![4];
         let note_scene = build_layout_scene(&note_score, &LayoutOptions::default());
         let rest = page_all_items(&silent_scene.pages[0])
@@ -2334,7 +2327,6 @@ mod tests {
         score.header.time_beats = 6;
         score.header.time_beat_unit = 8;
         score.header.note_value = 8;
-        score.header.divisions = 6;
         score.header.grouping = vec![3, 3];
         let scene = build_layout_scene(&score, &LayoutOptions::default());
 
@@ -2719,7 +2711,6 @@ mod tests {
                 tempo: 120,
                 time_beats: 4,
                 time_beat_unit: 4,
-                divisions: 16,
                 note_value: 8,
                 grouping: vec![1, 1, 1, 1],
                 title: None,
@@ -3286,7 +3277,6 @@ mod tests {
         let mut score = simple_layout_score(vec![measure]);
         score.header.time_beats = 6;
         score.header.time_beat_unit = 8;
-        score.header.divisions = 6;
         score.header.note_value = 8;
         score.header.grouping = vec![3, 3];
 
@@ -3360,7 +3350,6 @@ mod tests {
         });
         score.header.time_beats = 6;
         score.header.time_beat_unit = 8;
-        score.header.divisions = 6;
         score.header.note_value = 8;
         score.header.grouping = vec![3, 3];
 
@@ -3784,7 +3773,6 @@ mod tests {
         let mut score = simple_layout_score(vec![measure]);
         score.header.time_beats = 6;
         score.header.time_beat_unit = 8;
-        score.header.divisions = 6;
         score.header.note_value = 8;
         score.header.grouping = vec![3, 3];
 
@@ -4843,7 +4831,6 @@ mod tests {
                 tempo: 115,
                 time_beats: 4,
                 time_beat_unit: 4,
-                divisions: 8,
                 note_value: 8,
                 grouping: vec![2, 2],
                 title: None,
@@ -4980,7 +4967,6 @@ mod tests {
                 tempo: 115,
                 time_beats: 4,
                 time_beat_unit: 4,
-                divisions: 8,
                 note_value: 8,
                 grouping: vec![4],
                 title: None,
@@ -5315,7 +5301,6 @@ fn test_contract_scene_smoke() {
             tempo: 120,
             time_beats: 4,
             time_beat_unit: 4,
-            divisions: 16,
             note_value: 8,
             grouping: vec![1, 1, 1, 1],
             title: Some("Smoke".into()),
@@ -5481,7 +5466,6 @@ fn test_header_layout_box_bounds_and_page0_cursor_use_actual_visual_bottom() {
         tempo: 120,
         time_beats: 4,
         time_beat_unit: 4,
-        divisions: 16,
         note_value: 8,
         grouping: vec![1, 1, 1, 1],
         title: Some("Title".into()),
@@ -5985,7 +5969,6 @@ fn test_system_box_orchestrator_outputs_multiple_pages_for_long_scores() {
             tempo: 120,
             time_beats: 4,
             time_beat_unit: 4,
-            divisions: 4,
             note_value: 4,
             grouping: vec![1, 1, 1, 1],
             title: Some("Long".into()),
@@ -6017,7 +6000,6 @@ fn test_volta_composites_are_emitted() {
             tempo: 120,
             time_beats: 4,
             time_beat_unit: 4,
-            divisions: 16,
             note_value: 8,
             grouping: vec![1, 1, 1, 1],
             title: None,
@@ -6138,7 +6120,6 @@ fn test_adjacent_voltas_share_y_and_positive_offset_moves_up() {
             tempo: 120,
             time_beats: 4,
             time_beat_unit: 4,
-            divisions: 4,
             note_value: 4,
             grouping: vec![1, 1, 1, 1],
             title: None,
@@ -6211,7 +6192,6 @@ fn test_two_bar_measure_repeat_expands_into_two_display_measures() {
             tempo: 120,
             time_beats: 4,
             time_beat_unit: 4,
-            divisions: 16,
             note_value: 8,
             grouping: vec![1, 1, 1, 1],
             title: None,
@@ -6298,7 +6278,6 @@ fn test_structural_composites_are_emitted() {
             tempo: 120,
             time_beats: 4,
             time_beat_unit: 4,
-            divisions: 16,
             note_value: 8,
             grouping: vec![1, 1, 1, 1],
             title: None,
@@ -6387,7 +6366,6 @@ fn test_system_boundaries_align_with_staff_edges() {
             tempo: 120,
             time_beats: 4,
             time_beat_unit: 4,
-            divisions: 16,
             note_value: 8,
             grouping: vec![1, 1, 1, 1],
             title: None,
@@ -6475,7 +6453,6 @@ fn test_first_measure_repeat_start_sits_after_system_preamble() {
             tempo: 120,
             time_beats: 4,
             time_beat_unit: 4,
-            divisions: 16,
             note_value: 8,
             grouping: vec![1, 1, 1, 1],
             title: None,
@@ -6637,7 +6614,6 @@ fn edge_padding_score(measures: Vec<RenderMeasure>) -> RenderScore {
             tempo: 120,
             time_beats: 4,
             time_beat_unit: 4,
-            divisions: 16,
             note_value: 8,
             grouping: vec![1, 1, 1, 1],
             title: None,
@@ -6873,7 +6849,6 @@ fn test_adjacent_repeat_end_start_uses_smufl_right_left_glyph() {
             tempo: 120,
             time_beats: 4,
             time_beat_unit: 4,
-            divisions: 4,
             note_value: 4,
             grouping: vec![1, 1, 1, 1],
             title: None,
@@ -6969,7 +6944,6 @@ fn test_later_system_uses_smaller_start_zone_than_first_system() {
             tempo: 120,
             time_beats: 4,
             time_beat_unit: 4,
-            divisions: 16,
             note_value: 8,
             grouping: vec![1, 1, 1, 1],
             title: None,
@@ -7015,7 +6989,6 @@ fn test_later_system_measure_number_uses_absolute_measure_index() {
             tempo: 120,
             time_beats: 4,
             time_beat_unit: 4,
-            divisions: 16,
             note_value: 8,
             grouping: vec![1, 1, 1, 1],
             title: None,
@@ -7088,7 +7061,6 @@ fn test_hide_measure_number_omits_system_labels() {
             tempo: 120,
             time_beats: 4,
             time_beat_unit: 4,
-            divisions: 16,
             note_value: 8,
             grouping: vec![1, 1, 1, 1],
             title: None,
@@ -7169,7 +7141,6 @@ fn test_down_stem_keeps_notehead_on_right_and_flag_on_stem_right_side() {
             tempo: 120,
             time_beats: 4,
             time_beat_unit: 4,
-            divisions: 16,
             note_value: 8,
             grouping: vec![1, 1, 1, 1],
             title: None,
@@ -7269,7 +7240,6 @@ fn test_crash_maps_to_top_ledger_line() {
             tempo: 120,
             time_beats: 4,
             time_beat_unit: 4,
-            divisions: 16,
             note_value: 8,
             grouping: vec![1, 1, 1, 1],
             title: None,
@@ -7389,7 +7359,6 @@ fn test_bottom_ledger_lines_render_for_notes_below_staff() {
             tempo: 120,
             time_beats: 4,
             time_beat_unit: 4,
-            divisions: 16,
             note_value: 8,
             grouping: vec![1, 1, 1, 1],
             title: None,
@@ -7480,7 +7449,6 @@ fn test_flam_renders_grace_notehead_stem_and_slash() {
             tempo: 120,
             time_beats: 4,
             time_beat_unit: 4,
-            divisions: 16,
             note_value: 8,
             grouping: vec![1, 1, 1, 1],
             title: None,
@@ -7739,7 +7707,6 @@ fn grace_modifier_score(modifier: &str, visual_duration: Fraction) -> RenderScor
             tempo: 120,
             time_beats: 4,
             time_beat_unit: 4,
-            divisions: 16,
             note_value: 8,
             grouping: vec![1, 1, 1, 1],
             title: None,

@@ -63,12 +63,12 @@ HH | x - - - |`);
 
   it("preserves the secondary voice rest visibility option", () => {
     const visible = buildMusicXml(`time 4/4
-divisions 4
+note 1/4
 
 HH | x - x - |
 BD | - b - b |`, false);
     const hidden = buildMusicXml(`time 4/4
-divisions 4
+note 1/4
 
 HH | x - x - |
 BD | - b - b |`, true);

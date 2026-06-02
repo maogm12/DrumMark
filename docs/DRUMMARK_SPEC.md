@@ -68,7 +68,6 @@ composer <text>
 tempo <number>
 time <beats>/<beatUnit>
 note 1/<power-of-2>
-divisions <number>
 grouping <a+b+c+...>
 ```
 
@@ -80,10 +79,9 @@ Rules:
 - Empty text values are invalid.
 - `tempo` is an optional positive integer and is interpreted as quarter-note BPM.
 - `time` is required.
-- `note 1/N` is the primary rhythmic-unit header and is preferred over `divisions`.
+- `note 1/N` is the canonical rhythmic-unit header.
 - `N` must be a supported power of 2: `1`, `2`, `4`, `8`, `16`, `32`, `64`, `128`.
 - `grouping` is optional for meters with a defined default and required for irregular meters with no default.
-- `divisions` is deprecated compatibility input. See Section 12.
 
 ### 3.2 Grouping Inference
 
@@ -402,7 +400,7 @@ Mutually exclusive whole-measure forms include:
 Invalid constructs include:
 - empty required text headers,
 - malformed `note 1/N`,
-- malformed deprecated `divisions`,
+- legacy `divisions <number>` headers,
 - paragraph-local `note 1/N` appearing after paragraph track content,
 - malformed routed-block syntax,
 - malformed compact barline/volta syntax.
@@ -420,7 +418,6 @@ Current normalized header shape is:
   "composer": "G. Mao",
   "tempo": 120,
   "timeSignature": { "beats": 4, "beatUnit": 4 },
-  "divisions": 8,
   "noteValue": 8,
   "grouping": [2, 2]
 }
@@ -428,8 +425,8 @@ Current normalized header shape is:
 
 Rules:
 - `noteValue` is the canonical active rhythmic-unit denominator.
-- `divisions` currently remains in normalized IR as a derived compatibility field for existing consumers.
-- Canonical semantic discussion in this spec should prefer `noteValue` and Note Units over `divisions`.
+- Normalized IR does not expose a DrumMark `divisions` field.
+- Canonical semantic discussion in this spec uses `noteValue` and Note Units.
 
 ### 10.2 Tracks
 
@@ -503,19 +500,17 @@ Accepted export behavior includes:
 - hairpin wedge export,
 - dynamic direction export below the staff.
 
-MusicXML `<divisions>` is an export-unit choice and is distinct from the deprecated DrumMark DSL `divisions` header.
+MusicXML `<divisions>` is an export-unit choice and is distinct from the removed DrumMark DSL `divisions` header.
 
 ## 12. Compatibility And Deprecated Syntax
 
-### 12.1 Deprecated `divisions` Header
+### 12.1 Removed `divisions` Header
 
-`divisions <number>` remains accepted as compatibility input in the current implementation.
+`divisions <number>` is no longer accepted DrumMark syntax.
 
 Rules:
-- It is deprecated in favor of `note 1/N`.
-- When accepted, it maps to a derived rhythmic-unit interpretation consistent with the active time signature.
-- It should not be used as the normative model for new syntax or future spec work.
-- Current normalized IR may still expose derived `divisions` for existing consumers.
+- Parsers should report a migration-oriented diagnostic directing users to `note 1/N`.
+- It remains relevant only as historical syntax when reading archived material or migration notes.
 
 ### 12.2 Removed Or Rejected Syntax
 

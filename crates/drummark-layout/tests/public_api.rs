@@ -71,7 +71,6 @@ fn crate_root_public_api_smoke() {
             tempo: 120,
             time_beats: 4,
             time_beat_unit: 4,
-            divisions: 4,
             note_value: 8,
             grouping: vec![2, 2],
             title: Some("Smoke".to_string()),

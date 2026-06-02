@@ -11,6 +11,17 @@ pub struct CliOutput {
 pub fn build_output(source: &str, cli: &Cli) -> Result<CliOutput, String> {
     let parser = parser::Parser::new(source);
     let doc = parser.parse_lossy();
+    if parser::has_legacy_divisions_error(&doc) && !matches!(cli.format, OutputFormat::Ast) {
+        let error = doc
+            .errors
+            .iter()
+            .find(|entry| entry.message == parser::LEGACY_DIVISIONS_HEADER_REMOVED_MESSAGE)
+            .expect("legacy divisions error should be present");
+        return Err(format!(
+            "Line {}, Col {}: {}",
+            error.line, error.column, error.message
+        ));
+    }
     let score = normalize::normalize_document(&doc);
     let warnings = score
         .errors

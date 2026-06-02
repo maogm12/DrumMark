@@ -248,7 +248,7 @@ describe("SVG Renderer parity", () => {
   });
 
   it("renders same-voice rests without inventing an upper voice", async () => {
-    const svg = await render("time 4/4\ndivisions 4\ngrouping 2+2\nBD | b - - - |\n");
+    const svg = await render("time 4/4\nnote 1/4\ngrouping 2+2\nBD | b - - - |\n");
     expect(countRole(svg, "rest")).toBe(3);
     expect(svg).toContain("\u{E4E5}");
   });

@@ -14,7 +14,6 @@ pub struct HeaderSection {
     pub time: Option<(u32, u32)>,
     pub grouping: Option<Vec<u32>>,
     pub note: Option<(u32, u32)>,
-    pub divisions: Option<u32>,
 }
 
 #[derive(Debug, Default)]

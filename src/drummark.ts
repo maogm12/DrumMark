@@ -4,7 +4,7 @@ import { tags } from "@lezer/highlight";
 import { TRACKS, MODIFIERS } from "./dsl/types";
 import type { AppTheme } from "./theme";
 
-type HeaderField = "title" | "subtitle" | "composer" | "tempo" | "time" | "divisions" | "note" | "grouping";
+type HeaderField = "title" | "subtitle" | "composer" | "tempo" | "time" | "note" | "grouping";
 type LineMode = "unknown" | "header" | "track";
 type TrackName = typeof TRACKS[number];
 
@@ -18,7 +18,7 @@ type DslState = {
   scopeTracks: TrackName[];
 };
 
-const headerFields: readonly HeaderField[] = ["title", "subtitle", "composer", "tempo", "time", "divisions", "note", "grouping"];
+const headerFields: readonly HeaderField[] = ["title", "subtitle", "composer", "tempo", "time", "note", "grouping"];
 const modifiers = [...MODIFIERS].sort((left, right) => right.length - left.length) as readonly string[];
 const sortedTracks = [...TRACKS].sort((left, right) => right.length - left.length) as readonly TrackName[];
 const jumpMarkers = [
@@ -150,7 +150,6 @@ function readHeaderValue(stream: StringStream, state: DslState): string | null {
       readToLineEnd(stream);
       return "header-text";
     case "tempo":
-    case "divisions":
       if (stream.match(/^\d+/)) {
         return "header-number";
       }

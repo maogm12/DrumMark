@@ -3,7 +3,7 @@ import { buildNormalizedScore } from "./normalize";
 
 function buildSingleMeasureScore(body: string) {
   const score = buildNormalizedScore(`time 4/4
-divisions 4
+note 1/4
 
 ${body}`);
 

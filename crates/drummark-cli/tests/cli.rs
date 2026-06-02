@@ -26,6 +26,13 @@ fn stderr(output: &Output) -> String {
     String::from_utf8_lossy(&output.stderr).into_owned()
 }
 
+fn write_temp_source(contents: &str) -> (tempfile::TempDir, PathBuf) {
+    let dir = tempdir().expect("tempdir");
+    let path = dir.path().join("legacy-divisions.drum");
+    fs::write(&path, contents).expect("write temp source");
+    (dir, path)
+}
+
 fn page_items(page: &serde_json::Value) -> Vec<&serde_json::Value> {
     let mut items = Vec::new();
     if let Some(header) = page.get("header") {
@@ -79,6 +86,26 @@ fn xml_alias_is_rejected() {
     let output = run(&[OVERVIEW, "--format", "xml"]);
     assert_eq!(output.status.code(), Some(2));
     assert!(stderr(&output).contains("invalid value"));
+}
+
+#[test]
+fn legacy_divisions_rejects_non_ast_outputs() {
+    let (_dir, path) = write_temp_source("time 4/4\ndivisions 4\n\nHH | x x x x |\n");
+
+    for format in ["ir", "svg", "musicxml", "scene"] {
+        let output = run(&[path.to_str().unwrap(), "--format", format]);
+        assert!(!output.status.success(), "{format} unexpectedly succeeded");
+        assert!(
+            stderr(&output).contains("legacy `divisions` header has been removed; use `note 1/N` instead"),
+            "{format} stderr missing migration diagnostic: {}",
+            stderr(&output)
+        );
+    }
+
+    let ast = run(&[path.to_str().unwrap(), "--format", "ast"]);
+    assert!(ast.status.success(), "ast failed: {}", stderr(&ast));
+    let value: serde_json::Value = serde_json::from_slice(&ast.stdout).expect("ast json should parse");
+    assert!(value["errors"].as_array().is_some_and(|errors| !errors.is_empty()));
 }
 
 #[test]

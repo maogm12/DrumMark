@@ -12,7 +12,6 @@ pub fn derive_render_score(score: &normalize::NormalizedScore) -> drummark_layou
             tempo: score.header.tempo,
             time_beats: score.header.time_beats,
             time_beat_unit: score.header.time_beat_unit,
-            divisions: score.header.divisions,
             note_value: score.header.note_value,
             grouping: score.header.grouping.clone(),
             title: score.header.title.clone(),
@@ -528,7 +527,7 @@ mod tests {
 
     #[test]
     fn derives_render_score_from_normalized_score() {
-        let source = "title Smoke\ntime 4/4\ndivisions 4\ngrouping 2+2\nHH | @p x x @ff x x |\nSD | - o - o |\n";
+        let source = "title Smoke\ntime 4/4\nnote 1/4\ngrouping 2+2\nHH | @p x x @ff x x |\nSD | - o - o |\n";
         let document = Parser::new(source).parse().expect("parse");
         let normalized = crate::normalize::normalize_document(&document);
         let render = derive_render_score(&normalized);
@@ -577,7 +576,6 @@ mod tests {
                 tempo: 120,
                 time_beats: 4,
                 time_beat_unit: 4,
-                divisions: 16,
                 note_value: 8,
                 grouping: vec![1, 1, 1, 1],
             },
@@ -670,7 +668,7 @@ mod tests {
 
     #[test]
     fn does_not_invent_missing_voice_rests() {
-        let source = "time 4/4\ndivisions 4\ngrouping 2+2\nBD | b - - - |\n";
+        let source = "time 4/4\nnote 1/4\ngrouping 2+2\nBD | b - - - |\n";
         let document = Parser::new(source).parse().expect("parse");
         let normalized = crate::normalize::normalize_document(&document);
         let render = derive_render_score(&normalized);

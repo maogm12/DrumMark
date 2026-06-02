@@ -64,27 +64,46 @@ IR-related behavior should be documented in the active spec or contract that cur
 
 For Spec / Contract Changes, affected spec or contract files must be updated before merge.
 
-Spec and contract files are append-only unless the user explicitly approves a rewrite.
+This project now has two maintenance modes for active specs/contracts:
 
-Append-only files include, but are not limited to:
+- **Canonical-integrated**: accepted behavior is merged into the main body of the active spec.
+- **Append-only**: accepted behavior is appended as dated addenda.
+
+Unless a spec has been explicitly converted to canonical-integrated maintenance, treat it as append-only unless the user explicitly approves a rewrite.
+
+Current canonical-integrated active specs:
 
 - `DRUMMARK_SPEC.md`
+
+Current append-only active specs/contracts include, but are not limited to:
+
 - `RENDER_LAYOUT_CONTRACT.md`
-- other active project specs/contracts
+- other active project specs/contracts not explicitly listed as canonical-integrated
 
-Do not insert new normative text into the middle of an existing spec section.
+For append-only specs/contracts:
 
-Do not rewrite existing spec text unless `plan.md` explicitly says this is a rewrite and the user has approved it.
+- Do not insert new normative text into the middle of an existing spec section.
+- Do not rewrite existing spec text unless `plan.md` explicitly says this is a rewrite and the user has approved it.
+
+For canonical-integrated specs:
+
+- Update the relevant canonical sections so the active spec reads as today's truth.
+- Do not append chronological addenda by default.
+- Keep rationale, rejected alternatives, and review history in change folders and archives, not in the active spec body.
+- If a planned feature is not yet accepted or implemented, keep it out of normative sections.
 
 ### Spec Delta Source of Truth
 
 `plan.md` must contain `## Spec Delta`.
 
-`## Spec Delta` is the draft source for the final spec or contract addendum.
+`## Spec Delta` is the draft source for the final accepted spec or contract text.
 
-Before merge, the agent must convert `## Spec Delta` into a clean addendum and append it to the affected spec or contract file.
+Before merge:
 
-The final appended addendum must not include:
+- for append-only specs/contracts, convert `## Spec Delta` into a clean addendum and append it to the affected file.
+- for canonical-integrated specs, convert `## Spec Delta` into clean normative section updates in the active spec body.
+
+The final accepted text must not include:
 
 - review notes
 - rejected alternatives
@@ -118,9 +137,17 @@ This replaces the old proposal-file `### Consolidated Changes` step.
 
 The purpose is to preserve a clear record of what was merged into the spec without polluting `plan.md`.
 
+For canonical-integrated specs, replace "Final addendum location" with:
+
+```md
+Final integration location:
+- Integrated into `<spec-file>` sections:
+  - `...`
+```
+
 ### Addendum Heading Format
 
-When appending to a spec or contract, use a clear dated heading:
+When appending to an append-only spec or contract, use a clear dated heading:
 
 ```md
 ## Addendum: <Title>
@@ -153,11 +180,11 @@ Before implementation review can approve a Spec / Contract Change, the reviewer 
 
 - `plan.md` contains `## Spec Delta`
 - affected specs/contracts are listed
-- final addendum was appended to the affected spec/contract
+- final accepted text was merged into the affected spec/contract using the correct maintenance mode
 - no review notes or rejected alternatives were copied into the spec
-- existing spec text was not rewritten unless explicitly approved
+- existing spec text was not rewritten unless explicitly approved for rewrite or canonical integration
 - `history.md` contains `## Consolidated Changes`
-- the implementation matches the final spec addendum
+- the implementation matches the final accepted spec text
 
 Spec / Contract Changes must not merge until this check passes.
 

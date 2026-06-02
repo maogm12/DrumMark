@@ -97,7 +97,6 @@ pub(crate) fn time_signature_width_pt(staff_space_pt: f32) -> f32 {
 
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct PreambleLayout {
-    pub(crate) glyph_origin_x_pt: f32,
     pub(crate) clef_x_pt: Option<f32>,
     pub(crate) time_signature_x_pt: Option<f32>,
     pub(crate) visible_end_x_pt: f32,
@@ -139,7 +138,6 @@ pub(crate) fn preamble_layout(
     };
 
     PreambleLayout {
-        glyph_origin_x_pt,
         clef_x_pt,
         time_signature_x_pt,
         visible_end_x_pt,

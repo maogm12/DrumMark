@@ -113,9 +113,8 @@ pub(crate) fn render_header_layout_box(
         }
     }
     if !opts.hide_tempo && header.tempo > 0 {
-        let preamble = preamble_layout(margin, true, opts);
         let (tempo_glyph_x, tempo_equals_x, tempo_value_x) =
-            tempo_item_x_positions(preamble.glyph_origin_x_pt, opts.staff_space_pt);
+            tempo_item_x_positions(margin, opts.staff_space_pt);
         let tempo_value_text = header.tempo.to_string();
         let tempo_glyph_id = sink.push_text_item(TextItemSpec {
             measure_id: None,
@@ -393,7 +392,7 @@ pub fn build_layout_scene(score: &RenderScore, opts: &LayoutOptions) -> LayoutSc
             let tempo_metric = canonical_text_metric(TextRole::Tempo, opts.staff_space_pt);
             let tempo_y = sy + opts.tempo_offset_y;
             let (tempo_glyph_x, tempo_equals_x, tempo_value_x) =
-                tempo_item_x_positions(preamble.glyph_origin_x_pt, opts.staff_space_pt);
+                tempo_item_x_positions(margin, opts.staff_space_pt);
             let tempo_value_text = score.header.tempo.to_string();
             let tempo_glyph_id = sink.push_text_item(TextItemSpec {
                 measure_id: Some(&first_measure_id),

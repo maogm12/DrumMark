@@ -165,10 +165,10 @@ pub(crate) fn tempo_equals_value_gap_pt(staff_space_pt: f32) -> f32 {
 }
 
 pub(crate) fn tempo_item_x_positions(
-    preamble_origin_x_pt: f32,
+    left_margin_pt: f32,
     staff_space_pt: f32,
 ) -> (f32, f32, f32) {
-    let glyph_x = preamble_origin_x_pt + tempo_margin_offset_pt(staff_space_pt);
+    let glyph_x = left_margin_pt + tempo_margin_offset_pt(staff_space_pt);
     let glyph_width = canonical_glyph_metric(GlyphRole::MetNoteQuarterUp).width_ss()
         * tempo_glyph_position_pt(staff_space_pt)
         / 4.0;
@@ -5509,6 +5509,90 @@ fn test_header_layout_box_bounds_and_page0_cursor_use_actual_visual_bottom() {
     let empty_box = render_header_layout_box(&empty_header, &opts);
     assert!(empty_box.items.is_empty());
     assert_eq!(page0_first_system_cursor(&opts, &empty_box), fixed_cursor);
+}
+
+#[test]
+fn test_tempo_anchor_uses_left_margin_single_gap() {
+    let opts = LayoutOptions::default();
+    let (glyph_x, equals_x, value_x) = tempo_item_x_positions(opts.left_margin_pt, opts.staff_space_pt);
+    let expected_glyph_x = opts.left_margin_pt + tempo_margin_offset_pt(opts.staff_space_pt);
+
+    assert!((glyph_x - expected_glyph_x).abs() < 0.01);
+    assert!(equals_x > glyph_x);
+    assert!(value_x > equals_x);
+
+    let header = RenderHeader {
+        tempo: 120,
+        time_beats: 4,
+        time_beat_unit: 4,
+        note_value: 8,
+        grouping: vec![1, 1, 1, 1],
+        title: None,
+        subtitle: None,
+        composer: None,
+    };
+    let scene = build_layout_scene(
+        &RenderScore {
+            version: RENDER_SCORE_VERSION.to_string(),
+            header,
+            tracks: vec![RenderTrack {
+                id: "HH".into(),
+                family: "cymbal".into(),
+            }],
+            measures: vec![RenderMeasure {
+                index: 0,
+                global_index: 0,
+                paragraph_index: 0,
+                measure_in_paragraph: 0,
+                source_line: 1,
+                events: vec![RenderEvent {
+                    track: "HH".into(),
+                    track_family: "cymbal".into(),
+                    start: Fraction {
+                        numerator: 0,
+                        denominator: 1,
+                    },
+                    duration: Fraction {
+                        numerator: 1,
+                        denominator: 1,
+                    },
+                    visual_duration: Fraction {
+                        numerator: 1,
+                        denominator: 1,
+                    },
+                    kind: EventKind::Hit,
+                    glyph: "x".into(),
+                    modifiers: vec![],
+                    dot_count: 0,
+                    modifier: None,
+                    voice: 1,
+                    beam: "none".into(),
+                    tuplet: None,
+                }],
+                barline: Some("regular".into()),
+                closing_barline: Some("regular".into()),
+                start_nav: None,
+                end_nav: None,
+                volta_indices: None,
+                hairpins: vec![],
+                dynamics: vec![],
+                measure_repeat_slashes: None,
+                multi_rest_count: None,
+                note_value: 8,
+                volta_terminator: false,
+            }],
+            errors: vec![],
+            repeat_spans: vec![],
+        },
+        &opts,
+    );
+    let tempo_glyph = page_all_items(&scene.pages[0])
+        .find(|item| item.role == "tempo-glyph")
+        .expect("tempo glyph");
+    let ScenePrimitive::TextRun(text) = &tempo_glyph.primitive else {
+        panic!("tempo glyph should be text");
+    };
+    assert!((text.x_pt - expected_glyph_x).abs() < 0.01);
 }
 
 #[test]

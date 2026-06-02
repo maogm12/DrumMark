@@ -1,5 +1,6 @@
 pub(crate) mod barlines;
 pub(crate) mod beams;
+pub(crate) mod constants;
 pub(crate) mod notes;
 pub(crate) mod tuplets;
 

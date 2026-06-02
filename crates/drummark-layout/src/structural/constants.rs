@@ -1,0 +1,14 @@
+pub(crate) const VOLTA_LABEL_X_OFFSET_PT: f32 = 5.0;
+pub(crate) const NAV_TEXT_FONT: &str = "Academico";
+pub(crate) const NAV_GAP_PT: f32 = 6.0;
+pub(crate) const NAV_MEASURE_EDGE_INSET_PT: f32 = 4.0;
+pub(crate) const NAV_DEFAULT_Y_OFFSET_PT: f32 = 8.0;
+pub(crate) const NAV_INLINE_TEXT_GAP_PT: f32 = 4.0;
+pub(crate) const NAV_TEXT_BASELINE_OFFSET_PT: f32 = 1.0;
+pub(crate) const HAIRPIN_TRAILING_INSET_PT: f32 = 12.0;
+pub(crate) const HAIRPIN_OPEN_HEIGHT_STAFF_SPACES: f32 = 2.0;
+pub(crate) const HAIRPIN_GAP_BELOW_STAFF_SPACES: f32 = 0.4;
+pub(crate) const LOWER_EXPRESSION_GAP_PT: f32 = 4.0;
+pub(crate) const DYNAMIC_EDGE_PADDING_PT: f32 = 3.0;
+pub(crate) const DYNAMIC_TEXT_PADDING_X_PT: f32 = 1.5;
+pub(crate) const DYNAMIC_TEXT_PADDING_Y_PT: f32 = 1.0;

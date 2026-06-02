@@ -22,6 +22,16 @@ use crate::{
     glyph_position_pt, grace_position_pt, grace_render_font_pt, grace_stem_length_pt,
     notation_render_font_pt, ENGRAVING_STROKE_WIDTH_PT,
 };
+use super::constants::{
+    ACCENT_FALLBACK_Y_PT, ACCENT_GAP_PT, BEAM_ENVELOPE_PAD_X_PT, BEAM_THICKNESS_PT,
+    CHORD_DISPLACE_EPSILON, DOT_ON_LINE_SHIFT_SS, GRACE_BEAM_THICKNESS_PT_AT_BASE_SS,
+    GRACE_NOTE_GAP_PT_AT_BASE_SS, GRACE_NOTE_SPACING_PT_AT_BASE_SS,
+    GRACE_SCALE_BASE_STAFF_SPACE_PT, GRACE_SECONDARY_BEAM_OFFSET_PT_AT_BASE_SS,
+    NOTE_X_OFFSET_PT, REST_FALLBACK_CENTER_X_PT, REST_OVERLAP_EPSILON,
+    SECONDARY_BEAM_GAP_PT, STICKING_PADDING_PT, FLAM_SLASH_HALF_HEIGHT_PT_AT_BASE_SS,
+    FLAM_SLASH_LEFT_PT_AT_BASE_SS, FLAM_SLASH_RIGHT_PT_AT_BASE_SS,
+    FLAM_SLASH_STEM_SHIFT_RATIO,
+};
 
 use super::beams::{render_beam_groups, BeamAnchor};
 use super::tuplets::render_tuplet_groups;
@@ -238,9 +248,6 @@ const REST_LANES_VOICE_1_UP_SS: [f32; 8] = [1.0, 0.5, 0.0, -0.5, -1.0, -1.5, -2.
 const REST_LANES_VOICE_2_DOWN_SS: [f32; 8] = [3.5, 4.0, 4.5, 5.0, 5.5, 6.0, 6.5, 7.0];
 /// Single-voice collision fallback: expand symmetrically around the middle staff line.
 const REST_LANES_SINGLE_SS: [f32; 9] = [2.0, 1.5, 2.5, 1.0, 3.0, 0.5, 3.5, 0.0, 4.0];
-pub(crate) const BEAM_THICKNESS_PT: f32 = 3.0;
-/// Clear space between adjacent beam ribbons (not center-to-center).
-pub(crate) const SECONDARY_BEAM_GAP_PT: f32 = 2.0;
 
 /// Vertical offset for a secondary beam level (2 = first secondary, 3 = second, …).
 pub(crate) fn secondary_beam_offset_from_primary_pt(display_level: u8) -> f32 {
@@ -257,25 +264,8 @@ pub(crate) fn beam_stack_extent_from_stem_pt(beam_level: u8) -> f32 {
     }
 }
 
-// Notehead positioning
-const NOTE_X_OFFSET_PT: f32 = crate::NOTE_METRIC_TO_DRAW_X_PT;
-// Augmentation dots
-const DOT_ON_LINE_SHIFT_SS: f32 = 0.5;
-// Rest
-const REST_FALLBACK_CENTER_X_PT: f32 = 7.0;
 // Ledger lines
 const LEDGER_HALF_OVERHANG_PT: f32 = 3.0;
-// Sticking
-const STICKING_PADDING_PT: f32 = 4.0;
-// Accent
-const ACCENT_GAP_PT: f32 = 4.0;
-const ACCENT_FALLBACK_Y_PT: f32 = 18.0;
-// Beam envelope
-const BEAM_ENVELOPE_PAD_X_PT: f32 = 12.0;
-// Collision epsilon
-const CHORD_DISPLACE_EPSILON: f32 = 0.01;
-// Rest overlap
-const REST_OVERLAP_EPSILON: f32 = 0.001;
 
 pub(crate) fn measure_uses_dual_voice_rest_zones(
     measure: &RenderMeasure,
@@ -625,13 +615,13 @@ pub(crate) fn render_slot_group(sink: &mut SceneEmitSink<'_>, input: RenderSlotG
             let dot_glyph = char::from_u32(dot_metric.smufl_codepoint)
                 .unwrap_or('?')
                 .to_string();
-            let dot_scale = sink.staff_space_pt / 5.0;
+            let dot_scale = sink.staff_space_pt / GRACE_SCALE_BASE_STAFF_SPACE_PT;
             let dot_spacing_x = 4.0 * dot_scale;
             for i in 0..rest_dot_count {
                 let dot_x = placement.x
                     + (i as f32) * dot_spacing_x
                     + rest_metric.width_ss() * rest_font_size / 4.0
-                    + 5.0 * dot_scale;
+                    + GRACE_NOTE_SPACING_PT_AT_BASE_SS * dot_scale;
                 sink.push_text_item(TextItemSpec {
                     measure_id: Some(input.measure_id),
                     role: "augmentation-dot",
@@ -879,13 +869,13 @@ pub(crate) fn render_hit_cluster(
             } else {
                 dot_ss
             };
-            let dot_scale = sink.staff_space_pt / 5.0;
+            let dot_scale = sink.staff_space_pt / GRACE_SCALE_BASE_STAFF_SPACE_PT;
             let dot_spacing_x = 4.0 * dot_scale;
             for i in 0..dot_count {
                 let dot_x = note_x
                     + (i as f32) * dot_spacing_x
                     + canonical_glyph_metric(placement.note_role).width_ss() * note_position_pt / 4.0
-                    + 5.0 * dot_scale;
+                    + GRACE_NOTE_SPACING_PT_AT_BASE_SS * dot_scale;
                 let dot_y = input.staff_top + dot_y_ss * sink.staff_space_pt;
                 sink.push_text_item(TextItemSpec {
                     measure_id: Some(input.measure_id),
@@ -1155,15 +1145,16 @@ pub(crate) fn render_grace_notes_for_hit(
 
     let grace_render = grace_render_font_pt(sink.staff_space_pt);
     let grace_stem_len_pt = grace_stem_length_pt(sink.staff_space_pt);
-    let grace_scale = sink.staff_space_pt / 5.0;
-    let grace_spacing = 5.0 * grace_scale;
-    let grace_gap = 6.0 * grace_scale;
-    let flam_slash_left_pt = 3.5 * grace_scale;
-    let flam_slash_right_pt = 4.5 * grace_scale;
-    let flam_slash_half_v = 3.0 * grace_scale;
-    let flam_slash_shift = grace_stem_len_pt * 0.4;
-    let grace_secondary_beam_offset_pt = 4.0 * grace_scale;
-    let grace_beam_thickness_pt = 2.0 * grace_scale;
+    let grace_scale = sink.staff_space_pt / GRACE_SCALE_BASE_STAFF_SPACE_PT;
+    let grace_spacing = GRACE_NOTE_SPACING_PT_AT_BASE_SS * grace_scale;
+    let grace_gap = GRACE_NOTE_GAP_PT_AT_BASE_SS * grace_scale;
+    let flam_slash_left_pt = FLAM_SLASH_LEFT_PT_AT_BASE_SS * grace_scale;
+    let flam_slash_right_pt = FLAM_SLASH_RIGHT_PT_AT_BASE_SS * grace_scale;
+    let flam_slash_half_v = FLAM_SLASH_HALF_HEIGHT_PT_AT_BASE_SS * grace_scale;
+    let flam_slash_shift = grace_stem_len_pt * FLAM_SLASH_STEM_SHIFT_RATIO;
+    let grace_secondary_beam_offset_pt =
+        GRACE_SECONDARY_BEAM_OFFSET_PT_AT_BASE_SS * grace_scale;
+    let grace_beam_thickness_pt = GRACE_BEAM_THICKNESS_PT_AT_BASE_SS * grace_scale;
     let note_metric = canonical_glyph_metric(note_role);
     let note_glyph = note_metric.render_text();
     let total_grace_width = (grace_count as f32 - 1.0) * grace_spacing;

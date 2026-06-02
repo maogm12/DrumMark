@@ -17,6 +17,7 @@ pub mod musicxml;
 pub mod nav;
 pub mod normalize;
 pub mod parser;
+pub mod parser_constants;
 #[cfg(feature = "layout")]
 pub mod render_score;
 pub mod resolve;

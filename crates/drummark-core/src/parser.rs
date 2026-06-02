@@ -1,5 +1,6 @@
 use crate::ast::*;
 use crate::lexer::Token;
+use crate::parser_constants::{MULTI_REST_MIN_COUNT, SUPPORTED_NOTE_DENOMINATORS};
 use logos::Logos;
 use std::ops::Range;
 
@@ -17,7 +18,7 @@ pub const LEGACY_DIVISIONS_HEADER_REMOVED_MESSAGE: &str =
 
 impl<'a> Parser<'a> {
     fn is_supported_note_denominator(value: u32) -> bool {
-        matches!(value, 1 | 2 | 4 | 8 | 16 | 32 | 64 | 128)
+        SUPPORTED_NOTE_DENOMINATORS.contains(&value)
     }
 
     pub fn new(source: &'a str) -> Self {
@@ -119,7 +120,8 @@ impl<'a> Parser<'a> {
         } else {
             return None;
         }
-        let count: u32 = rest[num_start..i].parse().unwrap_or(2);
+        // Multi-rest shorthand starts at two measures; bare `--1--` is intentionally rejected.
+        let count: u32 = rest[num_start..i].parse().unwrap_or(MULTI_REST_MIN_COUNT);
         while bytes.get(i) == Some(&b' ') || bytes.get(i) == Some(&b'\t') {
             i += 1;
         }

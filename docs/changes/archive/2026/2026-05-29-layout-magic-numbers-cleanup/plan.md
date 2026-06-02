@@ -2,7 +2,7 @@
 
 ## Status
 
-draft
+implemented
 
 ## Problem
 
@@ -201,7 +201,7 @@ draft
 
 ### Task 1: Constants module + 7.5 elimination
 
-Status: Pending
+Status: Done
 
 Scope: `planning.rs`, `options.rs`, `lib.rs` (`StaffSpace`), new `constants/`
 
@@ -217,7 +217,7 @@ Verification:
 
 ### Task 2: Preamble single source of truth
 
-Status: Pending
+Status: Done
 
 Scope: `planning.rs`, `scene.rs`, tests in `lib.rs`
 
@@ -233,7 +233,7 @@ Verification:
 
 ### Task 3: Engraving/structural const + staff-space scaling
 
-Status: Pending
+Status: Done
 
 Scope: `engraving/*`, `structural/spans.rs`, `notes.rs` `STAFF_SPACE_STEP_PT`
 
@@ -248,21 +248,21 @@ Verification:
 
 ### Task 4: (Optional) LayoutOptions + UI for compact/multirest gaps
 
-Status: Pending
+Status: Cancelled
 
 Scope: `options.rs`, `renderOptions.ts`, Settings, WASM
 
 Dependencies: Task 2
 
 Action:
-- 仅当产品确认后暴露 2–4 个新 option。
+- 不执行。`Decisions (2026-05-29)` 已确认 compact / multirest 边距保持内部 const，不新增 Settings。
 
 Acceptance:
-- TS/Rust 默认值一致；Settings 可调。
+- N/A
 
 ### Task 5: Parser documentation pass
 
-Status: Pending
+Status: Done
 
 Scope: `drummark-core/src/lexer.rs`, `parser.rs`
 

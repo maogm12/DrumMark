@@ -95,7 +95,7 @@ pub struct StaffSpace {
 
 impl Default for StaffSpace {
     fn default() -> Self {
-        Self { pt_per_ss: 5.0 }
+        Self::from_layout_options(&LayoutOptions::default())
     }
 }
 
@@ -104,6 +104,13 @@ pub fn stem_length_pt(opts: &LayoutOptions) -> f32 {
 }
 
 impl StaffSpace {
+    /// Mirrors the layout-engine spacing baseline so helper math cannot drift from LayoutOptions.
+    pub fn from_layout_options(opts: &LayoutOptions) -> Self {
+        Self {
+            pt_per_ss: opts.staff_space_pt,
+        }
+    }
+
     pub fn to_pixels(&self, staff_height_px: f32) -> f32 {
         staff_height_px / 4.0
     }

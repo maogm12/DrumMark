@@ -1,7 +1,8 @@
 use crate::metrics::{canonical_glyph_metric, GlyphPoint, GlyphRole};
 use crate::scene_builder::{GlyphItemSpec, PathItemSpec, SceneEmitSink};
 use crate::{flag_position_pt, flag_render_font_pt};
-use crate::engraving::notes::{secondary_beam_offset_from_primary_pt, BEAM_THICKNESS_PT};
+use crate::engraving::constants::BEAM_THICKNESS_PT;
+use crate::engraving::notes::secondary_beam_offset_from_primary_pt;
 
 #[derive(Clone, Debug)]
 pub(crate) struct BeamAnchor {

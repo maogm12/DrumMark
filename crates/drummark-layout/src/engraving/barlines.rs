@@ -7,6 +7,7 @@ use crate::planning::{
 };
 use crate::notation_render_font_pt;
 use crate::scene_builder::{GlyphItemSpec, RectItemSpec, SceneEmitSink};
+use super::constants::FINAL_BARLINE_LEFT_OFFSET_PT;
 
 pub(crate) fn render_left_barline(
     sink: &mut SceneEmitSink<'_>,
@@ -111,7 +112,7 @@ pub(crate) fn render_right_barline(sink: &mut SceneEmitSink<'_>, spec: RightBarl
             sink.push_rect_item(RectItemSpec {
                 measure_id: spec.measure_id,
                 role: "double-barline-left",
-                x: spec.x - 4.0,
+                x: spec.x - FINAL_BARLINE_LEFT_OFFSET_PT,
                 y: spec.top,
                 width: ENGRAVING_BARLINE_WIDTH_PT,
                 height: h,
@@ -135,7 +136,7 @@ pub(crate) fn render_right_barline(sink: &mut SceneEmitSink<'_>, spec: RightBarl
             sink.push_rect_item(RectItemSpec {
                 measure_id: spec.measure_id,
                 role: "final-barline-thin",
-                x: spec.x - 4.0,
+                x: spec.x - FINAL_BARLINE_LEFT_OFFSET_PT,
                 y: spec.top,
                 width: ENGRAVING_BARLINE_WIDTH_PT,
                 height: h,

@@ -10,6 +10,8 @@ pub enum Token {
     Space,
 
     // --- Regex tokens (explicit priority to resolve token/regex overlap) ---
+    // `priority = 0` keeps these regexes at the default Logos priority while documenting that
+    // overlap resolution here is intentional rather than accidental.
     // Multi-rest: --2--, --11--, -- 2 --, etc. (rejects bare --1--)
     // Multi-rest scanned manually in parser (avoids regex vs Rest token conflict)
     #[logos(skip)]
@@ -27,7 +29,7 @@ pub enum Token {
     #[regex("[0-9]+", |lex| lex.slice().parse::<u32>().ok())]
     Integer(u32),
 
-    // Comments (priority 0: beats HeaderWord for `#...` inputs)
+    // Comments (priority 0: beats HeaderWord for `#...` inputs while staying at default regex priority)
     #[regex(r"#[^\n]*", priority = 0)]
     Comment,
 

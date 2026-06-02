@@ -69,22 +69,6 @@ impl MeasureGeometry {
     }
 }
 
-/// Gap from the page left margin to the clef, between clef and time signature, and
-/// (on non-first systems) from the clef to the first measure's content.
-pub(crate) const SYSTEM_PREAMBLE_SIDE_GAP_PT: f32 = 5.0;
-
-pub(crate) const MEASURE_RIGHT_PAD_PT: f32 = 10.0;
-pub(crate) const NON_INITIAL_MEASURE_LEFT_PAD_PT: f32 = 10.0;
-/// Visual gap between compact-measure content (multi-rest) and adjacent barlines/glyphs.
-pub(crate) const COMPACT_MEASURE_EDGE_GAP_PT: f32 = 8.0;
-pub(crate) const OPENING_BARLINE_THICKNESS_PT: f32 = crate::ENGRAVING_BARLINE_WIDTH_PT;
-pub(crate) const COMPLEX_BARLINE_TRAILING_CONTENT_GAP_PT: f32 = 8.0;
-/// Scene coordinates and SVG `font-size` both use layout points (1 user unit = 1 pt).
-pub(crate) const SVG_POINT_TO_USER_UNIT: f32 = 1.0;
-pub(crate) const FIRST_MEASURE_START_REPEAT_PREAMBLE_PULL_PT: f32 = 10.0;
-pub(crate) const START_REPEAT_TRAILING_GAP_PT: f32 = 10.0;
-pub(crate) const VOLTA_LINE_THICKNESS_PT: f32 = crate::ENGRAVING_STROKE_WIDTH_PT;
-
 /// Volta ending label size (Academico), scaled from staff spacing (~12pt at 7.5ss).
 pub(crate) fn volta_text_size_pt(staff_space_pt: f32) -> f32 {
     staff_space_pt * 1.6
@@ -103,37 +87,69 @@ pub(crate) fn volta_skyline_gap_pt(staff_space_pt: f32) -> f32 {
     staff_space_pt * 0.8
 }
 
-pub(crate) fn clef_x_pt(page_margin_left: f32) -> f32 {
-    page_margin_left + SYSTEM_PREAMBLE_SIDE_GAP_PT
-}
-
 pub(crate) fn clef_width_pt(staff_space_pt: f32) -> f32 {
     canonical_text_metric(TextRole::PercussionClef, staff_space_pt).average_advance_pt
-}
-
-pub(crate) fn time_signature_x_pt(page_margin_left: f32, opts: &LayoutOptions) -> f32 {
-    if opts.hide_clef {
-        page_margin_left + SYSTEM_PREAMBLE_SIDE_GAP_PT
-    } else {
-        clef_x_pt(page_margin_left) + clef_width_pt(opts.staff_space_pt) + SYSTEM_PREAMBLE_SIDE_GAP_PT
-    }
 }
 
 pub(crate) fn time_signature_width_pt(staff_space_pt: f32) -> f32 {
     canonical_text_metric(TextRole::TimeSignatureDigit, staff_space_pt).average_advance_pt
 }
 
-pub(crate) fn system_content_preamble_width(is_first_system: bool, opts: &LayoutOptions) -> f32 {
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct PreambleLayout {
+    pub(crate) glyph_origin_x_pt: f32,
+    pub(crate) clef_x_pt: Option<f32>,
+    pub(crate) time_signature_x_pt: Option<f32>,
+    pub(crate) visible_end_x_pt: f32,
+    pub(crate) content_start_x_pt: f32,
+    pub(crate) reservation_width_pt: f32,
+}
+
+pub(crate) fn preamble_layout(
+    page_margin_left: f32,
+    is_first_system: bool,
+    opts: &LayoutOptions,
+) -> PreambleLayout {
     let staff_space_pt = opts.staff_space_pt;
-    let side = SYSTEM_PREAMBLE_SIDE_GAP_PT;
-    let mut width = side;
+    let glyph_origin_x_pt = page_margin_left + SYSTEM_PREAMBLE_SIDE_GAP_PT;
+    let mut next_x = glyph_origin_x_pt;
+    let mut visible_end_x_pt = page_margin_left;
+    let mut clef_x_pt = None;
+    let mut time_signature_x_pt = None;
+
     if !opts.hide_clef {
-        width += clef_width_pt(staff_space_pt) + side;
+        let x = next_x;
+        let end_x = x + clef_width_pt(staff_space_pt);
+        clef_x_pt = Some(x);
+        visible_end_x_pt = end_x;
+        next_x = end_x + SYSTEM_PREAMBLE_SIDE_GAP_PT;
     }
+
     if is_first_system && !opts.hide_time_signature {
-        width += time_signature_width_pt(staff_space_pt) + side;
+        let x = next_x;
+        let end_x = x + time_signature_width_pt(staff_space_pt);
+        time_signature_x_pt = Some(x);
+        visible_end_x_pt = end_x;
     }
-    width
+
+    let content_start_x_pt = if clef_x_pt.is_none() && time_signature_x_pt.is_none() {
+        glyph_origin_x_pt
+    } else {
+        visible_end_x_pt + SYSTEM_PREAMBLE_SIDE_GAP_PT
+    };
+
+    PreambleLayout {
+        glyph_origin_x_pt,
+        clef_x_pt,
+        time_signature_x_pt,
+        visible_end_x_pt,
+        content_start_x_pt,
+        reservation_width_pt: content_start_x_pt - page_margin_left,
+    }
+}
+
+pub(crate) fn system_content_preamble_width(is_first_system: bool, opts: &LayoutOptions) -> f32 {
+    preamble_layout(opts.left_margin_pt, is_first_system, opts).reservation_width_pt
 }
 
 pub(crate) fn system_preamble_shows_clef_or_time_signature(
@@ -215,8 +231,7 @@ pub(crate) fn first_measure_start_repeat_x(
     if skip_system_opening_barline(is_first_system, Some("repeat-start"), opts) {
         return measure_x;
     }
-    let min_x = compact_measure_preamble_end_x(page_margin_left, is_first_system, opts)
-        + SYSTEM_PREAMBLE_SIDE_GAP_PT;
+    let min_x = preamble_layout(page_margin_left, is_first_system, opts).content_start_x_pt;
     if is_first_system {
         let pulled = measure_x
             + system_start_reserved_width(is_first_system, opts, Some("repeat-start"))
@@ -305,18 +320,7 @@ pub(crate) fn compact_measure_preamble_end_x(
     is_first_system: bool,
     opts: &LayoutOptions,
 ) -> f32 {
-    let staff_space_pt = opts.staff_space_pt;
-    let mut x = page_margin_left + SYSTEM_PREAMBLE_SIDE_GAP_PT;
-    if !opts.hide_clef {
-        x += clef_width_pt(staff_space_pt);
-    }
-    if is_first_system && !opts.hide_time_signature {
-        if !opts.hide_clef {
-            x += SYSTEM_PREAMBLE_SIDE_GAP_PT;
-        }
-        x += time_signature_width_pt(staff_space_pt);
-    }
-    x
+    preamble_layout(page_margin_left, is_first_system, opts).visible_end_x_pt
 }
 
 pub(crate) fn compact_measure_inner_left(
@@ -368,7 +372,9 @@ pub(crate) fn compact_measure_inner_right(
             x - repeat_barline_rendered_width(GlyphRole::RepeatRight, staff_space_pt)
                 - COMPACT_MEASURE_EDGE_GAP_PT
         }
-        Some("final") | Some("double") => x - 4.0 - COMPACT_MEASURE_EDGE_GAP_PT,
+        Some("final") | Some("double") => {
+            x - FINAL_OR_DOUBLE_BARLINE_INNER_RIGHT_INSET_PT - COMPACT_MEASURE_EDGE_GAP_PT
+        }
         _ => x - OPENING_BARLINE_THICKNESS_PT - COMPACT_MEASURE_EDGE_GAP_PT,
     }
 }
@@ -919,8 +925,8 @@ pub(crate) fn plan_scene_systems<'a>(
     opts: &LayoutOptions,
 ) -> Vec<PlannedSystem<'a>> {
     let mapper = SlotMapper::new(opts.px_per_quarter);
-    let available_width =
-        (opts.page_width_pt - opts.left_margin_pt - opts.right_margin_pt).max(100.0);
+    let available_width = (opts.page_width_pt - opts.left_margin_pt - opts.right_margin_pt)
+        .max(MIN_SYSTEM_AVAILABLE_WIDTH_PT);
     let mut systems: Vec<PlannedSystem<'a>> = Vec::new();
     let mut current_measures: Vec<&'a DisplayMeasure<'a>> = Vec::new();
     let mut current_inner_estimates: Vec<f32> = Vec::new();

@@ -113,8 +113,9 @@ pub(crate) fn render_header_layout_box(
         }
     }
     if !opts.hide_tempo && header.tempo > 0 {
+        let preamble = preamble_layout(margin, true, opts);
         let (tempo_glyph_x, tempo_equals_x, tempo_value_x) =
-            tempo_item_x_positions(margin, opts.staff_space_pt);
+            tempo_item_x_positions(preamble.glyph_origin_x_pt, opts.staff_space_pt);
         let tempo_value_text = header.tempo.to_string();
         let tempo_glyph_id = sink.push_text_item(TextItemSpec {
             measure_id: None,
@@ -341,12 +342,13 @@ pub fn build_layout_scene(score: &RenderScore, opts: &LayoutOptions) -> LayoutSc
                 stroke_line_cap: None,
             });
         }
-        if !opts.hide_clef {
+        let preamble = preamble_layout(margin, is_first_system, opts);
+        if let Some(clef_x_pt) = preamble.clef_x_pt {
             let clef_metric = canonical_text_metric(TextRole::PercussionClef, opts.staff_space_pt);
             sink.push_text_item(TextItemSpec {
                 measure_id: None,
                 role: "percussion-clef",
-                x: clef_x_pt(margin),
+                x: clef_x_pt,
                 y: s_mid,
                 text_role: TextRole::PercussionClef,
                 text: "\u{E069}".to_string(),
@@ -357,8 +359,7 @@ pub fn build_layout_scene(score: &RenderScore, opts: &LayoutOptions) -> LayoutSc
                 font_weight: None,
             });
         }
-        if is_first_system && !opts.hide_time_signature {
-            let tsx = time_signature_x_pt(margin, opts);
+        if let Some(tsx) = preamble.time_signature_x_pt {
             let time_sig_metric = canonical_text_metric(TextRole::TimeSignatureDigit, opts.staff_space_pt);
             sink.push_text_item(TextItemSpec {
                 measure_id: None,
@@ -392,7 +393,7 @@ pub fn build_layout_scene(score: &RenderScore, opts: &LayoutOptions) -> LayoutSc
             let tempo_metric = canonical_text_metric(TextRole::Tempo, opts.staff_space_pt);
             let tempo_y = sy + opts.tempo_offset_y;
             let (tempo_glyph_x, tempo_equals_x, tempo_value_x) =
-                tempo_item_x_positions(margin, opts.staff_space_pt);
+                tempo_item_x_positions(preamble.glyph_origin_x_pt, opts.staff_space_pt);
             let tempo_value_text = score.header.tempo.to_string();
             let tempo_glyph_id = sink.push_text_item(TextItemSpec {
                 measure_id: Some(&first_measure_id),
@@ -533,7 +534,8 @@ pub fn build_layout_scene(score: &RenderScore, opts: &LayoutOptions) -> LayoutSc
                     opts.staff_space_pt,
                 );
                 let inner_width = (inner_right - inner_left).max(0.0);
-                let pad = (inner_width * 0.1).max(8.0);
+                let pad =
+                    (inner_width * MULTI_REST_INNER_PAD_RATIO).max(MULTI_REST_INNER_PAD_MIN_PT);
                 let bar_left = inner_left + pad;
                 let bar_right = inner_right - pad;
                 let bar_thickness = staff_ss * 0.5;

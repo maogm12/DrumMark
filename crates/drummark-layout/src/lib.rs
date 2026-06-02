@@ -1,5 +1,6 @@
 mod collision;
 mod compat_planning;
+mod constants;
 mod contract;
 mod display;
 mod engraving;
@@ -55,6 +56,8 @@ pub(crate) use pagination::{
     system_boxes_from_page, BoxPaginationResult, HeaderLayoutBox, PlacedSystemBox,
     SystemLayoutBox,
 };
+#[allow(unused_imports)] // `planning` / `scene` pull these in via `crate::*`.
+pub(crate) use constants::*;
 #[allow(unused_imports)] // `scene` pulls these in via `super::*`.
 use planning::*;
 use scene_builder::{GlyphItemSpec, LineItemSpec, SceneEmitSink, TextItemSpec};
@@ -162,10 +165,10 @@ pub(crate) fn tempo_equals_value_gap_pt(staff_space_pt: f32) -> f32 {
 }
 
 pub(crate) fn tempo_item_x_positions(
-    margin: f32,
+    preamble_origin_x_pt: f32,
     staff_space_pt: f32,
 ) -> (f32, f32, f32) {
-    let glyph_x = margin + tempo_margin_offset_pt(staff_space_pt);
+    let glyph_x = preamble_origin_x_pt + tempo_margin_offset_pt(staff_space_pt);
     let glyph_width = canonical_glyph_metric(GlyphRole::MetNoteQuarterUp).width_ss()
         * tempo_glyph_position_pt(staff_space_pt)
         / 4.0;
@@ -6746,7 +6749,7 @@ fn test_second_system_first_measure_repeat_start_clears_clef() {
         })
         .expect("expected notehead in second-system first measure");
 
-    let clef_end = clef_x_pt(opts.left_margin_pt) + clef_width_pt(opts.staff_space_pt);
+    let clef_end = preamble_layout(opts.left_margin_pt, false, &opts).visible_end_x_pt;
     let (repeat_x, _, repeat_w, _) = item_bounds(repeat_start, 10.0).expect("repeat should have bounds");
     let (note_x, _, _, _) = item_bounds(first_note, 10.0).expect("notehead should have bounds");
 

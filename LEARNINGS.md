@@ -442,3 +442,28 @@ When an older note conflicts with this file, treat this file plus the active spe
 ## 2026-05-31 Compact Measure Width Budget
 
 - `finalize_planned_system()` must count compact structural measure inner widths (`%%`, `--N--`) as fixed width when computing the scale for ordinary measures. Compact measures are intentionally not shrunk later; leaving their inner estimates in the scalable denominator makes ordinary measures shrink too little and can push trailing multi-rest final barlines past the system right edge.
+
+## 2026-06-02 Layout Phase 1 Constants Baseline
+
+- `crates/drummark-layout/src/constants/mod.rs` is now the Phase 1 home for shared layout constants that were previously duplicated in `planning.rs` and `scene.rs`: preamble spacing, measure padding, repeat gaps, minimum system width, SVG point units, and multi-rest inner padding.
+- Compact multi-rest drawing in `scene.rs` must use named inner-padding constants (`MULTI_REST_INNER_PAD_RATIO`, `MULTI_REST_INNER_PAD_MIN_PT`) rather than inline `0.1` / `8.0`, so visual tuning stays aligned with the planner cleanup work.
+- `StaffSpace::default()` should derive from `LayoutOptions::default()` via `StaffSpace::from_layout_options()`. Even when `StaffSpace` is only a helper type, it must not carry an independent baseline that can drift from the layout engine's `staff_space_pt`.
+
+## 2026-06-02 Preamble Geometry Single Source
+
+- `planning::preamble_layout(left_margin, is_first_system, opts)` is the shared source for system-left preamble geometry. It owns the clef X, time-signature X, visible glyph end, first-content start, and reservation width.
+- `system_content_preamble_width()` and first-measure repeat-start placement should derive from that helper rather than separately re-encoding `margin + side-gap + glyph-width` math.
+- Tempo placement can still be a separate helper, but its X origin should start from the same preamble glyph origin (`left_margin + SYSTEM_PREAMBLE_SIDE_GAP_PT`) so header/system left alignment does not drift.
+
+## 2026-06-02 Engraving And Structural Constant Layers
+
+- `crates/drummark-layout/src/engraving/constants.rs` is the shared home for engraving-only constants that were previously duplicated across `notes.rs`, `beams.rs`, `tuplets.rs`, and `barlines.rs`, including beam thickness/gaps, final-barline inset, tuplet staff-space ratios, and grace-note scaling baselines.
+- Tuplet bracket geometry should be expressed in staff-space ratios (`*_SS`) rather than mixed inline pt literals so the bracket, hook, label gap, and voice stacking scale together with `staff_space_pt`.
+- `crates/drummark-layout/src/structural/constants.rs` is the shared home for navigation, volta label offset, hairpin trailing inset, and dynamic text padding constants. This keeps structural spacing policy out of `spans.rs` control flow and makes golden updates easier to audit.
+- `compat_planning.rs` remains legacy, but compact width, dense beat bonus, and the old system preamble/cursor offsets should still be named constants so tests can see which values are legacy compatibility knobs versus accidental literals.
+
+## 2026-06-02 Parser Semantic Constants
+
+- `crates/drummark-core/src/parser_constants.rs` holds parser-only semantic constants. Multi-rest minimum count and supported `note 1/N` denominators should live there instead of being repeated inline in parser control flow.
+- The parser intentionally rejects bare `--1--`; multi-rest shorthand begins at two measures. The fallback parse default in `try_scan_multi_rest()` should therefore use `MULTI_REST_MIN_COUNT`, not a naked `2`.
+- Lexer `priority = 0` annotations are deliberate overlap documentation for Logos, not tuning knobs. Keep that explanation next to the token definitions so future cleanup does not remove them as “redundant”.

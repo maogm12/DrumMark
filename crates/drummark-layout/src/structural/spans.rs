@@ -1,8 +1,17 @@
+use crate::structural::constants::{
+    DYNAMIC_EDGE_PADDING_PT, DYNAMIC_TEXT_PADDING_X_PT, DYNAMIC_TEXT_PADDING_Y_PT,
+    HAIRPIN_GAP_BELOW_STAFF_SPACES, HAIRPIN_OPEN_HEIGHT_STAFF_SPACES,
+    HAIRPIN_TRAILING_INSET_PT, LOWER_EXPRESSION_GAP_PT, NAV_DEFAULT_Y_OFFSET_PT, NAV_GAP_PT,
+    NAV_INLINE_TEXT_GAP_PT, NAV_MEASURE_EDGE_INSET_PT, NAV_TEXT_BASELINE_OFFSET_PT,
+    NAV_TEXT_FONT, VOLTA_LABEL_X_OFFSET_PT,
+};
+use crate::constants::{
+    MEASURE_RIGHT_PAD_PT, NON_INITIAL_MEASURE_LEFT_PAD_PT, VOLTA_LINE_THICKNESS_PT,
+};
 use crate::display::DisplayMeasure;
 use crate::planning::{
     measure_left_pad, rendered_glyph_width, volta_label_baseline_gap_pt, volta_line_height_pt,
-    volta_skyline_gap_pt, volta_text_size_pt, MEASURE_RIGHT_PAD_PT,
-    NON_INITIAL_MEASURE_LEFT_PAD_PT, VOLTA_LINE_THICKNESS_PT,
+    volta_skyline_gap_pt, volta_text_size_pt,
 };
 use crate::scene_builder::{GlyphItemSpec, LineItemSpec, SceneEmitSink, TextItemSpec};
 use crate::structural::skyline::{
@@ -213,7 +222,7 @@ fn volta_line_y_for_segment(
                 .collect::<Vec<_>>()
                 .join(",")
         );
-        let label_x = x1 + 5.0;
+        let label_x = x1 + VOLTA_LABEL_X_OFFSET_PT;
         let text_size = volta_text_size_pt(staff_space_pt);
         let count_metric = canonical_text_metric(TextRole::CountLabel, staff_space_pt);
         let metric_scale = text_size / count_metric.font_size_pt.max(1e-6);
@@ -324,7 +333,7 @@ pub(crate) fn push_volta_segment(
         child_item_ids.push(sink.push_text_item(TextItemSpec {
             measure_id: Some(&first.id),
             role: "volta-label",
-            x: x1 + 5.0,
+            x: x1 + VOLTA_LABEL_X_OFFSET_PT,
             y: spec.line_y + text_size + label_gap,
             text_role: TextRole::CountLabel,
             text: label_text.clone(),
@@ -504,8 +513,6 @@ pub(crate) fn render_nav_markers(
     spec: &DeferredNavMarker,
 ) {
     let count_metric = canonical_text_metric(TextRole::CountLabel, sink.staff_space_pt);
-    const NAV_TEXT_FONT: &str = "Academico";
-    const NAV_GAP: f32 = 6.0;
     if let Some(ref start_nav) = spec.start_nav {
         let (label, glyph_role) = match start_nav {
             NavMarker::Segno => ("segno", GlyphRole::NavigationSegno),
@@ -514,18 +521,18 @@ pub(crate) fn render_nav_markers(
         let nav_render = nav_glyph_render_font_pt(sink.staff_space_pt);
         let nav_position = nav_glyph_position_pt(sink.staff_space_pt);
         let glyph_width = rendered_glyph_width(glyph_role, nav_position);
-        let x_start = spec.x + 4.0;
-        let default_y = spec.top - 8.0;
+        let x_start = spec.x + NAV_MEASURE_EDGE_INSET_PT;
+        let default_y = spec.top - NAV_DEFAULT_Y_OFFSET_PT;
         let occupied_top = skyline_top_for_range(
             sink.items(),
             x_start,
             x_start + glyph_width,
             spec.top,
-            default_y + NAV_GAP,
+            default_y + NAV_GAP_PT,
             sink.staff_space_pt,
         );
         let glyph_metric = canonical_glyph_metric(glyph_role);
-        let nav_y = occupied_top - NAV_GAP + glyph_metric.bbox_sw_y_ss * (nav_position / 4.0);
+        let nav_y = occupied_top - NAV_GAP_PT + glyph_metric.bbox_sw_y_ss * (nav_position / 4.0);
         let nav_id = sink.push_glyph_item(GlyphItemSpec {
             measure_id: Some(spec.measure_id.as_str()),
             role: "nav-start",
@@ -560,21 +567,21 @@ pub(crate) fn render_nav_markers(
         };
         let child_item_ids = match end_nav {
             NavJump::ToCoda => {
-                let right_x = spec.x + spec.width - 4.0;
+                let right_x = spec.x + spec.width - NAV_MEASURE_EDGE_INSET_PT;
                 let coda_render = coda_glyph_render_font_pt(sink.staff_space_pt);
                 let coda_position = coda_glyph_position_pt(sink.staff_space_pt);
                 let coda_width = rendered_glyph_width(GlyphRole::NavigationCoda, coda_position);
                 let to_text_width = canonical_text_width(TextRole::CountLabel, "To", sink.staff_space_pt);
-                let combined_x_start = right_x - coda_width - 4.0 - to_text_width;
+                let combined_x_start = right_x - coda_width - NAV_INLINE_TEXT_GAP_PT - to_text_width;
                 let combined_x_end = right_x;
-                let default_glyph_y = spec.top - 8.0;
-                let default_text_y = spec.top - count_metric.descent_pt - 1.0;
+                let default_glyph_y = spec.top - NAV_DEFAULT_Y_OFFSET_PT;
+                let default_text_y = spec.top - count_metric.descent_pt - NAV_TEXT_BASELINE_OFFSET_PT;
                 let occupied_top = skyline_top_for_range(
                     sink.items(),
                     combined_x_start,
                     combined_x_end,
                     spec.top,
-                    default_glyph_y + NAV_GAP,
+                    default_glyph_y + NAV_GAP_PT,
                     sink.staff_space_pt,
                 );
                 let coda_metric = canonical_glyph_metric(GlyphRole::NavigationCoda);
@@ -582,7 +589,7 @@ pub(crate) fn render_nav_markers(
                     default_glyph_y - coda_metric.bbox_sw_y_ss * (coda_position / 4.0);
                 let default_text_bottom = default_text_y + count_metric.descent_pt;
                 let default_group_bottom = default_glyph_bottom.max(default_text_bottom);
-                let delta = occupied_top - NAV_GAP - default_group_bottom;
+                let delta = occupied_top - NAV_GAP_PT - default_group_bottom;
                 let glyph_y = default_glyph_y + delta;
                 let text_y = default_text_y + delta;
                 let glyph_id = sink.push_glyph_item(GlyphItemSpec {
@@ -598,7 +605,7 @@ pub(crate) fn render_nav_markers(
                 let text_id = sink.push_text_item(TextItemSpec {
                     measure_id: Some(spec.measure_id.as_str()),
                     role: "nav-end",
-                    x: right_x - coda_width - 4.0,
+                    x: right_x - coda_width - NAV_INLINE_TEXT_GAP_PT,
                     y: text_y,
                     text_role: TextRole::CountLabel,
                     text: "To".to_string(),
@@ -612,22 +619,22 @@ pub(crate) fn render_nav_markers(
             }
             _ => {
                 let text_width = canonical_text_width(TextRole::CountLabel, label, sink.staff_space_pt);
-                let x_start = spec.x + spec.width - 4.0 - text_width;
-                let x_end = spec.x + spec.width - 4.0;
-                let default_y = spec.top - count_metric.descent_pt - 1.0;
+                let x_start = spec.x + spec.width - NAV_MEASURE_EDGE_INSET_PT - text_width;
+                let x_end = spec.x + spec.width - NAV_MEASURE_EDGE_INSET_PT;
+                let default_y = spec.top - count_metric.descent_pt - NAV_TEXT_BASELINE_OFFSET_PT;
                 let occupied_top = skyline_top_for_range(
                     sink.items(),
                     x_start,
                     x_end,
                     spec.top,
-                    default_y + NAV_GAP,
+                    default_y + NAV_GAP_PT,
                     sink.staff_space_pt,
                 );
-                let nav_y = occupied_top - NAV_GAP - count_metric.descent_pt;
+                let nav_y = occupied_top - NAV_GAP_PT - count_metric.descent_pt;
                 let nav_id = sink.push_text_item(TextItemSpec {
                     measure_id: Some(spec.measure_id.as_str()),
                     role: "nav-end",
-                    x: spec.x + spec.width - 4.0,
+                    x: spec.x + spec.width - NAV_MEASURE_EDGE_INSET_PT,
                     y: nav_y,
                     text_role: TextRole::CountLabel,
                     text: label.to_string(),
@@ -661,8 +668,6 @@ pub(crate) fn render_hairpin_fragments(
     measures: &[DisplayMeasure<'_>],
     hairpin_offset_y: f32,
 ) {
-    const HAIRPIN_OPEN_HEIGHT_STAFF_SPACES: f32 = 2.0;
-    const HAIRPIN_GAP_BELOW_STAFF_SPACES: f32 = 0.4;
     let hairpin_open_height_pt = sink.staff_space_pt * HAIRPIN_OPEN_HEIGHT_STAFF_SPACES;
     let hairpin_gap_below_pt = sink.staff_space_pt * HAIRPIN_GAP_BELOW_STAFF_SPACES;
 
@@ -712,7 +717,7 @@ pub(crate) fn render_hairpin_fragments(
                         + NON_INITIAL_MEASURE_LEFT_PAD_PT
                         + end_progress * (last.width_pt - measure_horizontal_inset)
                 } else {
-                    last.x_pt + last.width_pt - 12.0
+                    last.x_pt + last.width_pt - HAIRPIN_TRAILING_INSET_PT
                 };
                 if end_x <= start_x {
                     continue;
@@ -798,11 +803,6 @@ pub(crate) fn render_dynamic_marks(
     measures: &[DisplayMeasure<'_>],
     header: &RenderHeader,
 ) {
-    const LOWER_EXPRESSION_GAP_PT: f32 = 4.0;
-    const DYNAMIC_EDGE_PADDING_PT: f32 = 3.0;
-    const DYNAMIC_TEXT_PADDING_X_PT: f32 = 1.5;
-    const DYNAMIC_TEXT_PADDING_Y_PT: f32 = 1.0;
-
     let metric = canonical_text_metric(TextRole::Dynamic, sink.staff_space_pt);
     for display_measure in measures {
         if display_measure.measure.dynamics.is_empty() {

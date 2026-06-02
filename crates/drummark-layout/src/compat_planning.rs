@@ -3,6 +3,11 @@ use crate::{
     NormalizedMeasure, NormalizedScore, STAFF_HEIGHT_SS,
 };
 
+const COMPACT_MEASURE_WIDTH_PT: f32 = 40.0;
+const DENSE_BEAT_WIDTH_BONUS: f32 = 1.15;
+const LEGACY_SYSTEM_PREAMBLE_PT: f32 = 30.0;
+const LEGACY_SYSTEM_CURSOR_OFFSET_PT: f32 = LEGACY_SYSTEM_PREAMBLE_PT + COMPACT_MEASURE_WIDTH_PT;
+
 /// Converts a uniform slot grid position to a horizontal X coordinate (in px).
 pub struct SlotMapper {
     pub px_per_quarter: f32,
@@ -20,7 +25,7 @@ impl SlotMapper {
 
     pub fn measure_width(&self, total_slots: u32, slots_per_quarter: u32, is_compact: bool) -> f32 {
         if is_compact {
-            return 40.0;
+            return COMPACT_MEASURE_WIDTH_PT;
         }
         let quarters = total_slots as f32 / slots_per_quarter as f32;
         quarters * self.px_per_quarter
@@ -28,7 +33,7 @@ impl SlotMapper {
 
     pub fn beat_width(&self, beat_slots: u32, slots_per_quarter: u32) -> f32 {
         let quarters = beat_slots as f32 / slots_per_quarter as f32;
-        let density_bonus = if beat_slots > 1 { 1.15 } else { 1.0 };
+        let density_bonus = if beat_slots > 1 { DENSE_BEAT_WIDTH_BONUS } else { 1.0 };
         quarters * self.px_per_quarter * density_bonus
     }
 }
@@ -216,9 +221,9 @@ pub fn build_systems(score: &NormalizedScore, opts: &LayoutOptions) -> Vec<Syste
         height: STAFF_HEIGHT_SS * opts.staff_space_pt,
         measures: Vec::new(),
     };
-    let mut cursor_x = opts.left_margin_pt + 30.0 + 40.0;
+    let mut cursor_x = opts.left_margin_pt + LEGACY_SYSTEM_CURSOR_OFFSET_PT;
     let usable_width =
-        opts.page_width_pt - opts.left_margin_pt - opts.right_margin_pt - 30.0 - 40.0;
+        opts.page_width_pt - opts.left_margin_pt - opts.right_margin_pt - LEGACY_SYSTEM_CURSOR_OFFSET_PT;
 
     for measure in &score.measures {
         let is_compact =
@@ -235,7 +240,7 @@ pub fn build_systems(score: &NormalizedScore, opts: &LayoutOptions) -> Vec<Syste
                 height: STAFF_HEIGHT_SS * opts.staff_space_pt,
                 measures: Vec::new(),
             };
-            cursor_x = opts.left_margin_pt + 30.0 + 40.0;
+            cursor_x = opts.left_margin_pt + LEGACY_SYSTEM_CURSOR_OFFSET_PT;
         }
 
         let mut elements = Vec::new();

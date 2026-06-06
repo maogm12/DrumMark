@@ -670,6 +670,16 @@ pub(crate) fn render_hairpin_fragments(
 ) {
     let hairpin_open_height_pt = sink.staff_space_pt * HAIRPIN_OPEN_HEIGHT_STAFF_SPACES;
     let hairpin_gap_below_pt = sink.staff_space_pt * HAIRPIN_GAP_BELOW_STAFF_SPACES;
+    let measure_duration_for_index = |measure_index: u32| {
+        measures
+            .iter()
+            .find(|measure| measure.global_index == measure_index)
+            .map(|measure| measure.measure.actual_duration)
+            .unwrap_or(Fraction {
+                numerator: 1,
+                denominator: 1,
+            })
+    };
 
     for measure in measures {
         for hairpin in &measure.hairpins {
@@ -679,10 +689,10 @@ pub(crate) fn render_hairpin_fragments(
                 hairpin.end_measure_index,
             );
             let fragment_total = fragments.len();
-            let total_start =
-                hairpin.start_measure_index as f32 + crate::fraction_to_f32(hairpin.start);
-            let mut total_end =
-                hairpin.end_measure_index as f32 + crate::fraction_to_f32(hairpin.end);
+            let total_start = hairpin.start_measure_index as f32
+                + normalized_measure_progress(hairpin.start, measure_duration_for_index(hairpin.start_measure_index));
+            let mut total_end = hairpin.end_measure_index as f32
+                + normalized_measure_progress(hairpin.end, measure_duration_for_index(hairpin.end_measure_index));
             if total_end <= total_start {
                 total_end = total_start + 0.05;
             }
@@ -693,13 +703,15 @@ pub(crate) fn render_hairpin_fragments(
                 }
                 let first = fragment.first().unwrap();
                 let last = fragment.last().unwrap();
+                let first_duration = measure_duration_for_index(first.global_index);
+                let last_duration = measure_duration_for_index(last.global_index);
                 let start_progress = if first.global_index == hairpin.start_measure_index {
-                    crate::fraction_to_f32(hairpin.start)
+                    normalized_measure_progress(hairpin.start, first_duration)
                 } else {
                     0.0
                 };
                 let end_progress = if last.global_index == hairpin.end_measure_index {
-                    crate::fraction_to_f32(hairpin.end).max(start_progress + 0.05)
+                    normalized_measure_progress(hairpin.end, last_duration).max(start_progress + 0.05)
                 } else {
                     1.0
                 };
@@ -817,7 +829,7 @@ pub(crate) fn render_dynamic_marks(
         for dynamic in &display_measure.measure.dynamics {
             let text = dynamic.level.as_str().to_string();
             let text_width = canonical_text_width(TextRole::Dynamic, &text, sink.staff_space_pt);
-            let anchor_x = dynamic_anchor_x(scene_measure, header, dynamic.at);
+            let anchor_x = dynamic_anchor_x(scene_measure, display_measure.measure, header, dynamic.at);
             let left_bound = scene_measure.x_pt + DYNAMIC_EDGE_PADDING_PT;
             let right_bound = scene_measure.x_pt + scene_measure.width_pt - DYNAMIC_EDGE_PADDING_PT;
             let half_width = text_width * 0.5;
@@ -905,12 +917,26 @@ fn measure_belongs_to_system(systems: &[SceneSystem], measure_id: &str, system_i
     })
 }
 
-fn dynamic_anchor_x(measure: &SceneMeasure, _header: &RenderHeader, fraction: Fraction) -> f32 {
-    let progress = crate::fraction_to_f32(fraction).clamp(0.0, 1.0);
+fn dynamic_anchor_x(
+    measure: &SceneMeasure,
+    render_measure: &RenderMeasure,
+    _header: &RenderHeader,
+    fraction: Fraction,
+) -> f32 {
+    let progress = normalized_measure_progress(fraction, render_measure.actual_duration);
     measure.x_pt
         + NON_INITIAL_MEASURE_LEFT_PAD_PT
         + progress * (measure.width_pt - NON_INITIAL_MEASURE_LEFT_PAD_PT - MEASURE_RIGHT_PAD_PT)
             .max(1.0)
+}
+
+fn normalized_measure_progress(fraction: Fraction, duration: Fraction) -> f32 {
+    if compare_fractions(duration, Fraction { numerator: 0, denominator: 1 })
+        != std::cmp::Ordering::Greater
+    {
+        return 0.0;
+    }
+    (crate::fraction_to_f32(fraction) / crate::fraction_to_f32(duration)).clamp(0.0, 1.0)
 }
 
 fn hairpin_open_height_at_progress(kind: HairpinKind, progress: f32, max_height: f32) -> f32 {

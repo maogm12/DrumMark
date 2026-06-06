@@ -129,6 +129,8 @@ pub struct NormalizedMeasure {
     pub paragraph_index: u32,
     pub measure_in_paragraph: u32,
     pub source_line: u32,
+    pub actual_duration: Fraction,
+    pub full_duration: Fraction,
     pub events: Vec<NormalizedEvent>,
     pub barline: Option<String>,
     pub closing_barline: Option<String>,
@@ -426,6 +428,7 @@ pub fn normalize_document(doc: &Document) -> NormalizedScore {
 
     let mut all_measures: Vec<NormalizedMeasure> = Vec::new();
     let mut global_index: u32 = 0;
+    let full_measure_duration = Fraction::new(time_beats as u64, time_beat_unit as u64);
 
     // Per-track hairpin state
     let mut hairpin_states: HashMap<String, HairpinState> = HashMap::new();
@@ -455,6 +458,7 @@ pub fn normalize_document(doc: &Document) -> NormalizedScore {
             let mut multi_rest_count: Option<u32> = None;
             let mut start_nav: Option<StartNav> = None;
             let mut end_nav: Option<EndNav> = None;
+            let mut actual_duration = Fraction::zero();
 
             for (li, line) in para.lines.iter().enumerate() {
                 let expanded = &expanded_lines[li];
@@ -600,11 +604,17 @@ pub fn normalize_document(doc: &Document) -> NormalizedScore {
                 let _duration: Fraction = Fraction::zero();
 
                 // Calculate total weight for measure duration
-                let mut total_weight = Fraction::zero();
-                for t in &tokens {
-                    total_weight = total_weight.add(token_weight(t));
+                let total_weight = crate::event::sequence_total_weight(&tokens);
+                let track_duration = total_weight.multiply(duration_per_quarter);
+                if track_duration.compare(actual_duration).is_gt() {
+                    actual_duration = track_duration;
                 }
-                let _measure_duration = total_weight.multiply(duration_per_quarter);
+                if track_duration.compare(full_measure_duration).is_gt() {
+                    errors.push(format!(
+                        "Line {}: Measure content exceeds the active time signature duration",
+                        es.barline_location.line.max(1)
+                    ));
+                }
 
                 // Expand tokens to events
                 let mut position = Fraction::zero();
@@ -670,6 +680,18 @@ pub fn normalize_document(doc: &Document) -> NormalizedScore {
                 );
             }
 
+            if actual_duration.is_zero() {
+                if measure_repeat_slashes.is_some() || multi_rest_count.is_some() {
+                    actual_duration = full_measure_duration;
+                } else {
+                    errors.push(
+                        "Line 1, Col 1: Measure has no duration-bearing content; fully silent measures must use explicit `-` rests"
+                            .to_string(),
+                    );
+                    actual_duration = full_measure_duration;
+                }
+            }
+
             let measure_dynamics =
                 merge_measure_dynamics(dynamic_candidates, &mut errors, global_index, 1);
 
@@ -700,6 +722,8 @@ pub fn normalize_document(doc: &Document) -> NormalizedScore {
                 paragraph_index: para_idx as u32,
                 measure_in_paragraph: m_idx as u32,
                 source_line: 0,
+                actual_duration,
+                full_duration: full_measure_duration,
                 events: measure_events,
                 barline,
                 closing_barline,
@@ -746,7 +770,11 @@ pub fn normalize_document(doc: &Document) -> NormalizedScore {
 
     let last_idx = all_measures.len().saturating_sub(1);
     for (_track_id, state) in hairpin_states.iter_mut() {
-        if let Some(hairpin) = close_dangling_hairpin(state, last_idx, Fraction::new(1, 1)) {
+        let measure_end = all_measures
+            .last()
+            .map(|measure| measure.actual_duration)
+            .unwrap_or_else(Fraction::one);
+        if let Some(hairpin) = close_dangling_hairpin(state, last_idx, measure_end) {
             if let Some(m) = all_measures.last_mut() {
                 m.hairpins.push(hairpin);
             }
@@ -1046,6 +1074,30 @@ mod group_visual_test {
             vec![Fraction::zero(), Fraction::new(1, 4)]
         );
     }
+
+    #[test]
+    fn short_measure_uses_authored_duration_without_tail_fill() {
+        let doc = parser::Parser::new("time 4/4\nnote 1/4\nHH | x | x - - - |")
+            .parse()
+            .unwrap();
+        let score = normalize::normalize_document(&doc);
+        assert_eq!(score.errors, Vec::<String>::new());
+        assert_eq!(score.measures[0].actual_duration, Fraction::new(1, 4));
+        assert_eq!(score.measures[0].full_duration, Fraction::one());
+        assert_eq!(score.measures[1].actual_duration, Fraction::one());
+    }
+
+    #[test]
+    fn dangling_hairpin_closes_at_short_final_measure_duration() {
+        let doc = parser::Parser::new("time 4/4\nnote 1/4\n| < x |")
+            .parse()
+            .unwrap();
+        let score = normalize::normalize_document(&doc);
+        assert_eq!(score.errors, Vec::<String>::new());
+        assert_eq!(score.measures[0].hairpins.len(), 1);
+        assert_eq!(score.measures[0].hairpins[0].start, Fraction::zero());
+        assert_eq!(score.measures[0].hairpins[0].end, Fraction::new(1, 4));
+    }
 }
 
 #[cfg(test)]
@@ -1196,6 +1248,8 @@ mod volta_test {
                 paragraph_index: 0,
                 measure_in_paragraph: 0,
                 source_line: 1,
+                actual_duration: crate::fraction::Fraction::one(),
+                full_duration: crate::fraction::Fraction::one(),
                 events: vec![],
                 barline: Some("repeat-start".into()),
                 closing_barline: None,
@@ -1215,6 +1269,8 @@ mod volta_test {
                 paragraph_index: 0,
                 measure_in_paragraph: 1,
                 source_line: 1,
+                actual_duration: crate::fraction::Fraction::one(),
+                full_duration: crate::fraction::Fraction::one(),
                 events: vec![],
                 barline: Some("repeat-both".into()),
                 closing_barline: None,
@@ -1234,6 +1290,8 @@ mod volta_test {
                 paragraph_index: 0,
                 measure_in_paragraph: 2,
                 source_line: 1,
+                actual_duration: crate::fraction::Fraction::one(),
+                full_duration: crate::fraction::Fraction::one(),
                 events: vec![],
                 barline: Some("repeat-end".into()),
                 closing_barline: None,

@@ -5,7 +5,6 @@ use crate::nav::{EndNav, StartNav};
 use crate::normalize;
 
 pub fn derive_render_score(score: &normalize::NormalizedScore) -> drummark_layout::RenderScore {
-    let default_voice_tracks = default_voice_tracks(score);
     drummark_layout::RenderScore {
         version: drummark_layout::RENDER_SCORE_VERSION.to_string(),
         header: drummark_layout::RenderHeader {
@@ -36,15 +35,7 @@ pub fn derive_render_score(score: &normalize::NormalizedScore) -> drummark_layou
                     .filter(|event| !is_st_track_spacer(event))
                     .map(event_to_render_event)
                     .collect();
-
-                if measure.measure_repeat_slashes.is_none() && measure.multi_rest_count.is_none() {
-                    events.extend(derive_implicit_rest_events(
-                        score,
-                        measure,
-                        &default_voice_tracks,
-                    ));
-                    sort_render_events(&mut events);
-                }
+                sort_render_events(&mut events);
 
                 drummark_layout::RenderMeasure {
                     index: measure.index,
@@ -52,6 +43,8 @@ pub fn derive_render_score(score: &normalize::NormalizedScore) -> drummark_layou
                     paragraph_index: measure.paragraph_index,
                     measure_in_paragraph: measure.measure_in_paragraph,
                     source_line: measure.source_line,
+                    actual_duration: render_fraction(measure.actual_duration),
+                    full_duration: render_fraction(measure.full_duration),
                     events,
                     barline: measure.barline.clone(),
                     closing_barline: measure.closing_barline.clone(),
@@ -154,306 +147,6 @@ fn render_fraction(fraction: Fraction) -> drummark_layout::Fraction {
         numerator: fraction.numerator as u32,
         denominator: fraction.denominator as u32,
     }
-}
-
-fn default_voice_tracks(score: &normalize::NormalizedScore) -> [(String, String); 2] {
-    let mut voice_one = ("HH".to_string(), "cymbal".to_string());
-    let mut voice_two = ("BD".to_string(), "drum".to_string());
-    for track in &score.tracks {
-        let family = crate::resolve::get_track_family(&track.id)
-            .as_str()
-            .to_string();
-        match crate::resolve::voice_for_track(&track.id) {
-            1 if voice_one.0 == "HH" => voice_one = (track.id.clone(), family),
-            2 if voice_two.0 == "BD" => voice_two = (track.id.clone(), family),
-            _ => {}
-        }
-    }
-    [voice_one, voice_two]
-}
-
-fn derive_implicit_rest_events(
-    score: &normalize::NormalizedScore,
-    measure: &normalize::NormalizedMeasure,
-    default_voice_tracks: &[(String, String); 2],
-) -> Vec<drummark_layout::RenderEvent> {
-    let measure_duration = Fraction::new(
-        score.header.time_beats as u64,
-        score.header.time_beat_unit as u64,
-    );
-    let grouping = if score.header.grouping.is_empty() {
-        vec![score.header.time_beats]
-    } else {
-        score.header.grouping.clone()
-    };
-
-    let measure_events: Vec<&crate::event::NormalizedEvent> = measure
-        .events
-        .iter()
-        .filter(|event| event.kind != EventKind::Sticking && !is_st_track_spacer(event))
-        .collect();
-    if measure_events.is_empty() {
-        let (track, track_family) = &default_voice_tracks[0];
-        return vec![drummark_layout::RenderEvent {
-            track: track.clone(),
-            track_family: track_family.clone(),
-            start: render_fraction(Fraction::zero()),
-            duration: render_fraction(measure_duration),
-            visual_duration: render_fraction(measure_duration),
-            kind: drummark_layout::EventKind::Rest,
-            glyph: "-".to_string(),
-            modifiers: Vec::new(),
-            dot_count: 0,
-            modifier: None,
-            voice: 1,
-            beam: "none".to_string(),
-            tuplet: None,
-        }];
-    }
-
-    let mut rests = Vec::new();
-    let active_voices = active_voices_for_score(score);
-    let mut deferred_whole_measure_rests: Vec<(u8, String, String)> = Vec::new();
-    for voice in [1_u8, 2_u8] {
-        if !active_voices.contains(&voice) {
-            continue;
-        }
-        let mut voice_events: Vec<&crate::event::NormalizedEvent> = measure
-            .events
-            .iter()
-            .filter(|event| event.voice == voice && event.kind != EventKind::Sticking)
-            .collect();
-        voice_events.sort_by(|left, right| left.start.compare(right.start));
-
-        let fallback = &default_voice_tracks[(voice - 1) as usize];
-        let track = voice_events
-            .first()
-            .map(|event| {
-                (
-                    event.track.clone(),
-                    crate::resolve::get_track_family(&event.track)
-                        .as_str()
-                        .to_string(),
-                )
-            })
-            .unwrap_or_else(|| fallback.clone());
-
-        if voice_events.is_empty() {
-            deferred_whole_measure_rests.push((voice, track.0, track.1));
-            continue;
-        }
-
-        let mut cursor = Fraction::zero();
-        for event in voice_events {
-            if event.start.compare(cursor).is_gt() {
-                extend_voice_rests(
-                    &mut rests,
-                    cursor,
-                    event.start,
-                    voice,
-                    &track.0,
-                    &track.1,
-                    &grouping,
-                    score.header.time_beat_unit,
-                );
-            }
-            let event_end = event.start.add(event.duration);
-            if event_end.compare(cursor).is_gt() {
-                cursor = event_end;
-            }
-        }
-        if cursor.compare(measure_duration).is_lt() {
-            extend_voice_rests(
-                &mut rests,
-                cursor,
-                measure_duration,
-                voice,
-                &track.0,
-                &track.1,
-                &grouping,
-                score.header.time_beat_unit,
-            );
-        }
-    }
-
-    if deferred_whole_measure_rests.len() == 2 {
-        let (_, track, track_family) = deferred_whole_measure_rests
-            .iter()
-            .find(|(voice, _, _)| *voice == 1)
-            .unwrap_or(&deferred_whole_measure_rests[0]);
-        push_rest_event(
-            &mut rests,
-            Fraction::zero(),
-            measure_duration,
-            1,
-            track,
-            track_family,
-        );
-    } else {
-        for (voice, track, track_family) in deferred_whole_measure_rests {
-            push_rest_event(
-                &mut rests,
-                Fraction::zero(),
-                measure_duration,
-                voice,
-                &track,
-                &track_family,
-            );
-        }
-    }
-
-    rests
-}
-
-fn active_voices_for_score(score: &normalize::NormalizedScore) -> Vec<u8> {
-    let mut voices = Vec::new();
-    for measure in &score.measures {
-        for event in &measure.events {
-            if event.kind == EventKind::Sticking {
-                continue;
-            }
-            if !voices.contains(&event.voice) {
-                voices.push(event.voice);
-            }
-        }
-    }
-    if voices.is_empty() {
-        // Anonymous-only scores have no registered tracks; default to voice 1.
-        voices.push(1);
-    }
-    voices
-}
-
-fn extend_voice_rests(
-    output: &mut Vec<drummark_layout::RenderEvent>,
-    start: Fraction,
-    end: Fraction,
-    voice: u8,
-    track: &str,
-    track_family: &str,
-    grouping: &[u32],
-    beat_unit: u32,
-) {
-    let mut cursor = start;
-    for boundary in grouping_boundaries(grouping, beat_unit) {
-        if cursor.compare(boundary).is_ge() {
-            continue;
-        }
-        if end.compare(boundary).is_le() {
-            push_rest_span(
-                output,
-                cursor,
-                end.subtract(cursor),
-                voice,
-                track,
-                track_family,
-            );
-            return;
-        }
-        push_rest_span(
-            output,
-            cursor,
-            boundary.subtract(cursor),
-            voice,
-            track,
-            track_family,
-        );
-        cursor = boundary;
-    }
-    if cursor.compare(end).is_lt() {
-        push_rest_span(
-            output,
-            cursor,
-            end.subtract(cursor),
-            voice,
-            track,
-            track_family,
-        );
-    }
-}
-
-fn grouping_boundaries(grouping: &[u32], beat_unit: u32) -> Vec<Fraction> {
-    let mut boundaries = Vec::with_capacity(grouping.len());
-    let mut accumulated = 0_u64;
-    for group in grouping {
-        accumulated += *group as u64;
-        boundaries.push(Fraction::new(accumulated, beat_unit as u64));
-    }
-    boundaries
-}
-
-fn push_rest_event(
-    output: &mut Vec<drummark_layout::RenderEvent>,
-    start: Fraction,
-    duration: Fraction,
-    voice: u8,
-    track: &str,
-    track_family: &str,
-) {
-    if duration.is_zero() {
-        return;
-    }
-    output.push(drummark_layout::RenderEvent {
-        track: track.to_string(),
-        track_family: track_family.to_string(),
-        start: render_fraction(start),
-        duration: render_fraction(duration),
-        visual_duration: render_fraction(duration),
-        kind: drummark_layout::EventKind::Rest,
-        glyph: "-".to_string(),
-        modifiers: Vec::new(),
-        dot_count: 0,
-        modifier: None,
-        voice,
-        beam: "none".to_string(),
-        tuplet: None,
-    });
-}
-
-fn push_rest_span(
-    output: &mut Vec<drummark_layout::RenderEvent>,
-    start: Fraction,
-    duration: Fraction,
-    voice: u8,
-    track: &str,
-    track_family: &str,
-) {
-    if duration.is_zero() {
-        return;
-    }
-
-    let mut cursor = start;
-    let mut remaining = duration;
-    for primitive in decompose_rest_duration(duration) {
-        push_rest_event(output, cursor, primitive, voice, track, track_family);
-        cursor = cursor.add(primitive);
-        remaining = remaining.subtract(primitive);
-    }
-
-    if !remaining.is_zero() {
-        push_rest_event(output, cursor, remaining, voice, track, track_family);
-    }
-}
-
-fn decompose_rest_duration(duration: Fraction) -> Vec<Fraction> {
-    let primitives = [
-        Fraction::one(),
-        Fraction::new(1, 2),
-        Fraction::new(1, 4),
-        Fraction::new(1, 8),
-        Fraction::new(1, 16),
-        Fraction::new(1, 32),
-    ];
-
-    let mut result = Vec::new();
-    let mut remaining = duration;
-    for primitive in primitives {
-        while remaining.compare(primitive).is_ge() {
-            result.push(primitive);
-            remaining = remaining.subtract(primitive);
-        }
-    }
-    result
 }
 
 fn sort_render_events(events: &mut [drummark_layout::RenderEvent]) {
@@ -589,6 +282,8 @@ mod tests {
                 paragraph_index: 0,
                 measure_in_paragraph: 7,
                 source_line: 12,
+                actual_duration: Fraction::one(),
+                full_duration: Fraction::one(),
                 events: vec![],
                 barline: Some("double".into()),
                 closing_barline: Some("double".into()),
@@ -691,7 +386,7 @@ mod tests {
     }
 
     #[test]
-    fn anonymous_lower_voice_measure_derives_only_voice_two_rests() {
+    fn anonymous_lower_voice_measure_keeps_only_authored_rests() {
         let source = "time 4/4\nnote 1/4\ngrouping 4\n| b |\n";
         let document = Parser::new(source).parse().expect("parse");
         let normalized = crate::normalize::normalize_document(&document);
@@ -715,33 +410,13 @@ mod tests {
         );
         assert_eq!(
             voice_two_rests.len(),
-            2,
-            "the trailing 3/4 gap after `b` should decompose into half + quarter rests on voice 2"
+            0,
+            "the trailing 3/4 gap after `b` must remain silent without synthesized rests"
         );
-        assert!(voice_two_rests.iter().any(|event| event.start
-            == drummark_layout::Fraction {
-                numerator: 1,
-                denominator: 4
-            }
-            && event.duration
-                == drummark_layout::Fraction {
-                    numerator: 1,
-                    denominator: 2
-                }));
-        assert!(voice_two_rests.iter().any(|event| event.start
-            == drummark_layout::Fraction {
-                numerator: 3,
-                denominator: 4
-            }
-            && event.duration
-                == drummark_layout::Fraction {
-                    numerator: 1,
-                    denominator: 4
-                }));
     }
 
     #[test]
-    fn silent_measure_uses_only_voice_one_whole_rest_even_with_voice_two_elsewhere() {
+    fn fully_silent_measure_requires_authored_rest_content() {
         let source = "time 4/4\nnote 1/4\ngrouping 4\nBD | b | - |\n";
         let document = Parser::new(source).parse().expect("parse");
         let normalized = crate::normalize::normalize_document(&document);
@@ -754,7 +429,14 @@ mod tests {
             .filter(|event| event.kind == drummark_layout::EventKind::Rest)
             .collect();
 
-        assert_eq!(rest_events.len(), 3);
+        assert_eq!(rest_events.len(), 1);
         assert!(rest_events.iter().all(|event| event.voice == 2));
+        assert_eq!(
+            rest_events[0].duration,
+            drummark_layout::Fraction {
+                numerator: 1,
+                denominator: 4
+            }
+        );
     }
 }

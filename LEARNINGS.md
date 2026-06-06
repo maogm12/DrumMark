@@ -467,3 +467,8 @@ When an older note conflicts with this file, treat this file plus the active spe
 - `crates/drummark-core/src/parser_constants.rs` holds parser-only semantic constants. Multi-rest minimum count and supported `note 1/N` denominators should live there instead of being repeated inline in parser control flow.
 - The parser intentionally rejects bare `--1--`; multi-rest shorthand begins at two measures. The fallback parse default in `try_scan_multi_rest()` should therefore use `MULTI_REST_MIN_COUNT`, not a naked `2`.
 - Lexer `priority = 0` annotations are deliberate overlap documentation for Logos, not tuning knobs. Keep that explanation next to the token definitions so future cleanup does not remove them as “redundant”.
+
+## 2026-06-03 Authored Short Measure Duration
+
+- For authored short measures, naive `sum(token_weight(..))` over a measure line is wrong when adjacent routed/braced blocks are simultaneous. `crates/drummark-core/src/event.rs::sequence_total_weight()` already models those clusters by taking the max cluster weight instead of summing every routed block; normalization should reuse that when deriving measure duration.
+- Pure navigation-only measures now fail normalization unless they include explicit duration-bearing content such as `-` rests. Any parity fixture that previously used `| @dc |` or similar must be updated to something like `| @dc - - - - |` under the active note unit.

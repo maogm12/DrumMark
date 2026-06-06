@@ -137,10 +137,7 @@ fn measure_xml(
 ) -> String {
     let measure = &export_measure.measure;
     let content_measure = &export_measure.content_measure;
-    let measure_duration = Fraction::new(
-        score.header.time_beats as u64,
-        score.header.time_beat_unit as u64,
-    );
+    let measure_duration = content_measure.actual_duration;
     let previous_measure = measure
         .global_index
         .checked_sub(1)
@@ -187,6 +184,7 @@ fn measure_xml(
         VoiceTrack { voice: 1, stem: "up" },
         score,
         measure_duration,
+        content_measure.full_duration,
         divisions,
         &stickings,
         hide_voice2_rests,
@@ -196,6 +194,7 @@ fn measure_xml(
         VoiceTrack { voice: 2, stem: "down" },
         score,
         measure_duration,
+        content_measure.full_duration,
         divisions,
         &stickings,
         hide_voice2_rests,
@@ -215,8 +214,10 @@ fn measure_xml(
         voice_content.extend(down_notes);
     }
 
-    let is_purely_empty = measure.multi_rest_count.is_some()
-        || (up_entries.iter().all(is_rest_entry) && down_entries.iter().all(is_rest_entry));
+    let is_purely_empty = content_measure.actual_duration.compare(content_measure.full_duration)
+        == Ordering::Equal
+        && (measure.multi_rest_count.is_some()
+            || (up_entries.iter().all(is_rest_entry) && down_entries.iter().all(is_rest_entry)));
     let content = if is_purely_empty {
         vec![format!(
             "<note><rest measure=\"yes\"/><duration>{}</duration><voice>1</voice><type>whole</type><staff>1</staff></note>",
@@ -255,6 +256,7 @@ fn process_voice_entries(
     voice: VoiceTrack,
     score: &NormalizedScore,
     measure_duration: Fraction,
+    full_duration: Fraction,
     divisions: u64,
     stickings: &[(Fraction, String)],
     hide_voice2_rests: bool,
@@ -264,7 +266,9 @@ fn process_voice_entries(
             VoiceEntry::Rest { duration, .. } => sum.add(*duration),
             VoiceEntry::Notes { duration, .. } => sum.add(*duration),
         });
-        if total.compare(measure_duration) == Ordering::Equal {
+        if total.compare(measure_duration) == Ordering::Equal
+            && measure_duration.compare(full_duration) == Ordering::Equal
+        {
             let duration = fraction_to_divisions(measure_duration, divisions);
             return if hide_voice2_rests && voice.voice == 2 {
                 vec![forward_xml(duration)]
@@ -1056,5 +1060,27 @@ mod tests {
         assert!(visible.contains("<rest><display-step>F"));
         assert!(hidden.contains("<forward><duration>"));
         assert!(!hidden.contains("<rest><display-step>F"));
+    }
+
+    #[test]
+    fn short_middle_measure_does_not_gain_synthetic_rests() {
+        let doc = Parser::new(
+            "time 4/4\n\
+             note 1/4\n\n\
+             HH | x - - - | x | x - - - |",
+        )
+        .parse_lossy();
+        let score = crate::normalize::normalize_document(&doc);
+        let xml = build_music_xml(&score, false);
+
+        let measure_two = xml
+            .split("<measure number=\"2\">")
+            .nth(1)
+            .and_then(|rest| rest.split("</measure>").next())
+            .expect("second measure xml");
+
+        assert!(measure_two.contains("<note>"));
+        assert!(!measure_two.contains("<rest"));
+        assert!(!measure_two.contains("measure=\"yes\""));
     }
 }

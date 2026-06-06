@@ -482,7 +482,7 @@ fn scan_dynamic_sequence(
     }
 }
 
-fn sequence_total_weight(tokens: &[TokenGlyph]) -> Fraction {
+pub(crate) fn sequence_total_weight(tokens: &[TokenGlyph]) -> Fraction {
     let mut total = Fraction::zero();
     let mut index = 0usize;
     while index < tokens.len() {

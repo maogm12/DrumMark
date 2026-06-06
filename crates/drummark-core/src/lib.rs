@@ -206,6 +206,8 @@ fn normalize_to_js(score: &normalize::NormalizedScore) -> JsValue {
         );
         set(&mo, "sourceLine", &JsValue::from_f64(m.source_line as f64));
         set(&mo, "noteValue", &JsValue::from_f64(m.note_value as f64));
+        set(&mo, "actualDuration", &frac_js(m.actual_duration));
+        set(&mo, "fullDuration", &frac_js(m.full_duration));
         if let Some(ref b) = m.barline {
             set(&mo, "barline", &JsValue::from_str(b));
         }
@@ -440,6 +442,8 @@ fn render_score_to_js(score: &drummark_layout::RenderScore) -> JsValue {
             "sourceLine",
             &JsValue::from_f64(measure.source_line as f64),
         );
+        set(&entry, "actualDuration", &render_fraction_js(measure.actual_duration));
+        set(&entry, "fullDuration", &render_fraction_js(measure.full_duration));
         set(
             &entry,
             "noteValue",

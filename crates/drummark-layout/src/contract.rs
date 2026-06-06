@@ -1,6 +1,6 @@
 use crate::metrics::{GlyphRole, TextRole};
 
-pub const RENDER_SCORE_VERSION: &str = "2";
+pub const RENDER_SCORE_VERSION: &str = "3";
 pub const LAYOUT_SCENE_VERSION: &str = "2";
 pub const CANONICAL_METRICS_VERSION: &str = "2026-05-13";
 
@@ -48,6 +48,8 @@ pub struct RenderMeasure {
     pub paragraph_index: u32,
     pub measure_in_paragraph: u32,
     pub source_line: u32,
+    pub actual_duration: Fraction,
+    pub full_duration: Fraction,
     pub events: Vec<RenderEvent>,
     pub barline: Option<String>,
     pub closing_barline: Option<String>,

@@ -2,7 +2,7 @@
 
 ## Status
 
-draft - pending corrected plan review and human stamp
+superseded by `docs/changes/archive/2026/2026-06-02-wysiwyg-short-measures/plan.md`
 
 ## Problem
 

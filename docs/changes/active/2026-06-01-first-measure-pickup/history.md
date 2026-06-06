@@ -46,6 +46,14 @@ Status: APPROVED
 
 Implementation remains blocked until a human stamp records `Status: APPROVED_FOR_IMPLEMENTATION` because this is a Spec / Contract Change.
 
+### Superseded
+
+Superseded by: `docs/changes/archive/2026/2026-06-02-wysiwyg-short-measures/plan.md`
+
+Reason:
+- User chose to abandon the first-measure-only pickup design in favor of a broader WYSIWYG short-measure change.
+- Future planning and review should use the new change folder as the active source of truth.
+
 ### Approval Invalidated By Spec Correction
 
 Reviewer: user

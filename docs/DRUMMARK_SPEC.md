@@ -131,8 +131,22 @@ Examples:
 Validation is exact rational musical-duration math.
 
 A measure is valid if and only if:
-- the sum of duration-consuming content equals the full measure duration, and
-- no token or group crosses a grouping boundary.
+- `actualDuration` is greater than zero,
+- `actualDuration` does not exceed the full measure duration derived from the active time signature,
+- any token or group that contributes duration stays within the header-derived full measure duration, and
+- no token or group crosses a grouping boundary inside the authored duration span.
+
+Definitions for the current accepted model:
+- `fullDuration` is the nominal measure duration derived from the active time signature.
+- `actualDuration` is the maximum explicit duration across all written tracks in the logical measure.
+- Explicit `-` rest tokens contribute duration exactly like notes.
+- Omitted content does not contribute duration.
+
+Consequences:
+- Underfull measures are valid.
+- A following measure begins immediately after the prior measure's `actualDuration`; there is no hidden tail up to `fullDuration`.
+- A first-measure pickup is represented by an ordinary short first measure; no dedicated pickup syntax is required.
+- A fully silent measure must still be authored with explicit `-` rests.
 
 “Slot count” language is only shorthand for the Note Unit model. The normative model is exact duration under the active `note 1/N`.
 
@@ -183,7 +197,12 @@ Rules:
 
 ### 5.4 Track Registry And Auto-Fill
 
-Once a track is registered, omitted measures in later aligned content normalize as rests of the appropriate measure duration for that paragraph and measure context.
+Once a track is registered, omitted measures in later aligned content remain aligned structurally, but omitted content does not synthesize rest events by default.
+
+Rules:
+- Explicit `-` remains the only accepted silent duration token.
+- Omitted registered tracks do not receive auto-generated trailing rests or whole-measure rest content.
+- Tracks whose written duration is shorter than the measure `actualDuration` remain silent for the remaining span without creating additional rest events.
 
 ## 6. Measure Content
 

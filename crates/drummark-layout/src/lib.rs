@@ -305,6 +305,8 @@ mod tests {
             paragraph_index: 0,
             measure_in_paragraph: 0,
             source_line: 1,
+            actual_duration: Fraction { numerator: 1, denominator: 1 },
+            full_duration: Fraction { numerator: 1, denominator: 1 },
             events: vec![test_rest(
                 Fraction {
                     numerator: 0,
@@ -334,6 +336,8 @@ mod tests {
             paragraph_index: 0,
             measure_in_paragraph: 0,
             source_line: 1,
+            actual_duration: Fraction { numerator: 1, denominator: 1 },
+            full_duration: Fraction { numerator: 1, denominator: 1 },
             events: vec![test_rest(
                 Fraction {
                     numerator: 0,
@@ -566,6 +570,8 @@ mod tests {
                     paragraph_index: 0,
                     measure_in_paragraph: 0,
                     source_line: 1,
+                    actual_duration: Fraction { numerator: 1, denominator: 1 },
+                    full_duration: Fraction { numerator: 1, denominator: 1 },
                     events: vec![RenderEvent {
                         track: "HH".into(),
                         track_family: "cymbal".into(),
@@ -620,6 +626,8 @@ mod tests {
                     paragraph_index: 1,
                     measure_in_paragraph: 0,
                     source_line: 2,
+                    actual_duration: Fraction { numerator: 1, denominator: 1 },
+                    full_duration: Fraction { numerator: 1, denominator: 1 },
                     events: vec![
                         RenderEvent {
                             track: "HH".into(),
@@ -688,6 +696,8 @@ mod tests {
                     paragraph_index: 2,
                     measure_in_paragraph: 0,
                     source_line: 3,
+                    actual_duration: Fraction { numerator: 1, denominator: 1 },
+                    full_duration: Fraction { numerator: 1, denominator: 1 },
                     events: vec![RenderEvent {
                         track: "HH".into(),
                         track_family: "cymbal".into(),
@@ -730,6 +740,8 @@ mod tests {
                     paragraph_index: 3,
                     measure_in_paragraph: 0,
                     source_line: 4,
+                    actual_duration: Fraction { numerator: 1, denominator: 1 },
+                    full_duration: Fraction { numerator: 1, denominator: 1 },
                     events: vec![RenderEvent {
                         track: "SD".into(),
                         track_family: "drum".into(),
@@ -810,6 +822,14 @@ mod tests {
             paragraph_index,
             measure_in_paragraph: index,
             source_line: index + 1,
+            actual_duration: Fraction {
+                numerator: 1,
+                denominator: 1,
+            },
+            full_duration: Fraction {
+                numerator: 1,
+                denominator: 1,
+            },
             events,
             barline: Some("regular".into()),
             closing_barline: Some("regular".into()),
@@ -1369,6 +1389,8 @@ mod tests {
                 paragraph_index: 0,
                 measure_in_paragraph: 0,
                 source_line: 1,
+                actual_duration: Fraction { numerator: 1, denominator: 1 },
+                full_duration: Fraction { numerator: 1, denominator: 1 },
                 events: vec![
                     RenderEvent {
                         track: "HH".into(),
@@ -1632,6 +1654,133 @@ mod tests {
     }
 
     #[test]
+    fn test_authored_short_measure_is_narrower_than_full_measure() {
+        let full = regular_measure(0, 0, 4);
+        let mut short = regular_measure(1, 0, 1);
+        short.actual_duration = Fraction {
+            numerator: 1,
+            denominator: 4,
+        };
+        short.events = vec![RenderEvent {
+            track: "HH".into(),
+            track_family: "cymbal".into(),
+            start: Fraction {
+                numerator: 0,
+                denominator: 1,
+            },
+            duration: Fraction {
+                numerator: 1,
+                denominator: 4,
+            },
+            visual_duration: Fraction {
+                numerator: 1,
+                denominator: 4,
+            },
+            kind: EventKind::Hit,
+            glyph: "x".into(),
+            modifiers: vec![],
+            dot_count: 0,
+            modifier: None,
+            voice: 1,
+            beam: "none".into(),
+            tuplet: None,
+        }];
+
+        let score = simple_layout_score(vec![full, short]);
+        let scene = build_layout_scene(&score, &LayoutOptions::default());
+        let full_width = page_all_measures(&scene.pages[0])
+            .find(|measure| measure.id == "measure-0")
+            .unwrap()
+            .width_pt;
+        let short_width = page_all_measures(&scene.pages[0])
+            .find(|measure| measure.id == "measure-1")
+            .unwrap()
+            .width_pt;
+
+        assert!(short_width < full_width);
+    }
+
+    #[test]
+    fn test_short_measure_dynamics_and_hairpin_use_authored_progress() {
+        let mut short = regular_measure(0, 0, 1);
+        short.actual_duration = Fraction {
+            numerator: 1,
+            denominator: 4,
+        };
+        short.events = vec![RenderEvent {
+            track: "HH".into(),
+            track_family: "cymbal".into(),
+            start: Fraction {
+                numerator: 0,
+                denominator: 1,
+            },
+            duration: Fraction {
+                numerator: 1,
+                denominator: 4,
+            },
+            visual_duration: Fraction {
+                numerator: 1,
+                denominator: 4,
+            },
+            kind: EventKind::Hit,
+            glyph: "x".into(),
+            modifiers: vec![],
+            dot_count: 0,
+            modifier: None,
+            voice: 1,
+            beam: "none".into(),
+            tuplet: None,
+        }];
+        short.dynamics = vec![DynamicMark {
+            level: DynamicLevel::Mf,
+            at: Fraction {
+                numerator: 1,
+                denominator: 8,
+            },
+        }];
+        short.hairpins = vec![HairpinSpan {
+            kind: HairpinKind::Crescendo,
+            start: Fraction {
+                numerator: 0,
+                denominator: 1,
+            },
+            end: Fraction {
+                numerator: 1,
+                denominator: 4,
+            },
+            start_measure_index: 0,
+            end_measure_index: 0,
+        }];
+
+        let scene = build_layout_scene(&simple_layout_score(vec![short]), &LayoutOptions::default());
+        let measure = page_all_measures(&scene.pages[0]).next().unwrap();
+        let dynamic = page_all_items(&scene.pages[0])
+            .find(|item| item.role == "dynamic")
+            .expect("dynamic item");
+        let hairpin_top = page_all_items(&scene.pages[0])
+            .find(|item| item.role == "hairpin-top")
+            .expect("hairpin item");
+        let dynamic_x = match &dynamic.primitive {
+            ScenePrimitive::TextRun(text) => text.x_pt,
+            _ => panic!("expected text dynamic"),
+        };
+        let hairpin_end_x = match &hairpin_top.primitive {
+            ScenePrimitive::LineSegment(line) => line.x2_pt,
+            _ => panic!("expected line hairpin"),
+        };
+        let midpoint = measure.x_pt + measure.width_pt * 0.5;
+
+        assert!(
+            dynamic_x > midpoint - 1.0,
+            "dynamic should land near the midpoint of a 1/4 short measure: dynamic_x={dynamic_x:.2} midpoint={midpoint:.2}"
+        );
+        assert!(
+            hairpin_end_x > midpoint,
+            "hairpin should extend across the authored short measure span: hairpin_end_x={hairpin_end_x:.2} midpoint={midpoint:.2}"
+        );
+    }
+
+    #[test]
     fn test_trailing_multi_rest_stays_inside_system_after_compaction() {
         let mut repeat = regular_measure(1, 0, 1);
         repeat.events.clear();
@@ -1786,6 +1935,14 @@ mod tests {
             paragraph_index: 0,
             measure_in_paragraph: 0,
             source_line: 1,
+            actual_duration: Fraction {
+                numerator: 1,
+                denominator: 1,
+            },
+            full_duration: Fraction {
+                numerator: 1,
+                denominator: 1,
+            },
             events,
             barline: Some("regular".into()),
             closing_barline: Some("regular".into()),
@@ -1841,6 +1998,8 @@ mod tests {
                 paragraph_index: 0,
                 measure_in_paragraph: index,
                 source_line: 1,
+                actual_duration: Fraction { numerator: 1, denominator: 1 },
+                full_duration: Fraction { numerator: 1, denominator: 1 },
                 events: events.clone(),
                 barline: Some("regular".into()),
                 closing_barline: if index == 3 {
@@ -1930,6 +2089,8 @@ mod tests {
             paragraph_index: 0,
             measure_in_paragraph: 0,
             source_line: 1,
+            actual_duration: Fraction { numerator: 1, denominator: 1 },
+            full_duration: Fraction { numerator: 1, denominator: 1 },
             events: vec![
                 RenderEvent {
                     track: "HH".into(),
@@ -2087,6 +2248,8 @@ mod tests {
             paragraph_index: 0,
             measure_in_paragraph: 0,
             source_line: 1,
+            actual_duration: Fraction { numerator: 1, denominator: 1 },
+            full_duration: Fraction { numerator: 1, denominator: 1 },
             events: vec![test_rest(
                 Fraction {
                     numerator: 0,
@@ -2116,6 +2279,8 @@ mod tests {
             paragraph_index: 0,
             measure_in_paragraph: 0,
             source_line: 1,
+            actual_duration: Fraction { numerator: 1, denominator: 1 },
+            full_duration: Fraction { numerator: 1, denominator: 1 },
             events: vec![test_hit(
                 "HH",
                 Fraction {
@@ -2173,6 +2338,8 @@ mod tests {
             paragraph_index: 0,
             measure_in_paragraph: 0,
             source_line: 1,
+            actual_duration: Fraction { numerator: 1, denominator: 1 },
+            full_duration: Fraction { numerator: 1, denominator: 1 },
             events: vec![
                 test_hit(
                     "HH",
@@ -2371,6 +2538,8 @@ mod tests {
             paragraph_index: 0,
             measure_in_paragraph: 0,
             source_line: 1,
+            actual_duration: Fraction { numerator: 1, denominator: 1 },
+            full_duration: Fraction { numerator: 1, denominator: 1 },
             events: vec![
                 test_hit(
                     "HH",
@@ -2471,6 +2640,8 @@ mod tests {
             paragraph_index: 0,
             measure_in_paragraph: 0,
             source_line: 1,
+            actual_duration: Fraction { numerator: 1, denominator: 1 },
+            full_duration: Fraction { numerator: 1, denominator: 1 },
             events: vec![
                 hit,
                 test_rest(
@@ -2523,6 +2694,8 @@ mod tests {
             paragraph_index: 0,
             measure_in_paragraph: 0,
             source_line: 1,
+            actual_duration: Fraction { numerator: 1, denominator: 1 },
+            full_duration: Fraction { numerator: 1, denominator: 1 },
             events: vec![
                 test_rest(
                     Fraction {
@@ -2585,6 +2758,8 @@ mod tests {
             paragraph_index: 0,
             measure_in_paragraph: 0,
             source_line: 1,
+            actual_duration: Fraction { numerator: 1, denominator: 1 },
+            full_duration: Fraction { numerator: 1, denominator: 1 },
             events: vec![
                 test_rest(
                     Fraction {
@@ -2730,6 +2905,8 @@ mod tests {
                 paragraph_index: 0,
                 measure_in_paragraph: 0,
                 source_line: 1,
+                actual_duration: Fraction { numerator: 1, denominator: 1 },
+                full_duration: Fraction { numerator: 1, denominator: 1 },
                 events: vec![RenderEvent {
                     track: "SD".into(),
                     track_family: "drum".into(),
@@ -2944,6 +3121,8 @@ mod tests {
             paragraph_index: 0,
             measure_in_paragraph: 0,
             source_line: 1,
+            actual_duration: Fraction { numerator: 1, denominator: 1 },
+            full_duration: Fraction { numerator: 1, denominator: 1 },
             events: vec![
                 test_hit(
                     "SD",
@@ -3031,6 +3210,8 @@ mod tests {
             paragraph_index: 0,
             measure_in_paragraph: 0,
             source_line: 1,
+            actual_duration: Fraction { numerator: 1, denominator: 1 },
+            full_duration: Fraction { numerator: 1, denominator: 1 },
             events: vec![
                 RenderEvent {
                     track: "HH".into(),
@@ -3861,6 +4042,8 @@ mod tests {
             paragraph_index: 0,
             measure_in_paragraph: 0,
             source_line: 1,
+            actual_duration: Fraction { numerator: 1, denominator: 1 },
+            full_duration: Fraction { numerator: 1, denominator: 1 },
             events: vec![
                 RenderEvent {
                     track: "HH".into(),
@@ -3968,6 +4151,8 @@ mod tests {
             paragraph_index: 0,
             measure_in_paragraph: 0,
             source_line: 1,
+            actual_duration: Fraction { numerator: 1, denominator: 1 },
+            full_duration: Fraction { numerator: 1, denominator: 1 },
             events: vec![
                 RenderEvent {
                     track: "SD".into(),
@@ -4060,6 +4245,8 @@ mod tests {
             paragraph_index: 0,
             measure_in_paragraph: 0,
             source_line: 1,
+            actual_duration: Fraction { numerator: 1, denominator: 1 },
+            full_duration: Fraction { numerator: 1, denominator: 1 },
             events: vec![
                 RenderEvent {
                     track: "HH".into(),
@@ -4151,6 +4338,8 @@ mod tests {
             paragraph_index: 0,
             measure_in_paragraph: 0,
             source_line: 1,
+            actual_duration: Fraction { numerator: 1, denominator: 1 },
+            full_duration: Fraction { numerator: 1, denominator: 1 },
             events: vec![
                 RenderEvent {
                     track: "HH".into(),
@@ -4324,6 +4513,8 @@ mod tests {
             paragraph_index: 0,
             measure_in_paragraph: 0,
             source_line: 1,
+            actual_duration: Fraction { numerator: 1, denominator: 1 },
+            full_duration: Fraction { numerator: 1, denominator: 1 },
             events: vec![
                 quarter(0, EventKind::Sticking, "ST", "R"),
                 quarter(0, EventKind::Hit, "SD", "d"),
@@ -4529,6 +4720,8 @@ mod tests {
             paragraph_index: 0,
             measure_in_paragraph: 0,
             source_line: 1,
+            actual_duration: Fraction { numerator: 1, denominator: 1 },
+            full_duration: Fraction { numerator: 1, denominator: 1 },
             events: vec![
                 RenderEvent {
                     track: "SD".into(),
@@ -4648,6 +4841,8 @@ mod tests {
             paragraph_index: 0,
             measure_in_paragraph: 0,
             source_line: 1,
+            actual_duration: Fraction { numerator: 1, denominator: 1 },
+            full_duration: Fraction { numerator: 1, denominator: 1 },
             events: vec![
                 RenderEvent {
                     track: "SD".into(),
@@ -4864,6 +5059,8 @@ mod tests {
                 paragraph_index: 0,
                 measure_in_paragraph: 0,
                 source_line: 1,
+                actual_duration: Fraction { numerator: 1, denominator: 1 },
+                full_duration: Fraction { numerator: 1, denominator: 1 },
                 events: vec![
                     hit("T3", 0, 1),
                     hit("C", 1, 8),
@@ -5000,6 +5197,8 @@ mod tests {
                 paragraph_index: 0,
                 measure_in_paragraph: 0,
                 source_line: 1,
+                actual_duration: Fraction { numerator: 1, denominator: 1 },
+                full_duration: Fraction { numerator: 1, denominator: 1 },
                 events: vec![
                     hit("T3", 0, 1),
                     hit("C", 1, 8),
@@ -5049,6 +5248,8 @@ mod tests {
             paragraph_index: 0,
             measure_in_paragraph: 0,
             source_line: 1,
+            actual_duration: Fraction { numerator: 1, denominator: 1 },
+            full_duration: Fraction { numerator: 1, denominator: 1 },
             events: vec![
                 RenderEvent {
                     track: "HH".into(),
@@ -5181,6 +5382,8 @@ fn test_place_notes() {
         paragraph_index: 0,
         measure_in_paragraph: 0,
         source_line: 1,
+        actual_duration: Fraction { numerator: 1, denominator: 1 },
+        full_duration: Fraction { numerator: 1, denominator: 1 },
         events: vec![NormalizedEvent {
             track: "HH".into(),
             start: Fraction {
@@ -5277,6 +5480,8 @@ fn test_barlines() {
         paragraph_index: 0,
         measure_in_paragraph: 0,
         source_line: 1,
+        actual_duration: Fraction { numerator: 1, denominator: 1 },
+        full_duration: Fraction { numerator: 1, denominator: 1 },
         events: vec![],
         barline: Some("|:".into()),
         closing_barline: Some("|:".into()),
@@ -5320,6 +5525,8 @@ fn test_contract_scene_smoke() {
             paragraph_index: 0,
             measure_in_paragraph: 0,
             source_line: 1,
+            actual_duration: Fraction { numerator: 1, denominator: 1 },
+            full_duration: Fraction { numerator: 1, denominator: 1 },
             events: vec![RenderEvent {
                 track: "HH".into(),
                 track_family: "cymbal".into(),
@@ -5545,6 +5752,8 @@ fn test_tempo_anchor_uses_left_margin_single_gap() {
                 paragraph_index: 0,
                 measure_in_paragraph: 0,
                 source_line: 1,
+                actual_duration: Fraction { numerator: 1, denominator: 1 },
+                full_duration: Fraction { numerator: 1, denominator: 1 },
                 events: vec![RenderEvent {
                     track: "HH".into(),
                     track_family: "cymbal".into(),
@@ -6036,6 +6245,8 @@ fn test_system_box_orchestrator_outputs_multiple_pages_for_long_scores() {
             paragraph_index: index,
             measure_in_paragraph: 0,
             source_line: index + 1,
+            actual_duration: Fraction { numerator: 1, denominator: 1 },
+            full_duration: Fraction { numerator: 1, denominator: 1 },
             events: vec![event.clone()],
             barline: Some("regular".into()),
             closing_barline: Some("regular".into()),
@@ -6104,6 +6315,8 @@ fn test_volta_composites_are_emitted() {
                 paragraph_index: 0,
                 measure_in_paragraph: 0,
                 source_line: 1,
+                actual_duration: Fraction { numerator: 1, denominator: 1 },
+                full_duration: Fraction { numerator: 1, denominator: 1 },
                 events: vec![],
                 barline: Some("repeat-start".into()),
                 closing_barline: Some("repeat-start".into()),
@@ -6123,6 +6336,8 @@ fn test_volta_composites_are_emitted() {
                 paragraph_index: 0,
                 measure_in_paragraph: 1,
                 source_line: 1,
+                actual_duration: Fraction { numerator: 1, denominator: 1 },
+                full_duration: Fraction { numerator: 1, denominator: 1 },
                 events: vec![],
                 barline: Some("repeat-end".into()),
                 closing_barline: Some("repeat-end".into()),
@@ -6188,6 +6403,8 @@ fn test_adjacent_voltas_share_y_and_positive_offset_moves_up() {
         paragraph_index: 0,
         measure_in_paragraph: index,
         source_line: 1,
+        actual_duration: Fraction { numerator: 1, denominator: 1 },
+        full_duration: Fraction { numerator: 1, denominator: 1 },
         events: vec![event.clone()],
         barline: Some("regular".into()),
         closing_barline: Some("regular".into()),
@@ -6296,6 +6513,8 @@ fn test_two_bar_measure_repeat_expands_into_two_display_measures() {
                 paragraph_index: 0,
                 measure_in_paragraph: 0,
                 source_line: 1,
+                actual_duration: Fraction { numerator: 1, denominator: 1 },
+                full_duration: Fraction { numerator: 1, denominator: 1 },
                 events: vec![],
                 barline: Some("regular".into()),
                 closing_barline: Some("regular".into()),
@@ -6315,6 +6534,8 @@ fn test_two_bar_measure_repeat_expands_into_two_display_measures() {
                 paragraph_index: 0,
                 measure_in_paragraph: 1,
                 source_line: 1,
+                actual_duration: Fraction { numerator: 1, denominator: 1 },
+                full_duration: Fraction { numerator: 1, denominator: 1 },
                 events: vec![],
                 barline: Some("regular".into()),
                 closing_barline: Some("final".into()),
@@ -6382,6 +6603,8 @@ fn test_structural_composites_are_emitted() {
                 paragraph_index: 0,
                 measure_in_paragraph: 0,
                 source_line: 1,
+                actual_duration: Fraction { numerator: 1, denominator: 1 },
+                full_duration: Fraction { numerator: 1, denominator: 1 },
                 events: vec![],
                 barline: Some("regular".into()),
                 closing_barline: Some("regular".into()),
@@ -6413,6 +6636,8 @@ fn test_structural_composites_are_emitted() {
                 paragraph_index: 0,
                 measure_in_paragraph: 1,
                 source_line: 1,
+                actual_duration: Fraction { numerator: 1, denominator: 1 },
+                full_duration: Fraction { numerator: 1, denominator: 1 },
                 events: vec![],
                 barline: Some("regular".into()),
                 closing_barline: Some("regular".into()),
@@ -6469,6 +6694,8 @@ fn test_system_boundaries_align_with_staff_edges() {
             paragraph_index: 0,
             measure_in_paragraph: 0,
             source_line: 1,
+            actual_duration: Fraction { numerator: 1, denominator: 1 },
+            full_duration: Fraction { numerator: 1, denominator: 1 },
             events: vec![RenderEvent {
                 track: "HH".into(),
                 track_family: "cymbal".into(),
@@ -6556,6 +6783,8 @@ fn test_first_measure_repeat_start_sits_after_system_preamble() {
             paragraph_index: 0,
             measure_in_paragraph: 0,
             source_line: 1,
+            actual_duration: Fraction { numerator: 1, denominator: 1 },
+            full_duration: Fraction { numerator: 1, denominator: 1 },
             events: vec![RenderEvent {
                 track: "SD".into(),
                 track_family: "drum".into(),
@@ -6678,6 +6907,14 @@ fn edge_padding_measure(index: u32, event_count: u32) -> RenderMeasure {
         paragraph_index: 0,
         measure_in_paragraph: index,
         source_line: index + 1,
+        actual_duration: Fraction {
+            numerator: 1,
+            denominator: 1,
+        },
+        full_duration: Fraction {
+            numerator: 1,
+            denominator: 1,
+        },
         events,
         barline: Some("regular".into()),
         closing_barline: Some("regular".into()),
@@ -6892,6 +7129,8 @@ fn test_adjacent_repeat_end_start_uses_smufl_right_left_glyph() {
             paragraph_index: 0,
             measure_in_paragraph: index,
             source_line: 1,
+            actual_duration: Fraction { numerator: 1, denominator: 1 },
+            full_duration: Fraction { numerator: 1, denominator: 1 },
             events: vec![RenderEvent {
                 track: "HH".into(),
                 track_family: "cymbal".into(),
@@ -6983,6 +7222,8 @@ fn test_later_system_uses_smaller_start_zone_than_first_system() {
             paragraph_index: index,
             measure_in_paragraph: 0,
             source_line: 1,
+            actual_duration: Fraction { numerator: 1, denominator: 1 },
+            full_duration: Fraction { numerator: 1, denominator: 1 },
             events: vec![RenderEvent {
                 track: "HH".into(),
                 track_family: "cymbal".into(),
@@ -7093,6 +7334,8 @@ fn test_later_system_measure_number_uses_absolute_measure_index() {
                 paragraph_index: 0,
                 measure_in_paragraph: 0,
                 source_line: 1,
+                actual_duration: Fraction { numerator: 1, denominator: 1 },
+                full_duration: Fraction { numerator: 1, denominator: 1 },
                 events: vec![],
                 barline: Some("regular".into()),
                 closing_barline: Some("regular".into()),
@@ -7112,6 +7355,8 @@ fn test_later_system_measure_number_uses_absolute_measure_index() {
                 paragraph_index: 1,
                 measure_in_paragraph: 0,
                 source_line: 2,
+                actual_duration: Fraction { numerator: 1, denominator: 1 },
+                full_duration: Fraction { numerator: 1, denominator: 1 },
                 events: vec![],
                 barline: Some("final".into()),
                 closing_barline: Some("final".into()),
@@ -7165,6 +7410,8 @@ fn test_hide_measure_number_omits_system_labels() {
                 paragraph_index: 0,
                 measure_in_paragraph: index,
                 source_line: 1,
+                actual_duration: Fraction { numerator: 1, denominator: 1 },
+                full_duration: Fraction { numerator: 1, denominator: 1 },
                 events: vec![RenderEvent {
                     track: "HH".into(),
                     track_family: "cymbal".into(),
@@ -7244,6 +7491,8 @@ fn test_down_stem_keeps_notehead_on_right_and_flag_on_stem_right_side() {
             paragraph_index: 0,
             measure_in_paragraph: 0,
             source_line: 1,
+            actual_duration: Fraction { numerator: 1, denominator: 1 },
+            full_duration: Fraction { numerator: 1, denominator: 1 },
             events: vec![RenderEvent {
                 track: "BD".into(),
                 track_family: "drum".into(),
@@ -7343,6 +7592,8 @@ fn test_crash_maps_to_top_ledger_line() {
             paragraph_index: 0,
             measure_in_paragraph: 0,
             source_line: 1,
+            actual_duration: Fraction { numerator: 1, denominator: 1 },
+            full_duration: Fraction { numerator: 1, denominator: 1 },
             events: vec![RenderEvent {
                 track: "C".into(),
                 track_family: "cymbal".into(),
@@ -7462,6 +7713,8 @@ fn test_bottom_ledger_lines_render_for_notes_below_staff() {
             paragraph_index: 0,
             measure_in_paragraph: 0,
             source_line: 1,
+            actual_duration: Fraction { numerator: 1, denominator: 1 },
+            full_duration: Fraction { numerator: 1, denominator: 1 },
             events: vec![RenderEvent {
                 track: "WB".into(),
                 track_family: "percussion".into(),
@@ -7552,6 +7805,8 @@ fn test_flam_renders_grace_notehead_stem_and_slash() {
             paragraph_index: 0,
             measure_in_paragraph: 0,
             source_line: 1,
+            actual_duration: Fraction { numerator: 1, denominator: 1 },
+            full_duration: Fraction { numerator: 1, denominator: 1 },
             events: vec![RenderEvent {
                 track: "SD".into(),
                 track_family: "drum".into(),
@@ -7810,6 +8065,8 @@ fn grace_modifier_score(modifier: &str, visual_duration: Fraction) -> RenderScor
             paragraph_index: 0,
             measure_in_paragraph: 0,
             source_line: 1,
+            actual_duration: Fraction { numerator: 1, denominator: 1 },
+            full_duration: Fraction { numerator: 1, denominator: 1 },
             events: vec![RenderEvent {
                 track: "SD".into(),
                 track_family: "drum".into(),

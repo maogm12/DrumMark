@@ -30,7 +30,7 @@ grouping 2+2
 note 1/4
 grouping 1+1+1+1
 
-| @segno x x x x | x x x @fine | @dc |
+| @segno x x x x | x x x @fine | @dc - - - - |
 `,
   },
   {

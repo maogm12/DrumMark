@@ -397,6 +397,44 @@ pub(crate) fn normalized_grouping(header: &RenderHeader) -> Vec<u32> {
     }
 }
 
+fn effective_measure_duration(measure: &RenderMeasure) -> Fraction {
+    if compare_fractions(measure.actual_duration, Fraction { numerator: 0, denominator: 1 })
+        == std::cmp::Ordering::Greater
+    {
+        measure.actual_duration
+    } else {
+        measure.full_duration
+    }
+}
+
+fn effective_group_durations(header: &RenderHeader, measure: &RenderMeasure) -> Vec<Fraction> {
+    let grouping = normalized_grouping(header);
+    let mut remaining = effective_measure_duration(measure);
+    let mut durations = Vec::new();
+
+    for beat_units in grouping {
+        if compare_fractions(remaining, Fraction { numerator: 0, denominator: 1 })
+            != std::cmp::Ordering::Greater
+        {
+            break;
+        }
+        let group_duration = measure_fraction_for_beat_units(beat_units.max(1), header.time_beat_unit);
+        let current = if compare_fractions(remaining, group_duration) == std::cmp::Ordering::Less {
+            remaining
+        } else {
+            group_duration
+        };
+        durations.push(current);
+        remaining = subtract_fractions(remaining, current);
+    }
+
+    if durations.is_empty() {
+        durations.push(effective_measure_duration(measure));
+    }
+
+    durations
+}
+
 pub(crate) fn measure_fraction_for_beat_units(beat_units: u32, beat_unit: u32) -> Fraction {
     reduce_fraction(Fraction {
         numerator: beat_units,
@@ -620,14 +658,14 @@ pub(crate) fn measure_geometry(
 ) -> MeasureGeometry {
     let inner_left_pt = input.measure_x + input.left_pad;
     let inner_width_pt = (input.measure_width - input.left_pad - input.right_pad).max(1.0);
-    let grouping = normalized_grouping(header);
+    let grouping = effective_group_durations(header, measure);
     let mut groups = Vec::new();
     let mut weighted_width_sum = 0.0_f32;
     let mut start_fraction = Fraction {
         numerator: 0,
         denominator: 1,
     };
-    let measure_end = measure_fraction_for_beat_units(header.time_beats, header.time_beat_unit);
+    let measure_end = effective_measure_duration(measure);
 
     let mut all_starts: Vec<Fraction> = measure.events.iter().map(|event| event.start).collect();
     sort_and_dedup_fractions(&mut all_starts);
@@ -661,11 +699,9 @@ pub(crate) fn measure_geometry(
     }
 
     let grouping_len = grouping.len();
-    for (group_index, beat_units) in grouping.into_iter().enumerate() {
-        let group_duration =
-            measure_fraction_for_beat_units(beat_units.max(1), header.time_beat_unit);
+    for (group_index, group_duration) in grouping.into_iter().enumerate() {
         let end_fraction = add_fractions(start_fraction, group_duration);
-        let base_quarters = beat_units as f32 * 4.0 / header.time_beat_unit.max(1) as f32;
+        let base_quarters = fraction_to_f32(group_duration) * 4.0;
 
         // Content weight for measure-width compression
         let group_starts: Vec<Fraction> = all_starts
@@ -818,7 +854,7 @@ pub(crate) fn estimated_measure_width(
         return mapper.measure_width(1, 1, true);
     }
 
-    let grouping = normalized_grouping(header);
+    let grouping = effective_group_durations(header, measure);
 
     let mut starts: Vec<Fraction> = measure.events.iter().map(|event| event.start).collect();
     sort_and_dedup_fractions(&mut starts);
@@ -836,12 +872,11 @@ pub(crate) fn estimated_measure_width(
 
     grouping
         .into_iter()
-        .scan(0_u32, |accumulated_units, beat_units| {
-            let base_quarters = beat_units as f32 * 4.0 / header.time_beat_unit.max(1) as f32;
+        .map(|group_duration| {
+            let base_quarters = fraction_to_f32(group_duration) * 4.0;
             let content_weight =
                 1.0 + compression * (segment_count as f32).max(1.0).log2() + modifier_bonus;
-            *accumulated_units += beat_units.max(1);
-            Some(base_quarters * mapper.px_per_quarter * content_weight)
+            base_quarters * mapper.px_per_quarter * content_weight
         })
         .sum()
 }

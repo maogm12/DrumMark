@@ -482,3 +482,24 @@ The final spacing used between non-first systems is:
 Header-to-first-system placement keeps the existing header cursor behavior. The uniform final spacing applies to subsequent same-page systems and is used consistently during pagination and page assembly. First systems after a page break start from the page top margin/header cursor rules; they do not receive page-crossing spacing from the previous page.
 
 Visual bounds remain authoritative for overflow diagnostics and validation; they no longer cause one individual system pair to receive a unique larger stride except through the global final spacing calculation.
+
+## Addendum 2026-06-03: Content-Driven Measure Duration
+
+Date: 2026-06-03
+Source change: `docs/changes/active/2026-06-02-wysiwyg-short-measures/plan.md`
+Status: Accepted
+
+`RenderMeasure` now carries:
+- `actual_duration: Fraction`
+- `full_duration: Fraction`
+
+Rules:
+- `actual_duration` is the authoritative geometry-owning measure duration.
+- `full_duration` is the nominal duration derived from the active time signature and is retained for validation-facing and export-facing consumers.
+- Layout engines must use `actual_duration` for measure width, event placement, grouping truncation, and measure-local anchor mapping.
+- A short middle measure ends at `actual_duration`; the following measure begins immediately after that barline.
+- Layout engines and platform adapters must not infer missing trailing rest events to occupy the gap between a track's written content and `actual_duration`.
+
+Serialization:
+- RenderScore/WASM JSON includes both duration fields on every measure.
+- This change bumps `RENDER_SCORE_VERSION`.

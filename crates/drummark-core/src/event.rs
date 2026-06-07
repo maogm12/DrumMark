@@ -317,7 +317,7 @@ fn is_standard_undotted_note_duration(duration: Fraction) -> bool {
     duration.numerator == 1 && duration.denominator.is_power_of_two()
 }
 
-/// When a token is squeezed into less time than its nominal note value (e.g. `[ss]`),
+/// When a token is squeezed into less time than its nominal note value (e.g. `(ss)`),
 /// show the smaller written note shape.
 fn effective_visual_duration(actual: Fraction, nominal: Fraction) -> Fraction {
     if is_standard_undotted_note_duration(actual) && actual.compare(nominal) == Ordering::Less {

@@ -8,4 +8,4 @@ grouping 2+2
 
 HH | x x   x x   x x   x x |
 SD | - -   d -   - -   d - |
-BD | [2:p] - p   [2:p] - - |
+BD | (2:p) - p   (2:p) - - |

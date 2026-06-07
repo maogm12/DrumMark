@@ -327,6 +327,10 @@ pub enum Token {
     LBrace,
     #[token("}")]
     RBrace,
+    #[token("(")]
+    LParen,
+    #[token(")")]
+    RParen,
     #[token("[")]
     LBracket,
     #[token("]")]
@@ -616,6 +620,8 @@ mod tests {
     #[test]
     fn test_single_char_tokens() {
         assert_eq!(tokenize_ok("{"), vec![Token::LBrace]);
+        assert_eq!(tokenize_ok("("), vec![Token::LParen]);
+        assert_eq!(tokenize_ok(")"), vec![Token::RParen]);
         assert_eq!(tokenize_ok("["), vec![Token::LBracket]);
         assert_eq!(tokenize_ok("+"), vec![Token::Plus]);
         assert_eq!(tokenize_ok(":"), vec![Token::Colon]);

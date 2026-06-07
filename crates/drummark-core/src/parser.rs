@@ -283,6 +283,8 @@ impl<'a> Parser<'a> {
             Token::DynamicFff => "fff".to_string(),
             Token::LBrace => "{".to_string(),
             Token::RBrace => "}".to_string(),
+            Token::LParen => "(".to_string(),
+            Token::RParen => ")".to_string(),
             Token::LBracket => "[".to_string(),
             Token::RBracket => "]".to_string(),
             Token::Integer(n) => n.to_string(),
@@ -864,7 +866,7 @@ impl<'a> Parser<'a> {
                     .unwrap_or(1);
                 Ok(MeasureExpr::InlineRepeat(times))
             }
-            Some(Token::LBracket) => self.parse_group(),
+            Some(Token::LParen) => self.parse_group(),
             Some(Token::LBrace) => {
                 let content = self.parse_inline_braced_block()?;
                 Ok(MeasureExpr::InlineBracedBlock(content))
@@ -937,7 +939,7 @@ impl<'a> Parser<'a> {
         ch.is_whitespace()
             || matches!(
                 ch,
-                '#' | '|' | ':' | '[' | ']' | '{' | '}' | '(' | '+' | '\0'
+                '#' | '|' | ':' | '[' | ']' | '{' | '}' | '(' | ')' | '+' | '\0'
             )
     }
 
@@ -1048,7 +1050,7 @@ impl<'a> Parser<'a> {
     // ── Group ─────────────────────────────────────────────────────
 
     fn parse_group(&mut self) -> Result<MeasureExpr, ParseError> {
-        self.expect(Token::LBracket)?;
+        self.expect(Token::LParen)?;
         let n = if let Some(Token::Integer(num)) = self.peek() {
             if self.peek_n(1) == Some(Token::Colon) {
                 self.next().ok();
@@ -1064,20 +1066,20 @@ impl<'a> Parser<'a> {
         let mut items = Vec::new();
         loop {
             match self.peek() {
-                Some(Token::RBracket) => break,
+                Some(Token::RParen) => break,
                 Some(Token::Newline) => {
-                    return Err(self.error_at(self.last_end, "unclosed group bracket"));
+                    return Err(self.error_at(self.last_end, "unclosed group delimiter"));
                 }
                 Some(ref t) if t.is_barline_like() => {
-                    return Err(self.error_at(self.last_end, "unclosed group bracket"));
+                    return Err(self.error_at(self.last_end, "unclosed group delimiter"));
                 }
                 Some(_) => {
                     items.push(self.parse_measure_expr()?);
                 }
-                None => return Err(self.error_at(self.last_end, "unclosed group bracket")),
+                None => return Err(self.error_at(self.last_end, "unclosed group delimiter")),
             }
         }
-        self.expect(Token::RBracket)?;
+        self.expect(Token::RParen)?;
 
         let mut group_mods = Vec::new();
         while let Some(Token::Colon) = self.peek() {
@@ -1483,9 +1485,10 @@ mod tests {
 
     #[test]
     fn test_lossy_parse_keeps_following_measure_after_unclosed_group() {
-        let doc = parse_lossy("time 4/4\nnote 1/4\n\nHH | [x x - - | x x x x |\n");
+        let doc = parse_lossy("time 4/4\nnote 1/4\n\nHH | (x x - - | x x x x |\n");
         let line = &doc.paragraphs[0].lines[0];
         assert_eq!(doc.errors.len(), 1);
+        assert_eq!(doc.errors[0].message, "unclosed group delimiter");
         assert_eq!(line.measures.len(), 2);
         assert!(line.measures[0].tokens.is_empty());
         assert_eq!(line.measures[1].tokens.len(), 4);
@@ -1589,12 +1592,28 @@ mod tests {
 
     #[test]
     fn test_group() {
-        let doc = parse_ok("SD | [x d b] |\n");
+        let doc = parse_ok("SD | (x d b) |\n");
         let tokens = &doc.paragraphs[0].lines[0].measures[0].tokens;
         match &tokens[0] {
             MeasureExpr::Group(g) => assert_eq!(g.items.len(), 3),
             _ => panic!("expected Group"),
         }
+    }
+
+    #[test]
+    fn test_legacy_bracket_group_is_invalid_without_migration_hint() {
+        let errors = parse_err("SD | [x d b] |\n");
+        assert!(!errors.is_empty());
+        assert!(
+            errors
+                .iter()
+                .any(|error| error.message.contains("unexpected token: LBracket"))
+        );
+        assert!(
+            errors
+                .iter()
+                .all(|error| !error.message.contains("migrat") && !error.message.contains("()"))
+        );
     }
 
     #[test]
@@ -1690,6 +1709,8 @@ mod tests {
         parse_ok("SD | { @f} |\n");
         parse_ok("SD | @f| d |\n");
         parse_ok("SD | { @f } |\n");
+        parse_ok("SD | (@p) |\n");
+        parse_ok("SD | (@f x x) |\n");
 
         for src in [
             "SD | @ffff |\n",

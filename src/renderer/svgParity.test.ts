@@ -140,7 +140,7 @@ describe("SVG Renderer parity", () => {
   });
 
   it("renders volta composites only for explicit numbered endings", async () => {
-    const svg = await render("time 4/4\nnote 1/4\ngrouping 1+1+1+1\n|: s s s s |1. s s [ss] s :|2. s s [ssss] s |\n");
+    const svg = await render("time 4/4\nnote 1/4\ngrouping 1+1+1+1\n|: s s s s |1. s s (ss) s :|2. s s (ssss) s |\n");
     expect(countRole(svg, "repeat-span-line")).toBe(0);
     expect(countRole(svg, "repeat-span-count")).toBe(0);
     expect(countRole(svg, "volta-line")).toBeGreaterThanOrEqual(2);
@@ -253,10 +253,9 @@ describe("SVG Renderer parity", () => {
     expect(svg).toContain("\u{E4E5}");
   });
 
-  it("renders eighth-rest glyphs for simple eighth-note gaps and trailing silence", async () => {
+  it("renders explicit eighth-rest glyphs in authored short measures without tail fill", async () => {
     const svg = await render("time 4/4\nnote 1/8\ngrouping 2+2\nHH | x - x - |\n");
-    expect(countRole(svg, "rest")).toBe(3);
+    expect(countRole(svg, "rest")).toBe(2);
     expect(svg).toContain("\u{E4E6}");
-    expect(svg).toContain("\u{E4E4}");
   });
 });

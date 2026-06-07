@@ -213,7 +213,7 @@ fn to_token_glyph(expr: &MeasureExpr) -> TokenGlyph {
             // Check if any item is itself a Group (nested group)
             let has_nested = g.items.iter().any(|i| matches!(i, MeasureExpr::Group(_)));
             TokenGlyph::Group {
-                // In drummark [N: ...] notation, N is the SPAN (normal duration),
+                // In drummark (N: ...) notation, N is the SPAN (normal duration),
                 // not the tuplet numerator. Items count is the actual note count.
                 // Without N (no ratio): span defaults to 1.
                 // For nested groups, match Lezer: treat outer as if span=items.len()
@@ -995,7 +995,7 @@ mod dynamic_test {
 
     #[test]
     fn normalizes_routed_and_group_dynamic_positions() {
-        let p = parser::Parser::new("time 5/4\nnote 1/4\ngrouping 2+3\n| @SD { @p d d } @BD { @p b b } @mp d [2: @f d d] |\n");
+        let p = parser::Parser::new("time 5/4\nnote 1/4\ngrouping 2+3\n| @SD { @p d d } @BD { @p b b } @mp d (2: @f d d) |\n");
         let doc = p.parse().unwrap();
         let score = normalize::normalize_document(&doc);
 
@@ -1018,7 +1018,7 @@ mod group_visual_test {
 
     #[test]
     fn implicit_pair_group_emits_sixteenth_visual_durations() {
-        let doc = parser::Parser::new("time 6/8\nnote 1/8\nSD | [ss] s s s |\n")
+        let doc = parser::Parser::new("time 6/8\nnote 1/8\nSD | (ss) s s s |\n")
             .parse()
             .unwrap();
         let score = normalize::normalize_document(&doc);

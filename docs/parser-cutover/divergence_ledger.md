@@ -5,8 +5,8 @@ This ledger records the final checked-in example-corpus divergences that were ac
 ## 2026-05-13
 
 ### 1. `docs/examples/groups.drum`
-- Observed difference: the Rust/WASM path parses the nested tuplet line `SD | - - [3: d [2: d d d] d] - - - |` structurally and reports only semantic grouping/timing errors. The Lezer path emits extra `Unknown token` diagnostics on the same line and fails to represent the nested group correctly.
-- Spec/rationale: nested groups are part of the grammar-owned surface syntax; they should be parsed structurally before timing validation. Emitting tokenization-style unknown-token errors for `[3:` / `[2:` is not spec-correct behavior.
+- Observed difference: the Rust/WASM path parses the nested tuplet line `SD | - - (3: d (2: d d d) d) - - - |` structurally and reports only semantic grouping/timing errors. The Lezer path emits extra `Unknown token` diagnostics on the same line and fails to represent the nested group correctly.
+- Spec/rationale: nested groups are part of the grammar-owned surface syntax; they should be parsed structurally before timing validation. Emitting tokenization-style unknown-token errors for `(3:` / `(2:` is not spec-correct behavior.
 - Disposition: `Lezer bug; WASM kept`
 
 ### 2. `docs/examples/repeats.drum`

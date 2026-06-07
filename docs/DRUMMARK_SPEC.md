@@ -248,8 +248,8 @@ Rules:
 Rhythmic groups use:
 
 ```txt
-[span: item1 item2 ...]
-[item1 item2 ...]
+(span: item1 item2 ...)
+(item1 item2 ...)
 ```
 
 Rules:
@@ -534,6 +534,7 @@ Rules:
 ### 12.2 Removed Or Rejected Syntax
 
 The following are not part of accepted current syntax:
+- legacy rhythmic-group form `[ ... ]` or `[N: ... ]`,
 - legacy bare routed-block form `TRACK { ... }`,
 - generic `@Identifier` directives outside the closed accepted directive families,
 - inline `@divisions:<N>` change syntax.
@@ -541,7 +542,7 @@ The following are not part of accepted current syntax:
 ## 13. Planned V1 Changes
 
 The following items are active plans and are not yet accepted normative behavior:
-- first-measure pickup / anacrusis: `docs/changes/active/2026-06-01-first-measure-pickup/`
+- first-measure pickup / anacrusis: `docs/changes/archive/2026/2026-06-01-first-measure-pickup/`
 - rehearsal / section marks: `docs/changes/active/2026-06-01-rehearsal-section-marks/`
 - modifier visual / export completion: `docs/changes/active/2026-06-01-modifier-visual-export-completion/`
 

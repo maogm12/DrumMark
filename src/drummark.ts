@@ -242,15 +242,15 @@ function readTrackToken(stream: StringStream, state: DslState): string | null {
     }
   }
 
-  if (stream.match("[")) {
+  if (stream.match("(")) {
     return "group-bracket";
   }
 
-  if (stream.match("]")) {
+  if (stream.match(")")) {
     return "group-bracket";
   }
 
-  // Group count (inside [N: ... ])
+  // Group count (inside (N: ... ))
   if (stream.match(/^\d+/)) {
     return "group-count";
   }

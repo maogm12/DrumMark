@@ -343,7 +343,7 @@ Verification:
 - Bug:
 - ADR:
 - PR:
-- Supersedes: `docs/changes/active/2026-06-01-first-measure-pickup/plan.md`
+- Supersedes: `docs/changes/archive/2026/2026-06-01-first-measure-pickup/plan.md`
 
 ## Revision Log
 

@@ -9,7 +9,7 @@ Plan file: `docs/changes/active/2026-06-02-wysiwyg-short-measures/plan.md`
 Status: pending plan review and human stamp before implementation.
 
 Notes:
-- This change supersedes `docs/changes/active/2026-06-01-first-measure-pickup/plan.md`.
+- This change supersedes `docs/changes/archive/2026/2026-06-01-first-measure-pickup/plan.md`.
 - No implementation may start until plan review is approved and the required spec-change human stamp is recorded.
 
 ### Plan Review Round 1

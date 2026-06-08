@@ -43,6 +43,14 @@ grouping 2+2
 `,
   },
   {
+    name: "rehearsal marks",
+    source: `time 4/4
+note 1/4
+
+HH | [A] x x x x | x [ A ] x x | x x x x [tail] |
+`,
+  },
+  {
     name: "multi-measure input",
     source: `time 4/4
 note 1/4
@@ -146,6 +154,12 @@ describe("parser/layout wasm semantic parity", () => {
       expect(countSceneComposite(scene, "hairpin")).toBeGreaterThan(0);
     }
 
+    const scoreHasRehearsal = score.measures.some((measure) => measure.rehearsalMark);
+    if (scoreHasRehearsal) {
+      expect(countSceneRole(scene, "rehearsalMark.text")).toBeGreaterThan(0);
+      expect(countSceneRole(scene, "rehearsalMark.box")).toBeGreaterThan(0);
+    }
+
     const scoreHasBeamedEvents = score.measures.some((measure) =>
       measure.events.some((event) => event.beam && event.beam !== "none"),
     );
@@ -179,5 +193,29 @@ SD | d d d d | d d d d |
     expect(score.measures).toHaveLength(2);
     expect(scene.pages.length).toBeGreaterThan(0);
     expect(sceneMeasures(scene)).toHaveLength(score.measures.length);
+  });
+
+  it("preserves rehearsal mark payloads and offsets through wasm normalization", () => {
+    const score = buildNormalizedScore(`time 4/4
+note 1/4
+
+HH | x [ A ] x x | x x x x [tail] |
+`);
+
+    expect(score.errors).toEqual([]);
+    expect(score.measures[0].rehearsalMark).toEqual({
+      text: " A ",
+      anchor: {
+        type: "measure-time",
+        offset: { numerator: 1, denominator: 3 },
+      },
+    });
+    expect(score.measures[1].rehearsalMark).toEqual({
+      text: "tail",
+      anchor: {
+        type: "measure-time",
+        offset: { numerator: 1, denominator: 1 },
+      },
+    });
   });
 });

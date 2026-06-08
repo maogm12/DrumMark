@@ -81,6 +81,14 @@ pub fn derive_render_score(score: &normalize::NormalizedScore) -> drummark_layou
                             at: render_fraction(dynamic.at),
                         })
                         .collect(),
+                    rehearsal_mark: measure.rehearsal_mark.as_ref().map(|mark| {
+                        drummark_layout::RehearsalMark {
+                            text: mark.text.clone(),
+                            anchor: drummark_layout::RehearsalAnchor {
+                                offset: render_fraction(mark.anchor.offset),
+                            },
+                        }
+                    }),
                     measure_repeat_slashes: measure.measure_repeat_slashes,
                     multi_rest_count: measure.multi_rest_count,
                     note_value: measure.note_value,
@@ -308,6 +316,7 @@ mod tests {
                     end_measure_index: 8,
                 }],
                 dynamics: vec![],
+                rehearsal_mark: None,
                 measure_repeat_slashes: Some(1),
                 multi_rest_count: None,
                 note_value: 8,

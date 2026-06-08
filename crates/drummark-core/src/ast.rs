@@ -77,6 +77,7 @@ pub enum MeasureExpr {
     Crescendo,
     Decrescendo,
     HairpinEnd,
+    RehearsalMark(String),
     Dynamic(DynamicLevel),
     NavMarker(String),
     NavJump(String),

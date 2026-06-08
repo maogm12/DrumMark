@@ -1,6 +1,6 @@
 use crate::metrics::{GlyphRole, TextRole};
 
-pub const RENDER_SCORE_VERSION: &str = "3";
+pub const RENDER_SCORE_VERSION: &str = "4";
 pub const LAYOUT_SCENE_VERSION: &str = "2";
 pub const CANONICAL_METRICS_VERSION: &str = "2026-05-13";
 
@@ -58,6 +58,7 @@ pub struct RenderMeasure {
     pub volta_indices: Option<Vec<u32>>,
     pub hairpins: Vec<HairpinSpan>,
     pub dynamics: Vec<DynamicMark>,
+    pub rehearsal_mark: Option<RehearsalMark>,
     pub measure_repeat_slashes: Option<u32>,
     pub multi_rest_count: Option<u32>,
     pub note_value: u32,
@@ -68,6 +69,17 @@ pub struct RenderMeasure {
 pub struct DynamicMark {
     pub level: DynamicLevel,
     pub at: Fraction,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RehearsalAnchor {
+    pub offset: Fraction,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RehearsalMark {
+    pub text: String,
+    pub anchor: RehearsalAnchor,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]

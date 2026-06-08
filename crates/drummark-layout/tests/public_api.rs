@@ -9,7 +9,7 @@ fn sample_fraction() -> Fraction {
 
 #[test]
 fn crate_root_public_api_smoke() {
-    assert_eq!(RENDER_SCORE_VERSION, "3");
+    assert_eq!(RENDER_SCORE_VERSION, "4");
     assert_eq!(LAYOUT_SCENE_VERSION, "2");
     assert!(!CANONICAL_METRICS_VERSION.is_empty());
 
@@ -62,6 +62,7 @@ fn crate_root_public_api_smoke() {
             level: DynamicLevel::Mf,
             at: sample_fraction(),
         }],
+        rehearsal_mark: None,
         measure_repeat_slashes: None,
         multi_rest_count: None,
         note_value: 8,

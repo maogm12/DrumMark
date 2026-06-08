@@ -50,6 +50,7 @@ pub enum TextRole {
     CountLabel,
     MeasureNumber,
     Dynamic,
+    RehearsalMark,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -486,6 +487,15 @@ pub fn canonical_text_metric(role: TextRole, staff_space_pt: f32) -> CanonicalTe
             line_height_pt: staff_space_pt * 1.5,
             average_advance_pt: staff_space_pt * 0.7,
             ascent_pt: staff_space_pt * 0.75,
+            descent_pt: staff_space_pt * -0.2,
+        },
+        TextRole::RehearsalMark => CanonicalTextMetric {
+            role,
+            font_family: "Academico",
+            font_size_pt: staff_space_pt * 1.15,
+            line_height_pt: staff_space_pt * 1.35,
+            average_advance_pt: staff_space_pt * 0.62,
+            ascent_pt: staff_space_pt * 0.7,
             descent_pt: staff_space_pt * -0.2,
         },
     }

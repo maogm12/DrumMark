@@ -196,6 +196,7 @@ pub fn build_layout_scene(score: &RenderScore, opts: &LayoutOptions) -> LayoutSc
     let mut item_counter = 0usize;
     let mapper = SlotMapper::new(opts.px_per_quarter);
     let expanded = expand_layout_data(score);
+    let mut deferred_rehearsals = Vec::new();
 
     let planned_systems = plan_scene_systems(&score.header, &expanded.measures, opts);
 
@@ -712,6 +713,15 @@ pub fn build_layout_scene(score: &RenderScore, opts: &LayoutOptions) -> LayoutSc
                 width: *mw,
                 top: s_top,
             });
+            if let Some(rehearsal_mark) = measure.measure.rehearsal_mark.clone() {
+                deferred_rehearsals.push(DeferredRehearsalMark {
+                    measure_id: measure_id.clone(),
+                    global_index: measure.global_index,
+                    top: s_top,
+                    actual_duration: measure.measure.actual_duration,
+                    rehearsal_mark,
+                });
+            }
             let right_repeat_is_shared_boundary = is_end_repeat_barline(right_barline)
                 && system
                     .measures
@@ -772,7 +782,12 @@ pub fn build_layout_scene(score: &RenderScore, opts: &LayoutOptions) -> LayoutSc
         &page.systems,
         &page_measures,
         &expanded.measures,
-        &score.header,
+    );
+    render_rehearsal_marks(
+        &mut post_sink,
+        &page.systems,
+        &page_measures,
+        &deferred_rehearsals,
     );
     for nav_spec in &deferred_navs {
         render_nav_markers(&mut post_sink, &mut post_composites, nav_spec);

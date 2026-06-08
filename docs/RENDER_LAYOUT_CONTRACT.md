@@ -218,6 +218,31 @@ The approved web runtime architecture separates parser startup from layout rende
 - layout WASM is loaded only when the layout renderer is invoked
 - VexFlow remains available as a lazy legacy renderer
 
+## Addendum: Rendered Rehearsal Marks
+
+Date: 2026-06-07
+Source change: `docs/changes/active/2026-06-01-rehearsal-section-marks/plan.md`
+Status: Accepted
+
+`RenderMeasure` may carry `rehearsal_mark: Option<RehearsalMark>`.
+
+`RehearsalMark` has:
+- `text: string`
+- `anchor: { offset: Fraction }`
+
+The render-facing anchor is a musical placement hint, not a source byte offset. `anchor.offset` is a simplified measure-local fraction measured from the start of the logical measure and interpreted against `actual_duration` for geometry. Absence means the measure has no rendered rehearsal mark. Serialized WASM JSON omits `rehearsal_mark` when it is `None`.
+
+The layout engine owns placement, stacking, collision avoidance, and boxed rehearsal-mark styling. Layout emits stable semantic scene roles:
+- `rehearsalMark.box`
+- `rehearsalMark.text`
+
+For v1, layout emits ordinary `Rect` and `TextRun` scene items for rehearsal marks and does not add a new serialized composite kind. Adapters may only draw the emitted `LayoutScene` items.
+
+When a rehearsal mark shares local space with existing system-top structural markings already owned by the current contract, layout applies this temporary narrow priority order:
+1. volta / ending brackets
+2. rehearsal marks
+3. segno, coda, fine, D.C., D.S., D.C. al Fine, D.C. al Coda, D.S. al Fine, D.S. al Coda, and To Coda symbols/text
+
 ### Package Boundaries
 
 Browser production code uses web packages only:

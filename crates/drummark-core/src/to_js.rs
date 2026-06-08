@@ -200,6 +200,10 @@ fn expr_to_js(e: &MeasureExpr) -> JsValue {
         MeasureExpr::HairpinEnd => {
             set(&obj, "kind", &JsValue::from_str("hairpinEnd"));
         }
+        MeasureExpr::RehearsalMark(text) => {
+            set(&obj, "kind", &JsValue::from_str("rehearsalMark"));
+            set(&obj, "text", &JsValue::from_str(text));
+        }
         MeasureExpr::Dynamic(level) => {
             set(&obj, "kind", &JsValue::from_str("dynamic"));
             set(&obj, "level", &JsValue::from_str(level.as_str()));

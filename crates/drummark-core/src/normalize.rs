@@ -1,7 +1,8 @@
 use crate::ast::DynamicLevel;
 use crate::ast::{Barline, Document, HeaderSection, MeasureExpr, SourceLocation, TrackLine};
 use crate::event::{
-    scan_dynamic_tokens, scan_hairpin_tokens, token_to_events, NormalizedEvent, TokenGlyph,
+    scan_dynamic_tokens, scan_hairpin_tokens, scan_rehearsal_mark_tokens, token_to_events,
+    NormalizedEvent, RehearsalMarkCandidate, TokenGlyph,
 };
 use crate::fraction::{calculate_token_weight_as_fraction, Fraction};
 use crate::hairpin::{close_dangling_hairpin, collect_track_hairpins, HairpinIntent, HairpinState};
@@ -139,6 +140,7 @@ pub struct NormalizedMeasure {
     pub volta: Option<Vec<u32>>,
     pub hairpins: Vec<HairpinIntent>,
     pub dynamics: Vec<DynamicIntent>,
+    pub rehearsal_mark: Option<RehearsalMark>,
     pub measure_repeat_slashes: Option<u32>,
     pub multi_rest_count: Option<u32>,
     pub note_value: u32,
@@ -149,6 +151,17 @@ pub struct NormalizedMeasure {
 pub struct DynamicIntent {
     pub level: DynamicLevel,
     pub at: Fraction,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RehearsalAnchor {
+    pub offset: Fraction,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RehearsalMark {
+    pub text: String,
+    pub anchor: RehearsalAnchor,
 }
 
 #[derive(Debug, Clone)]
@@ -242,6 +255,7 @@ fn to_token_glyph(expr: &MeasureExpr) -> TokenGlyph {
         MeasureExpr::Decrescendo => TokenGlyph::Decrescendo,
         MeasureExpr::HairpinEnd => TokenGlyph::HairpinEnd,
         MeasureExpr::Dynamic(level) => TokenGlyph::Dynamic(level.clone()),
+        MeasureExpr::RehearsalMark(text) => TokenGlyph::RehearsalMark(text.clone()),
         MeasureExpr::MeasureRepeat(_count) => TokenGlyph::Basic {
             value: "-".to_string(),
             dots: 0,
@@ -448,6 +462,7 @@ pub fn normalize_document(doc: &Document) -> NormalizedScore {
             let mut measure_events: Vec<NormalizedEvent> = Vec::new();
             let mut measure_hairpins: Vec<HairpinIntent> = Vec::new();
             let mut dynamic_candidates: Vec<DynamicIntent> = Vec::new();
+            let mut rehearsal_candidates: Vec<RehearsalMarkCandidate> = Vec::new();
             let mut barline: Option<String> = None;
             let mut closing_barline: Option<String> = None;
             let mut repeat_start = false;
@@ -678,6 +693,7 @@ pub fn normalize_document(doc: &Document) -> NormalizedScore {
                             at: candidate.at,
                         }),
                 );
+                rehearsal_candidates.extend(scan_rehearsal_mark_tokens(&tokens, divisions));
             }
 
             if actual_duration.is_zero() {
@@ -694,6 +710,8 @@ pub fn normalize_document(doc: &Document) -> NormalizedScore {
 
             let measure_dynamics =
                 merge_measure_dynamics(dynamic_candidates, &mut errors, global_index, 1);
+            let rehearsal_mark =
+                merge_measure_rehearsal_marks(rehearsal_candidates, &mut errors, global_index);
 
             // End-nav barline forcing
             if let Some(ref en) = end_nav {
@@ -732,6 +750,7 @@ pub fn normalize_document(doc: &Document) -> NormalizedScore {
                 volta: volta_indices,
                 hairpins: measure_hairpins,
                 dynamics: measure_dynamics,
+                rehearsal_mark,
                 measure_repeat_slashes,
                 multi_rest_count,
                 note_value: para_note_value,
@@ -914,6 +933,7 @@ fn token_weight(token: &TokenGlyph) -> Fraction {
         TokenGlyph::Crescendo
         | TokenGlyph::Decrescendo
         | TokenGlyph::HairpinEnd
+        | TokenGlyph::RehearsalMark(_)
         | TokenGlyph::Dynamic(_) => Fraction::zero(),
     }
 }
@@ -940,6 +960,40 @@ fn merge_measure_dynamics(
             continue;
         }
         merged.push(candidate);
+    }
+
+    merged
+}
+
+fn merge_measure_rehearsal_marks(
+    mut candidates: Vec<RehearsalMarkCandidate>,
+    errors: &mut Vec<String>,
+    global_index: u32,
+) -> Option<RehearsalMark> {
+    candidates.sort_by(|left, right| left.at.compare(right.at));
+    let mut merged: Option<RehearsalMark> = None;
+
+    for candidate in candidates {
+        if let Some(existing) = &merged {
+            if existing.text == candidate.text && existing.anchor.offset == candidate.at {
+                continue;
+            }
+            errors.push(format!(
+                "Conflicting rehearsal marks at bar {} between offsets {}/{} and {}/{}",
+                global_index + 1,
+                existing.anchor.offset.numerator,
+                existing.anchor.offset.denominator,
+                candidate.at.numerator,
+                candidate.at.denominator
+            ));
+            continue;
+        }
+        merged = Some(RehearsalMark {
+            text: candidate.text,
+            anchor: RehearsalAnchor {
+                offset: candidate.at,
+            },
+        });
     }
 
     merged
@@ -1007,6 +1061,97 @@ mod dynamic_test {
         assert_eq!(score.measures[0].dynamics[1].at, Fraction::new(2, 5));
         assert_eq!(score.measures[0].dynamics[2].level, DynamicLevel::F);
         assert_eq!(score.measures[0].dynamics[2].at, Fraction::new(3, 5));
+    }
+}
+
+#[cfg(test)]
+mod rehearsal_mark_test {
+    use crate::fraction::Fraction;
+    use crate::normalize;
+    use crate::parser;
+
+    #[test]
+    fn deduplicates_identical_rehearsal_marks_across_tracks() {
+        let doc = parser::Parser::new(
+            "time 4/4\nnote 1/4\nHH | [A] x x x x |\nSD | [A] d d d d |\n",
+        )
+        .parse()
+        .unwrap();
+        let score = normalize::normalize_document(&doc);
+
+        assert_eq!(score.errors, Vec::<String>::new());
+        let rehearsal = score.measures[0]
+            .rehearsal_mark
+            .as_ref()
+            .expect("expected rehearsal mark");
+        assert_eq!(rehearsal.text, "A");
+        assert_eq!(rehearsal.anchor.offset, Fraction::zero());
+    }
+
+    #[test]
+    fn preserves_literal_payload_and_timing_offsets() {
+        let doc = parser::Parser::new(
+            "time 4/4\nnote 1/4\nHH | x [ A ] x x | [] x x x x | [   ] x x x x |\n",
+        )
+        .parse()
+        .unwrap();
+        let score = normalize::normalize_document(&doc);
+
+        assert_eq!(score.errors, Vec::<String>::new());
+        let first = score.measures[0].rehearsal_mark.as_ref().unwrap();
+        assert_eq!(first.text, " A ");
+        assert_eq!(first.anchor.offset, Fraction::new(1, 3));
+        assert_eq!(score.measures[1].rehearsal_mark.as_ref().unwrap().text, "");
+        assert_eq!(score.measures[2].rehearsal_mark.as_ref().unwrap().text, "   ");
+    }
+
+    #[test]
+    fn rejects_conflicting_rehearsal_marks() {
+        let doc = parser::Parser::new(
+            "time 4/4\nnote 1/4\nHH | [A] x x x x |\nSD | x [A] d d d |\n",
+        )
+        .parse()
+        .unwrap();
+        let score = normalize::normalize_document(&doc);
+
+        assert!(score
+            .errors
+            .iter()
+            .any(|message| message.contains("Conflicting rehearsal marks at bar 1")));
+    }
+
+    #[test]
+    fn resolves_nested_routed_and_trailing_offsets() {
+        let doc = parser::Parser::new(
+            "time 5/4\nnote 1/4\n| @SD { d d [A] } @BD { b b } d [tail] |\n",
+        )
+        .parse()
+        .unwrap();
+        let score = normalize::normalize_document(&doc);
+
+        assert!(score
+            .errors
+            .iter()
+            .any(|message| message.contains("Conflicting rehearsal marks at bar 1")));
+        let doc = parser::Parser::new("time 4/4\nnote 1/4\n| x x x x [tail] |\n")
+            .parse()
+            .unwrap();
+        let score = normalize::normalize_document(&doc);
+        assert_eq!(score.errors, Vec::<String>::new());
+        let rehearsal = score.measures[0].rehearsal_mark.as_ref().unwrap();
+        assert_eq!(rehearsal.text, "tail");
+        assert_eq!(rehearsal.anchor.offset, Fraction::one());
+    }
+
+    #[test]
+    fn bare_rehearsal_mark_measure_stays_invalid() {
+        let doc = parser::Parser::new("time 4/4\nnote 1/4\n| [A] |\n")
+            .parse()
+            .unwrap();
+        let score = normalize::normalize_document(&doc);
+        assert!(score.errors.iter().any(|message| {
+            message.contains("Measure has no duration-bearing content")
+        }));
     }
 }
 
@@ -1258,6 +1403,7 @@ mod volta_test {
                 volta: None,
                 hairpins: vec![],
                 dynamics: vec![],
+                rehearsal_mark: None,
                 measure_repeat_slashes: None,
                 multi_rest_count: None,
                 note_value: 8,
@@ -1279,6 +1425,7 @@ mod volta_test {
                 volta: None,
                 hairpins: vec![],
                 dynamics: vec![],
+                rehearsal_mark: None,
                 measure_repeat_slashes: None,
                 multi_rest_count: None,
                 note_value: 8,
@@ -1300,6 +1447,7 @@ mod volta_test {
                 volta: None,
                 hairpins: vec![],
                 dynamics: vec![],
+                rehearsal_mark: None,
                 measure_repeat_slashes: None,
                 multi_rest_count: None,
                 note_value: 8,

@@ -62,6 +62,7 @@ pub fn text_role_name(role: TextRole) -> &'static str {
         TextRole::CountLabel => "countLabel",
         TextRole::MeasureNumber => "measureNumber",
         TextRole::Dynamic => "dynamic",
+        TextRole::RehearsalMark => "rehearsalMark",
     }
 }
 

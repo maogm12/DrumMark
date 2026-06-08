@@ -39,6 +39,12 @@ pub struct DynamicCandidate {
     pub at: Fraction,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RehearsalMarkCandidate {
+    pub text: String,
+    pub at: Fraction,
+}
+
 // ── Internal Token Types (mirrors MeasureExpr from parser) ───────
 
 #[derive(Debug, Clone)]
@@ -64,6 +70,7 @@ pub enum TokenGlyph {
         track: String,
         items: Vec<TokenGlyph>,
     },
+    RehearsalMark(String),
     Crescendo,
     Decrescendo,
     HairpinEnd,
@@ -266,6 +273,7 @@ pub fn token_to_events(
         TokenGlyph::Crescendo
         | TokenGlyph::Decrescendo
         | TokenGlyph::HairpinEnd
+        | TokenGlyph::RehearsalMark(_)
         | TokenGlyph::Dynamic(_) => {
             vec![]
         }
@@ -298,6 +306,7 @@ fn item_weight(token: &TokenGlyph) -> Fraction {
         TokenGlyph::Crescendo
         | TokenGlyph::Decrescendo
         | TokenGlyph::HairpinEnd
+        | TokenGlyph::RehearsalMark(_)
         | TokenGlyph::Dynamic(_) => Fraction::zero(),
     }
 }
@@ -374,6 +383,7 @@ pub fn scan_hairpin_tokens(
             TokenGlyph::HairpinEnd => {
                 results.push((position, None, Some(())));
             }
+            TokenGlyph::RehearsalMark(_) => {}
             TokenGlyph::Dynamic(_) => {}
             _ => {
                 let w = item_weight(token);
@@ -394,6 +404,21 @@ pub fn scan_hairpin_tokens(
 pub fn scan_dynamic_tokens(tokens: &[TokenGlyph], divisions: u32) -> Vec<DynamicCandidate> {
     let mut results = Vec::new();
     scan_dynamic_sequence(
+        tokens,
+        Fraction::zero(),
+        Fraction::new(divisions as u64, 1),
+        Fraction::new(divisions as u64, 1),
+        &mut results,
+    );
+    results
+}
+
+pub fn scan_rehearsal_mark_tokens(
+    tokens: &[TokenGlyph],
+    divisions: u32,
+) -> Vec<RehearsalMarkCandidate> {
+    let mut results = Vec::new();
+    scan_rehearsal_mark_sequence(
         tokens,
         Fraction::zero(),
         Fraction::new(divisions as u64, 1),
@@ -464,6 +489,85 @@ fn scan_dynamic_sequence(
             TokenGlyph::Group { items, .. } => {
                 let item_duration = duration.multiply(item_weight(token)).divide(total_weight);
                 scan_dynamic_sequence(
+                    items,
+                    current_start,
+                    item_duration,
+                    measure_duration,
+                    results,
+                );
+                current_start = current_start.add(item_duration);
+            }
+            TokenGlyph::Braced { .. } => unreachable!("braced clusters are handled above"),
+            _ => {
+                let item_duration = duration.multiply(item_weight(token)).divide(total_weight);
+                current_start = current_start.add(item_duration);
+            }
+        }
+        index += 1;
+    }
+}
+
+fn scan_rehearsal_mark_sequence(
+    tokens: &[TokenGlyph],
+    start: Fraction,
+    duration: Fraction,
+    measure_duration: Fraction,
+    results: &mut Vec<RehearsalMarkCandidate>,
+) {
+    let total_weight = sequence_total_weight(tokens);
+    if fractions_equal(total_weight, Fraction::zero()) {
+        for token in tokens {
+            if let TokenGlyph::RehearsalMark(text) = token {
+                results.push(RehearsalMarkCandidate {
+                    text: text.clone(),
+                    at: start.divide(measure_duration),
+                });
+            }
+        }
+        return;
+    }
+
+    let mut current_start = start;
+    let mut index = 0usize;
+    while index < tokens.len() {
+        if matches!(tokens[index], TokenGlyph::Braced { .. }) {
+            let cluster_start = index;
+            while index < tokens.len() && matches!(tokens[index], TokenGlyph::Braced { .. }) {
+                index += 1;
+            }
+            let cluster = &tokens[cluster_start..index];
+            let cluster_weight = cluster
+                .iter()
+                .map(item_weight)
+                .max_by(|a, b| a.compare(*b))
+                .unwrap_or(Fraction::zero());
+            let cluster_duration = duration.multiply(cluster_weight).divide(total_weight);
+            for token in cluster {
+                if let TokenGlyph::Braced { items, .. } = token {
+                    scan_rehearsal_mark_sequence(
+                        items,
+                        current_start,
+                        cluster_duration,
+                        measure_duration,
+                        results,
+                    );
+                }
+            }
+            current_start = current_start.add(cluster_duration);
+            continue;
+        }
+
+        let token = &tokens[index];
+        match token {
+            TokenGlyph::RehearsalMark(text) => {
+                results.push(RehearsalMarkCandidate {
+                    text: text.clone(),
+                    at: current_start.divide(measure_duration),
+                });
+            }
+            TokenGlyph::Group { items, .. } => {
+                let item_duration = duration.multiply(item_weight(token)).divide(total_weight);
+                scan_rehearsal_mark_sequence(
                     items,
                     current_start,
                     item_duration,

@@ -274,6 +274,15 @@ fn normalize_to_js(score: &normalize::NormalizedScore) -> JsValue {
             da.push(&obj.into());
         }
         set(&mo, "dynamics", &da.into());
+        if let Some(rehearsal_mark) = &m.rehearsal_mark {
+            let rehearsal = Object::new();
+            set(&rehearsal, "text", &JsValue::from_str(&rehearsal_mark.text));
+            let anchor = Object::new();
+            set(&anchor, "type", &JsValue::from_str("measure-time"));
+            set(&anchor, "offset", &frac_js(rehearsal_mark.anchor.offset));
+            set(&rehearsal, "anchor", &anchor.into());
+            set(&mo, "rehearsalMark", &rehearsal.into());
+        }
         // Events
         let eva = Array::new();
         for ev in &m.events {
@@ -341,6 +350,7 @@ fn normalize_to_js(score: &normalize::NormalizedScore) -> JsValue {
     obj.into()
 }
 
+#[cfg(feature = "parser-wasm")]
 fn frac_js(f: crate::fraction::Fraction) -> JsValue {
     let obj = js_sys::Object::new();
     set(&obj, "numerator", &JsValue::from_f64(f.numerator as f64));
@@ -535,6 +545,14 @@ fn render_score_to_js(score: &drummark_layout::RenderScore) -> JsValue {
             dynamics.push(&dynamic_obj.into());
         }
         set(&entry, "dynamics", &dynamics.into());
+        if let Some(rehearsal_mark) = &measure.rehearsal_mark {
+            let rehearsal = Object::new();
+            set(&rehearsal, "text", &JsValue::from_str(&rehearsal_mark.text));
+            let anchor = Object::new();
+            set(&anchor, "offset", &render_fraction_js(rehearsal_mark.anchor.offset));
+            set(&rehearsal, "anchor", &anchor.into());
+            set(&entry, "rehearsal_mark", &rehearsal.into());
+        }
         if let Some(count) = measure.measure_repeat_slashes {
             set(
                 &entry,

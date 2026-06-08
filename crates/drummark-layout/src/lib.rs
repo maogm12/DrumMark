@@ -65,7 +65,8 @@ use scene_builder::{GlyphItemSpec, LineItemSpec, SceneEmitSink, TextItemSpec};
 use scene_geometry::item_bounds;
 #[allow(unused_imports)] // `scene` pulls these in via `super::*`.
 use structural::spans::{
-    render_dynamic_marks, render_hairpin_fragments, render_nav_markers, DeferredNavMarker,
+    render_dynamic_marks, render_hairpin_fragments, render_nav_markers,
+    render_rehearsal_marks, DeferredNavMarker, DeferredRehearsalMark,
 };
 #[cfg(test)]
 use structural::spans::{volta_type_for_measure, VoltaSegmentType};
@@ -325,6 +326,7 @@ mod tests {
             volta_indices: None,
             hairpins: vec![],
             dynamics: vec![],
+            rehearsal_mark: None,
             measure_repeat_slashes: None,
             multi_rest_count: None,
             note_value: 1,
@@ -356,6 +358,7 @@ mod tests {
             volta_indices: None,
             hairpins: vec![],
             dynamics: vec![],
+            rehearsal_mark: None,
             measure_repeat_slashes: None,
             multi_rest_count: None,
             note_value: 2,
@@ -615,6 +618,7 @@ mod tests {
                         end_measure_index: 3,
                     }],
                     dynamics: vec![],
+                    rehearsal_mark: None,
                     measure_repeat_slashes: None,
                     multi_rest_count: None,
                     note_value: 8,
@@ -685,6 +689,7 @@ mod tests {
                     volta_indices: Some(vec![1]),
                     hairpins: vec![],
                     dynamics: vec![],
+                    rehearsal_mark: None,
                     measure_repeat_slashes: None,
                     multi_rest_count: None,
                     note_value: 8,
@@ -729,6 +734,7 @@ mod tests {
                     volta_indices: Some(vec![1]),
                     hairpins: vec![],
                     dynamics: vec![],
+                    rehearsal_mark: None,
                     measure_repeat_slashes: None,
                     multi_rest_count: None,
                     note_value: 8,
@@ -773,6 +779,7 @@ mod tests {
                     volta_indices: Some(vec![1]),
                     hairpins: vec![],
                     dynamics: vec![],
+                    rehearsal_mark: None,
                     measure_repeat_slashes: None,
                     multi_rest_count: None,
                     note_value: 8,
@@ -838,6 +845,7 @@ mod tests {
             volta_indices: None,
             hairpins: vec![],
             dynamics: vec![],
+            rehearsal_mark: None,
             measure_repeat_slashes: None,
             multi_rest_count: None,
             note_value: 8,
@@ -888,10 +896,87 @@ mod tests {
         line
     }
 
+    fn text_for_role<'a>(page: &'a ScenePage, role: &str) -> &'a TextRun {
+        let item = page_all_items(page)
+            .find(|item| item.role == role)
+            .unwrap_or_else(|| panic!("expected {role} text item"));
+        let ScenePrimitive::TextRun(text) = &item.primitive else {
+            panic!("expected {role} to be a text run");
+        };
+        text
+    }
+
+    fn rect_for_role<'a>(page: &'a ScenePage, role: &str) -> &'a RectShape {
+        let item = page_all_items(page)
+            .find(|item| item.role == role)
+            .unwrap_or_else(|| panic!("expected {role} rect item"));
+        let ScenePrimitive::Rect(rect) = &item.primitive else {
+            panic!("expected {role} to be a rect");
+        };
+        rect
+    }
+
     fn hairpin_center_y(page: &ScenePage) -> f32 {
         let top = line_for_role(page, "hairpin-top");
         let bottom = line_for_role(page, "hairpin-bottom");
         (top.y1_pt + top.y2_pt + bottom.y1_pt + bottom.y2_pt) / 4.0
+    }
+
+    #[test]
+    fn test_boxed_rehearsal_mark_renders_with_measure_fraction() {
+        let mut measure = regular_measure(0, 0, 4);
+        measure.rehearsal_mark = Some(RehearsalMark {
+            text: "A".into(),
+            anchor: RehearsalAnchor {
+                offset: Fraction {
+                    numerator: 1,
+                    denominator: 2,
+                },
+            },
+        });
+        let scene = build_layout_scene(&simple_layout_score(vec![measure]), &LayoutOptions::default());
+        let page = &scene.pages[0];
+        let text = text_for_role(page, "rehearsalMark.text");
+        let rect = rect_for_role(page, "rehearsalMark.box");
+        let item = page_all_items(page)
+            .find(|item| item.role == "rehearsalMark.text")
+            .expect("rehearsal text item");
+
+        assert_eq!(text.text, "A");
+        assert!(rect.width_pt > 0.0);
+        assert_eq!(
+            item.measure_local_fraction,
+            Some(Fraction {
+                numerator: 1,
+                denominator: 2,
+            })
+        );
+    }
+
+    #[test]
+    fn test_navigation_yields_above_rehearsal_mark_at_same_anchor() {
+        let mut measure = regular_measure(0, 0, 4);
+        measure.start_nav = Some(NavMarker::Segno);
+        measure.rehearsal_mark = Some(RehearsalMark {
+            text: "A".into(),
+            anchor: RehearsalAnchor {
+                offset: Fraction {
+                    numerator: 0,
+                    denominator: 1,
+                },
+            },
+        });
+        let scene = build_layout_scene(&simple_layout_score(vec![measure]), &LayoutOptions::default());
+        let page = &scene.pages[0];
+        let nav = page_all_items(page)
+            .find(|item| item.role == "nav-start")
+            .expect("nav item");
+        let ScenePrimitive::GlyphRun(nav_glyph) = &nav.primitive else {
+            panic!("expected nav glyph");
+        };
+        let rehearsal = text_for_role(page, "rehearsalMark.text");
+
+        assert!(nav_glyph.y_pt < rehearsal.y_pt);
     }
 
     #[test]
@@ -1448,6 +1533,7 @@ mod tests {
                 volta_indices: None,
                 hairpins: vec![],
                 dynamics: vec![],
+                rehearsal_mark: None,
                 measure_repeat_slashes: None,
                 multi_rest_count: None,
                 note_value: 8,
@@ -1951,6 +2037,7 @@ mod tests {
             volta_indices: None,
             hairpins: vec![],
             dynamics: vec![],
+            rehearsal_mark: None,
             measure_repeat_slashes: None,
             multi_rest_count: None,
             note_value: 8,
@@ -2012,6 +2099,7 @@ mod tests {
                 volta_indices: None,
                 hairpins: vec![],
                 dynamics: vec![],
+                rehearsal_mark: None,
                 measure_repeat_slashes: None,
                 multi_rest_count: None,
                 note_value: 8,
@@ -2196,6 +2284,7 @@ mod tests {
             volta_indices: None,
             hairpins: vec![],
             dynamics: vec![],
+            rehearsal_mark: None,
             measure_repeat_slashes: None,
             multi_rest_count: None,
             note_value: 8,
@@ -2268,6 +2357,7 @@ mod tests {
             volta_indices: None,
             hairpins: vec![],
             dynamics: vec![],
+            rehearsal_mark: None,
             measure_repeat_slashes: None,
             multi_rest_count: None,
             note_value: 4,
@@ -2300,6 +2390,7 @@ mod tests {
             volta_indices: None,
             hairpins: vec![],
             dynamics: vec![],
+            rehearsal_mark: None,
             measure_repeat_slashes: None,
             multi_rest_count: None,
             note_value: 4,
@@ -2487,6 +2578,7 @@ mod tests {
             volta_indices: None,
             hairpins: vec![],
             dynamics: vec![],
+            rehearsal_mark: None,
             measure_repeat_slashes: None,
             multi_rest_count: None,
             note_value: 8,
@@ -2584,6 +2676,7 @@ mod tests {
             volta_indices: None,
             hairpins: vec![],
             dynamics: vec![],
+            rehearsal_mark: None,
             measure_repeat_slashes: None,
             multi_rest_count: None,
             note_value: 8,
@@ -2663,6 +2756,7 @@ mod tests {
             volta_indices: None,
             hairpins: vec![],
             dynamics: vec![],
+            rehearsal_mark: None,
             measure_repeat_slashes: None,
             multi_rest_count: None,
             note_value: 8,
@@ -2727,6 +2821,7 @@ mod tests {
             volta_indices: None,
             hairpins: vec![],
             dynamics: vec![],
+            rehearsal_mark: None,
             measure_repeat_slashes: None,
             multi_rest_count: None,
             note_value: 4,
@@ -2791,6 +2886,7 @@ mod tests {
             volta_indices: None,
             hairpins: vec![],
             dynamics: vec![],
+            rehearsal_mark: None,
             measure_repeat_slashes: None,
             multi_rest_count: None,
             note_value: 4,
@@ -2938,6 +3034,7 @@ mod tests {
                 volta_indices: None,
                 hairpins: vec![],
                 dynamics: vec![],
+                rehearsal_mark: None,
                 measure_repeat_slashes: None,
                 multi_rest_count: None,
                 note_value: 8,
@@ -3179,6 +3276,7 @@ mod tests {
             volta_indices: None,
             hairpins: vec![],
             dynamics: vec![],
+            rehearsal_mark: None,
             measure_repeat_slashes: None,
             multi_rest_count: None,
             note_value: 8,
@@ -3365,6 +3463,7 @@ mod tests {
             volta_indices: None,
             hairpins: vec![],
             dynamics: vec![],
+            rehearsal_mark: None,
             measure_repeat_slashes: None,
             multi_rest_count: None,
             note_value: 8,
@@ -4101,6 +4200,7 @@ mod tests {
             volta_indices: None,
             hairpins: vec![],
             dynamics: vec![],
+            rehearsal_mark: None,
             measure_repeat_slashes: None,
             multi_rest_count: None,
             note_value: 8,
@@ -4210,6 +4310,7 @@ mod tests {
             volta_indices: None,
             hairpins: vec![],
             dynamics: vec![],
+            rehearsal_mark: None,
             measure_repeat_slashes: None,
             multi_rest_count: None,
             note_value: 8,
@@ -4304,6 +4405,7 @@ mod tests {
             volta_indices: None,
             hairpins: vec![],
             dynamics: vec![],
+            rehearsal_mark: None,
             measure_repeat_slashes: None,
             multi_rest_count: None,
             note_value: 8,
@@ -4421,6 +4523,7 @@ mod tests {
             volta_indices: None,
             hairpins: vec![],
             dynamics: vec![],
+            rehearsal_mark: None,
             measure_repeat_slashes: None,
             multi_rest_count: None,
             note_value: 8,
@@ -4528,6 +4631,7 @@ mod tests {
             volta_indices: None,
             hairpins: vec![],
             dynamics: vec![],
+            rehearsal_mark: None,
             measure_repeat_slashes: None,
             multi_rest_count: None,
             note_value: 4,
@@ -4779,6 +4883,7 @@ mod tests {
             volta_indices: None,
             hairpins: vec![],
             dynamics: vec![],
+            rehearsal_mark: None,
             measure_repeat_slashes: None,
             multi_rest_count: None,
             note_value: 8,
@@ -4948,6 +5053,7 @@ mod tests {
             volta_indices: None,
             hairpins: vec![],
             dynamics: vec![],
+            rehearsal_mark: None,
             measure_repeat_slashes: None,
             multi_rest_count: None,
             note_value: 8,
@@ -5074,6 +5180,7 @@ mod tests {
                 volta_indices: None,
                 hairpins: vec![],
                 dynamics: vec![],
+                rehearsal_mark: None,
                 measure_repeat_slashes: None,
                 multi_rest_count: None,
                 note_value: 8,
@@ -5212,6 +5319,7 @@ mod tests {
                 volta_indices: None,
                 hairpins: vec![],
                 dynamics: vec![],
+                rehearsal_mark: None,
                 measure_repeat_slashes: None,
                 multi_rest_count: None,
                 note_value: 8,
@@ -5307,6 +5415,7 @@ mod tests {
             volta_indices: None,
             hairpins: vec![],
             dynamics: vec![],
+            rehearsal_mark: None,
             measure_repeat_slashes: None,
             multi_rest_count: None,
             note_value: 8,
@@ -5415,6 +5524,7 @@ fn test_place_notes() {
         volta_indices: None,
         hairpins: vec![],
         dynamics: vec![],
+        rehearsal_mark: None,
         measure_repeat_slashes: None,
         multi_rest_count: None,
         note_value: 8,
@@ -5490,6 +5600,7 @@ fn test_barlines() {
         volta_indices: None,
         hairpins: vec![],
         dynamics: vec![],
+        rehearsal_mark: None,
         measure_repeat_slashes: None,
         multi_rest_count: None,
         note_value: 8,
@@ -5558,6 +5669,7 @@ fn test_contract_scene_smoke() {
             volta_indices: None,
             hairpins: vec![],
             dynamics: vec![],
+            rehearsal_mark: None,
             measure_repeat_slashes: None,
             multi_rest_count: None,
             note_value: 8,
@@ -5785,6 +5897,7 @@ fn test_tempo_anchor_uses_left_margin_single_gap() {
                 volta_indices: None,
                 hairpins: vec![],
                 dynamics: vec![],
+                rehearsal_mark: None,
                 measure_repeat_slashes: None,
                 multi_rest_count: None,
                 note_value: 8,
@@ -6255,6 +6368,7 @@ fn test_system_box_orchestrator_outputs_multiple_pages_for_long_scores() {
             volta_indices: None,
             hairpins: vec![],
             dynamics: vec![],
+            rehearsal_mark: None,
             measure_repeat_slashes: None,
             multi_rest_count: None,
             note_value: 4,
@@ -6325,6 +6439,7 @@ fn test_volta_composites_are_emitted() {
                 volta_indices: Some(vec![1]),
                 hairpins: vec![],
                 dynamics: vec![],
+                rehearsal_mark: None,
                 measure_repeat_slashes: None,
                 multi_rest_count: None,
                 note_value: 8,
@@ -6346,6 +6461,7 @@ fn test_volta_composites_are_emitted() {
                 volta_indices: Some(vec![1]),
                 hairpins: vec![],
                 dynamics: vec![],
+                rehearsal_mark: None,
                 measure_repeat_slashes: None,
                 multi_rest_count: None,
                 note_value: 8,
@@ -6413,6 +6529,7 @@ fn test_adjacent_voltas_share_y_and_positive_offset_moves_up() {
         volta_indices: Some(vec![volta]),
         hairpins: vec![],
         dynamics: vec![],
+        rehearsal_mark: None,
         measure_repeat_slashes: None,
         multi_rest_count: None,
         note_value: 4,
@@ -6523,6 +6640,7 @@ fn test_two_bar_measure_repeat_expands_into_two_display_measures() {
                 volta_indices: None,
                 hairpins: vec![],
                 dynamics: vec![],
+                rehearsal_mark: None,
                 measure_repeat_slashes: None,
                 multi_rest_count: None,
                 note_value: 8,
@@ -6544,6 +6662,7 @@ fn test_two_bar_measure_repeat_expands_into_two_display_measures() {
                 volta_indices: None,
                 hairpins: vec![],
                 dynamics: vec![],
+                rehearsal_mark: None,
                 measure_repeat_slashes: Some(2),
                 multi_rest_count: None,
                 note_value: 8,
@@ -6625,6 +6744,7 @@ fn test_structural_composites_are_emitted() {
                     end_measure_index: 1,
                 }],
                 dynamics: vec![],
+                rehearsal_mark: None,
                 measure_repeat_slashes: Some(2),
                 multi_rest_count: None,
                 note_value: 8,
@@ -6646,6 +6766,7 @@ fn test_structural_composites_are_emitted() {
                 volta_indices: None,
                 hairpins: vec![],
                 dynamics: vec![],
+                rehearsal_mark: None,
                 measure_repeat_slashes: None,
                 multi_rest_count: Some(4),
                 note_value: 8,
@@ -6727,6 +6848,7 @@ fn test_system_boundaries_align_with_staff_edges() {
             volta_indices: None,
             hairpins: vec![],
             dynamics: vec![],
+            rehearsal_mark: None,
             measure_repeat_slashes: None,
             multi_rest_count: None,
             note_value: 8,
@@ -6816,6 +6938,7 @@ fn test_first_measure_repeat_start_sits_after_system_preamble() {
             volta_indices: None,
             hairpins: vec![],
             dynamics: vec![],
+            rehearsal_mark: None,
             measure_repeat_slashes: None,
             multi_rest_count: None,
             note_value: 8,
@@ -6923,6 +7046,7 @@ fn edge_padding_measure(index: u32, event_count: u32) -> RenderMeasure {
         volta_indices: None,
         hairpins: vec![],
         dynamics: vec![],
+        rehearsal_mark: None,
         measure_repeat_slashes: None,
         multi_rest_count: None,
         note_value: 8,
@@ -7162,6 +7286,7 @@ fn test_adjacent_repeat_end_start_uses_smufl_right_left_glyph() {
             volta_indices: None,
             hairpins: vec![],
             dynamics: vec![],
+            rehearsal_mark: None,
             measure_repeat_slashes: None,
             multi_rest_count: None,
             note_value: 4,
@@ -7259,6 +7384,7 @@ fn test_later_system_uses_smaller_start_zone_than_first_system() {
             volta_indices: None,
             hairpins: vec![],
             dynamics: vec![],
+            rehearsal_mark: None,
             measure_repeat_slashes: None,
             multi_rest_count: None,
             note_value: 8,
@@ -7344,6 +7470,7 @@ fn test_later_system_measure_number_uses_absolute_measure_index() {
                 volta_indices: None,
                 hairpins: vec![],
                 dynamics: vec![],
+                rehearsal_mark: None,
                 measure_repeat_slashes: None,
                 multi_rest_count: None,
                 note_value: 8,
@@ -7365,6 +7492,7 @@ fn test_later_system_measure_number_uses_absolute_measure_index() {
                 volta_indices: None,
                 hairpins: vec![],
                 dynamics: vec![],
+                rehearsal_mark: None,
                 measure_repeat_slashes: None,
                 multi_rest_count: None,
                 note_value: 8,
@@ -7443,6 +7571,7 @@ fn test_hide_measure_number_omits_system_labels() {
                 volta_indices: None,
                 hairpins: vec![],
                 dynamics: vec![],
+                rehearsal_mark: None,
                 measure_repeat_slashes: None,
                 multi_rest_count: None,
                 note_value: 8,
@@ -7524,6 +7653,7 @@ fn test_down_stem_keeps_notehead_on_right_and_flag_on_stem_right_side() {
             volta_indices: None,
             hairpins: vec![],
             dynamics: vec![],
+            rehearsal_mark: None,
             measure_repeat_slashes: None,
             multi_rest_count: None,
             note_value: 8,
@@ -7625,6 +7755,7 @@ fn test_crash_maps_to_top_ledger_line() {
             volta_indices: None,
             hairpins: vec![],
             dynamics: vec![],
+            rehearsal_mark: None,
             measure_repeat_slashes: None,
             multi_rest_count: None,
             note_value: 8,
@@ -7746,6 +7877,7 @@ fn test_bottom_ledger_lines_render_for_notes_below_staff() {
             volta_indices: None,
             hairpins: vec![],
             dynamics: vec![],
+            rehearsal_mark: None,
             measure_repeat_slashes: None,
             multi_rest_count: None,
             note_value: 8,
@@ -7838,6 +7970,7 @@ fn test_flam_renders_grace_notehead_stem_and_slash() {
             volta_indices: None,
             hairpins: vec![],
             dynamics: vec![],
+            rehearsal_mark: None,
             measure_repeat_slashes: None,
             multi_rest_count: None,
             note_value: 8,
@@ -8092,6 +8225,7 @@ fn grace_modifier_score(modifier: &str, visual_duration: Fraction) -> RenderScor
             volta_indices: None,
             hairpins: vec![],
             dynamics: vec![],
+            rehearsal_mark: None,
             measure_repeat_slashes: None,
             multi_rest_count: None,
             note_value: 8,

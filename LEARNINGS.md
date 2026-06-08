@@ -472,3 +472,13 @@ When an older note conflicts with this file, treat this file plus the active spe
 
 - For authored short measures, naive `sum(token_weight(..))` over a measure line is wrong when adjacent routed/braced blocks are simultaneous. `crates/drummark-core/src/event.rs::sequence_total_weight()` already models those clusters by taking the max cluster weight instead of summing every routed block; normalization should reuse that when deriving measure duration.
 - Pure navigation-only measures now fail normalization unless they include explicit duration-bearing content such as `-` rests. Any parity fixture that previously used `| @dc |` or similar must be updated to something like `| @dc - - - - |` under the active note unit.
+
+## 2026-06-05 Group Delimiter Investigation
+
+- Rhythmic groups are currently a first-class grammar surface, not a cosmetic token choice: the active spec teaches `[span: ...]` / `[...]`, `parser.rs` has a dedicated `parse_group()` that consumes `LBracket` / `RBracket`, and grouped-content tests exist in both parser and normalization suites.
+- Angle brackets are a poor replacement candidate for rhythmic groups in this DSL because the active spec already uses angle-bracket notation when describing `grouping <a+b+c+...>` semantics. Reusing `<>` for authored group delimiters would make the language visually and pedagogically noisier.
+
+## 2026-06-07 Rehearsal Mark Literal Payload Scanning
+
+- Rehearsal-mark payloads cannot be reconstructed by consuming normal raw tokens one by one, because the existing lexer correctly tokenizes `#...` as a comment and will swallow a closing `]` that appears later on the same line.
+- In `crates/drummark-core/src/parser.rs`, the safe way to preserve literal bracket payload text is: consume `[` normally, inspect `lexer.remainder()` byte-by-byte for `]` / nested `[` / newline, then advance the Logos cursor with `lexer.bump(...)`. This keeps `#` literal inside rehearsal marks without changing global comment lexing.

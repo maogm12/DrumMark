@@ -195,6 +195,14 @@ export type DynamicIntent = {
   at: Fraction;
 };
 
+export type RehearsalMark = {
+  text: string;
+  anchor: {
+    type: "measure-time";
+    offset: Fraction;
+  };
+};
+
 export type NormalizedEvent = {
   track: TrackName;
   paragraphIndex: number;
@@ -232,6 +240,7 @@ export type NormalizedMeasure = {
   multiRestCount?: number;
   hairpins?: HairpinIntent[];
   dynamics: DynamicIntent[];
+  rehearsalMark?: RehearsalMark;
   noteValue: number;
 };
 

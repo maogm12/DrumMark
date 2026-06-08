@@ -866,6 +866,7 @@ impl<'a> Parser<'a> {
                     .unwrap_or(1);
                 Ok(MeasureExpr::InlineRepeat(times))
             }
+            Some(Token::LBracket) => self.parse_rehearsal_mark(),
             Some(Token::LParen) => self.parse_group(),
             Some(Token::LBrace) => {
                 let content = self.parse_inline_braced_block()?;
@@ -933,6 +934,43 @@ impl<'a> Parser<'a> {
             }
         }
         Ok(MeasureExpr::Dynamic(level))
+    }
+
+    fn parse_rehearsal_mark(&mut self) -> Result<MeasureExpr, ParseError> {
+        self.expect(Token::LBracket)?;
+        let payload_start = self.last_end;
+        let remainder = self.lexer.remainder();
+        let mut closing_len: Option<usize> = None;
+
+        for (byte_index, ch) in remainder.char_indices() {
+            match ch {
+                ']' => {
+                    closing_len = Some(byte_index);
+                    break;
+                }
+                '[' => {
+                    return Err(self.error_at(
+                        payload_start + byte_index,
+                        "nested `[` is not allowed inside rehearsal marks",
+                    ));
+                }
+                '\n' => {
+                    return Err(self.error_at(
+                        payload_start + byte_index,
+                        "unclosed rehearsal mark",
+                    ));
+                }
+                _ => {}
+            }
+        }
+
+        let payload_len = closing_len
+            .ok_or_else(|| self.error_at(payload_start, "unclosed rehearsal mark"))?;
+        let payload = self.source[payload_start..payload_start + payload_len].to_string();
+        self.lexer.bump(payload_len + 1);
+        self.last_start = payload_start + payload_len;
+        self.last_end = self.last_start + 1;
+        Ok(MeasureExpr::RehearsalMark(payload))
     }
 
     fn is_dynamic_delimiter(ch: char) -> bool {
@@ -1601,19 +1639,42 @@ mod tests {
     }
 
     #[test]
-    fn test_legacy_bracket_group_is_invalid_without_migration_hint() {
-        let errors = parse_err("SD | [x d b] |\n");
-        assert!(!errors.is_empty());
-        assert!(
-            errors
-                .iter()
-                .any(|error| error.message.contains("unexpected token: LBracket"))
+    fn test_rehearsal_marks_parse_literal_payloads() {
+        let doc =
+            parse_ok("time 4/4\nnote 1/8\n| [A] [Verse] [x d b] [2: x x] [A:B] [  A  ] [] [   ] |\n");
+        let tokens = &doc.paragraphs[0].lines[0].measures[0].tokens;
+        let payloads = tokens
+            .iter()
+            .map(|token| match token {
+                MeasureExpr::RehearsalMark(text) => text.as_str(),
+                _ => panic!("expected rehearsal mark"),
+            })
+            .collect::<Vec<_>>();
+        assert_eq!(
+            payloads,
+            vec!["A", "Verse", "x d b", "2: x x", "A:B", "  A  ", "", "   "]
         );
-        assert!(
-            errors
-                .iter()
-                .all(|error| !error.message.contains("migrat") && !error.message.contains("()"))
-        );
+    }
+
+    #[test]
+    fn test_rehearsal_marks_preserve_comments_and_trailing_position() {
+        let doc = parse_ok("time 4/4\nnote 1/4\n| x x x x [#literal] |\n");
+        let tokens = &doc.paragraphs[0].lines[0].measures[0].tokens;
+        assert!(matches!(
+            tokens.last(),
+            Some(MeasureExpr::RehearsalMark(text)) if text == "#literal"
+        ));
+    }
+
+    #[test]
+    fn test_rehearsal_mark_parse_errors() {
+        for src in [
+            "time 4/4\nnote 1/4\n| [A |\n",
+            "time 4/4\nnote 1/4\n| [A[B] |\n",
+            "time 4/4\nnote 1/4\n| [A\n] |\n",
+        ] {
+            assert!(!parse_err(src).is_empty(), "expected parse error for {src:?}");
+        }
     }
 
     #[test]

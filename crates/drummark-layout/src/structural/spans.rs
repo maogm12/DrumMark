@@ -13,7 +13,7 @@ use crate::planning::{
     measure_left_pad, rendered_glyph_width, volta_label_baseline_gap_pt, volta_line_height_pt,
     volta_skyline_gap_pt, volta_text_size_pt,
 };
-use crate::scene_builder::{GlyphItemSpec, LineItemSpec, SceneEmitSink, TextItemSpec};
+use crate::scene_builder::{GlyphItemSpec, LineItemSpec, RectItemSpec, SceneEmitSink, TextItemSpec};
 use crate::structural::skyline::{
     bottom_skyline_sample, bottom_skyline_sample_including_hairpins, skyline_top_for_range,
     top_skyline_sample, top_skyline_sample_optional,
@@ -507,6 +507,101 @@ pub(crate) struct DeferredNavMarker {
     pub(crate) top: f32,
 }
 
+#[derive(Clone)]
+pub(crate) struct DeferredRehearsalMark {
+    pub(crate) measure_id: String,
+    pub(crate) global_index: u32,
+    pub(crate) top: f32,
+    pub(crate) actual_duration: Fraction,
+    pub(crate) rehearsal_mark: RehearsalMark,
+}
+
+const REHEARSAL_MARK_GAP_PT: f32 = 4.0;
+const REHEARSAL_MARK_PADDING_X_PT: f32 = 4.0;
+const REHEARSAL_MARK_PADDING_Y_PT: f32 = 2.0;
+const REHEARSAL_MARK_MIN_INSET_PT: f32 = 4.0;
+
+pub(crate) fn render_rehearsal_marks(
+    sink: &mut SceneEmitSink<'_>,
+    systems: &[SceneSystem],
+    page_measures: &[SceneMeasure],
+    specs: &[DeferredRehearsalMark],
+) {
+    let metric = canonical_text_metric(TextRole::RehearsalMark, sink.staff_space_pt);
+    for spec in specs {
+        let Some(scene_measure) = page_measures
+            .iter()
+            .find(|measure| measure.global_index == spec.global_index)
+        else {
+            continue;
+        };
+        let text_width =
+            canonical_text_width(TextRole::RehearsalMark, &spec.rehearsal_mark.text, sink.staff_space_pt);
+        let box_width = text_width + REHEARSAL_MARK_PADDING_X_PT * 2.0;
+        let box_height = metric.line_height_pt + REHEARSAL_MARK_PADDING_Y_PT * 2.0;
+        let anchor_x = measure_anchor_x(
+            scene_measure,
+            spec.actual_duration,
+            spec.rehearsal_mark.anchor.offset,
+        );
+        let left_bound = scene_measure.x_pt + REHEARSAL_MARK_MIN_INSET_PT;
+        let right_bound = scene_measure.x_pt + scene_measure.width_pt - REHEARSAL_MARK_MIN_INSET_PT;
+        let min_center = left_bound + box_width * 0.5;
+        let max_center = right_bound - box_width * 0.5;
+        let center_x = if min_center <= max_center {
+            anchor_x.clamp(min_center, max_center)
+        } else {
+            (left_bound + right_bound) * 0.5
+        };
+
+        let mut structural_items = system_items_for_measure(systems, scene_measure).to_vec();
+        structural_items.extend(
+            sink.items()
+                .iter()
+                .filter(|item| {
+                    item.measure_id.as_deref().is_some_and(|measure_id| {
+                        measure_belongs_to_system(systems, measure_id, &scene_measure.system_id)
+                    })
+                })
+                .cloned(),
+        );
+        let occupied_top = top_skyline_sample_optional(
+            &structural_items,
+            std::slice::from_ref(scene_measure),
+            center_x - box_width * 0.5,
+            center_x + box_width * 0.5,
+            sink.staff_space_pt,
+        )
+        .unwrap_or(spec.top);
+        let box_y = occupied_top - REHEARSAL_MARK_GAP_PT - box_height;
+        sink.push_rect_item(RectItemSpec {
+            measure_id: Some(spec.measure_id.as_str()),
+            role: "rehearsalMark.box",
+            x: center_x - box_width * 0.5,
+            y: box_y,
+            width: box_width,
+            height: box_height,
+            fill: "#fff",
+            stroke: Some("#333"),
+            stroke_width: Some(crate::ENGRAVING_STROKE_WIDTH_PT),
+        });
+        let text_id = sink.push_text_item(TextItemSpec {
+            measure_id: Some(spec.measure_id.as_str()),
+            role: "rehearsalMark.text",
+            x: center_x,
+            y: box_y + REHEARSAL_MARK_PADDING_Y_PT + metric.ascent_pt,
+            text_role: TextRole::RehearsalMark,
+            text: spec.rehearsal_mark.text.clone(),
+            font_family: metric.font_family,
+            font_size_pt: metric.font_size_pt,
+            fill: "#333",
+            text_anchor: Some("middle"),
+            font_weight: Some("bold"),
+        });
+        sink.set_measure_local_fraction(&text_id, spec.rehearsal_mark.anchor.offset);
+    }
+}
+
 pub(crate) fn render_nav_markers(
     sink: &mut SceneEmitSink<'_>,
     composites: &mut Vec<SceneComposite>,
@@ -813,7 +908,6 @@ pub(crate) fn render_dynamic_marks(
     systems: &[SceneSystem],
     page_measures: &[SceneMeasure],
     measures: &[DisplayMeasure<'_>],
-    header: &RenderHeader,
 ) {
     let metric = canonical_text_metric(TextRole::Dynamic, sink.staff_space_pt);
     for display_measure in measures {
@@ -829,7 +923,8 @@ pub(crate) fn render_dynamic_marks(
         for dynamic in &display_measure.measure.dynamics {
             let text = dynamic.level.as_str().to_string();
             let text_width = canonical_text_width(TextRole::Dynamic, &text, sink.staff_space_pt);
-            let anchor_x = dynamic_anchor_x(scene_measure, display_measure.measure, header, dynamic.at);
+            let anchor_x =
+                measure_anchor_x(scene_measure, display_measure.measure.actual_duration, dynamic.at);
             let left_bound = scene_measure.x_pt + DYNAMIC_EDGE_PADDING_PT;
             let right_bound = scene_measure.x_pt + scene_measure.width_pt - DYNAMIC_EDGE_PADDING_PT;
             let half_width = text_width * 0.5;
@@ -917,13 +1012,12 @@ fn measure_belongs_to_system(systems: &[SceneSystem], measure_id: &str, system_i
     })
 }
 
-fn dynamic_anchor_x(
+fn measure_anchor_x(
     measure: &SceneMeasure,
-    render_measure: &RenderMeasure,
-    _header: &RenderHeader,
+    actual_duration: Fraction,
     fraction: Fraction,
 ) -> f32 {
-    let progress = normalized_measure_progress(fraction, render_measure.actual_duration);
+    let progress = normalized_measure_progress(fraction, actual_duration);
     measure.x_pt
         + NON_INITIAL_MEASURE_LEFT_PAD_PT
         + progress * (measure.width_pt - NON_INITIAL_MEASURE_LEFT_PAD_PT - MEASURE_RIGHT_PAD_PT)

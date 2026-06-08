@@ -242,12 +242,12 @@ fn measure_xml(
         attributes,
         left_barline_xml(measure, previous_measure),
         start_nav_direction_xml(&measure.start_nav),
+        rehearsal_direction_xml(measure, divisions),
         end_nav_direction_xml(&measure.end_nav),
         hairpin_directions_xml(export_measures, export_measure.output_index, divisions),
         dynamic_directions_xml(measure, divisions),
         content.join(""),
-        right_barline_xml(measure, next_measure),
-        ""
+        right_barline_xml(measure, next_measure)
     )
 }
 
@@ -797,6 +797,17 @@ fn end_nav_direction_xml(end_nav: &Option<EndNav>) -> String {
     )
 }
 
+fn rehearsal_direction_xml(measure: &NormalizedMeasure, divisions: u64) -> String {
+    let Some(rehearsal_mark) = &measure.rehearsal_mark else {
+        return String::new();
+    };
+    format!(
+        "<direction placement=\"above\"><direction-type><rehearsal xml:space=\"preserve\">{}</rehearsal></direction-type><offset>{}</offset></direction>",
+        xml_escape(&rehearsal_mark.text),
+        fraction_to_divisions(rehearsal_mark.anchor.offset, divisions)
+    )
+}
+
 fn hairpin_directions_xml(export_measures: &[ExportMeasure], measure_index: usize, divisions: u64) -> String {
     let Some(current) = export_measures.get(measure_index) else {
         return String::new();
@@ -864,6 +875,9 @@ fn collect_divisions(score: &NormalizedScore) -> u64 {
     for measure in &score.measures {
         for dynamic in &measure.dynamics {
             divisions = lcm(divisions, dynamic.at.denominator);
+        }
+        if let Some(rehearsal_mark) = &measure.rehearsal_mark {
+            divisions = lcm(divisions, rehearsal_mark.anchor.offset.denominator);
         }
         for event in &measure.events {
             divisions = lcm(divisions, event.duration.denominator);
@@ -1082,5 +1096,20 @@ mod tests {
         assert!(measure_two.contains("<note>"));
         assert!(!measure_two.contains("<rest"));
         assert!(!measure_two.contains("measure=\"yes\""));
+    }
+
+    #[test]
+    fn exports_rehearsal_marks_with_offsets_and_preserved_whitespace() {
+        let doc = Parser::new(
+            "time 4/4\nnote 1/4\nHH | x [ A ] x | x x x x [tail] |\n",
+        )
+        .parse_lossy();
+        let score = crate::normalize::normalize_document(&doc);
+        let xml = build_music_xml(&score, false);
+
+        assert!(xml.contains("<rehearsal xml:space=\"preserve\"> A </rehearsal>"));
+        assert!(xml.contains("<rehearsal xml:space=\"preserve\">tail</rehearsal>"));
+        assert!(xml.contains("<offset>8</offset>"));
+        assert!(xml.contains("<offset>16</offset>"));
     }
 }

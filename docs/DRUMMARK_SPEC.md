@@ -282,6 +282,33 @@ Inline braced content is accepted where the implementation supports nested measu
 
 Braced content participates in the same duration and directive semantics as ordinary measure content.
 
+### 6.7 Rehearsal Marks
+
+Bracketed rehearsal marks use:
+
+```txt
+[A]
+[Verse]
+[]
+```
+
+Rules:
+- Rehearsal marks are zero-duration measure expressions.
+- A rehearsal mark begins with `[` and ends at the next `]`.
+- Newlines are forbidden inside the mark.
+- Nested `[` is a hard error.
+- `]` is not allowed inside the payload in v1.
+- The payload is otherwise literal, including empty and all-whitespace content.
+- Leading, trailing, and interior whitespace are significant and must survive normalization, layout measurement, and MusicXML export exactly as authored.
+- `#` inside the payload is literal text, not a comment introducer.
+- Rehearsal marks are legal in ordinary content, routed blocks, inline braced content, and rhythmic groups.
+- A rehearsal mark anchors to the current measure-local musical position at the point where it is authored.
+- The anchor is interpreted against `actualDuration`, not `fullDuration`, in underfull measures.
+- Adjacent routed or inline braced blocks reuse the current simultaneous-cluster timing rule, so post-cluster anchors advance by cluster maximum duration rather than summed duration.
+- A measure may contribute at most one rendered rehearsal mark after normalization.
+- Identical declarations collapse only when both literal payload and normalized anchor offset match exactly.
+- A rehearsal mark does not by itself make an otherwise zero-duration measure legal.
+
 ## 7. Structural Syntax
 
 ### 7.1 Barlines
@@ -489,6 +516,7 @@ Current accepted measure metadata includes:
 - multi-rest intent,
 - hairpins,
 - dynamics,
+- optional `rehearsalMark` metadata with literal `text` and `anchor: { type: "measure-time", offset }`,
 - paragraph-local `noteValue`.
 
 ### 10.4 Events
@@ -516,6 +544,7 @@ Accepted export behavior includes:
 - notehead mapping from glyph plus modifiers,
 - measure repeats and multi-rest export,
 - navigation export,
+- rehearsal-direction export with whitespace-preserving text,
 - hairpin wedge export,
 - dynamic direction export below the staff.
 

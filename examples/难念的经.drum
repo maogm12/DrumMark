@@ -1,0 +1,54 @@
+title 难念的经
+subtitle 周华健
+tempo 138
+time 6/8
+note 1/8
+grouping 3+3
+
+# Intro
+
+| | | | | | | | --- s:flam t1 t2 |
+
+| cxx xxx | xxx xxx | xxx xxx | x(xs)x x-- |
+| b*b s-- | b*b s-b | b*b s-b | b*   b s t1 t2|
+
+| cxx xxx | xxx xxx | x(xs)x xxx | cxx c-- |
+| b*b s-b | b*b s-b | b*   b s-b | bbb s t1 t2 |
+
+| cxx xxx | xxx xxx | x(xs)x xxx | x(xs)x x-- |
+| b*b s-b | b*b s-b | b*   b s-b | b*   b s t1 t2 |
+
+| cxx xxx | xxx ---     | c*. (xx) x* | cxx cxx |
+| b*b ssb | b*b s t1 t2 | b*.         | bbb s   |
+
+# Verse
+# 笑你我枉花光心計 愛競逐鏡花那美麗 怕幸運會轉眼遠逝 為貪嗔喜惡怒著迷
+| | c*. | | -* t1 t1 t2 t3 | | c* | | - t1 t2 t1 t2 t3 |
+
+# 責你我太貪功戀勢 怪大地眾生太美麗 悔舊日太執信約誓 為悲歡哀怨妒著迷
+| | c*. | | -* t1 t1 t2 t3 | | c* | | - t1 t2 t1 t2 t3 |
+
+# Pre-Chorus
+# 啊 捨不得璀璨俗世 啊 躲不開癡戀的欣慰
+| | c*. | | -* t1 t1 t2 t3 | | c* | r:bell*. | - t1 t2 t1 t2 t3 |
+
+# 啊 找不到色相代替 啊 參一生參不透這條難題
+| | c*. | | -* t1 t1 t2 t3 | | c* | r:bell*. | t1:flam* t1:flam* t3 t3:flam |
+| |     | |                | |    |         | - b      - b      --         |
+
+# Chorus
+# 吞風吻雨葬落日未曾徬徨 欺山趕海踐雪徑也未絕望
+| cxx xxx | xxx xxx | xxx xxx | xxx xxx |
+| b*b s   | b*b s-b | b*b s-b | b*b s   |
+
+# 拈花把酒偏折煞世人情狂 憑這兩眼與百臂或千手不能防
+| cxx x(xx)x | xxx xo* | cxx c--         | c t1 t2 c*+s |
+| b*b s      | b*b ss* | b*b s (t1t1) t2 | b*   -  -bb  |
+
+# 天闊闊雪漫漫與誰同航 這沙滾滾水皺皺笑著浪蕩
+| cxx xxx | xxx xo* | cxx c--         | c t1 t2 c*+s |
+| b*b s      | b*b ss* | b*b s (t1t1) t2 | b*   -  -bb  |
+
+
+| xxx xxx | xxx xxx | s*:flam s*:flam t3*:flam | t3*:flam s:flam scc |
+| b*b --b | b*b --b | b*b --b    | 

@@ -1,0 +1,32 @@
+title 低音大鼓与小鼓合练
+time 4/4
+note 1/8
+grouping 1+1+1+1
+
+   |:              |            :| 
+ST | -L -L RL RL   | -L R* -L RL |
+SD | -s -s ss ss   | -s s* -s ss |
+BD | p* p* p* p* *2|
+
+   |:                  |               :|
+ST | L* -L RL R/L/R/L/ | RR/L/ RL -L R* |
+SD | s* -s ss s/s/s/s/ | ss/s/ ss -s s* |
+BD | p* p* p* p*     *2|
+
+ST | -L RR/L/ R/L/R -L |
+SD | -s ss/s/ s/s/s -s | s.s/ ss -s -s |
+BD | p* p* p* p*    *2 |
+
+
+note  1/16
+   |:                    |                    :|
+ST | R*RL -LRL RLRL -LRL | RLR* R*RL R*L* -LRL |
+SD | s*ss -sss ssss -sss | sss* s*ss s*s* -sss |
+BD | p**  p**  p**  p**  | p**  p**  p**  p**  |
+
+note  1/16
+   |:                    |                    :|
+ST | RLRL -LRL R*.L -LRL | -LRL RLR- -LRL R-L- |
+SD | ssss -sss s*.s -sss | -sss sss* -sss s*s* |
+BD | p**  p**  p**  p**  | p**  p**  p**  p**  |
+

@@ -6,9 +6,23 @@ These rules are especially important for DSL, parser, layout, renderer, CLI, and
 
 ---
 
+## Branch and Main Discipline
+
+Do not commit directly on `main` unless the user explicitly requests it.
+
+Do not start a new change by editing on `main`. For any new change that will create `plan.md`, `history.md`, or implementation commits, first move to a dedicated non-`main` branch.
+
+`main` is the repository baseline and integration target. It is not the working location for in-flight planning or implementation.
+
+Planning-only branches are allowed when the branch is only producing change-tracking artifacts. Once a change enters implementation, prefer one implemented change per branch.
+
+If work begins accidentally on `main`, stop before committing and move the work to a non-`main` branch.
+
+---
+
 ## Tiny Change Exclusion Criteria
 
-A change is NOT a Tiny Change (and must use at least Normal Change workflow) if it meets **any** of the following:
+A change is NOT a Tiny Change (and must use at least Planned Change workflow) if it meets **any** of the following:
 
 - modifies parser, lexer, or AST
 - modifies IR structure or normalize logic
@@ -19,7 +33,7 @@ A change is NOT a Tiny Change (and must use at least Normal Change workflow) if 
 - requires new test coverage
 - may change existing test output
 
-When any exclusion criterion is met, escalate to Normal Change.
+When any exclusion criterion is met, escalate to Planned Change.
 
 ---
 
@@ -39,6 +53,38 @@ Examples of good LEARNINGS entries:
 - a platform or WASM boundary constraint
 - a golden/snapshot update rule
 - a project-specific build or test caveat
+
+---
+
+## Change Closeout Semantics
+
+`docs/changes/active/` is reserved for changes that are still being planned, implemented, or reviewed.
+
+An implementation review result of `STATUS: APPROVED` means the change is ready for closeout, not that the workflow is already complete.
+
+Required closeout order:
+
+1. finish all implementation-review fixes
+2. move `docs/changes/active/<change-id>/` to `docs/changes/archive/<year>/<change-id>/` on the change branch
+3. squash/merge that archived final state into `main`
+
+Do not leave an approved change in `docs/changes/active/` while starting unrelated follow-up work.
+
+Do not merge a change into `main` first and archive it later unless the user explicitly requests an exception.
+
+Once a change is archived on-branch, only closeout edits are allowed before merge. If further implementation is required, move the folder back to `active` or open a new review round and record why.
+
+### Stacked Change Branches
+
+Avoid stacking multiple implementation changes on one branch when a separate branch would work.
+
+If a change depends on an earlier unmerged change, record the dependency under `## Linked Items` or an equivalent note in `plan.md`, including:
+
+- the upstream change id
+- why the dependency exists
+- why the approved upstream change cannot yet be archived and merged independently
+
+Do not let stacked branches hide approved-but-unclosed changes.
 
 ---
 
@@ -62,7 +108,7 @@ IR-related behavior should be documented in the active spec or contract that cur
 
 ## Spec Merge Protocol
 
-For Spec / Contract Changes, affected spec or contract files must be updated before merge.
+For Planned Changes with `Spec Impact: Yes`, affected spec or contract files must be updated before merge.
 
 This project now has two maintenance modes for active specs/contracts:
 
@@ -176,7 +222,7 @@ If both are needed:
 
 ### Required Final Check
 
-Before implementation review can approve a Spec / Contract Change, the reviewer must check:
+Before implementation review can approve a Planned Change with `Spec Impact: Yes`, the reviewer must check:
 
 - `plan.md` contains `## Spec Delta`
 - affected specs/contracts are listed
@@ -186,7 +232,7 @@ Before implementation review can approve a Spec / Contract Change, the reviewer 
 - `history.md` contains `## Consolidated Changes`
 - the implementation matches the final accepted spec text
 
-Spec / Contract Changes must not merge until this check passes.
+Planned Changes with `Spec Impact: Yes` must not merge until this check passes.
 
 ---
 

@@ -39,19 +39,42 @@ For templates, read:
 
 ---
 
+## Branching Rules
+
+- Do not commit directly on `main`.
+- Do not start a new change by editing on `main`.
+- Before creating `plan.md`, `history.md`, or implementation commits for a new change, create or switch to a dedicated non-`main` branch.
+- If work began accidentally on `main`, stop before committing and move the work onto a non-`main` branch.
+- Exception: only commit on `main` when the user explicitly asks for a direct `main` commit.
+
+`main` is the sync baseline and final landing branch. It is not the working container for an in-flight change.
+
+---
+
+## Planning-Only Changes
+
+- A non-`main` branch may be used as a planning-only workspace for multiple changes when the work is limited to change-tracking artifacts such as `plan.md`, `history.md`, and linked planning notes.
+- Planning-only work must not include implementation commits in source, test, renderer, layout, parser, or spec files outside the scoped planning artifacts.
+- Once a planned change is ready to enter implementation, start a dedicated implementation branch from the latest appropriate base rather than continuing to implement on a shared planning branch.
+
+---
+
 ## Entry Checklist
 
 Before starting work, answer:
 
 - [ ] Is this a tiny change that can be safely fixed directly? (Check [Tiny Change Exclusion Criteria](.agents/skills/change-workflow/references/project-rules.md#tiny-change-exclusion-criteria) first.)
 - [ ] Is this a bug or feedback item that should be recorded as a GitHub Issue?
-- [ ] Is this a normal change that needs a reviewed plan?
-- [ ] Is this a spec or contract change that needs `## Spec Delta` and a human stamp? (If yes: read [project-rules.md](.agents/skills/change-workflow/references/project-rules.md) before planning.)
-- [ ] Is this a large or risky change that may need an ADR?
+- [ ] Is this a planned change that needs `plan.md` and `history.md`?
+- [ ] Does this planned change have `Spec Impact: Yes`? (If yes: read [project-rules.md](.agents/skills/change-workflow/references/project-rules.md) before planning.)
+- [ ] Does this planned change have `Large / Risky: Yes`?
 - [ ] Is this an exploratory question that should be handled as a spike?
 - [ ] What tests or verification will prove the work is done?
+- [ ] Am I on the correct non-`main` branch for this change?
 
-Do not start implementation for a Normal, Large, or Spec / Contract Change until the required plan review is approved — except for Light Normal Change or a Normal Change with a recorded skip reason (see [Light Normal Change](#light-normal-change)).
+Do not start implementation for a Planned Change until the required plan review is approved — except for [Light Planned Change](#light-planned-change) or a Planned Change with a recorded skip reason.
+
+Implementation review `STATUS: APPROVED` means the change is ready for closeout. The workflow is not finished until the change folder has been archived on the change branch and that archived state is the one that is finally squashed/merged into `main`.
 
 ---
 
@@ -68,30 +91,31 @@ When the agent cannot spawn a sub-agent for review:
 
 ## Workflow Decision Table
 
-| Work type | Change folder | Plan review | Human stamp | ADR |
+| Workflow | Change folder | Plan review | Human stamp | ADR |
 |---|---:|---:|---:|---:|
 | Tiny Change | No | No | No | No |
-| Small in-scope bug | No | No | No | No |
 | Bug / feedback needing tracking | GitHub Issue | No | No | No |
-| Normal Change | Yes | Yes | No | Usually no |
-| Normal Change (light) | Yes | Optional | No | No |
-| Medium bug with behavior risk | Yes | Yes | No, unless public behavior changes | Maybe |
-| Spec / Contract Change | Yes | Yes | Yes | Maybe |
-| Large internal refactor | Yes | Yes | Optional; required if high risk | Maybe |
-| Large architecture/public behavior change | Yes | Yes | Yes | Usually yes |
+| Planned Change | Yes | Yes | Flag-driven | Flag-driven |
+| Planned Change (light) | Yes | Optional | Flag-driven | Usually no |
 | Spike | Spike note | No | No | No |
 
-### Overlap Priority
+## Classification Block
 
-When a change matches multiple work types, use this priority order:
+Every `plan.md` for a Planned Change must declare:
 
-```text
-Spec / Contract Change > Large Change > Normal Change > Tiny Change
+```md
+## Classification
+
+- Workflow: Planned Change
+- Spec Impact: Yes | No
+- Large / Risky: Yes | No
 ```
 
-1. If a change meets Spec / Contract Change criteria, follow the Spec / Contract workflow even if it also qualifies as Large.
-2. If a change meets Large Change criteria, do not downgrade to Normal unless: (a) it does not involve architecture boundary, public behavior, compatibility, or migration, and (b) the plan reviewer explicitly agrees to the downgrade.
-3. Spec / Contract Changes that are also Large inherit the extra Large Change requirements (ADR, human stamp when applicable) on top of the Spec workflow.
+These fields drive the mandatory workflow requirements:
+
+- `Spec Impact: Yes` requires `## Spec Delta`, `## Affected Specs / Contracts`, at least one spec/contract update task, plan review, and human stamp before implementation.
+- `Large / Risky: Yes` requires explicit decomposition, ADR-needed review, merge strategy, and plan review. Human stamp is required when the change affects public behavior, architecture boundary, compatibility, migration, or user-visible semantics.
+- `Spec Impact: No` and `Large / Risky: No` may use the lighter Planned Change path when the other light criteria are satisfied.
 
 ---
 
@@ -120,15 +144,15 @@ Tiny Change workflow:
 
 Tiny Changes do not require a change folder, `plan.md`, or `history.md`.
 
-If a Tiny Change becomes risky, cross-cutting, or ambiguous, escalate to Normal Change.
+If a Tiny Change becomes risky, cross-cutting, or ambiguous, escalate to Planned Change.
 
-Before classifying a change as Tiny, check [project-rules.md § Tiny Change Exclusion Criteria](.agents/skills/change-workflow/references/project-rules.md#tiny-change-exclusion-criteria). If any exclusion criterion is met, the change is at least Normal.
+Before classifying a change as Tiny, check [project-rules.md § Tiny Change Exclusion Criteria](.agents/skills/change-workflow/references/project-rules.md#tiny-change-exclusion-criteria). If any exclusion criterion is met, the change is at least Planned Change.
 
 ---
 
-### Normal Change
+### Planned Change
 
-Use Normal Change for most non-trivial work:
+Use Planned Change for most non-trivial implementation work:
 
 - normal features
 - medium bug fixes
@@ -136,8 +160,9 @@ Use Normal Change for most non-trivial work:
 - small-to-medium refactors
 - changes with clear scope and limited risk
 - implementation work that benefits from plan review
+- any work that is not Tiny and is not purely a Spike
 
-Normal Changes require:
+Planned Changes require:
 
 ```text
 docs/changes/active/<change-id>/
@@ -145,7 +170,12 @@ docs/changes/active/<change-id>/
   history.md
 ```
 
-Normal Change workflow:
+Planned Change branch rule:
+
+- Prefer one implemented change per branch.
+- If the branch is planning-only, do not implement on it; create a dedicated implementation branch first.
+
+Planned Change workflow:
 
 ```text
 1. Create docs/changes/active/<change-id>/plan.md.
@@ -161,22 +191,29 @@ Normal Change workflow:
 11. Ask a sub-agent to review the implementation (or self-review if unavailable).
 12. Append the implementation review to history.md.
 13. Fix review findings.
-14. Merge only after implementation review reaches STATUS: APPROVED.
-15. Archive the change folder.
+14. After implementation review reaches STATUS: APPROVED, stop feature work for that change and perform closeout only.
+15. Move `docs/changes/active/<change-id>/` to `docs/changes/archive/<year>/<change-id>/` on the change branch.
+16. Squash/merge the archived final state into `main`.
 ```
 
-### Light Normal Change
+### Light Planned Change
 
-Light Normal Change is a variant for low-risk Normal Changes that do not need formal plan review. It is the recommended path when plan review would be disproportionate to the change size.
+Light Planned Change is a variant for low-risk Planned Changes that do not need formal plan review. It is the recommended path when plan review would be disproportionate to the change size.
 
-Light Normal Change may be used when **all** of the following are true:
+Light Planned Change may be used when **all** of the following are true:
 
 - change is confined to a single subsystem
 - does not modify public API, CLI interface, or contracts
 - expected diff < ~200 lines
 - existing tests cover the affected paths
+- `Spec Impact: No`
+- `Large / Risky: No`
 
-Light Normal Change workflow:
+Light Planned Change branch rule:
+
+- Use a dedicated non-`main` branch unless the user explicitly requests a direct `main` commit.
+
+Light Planned Change workflow:
 
 ```text
 1. Create docs/changes/active/<change-id>/plan.md.
@@ -190,18 +227,21 @@ Light Normal Change workflow:
 7. Ask a sub-agent to review the implementation (or self-review if unavailable).
 8. Append the implementation review to history.md.
 9. Fix review findings.
-10. Merge only after implementation review reaches STATUS: APPROVED.
-11. Archive the change folder.
+10. After implementation review reaches STATUS: APPROVED, stop feature work for that change and perform closeout only.
+11. Move `docs/changes/active/<change-id>/` to `docs/changes/archive/<year>/<change-id>/` on the change branch.
+12. Squash/merge the archived final state into `main`.
 ```
 
-### Skipping Plan Review for Other Normal Changes
+### Skipping Plan Review for Other Planned Changes
 
-For a Normal Change that does **not** meet the Light criteria, plan review may still be skipped if **all** of the following are true:
+For a Planned Change that does **not** meet the Light criteria, plan review may still be skipped if **all** of the following are true:
 
 - change is confined to a single file or single module
 - does not modify any public interface or contract
 - existing tests cover the change paths
 - the agent records the reason for skipping in `plan.md`
+- `Spec Impact: No`
+- `Large / Risky: No`
 
 The same `### Plan Review Skipped` section (as above) must be recorded in `history.md` before implementation starts.
 
@@ -211,31 +251,42 @@ If skipping plan review proves to have been wrong (scope grows, risk discovered)
 
 ---
 
-### Large Change
+## Closeout Rules
 
-Use Large Change for unusually large, risky, or cross-cutting work:
+- `docs/changes/active/<change-id>/` is only for work still in planning, implementation, or review.
+- Once implementation review reaches `STATUS: APPROVED`, the change enters closeout. Do not continue feature work under that change id unless a new review round re-opens it.
+- Closeout order is mandatory:
+  1. finish implementation-review fixes
+  2. archive the change folder on the change branch
+  3. squash/merge that archived state into `main`
+- Do not merge a change to `main` while its folder still lives under `docs/changes/active/`.
+- If a change cannot be merged immediately after approval, record the blocker in `history.md`. Do not leave an approved change looking like ordinary active work.
+- Avoid stacking multiple implementation changes on one branch. If stacking is unavoidable, record the dependency and merge blocker in `plan.md`.
+
+---
+
+### Planned Change Flags
+
+#### `Large / Risky: Yes`
+
+Use this flag for unusually large, risky, or cross-cutting work:
 
 - architecture redesign
 - public API changes
-- DSL / IR / schema / file format changes
 - compatibility or migration-sensitive changes
 - changes spanning multiple subsystems
 - changes likely to require several review rounds
 
-Large Changes use the same `plan.md` + `history.md` structure as Normal Changes.
+Additional expectations:
 
-Large Changes may also require:
+- explicit decomposition in `plan.md`
+- ADR-needed decision documented
+- merge strategy documented
+- migration or rollback note when relevant
 
-- ADRs for long-term decisions
-- human stamp before implementation
-- multiple implementation PRs
-- explicit migration or rollback plan
+#### `Spec Impact: Yes`
 
----
-
-### Spec / Contract Change
-
-A change is a Spec / Contract Change if it modifies or clarifies:
+Use this flag when the change modifies or clarifies:
 
 - DSL syntax or semantics
 - IR structure or semantics
@@ -247,15 +298,13 @@ A change is a Spec / Contract Change if it modifies or clarifies:
 - compatibility or migration behavior
 - persisted file or data format
 
-Spec / Contract Changes must use the Normal or Large Change workflow.
-
-`plan.md` must include:
+When `Spec Impact: Yes`, `plan.md` must include:
 
 - `## Spec Delta`
 - `## Affected Specs / Contracts`
 - at least one task that updates the affected spec or contract
 
-Spec / Contract Changes require:
+Additional requirements:
 
 - plan review approval
 - `### Approved Plan` recorded in `history.md`
@@ -321,7 +370,7 @@ docs/spikes/
 
 A spike should answer a question, not become production implementation.
 
-If the result leads to implementation, create a Normal or Large Change plan.
+If the result leads to implementation, create a Planned Change plan.
 
 ---
 
@@ -348,9 +397,9 @@ docs/adr/
 
 ---
 
-## Required File Layout for Normal and Large Changes
+## Required File Layout for Planned Changes
 
-For every Normal Change or Large Change, create a dedicated change folder:
+For every Planned Change, create a dedicated change folder:
 
 ```text
 docs/changes/active/<change-id>/
@@ -462,7 +511,7 @@ STATUS: APPROVED
 
 ## Plan Review Rules
 
-For Normal (except Light / recorded skip), Large, and Spec / Contract Changes, the agent must ask a sub-agent to review `plan.md` before implementation. Spec / Contract and Large Changes may never skip plan review.
+For Planned Changes (except Light / recorded skip), the agent must ask a sub-agent to review `plan.md` before implementation. Changes with `Spec Impact: Yes` or `Large / Risky: Yes` may never skip plan review.
 
 The reviewer should act as a skeptical architect.
 
@@ -513,9 +562,9 @@ Implementation may start only after plan review reaches:
 STATUS: APPROVED
 ```
 
-or after `### Plan Review Skipped` has been recorded for an eligible Normal Change (see [Light Normal Change](#light-normal-change)). Spec / Contract and Large Changes may not skip plan review.
+or after `### Plan Review Skipped` has been recorded for an eligible Planned Change (see [Light Planned Change](#light-planned-change)). Changes with `Spec Impact: Yes` or `Large / Risky: Yes` may not skip plan review.
 
-For Spec / Contract Changes and Large Changes that require human stamp, implementation may start only after both:
+For changes that require human stamp, implementation may start only after both:
 
 ```text
 STATUS: APPROVED
@@ -544,7 +593,7 @@ Open conditions:
 
 If no commit hash is available, record a concise summary of the approved plan and create a commit before implementation whenever practical.
 
-For Spec / Contract Changes, the approved `## Spec Delta` must be represented in the approved plan summary.
+For changes with `Spec Impact: Yes`, the approved `## Spec Delta` must be represented in the approved plan summary.
 
 ---
 
@@ -552,13 +601,13 @@ For Spec / Contract Changes, the approved `## Spec Delta` must be represented in
 
 A human stamp is required before implementation for:
 
-- Spec / Contract Changes
-- Large changes that affect public behavior, architecture boundary, compatibility, migration, or user-visible semantics
+- changes with `Spec Impact: Yes`
+- changes with `Large / Risky: Yes` that affect public behavior, architecture boundary, compatibility, migration, or user-visible semantics
 - changes where the user explicitly requests final sign-off
 
-Human stamp is optional for large internal refactors that do not change public behavior, unless the reviewer requests it.
+Human stamp is optional for `Large / Risky: Yes` internal refactors that do not change public behavior, unless the reviewer requests it.
 
-Tiny Changes and ordinary Normal Changes do not require a human stamp unless requested.
+Tiny Changes and ordinary Planned Changes do not require a human stamp unless requested.
 
 When a human stamp is required, the approval must be recorded in `history.md` before implementation starts.
 
@@ -651,10 +700,11 @@ Avoid tasks that are only logical phases but cannot be tested independently.
 Before implementation, confirm:
 
 - [ ] The work is not Tiny Change, or Tiny Change has been intentionally chosen.
-- [ ] The change folder exists if this is Normal or Large.
+- [ ] The change folder exists if this is a Planned Change.
 - [ ] `docs/changes/active/<change-id>/plan.md` exists.
 - [ ] `docs/changes/active/<change-id>/history.md` exists.
-- [ ] Plan review reached `STATUS: APPROVED`, or plan review was intentionally skipped with `### Plan Review Skipped` recorded in `history.md` (see [Light Normal Change](#light-normal-change)).
+- [ ] `plan.md` contains `## Classification` with `Workflow`, `Spec Impact`, and `Large / Risky`.
+- [ ] Plan review reached `STATUS: APPROVED`, or plan review was intentionally skipped with `### Plan Review Skipped` recorded in `history.md` (see [Light Planned Change](#light-planned-change)).
 - [ ] If plan review was performed, `### Approved Plan` was appended to `history.md`. If skipped, `### Plan Review Skipped` was appended.
 - [ ] Human stamp was received and recorded if required.
 - [ ] Relevant GitHub Issues are linked if applicable.
@@ -758,11 +808,8 @@ Before merge, confirm:
 
 After approval:
 
-1. Merge the branch into `main`.
-2. Prefer squash merge unless the user or project explicitly requests otherwise.
-3. Update `plan.md` status to `merged`.
-4. Add the PR link or final commit if available.
-5. Move the change folder from:
+1. Update `plan.md` status so the archived record reflects the merged state.
+2. Move the change folder from:
 
 ```text
 docs/changes/active/<change-id>/
@@ -773,6 +820,9 @@ to:
 ```text
 docs/changes/archive/<year>/<change-id>/
 ```
+3. Prefer squash merge unless the user or project explicitly requests otherwise.
+4. Merge the archived final state into `main`.
+5. Add the PR link or final commit if available.
 
 ---
 
@@ -813,7 +863,7 @@ Use each artifact for its proper job:
 | Artifact | Purpose |
 |---|---|
 | GitHub Issue | Bugs, feedback, backlog items, tracking, triage |
-| `plan.md` | Current implementation plan for a Normal or Large Change |
+| `plan.md` | Current implementation plan for a Planned Change |
 | `history.md` | Append-only review history |
 | Branch / PR | Implementation and code review |
 | Test | Executable acceptance criteria and regression prevention |
@@ -846,17 +896,17 @@ Use these defaults:
 Tiny change:
   No plan. Fix directly. Review if needed.
 
-Normal feature or medium bug:
+Planned change:
   plan.md + history.md.
 
 Bug report or feedback:
   GitHub Issue if tracking, reproduction, severity, priority, or discussion is needed.
 
-Spec / Contract Change:
-  plan.md + history.md + Spec Delta + affected spec update task + human stamp.
+Planned change with Spec Impact:
+  plan.md + history.md + Classification + Spec Delta + affected spec update task + human stamp.
 
-Large architecture change:
-  plan.md + history.md + optional ADR + human stamp when needed.
+Planned change with Large / Risky:
+  plan.md + history.md + Classification + optional ADR + human stamp when needed.
 
 Feasibility question:
   Spike note first, then plan if implementation proceeds.

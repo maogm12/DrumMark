@@ -140,6 +140,7 @@ fn measure_expr_json(expr: &MeasureExpr) -> Value {
         MeasureExpr::Crescendo => json!({"kind": "crescendo"}),
         MeasureExpr::Decrescendo => json!({"kind": "decrescendo"}),
         MeasureExpr::HairpinEnd => json!({"kind": "hairpinEnd"}),
+        MeasureExpr::RehearsalMark(text) => json!({"kind": "rehearsalMark", "text": text}),
         MeasureExpr::Dynamic(level) => json!({"kind": "dynamic", "level": level.as_str()}),
         MeasureExpr::NavMarker(name) => json!({"kind": "navMarker", "name": name}),
         MeasureExpr::NavJump(name) => json!({"kind": "navJump", "name": name}),

@@ -528,3 +528,27 @@ Rules:
 Serialization:
 - RenderScore/WASM JSON includes both duration fields on every measure.
 - This change bumps `RENDER_SCORE_VERSION`.
+
+## Addendum 2026-06-08: Visual / Export Completion
+
+Date: 2026-06-08
+Source change: `docs/changes/active/2026-06-01-modifier-visual-export-completion/plan.md`
+Status: Accepted
+
+LayoutScene and MusicXML must treat the following track and modifier semantics as explicit release-facing behavior, not generic fallback:
+
+- `CB`: upward triangle notehead in the fourth space
+- `WB`: upward triangle notehead on the fourth line
+- `SPL`: x notehead in the second space above the staff
+- `CHN`: x notehead on the second line above the staff
+- `dead`: x notehead / dead-note rendering
+- `roll`: stem-attached roll slashes
+- `choke`: apostrophe-like upper-right mark, exported as deterministic MusicXML `other-technical`
+- `half-open`: half-open pictogram above the note, exported as deterministic MusicXML `other-technical`
+
+Contract rules:
+- Specialty-track placement must come from `staff_y_for_track(...)`, not adapter-side overrides.
+- Specialty-track notehead shape must come from canonical notehead selection, not adapter-side glyph substitution.
+- `roll`, `choke`, and `half-open` must be emitted as ordinary `LayoutScene` items with stable semantic roles: `roll-slash`, `choke`, and `half-open`.
+- The layout engine remains responsible for collision participation and anchor ownership of these emitted items.
+- MusicXML notehead/export choices for these tracks and modifiers must remain aligned with the accepted layout semantics.

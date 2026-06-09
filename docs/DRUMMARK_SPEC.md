@@ -204,6 +204,17 @@ Rules:
 - Omitted registered tracks do not receive auto-generated trailing rests or whole-measure rest content.
 - Tracks whose written duration is shorter than the measure `actualDuration` remain silent for the remaining span without creating additional rest events.
 
+### 5.5 Release-Facing Specialty Track Semantics
+
+The following accepted tracks carry explicit release-facing rendering/export semantics rather than generic family fallback:
+
+- `CB`: upward triangle notehead, fourth space of the five-line percussion staff
+- `WB`: upward triangle notehead, fourth line of the five-line percussion staff
+- `SPL`: x notehead, second space above the staff
+- `CHN`: x notehead, second line above the staff
+
+These semantics apply to layout and MusicXML export together.
+
 ## 6. Measure Content
 
 ### 6.1 Basic Glyphs
@@ -242,6 +253,12 @@ Rules:
 - Modifier chaining is valid: `d:ghost:accent`.
 - Duration modifiers and articulation modifiers may be interleaved.
 - Trailing modifiers after duration suffixes are accepted: `d.*:accent`.
+
+Accepted release-facing semantics for currently completed modifiers:
+- `dead`: x / dead notehead semantics
+- `roll`: tremolo-style slashes attached to the resolved stem
+- `choke`: apostrophe-like mark at the note's upper-right; MusicXML exports deterministic `other-technical`
+- `half-open`: half-open pictogram above the note; MusicXML exports deterministic `other-technical`
 
 ### 6.4 Groups
 
@@ -570,12 +587,7 @@ The following are not part of accepted current syntax:
 
 ## 13. Planned V1 Changes
 
-The following items are active plans and are not yet accepted normative behavior:
-- first-measure pickup / anacrusis: `docs/changes/archive/2026/2026-06-01-first-measure-pickup/`
-- rehearsal / section marks: `docs/changes/active/2026-06-01-rehearsal-section-marks/`
-- modifier visual / export completion: `docs/changes/active/2026-06-01-modifier-visual-export-completion/`
-
-These items must not be treated as accepted language or export behavior until their implementation changes are merged and their spec deltas are integrated here.
+Any behavior that remains only in `docs/changes/active/` and has not yet been integrated into the canonical sections of this file must not be treated as accepted language or export behavior.
 
 ## 14. Maintenance Policy
 

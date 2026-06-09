@@ -6,6 +6,7 @@ pub enum GlyphRole {
     NoteheadBlack,
     NoteheadX,
     NoteheadDiamond,
+    NoteheadTriangleUp,
     NoteheadCircleX,
     NoteheadRim,
     NoteheadBlackParens,
@@ -36,6 +37,7 @@ pub enum GlyphRole {
     NavigationCoda,
     MetNoteQuarterUp,
     AugmentationDot,
+    PictHalfOpen1,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -213,6 +215,15 @@ pub fn canonical_glyph_metric(role: GlyphRole) -> CanonicalGlyphMetric {
             [1.0, 0.5],
             Some([1.0, 0.0]),
             Some([0.0, 0.0]),
+        ),
+        GlyphRole::NoteheadTriangleUp => glyph_metric(
+            role,
+            0xE0BE,
+            None,
+            [0.0, -0.5],
+            [1.172, 0.5],
+            Some([1.172, -0.5]),
+            Some([0.0, -0.5]),
         ),
         GlyphRole::NoteheadCircleX => glyph_metric(
             role,
@@ -393,6 +404,9 @@ pub fn canonical_glyph_metric(role: GlyphRole) -> CanonicalGlyphMetric {
         ),
         GlyphRole::AugmentationDot => {
             glyph_metric(role, 0xE1E7, None, [0.0, 0.0], [0.5, 0.5], None, None)
+        }
+        GlyphRole::PictHalfOpen1 => {
+            glyph_metric(role, 0xE7F6, None, [0.0, 0.0], [1.144, 1.144], None, None)
         }
     }
 }
@@ -596,15 +610,28 @@ pub fn canonical_flag_path(
 }
 
 pub fn notehead_glyph(track: &str, modifiers: &[String], _glyph: &str) -> CanonicalGlyphMetric {
-    for modifier in modifiers {
-        match modifier.as_str() {
-            "ghost" => return canonical_glyph_metric(GlyphRole::NoteheadBlackParens),
-            "open" => return canonical_glyph_metric(GlyphRole::NoteheadCircleX),
-            "cross" => return canonical_glyph_metric(GlyphRole::NoteheadX),
-            "bell" => return canonical_glyph_metric(GlyphRole::NoteheadDiamond),
-            "rim" => return canonical_glyph_metric(GlyphRole::NoteheadRim),
-            _ => {}
-        }
+    if modifiers.iter().any(|modifier| modifier == "ghost") {
+        return canonical_glyph_metric(GlyphRole::NoteheadBlackParens);
+    }
+    if modifiers.iter().any(|modifier| modifier == "open") {
+        return canonical_glyph_metric(GlyphRole::NoteheadCircleX);
+    }
+    if modifiers
+        .iter()
+        .any(|modifier| modifier == "dead" || modifier == "cross")
+    {
+        return canonical_glyph_metric(GlyphRole::NoteheadX);
+    }
+    if modifiers.iter().any(|modifier| modifier == "bell") {
+        return canonical_glyph_metric(GlyphRole::NoteheadDiamond);
+    }
+    if modifiers.iter().any(|modifier| modifier == "rim") {
+        return canonical_glyph_metric(GlyphRole::NoteheadRim);
+    }
+
+    match track {
+        "CB" | "WB" => return canonical_glyph_metric(GlyphRole::NoteheadTriangleUp),
+        _ => {}
     }
 
     let family = track_family(track);

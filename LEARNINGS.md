@@ -493,3 +493,9 @@ When an older note conflicts with this file, treat this file plus the active spe
 
 - If product notation chooses an apostrophe-like choke mark instead of the MusicXML-style stopped symbol, the safer v1 export is to keep `choke` as deterministic `other-technical` rather than pretending it is `stopped`.
 - In that configuration, `choke` layout placement should be treated as an upper-right attached mark, not a centered-above-note mark.
+
+## 2026-06-08 Specialty Track And Modifier Glyph Choices
+
+- `noteheadTriangleUpBlack` is the correct SMuFL triangle notehead for `CB` and `WB`; in Bravura it is `U+E0BE` with built-in stem anchors, so it can be treated like an ordinary notehead glyph rather than an adapter-side symbol swap.
+- `pictHalfOpen1` is a usable half-open glyph for v1 hi-hat rendering; in Bravura/SMuFL it is `U+E7F6`.
+- For `roll`, line-based stem slashes are simpler and more stable in the current scene model than introducing a dedicated glyph role for tremolo strokes; they integrate naturally with existing obstacle and anchor handling.

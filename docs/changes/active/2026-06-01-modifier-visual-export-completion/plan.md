@@ -135,7 +135,7 @@ Outcome summary:
 
 ### Task 2: Implement Layout Rendering And Track Mapping
 
-Status: Pending
+Status: Done
 
 Scope:
 - Notehead selection for `dead`.
@@ -167,9 +167,13 @@ Verification:
 - Focused Rust layout tests for each new visual role.
 - `npm run drummark -- docs/examples/modifiers.drum --format svg`
 
+Outcome summary:
+- Added explicit `CB` / `WB` / `SPL` / `CHN` track mapping in layout.
+- Added release-facing layout rendering for `dead`, `roll`, `choke`, and `half-open`.
+
 ### Task 3: Align MusicXML Export Tests
 
-Status: Pending
+Status: Done
 
 Scope:
 - `crates/drummark-core/src/musicxml.rs`
@@ -195,9 +199,13 @@ Verification:
 - `cargo test -p drummark-core musicxml -- --nocapture`
 - `npm test -- --run src/dsl/musicxml_corpus.test.ts` after expected golden updates.
 
+Outcome summary:
+- Locked `choke` and `half-open` to deterministic `other-technical`.
+- Locked explicit MusicXML notehead/export behavior for `CB`, `WB`, `SPL`, and `CHN`.
+
 ### Task 4: Rebuild WASM And Update Examples
 
-Status: Pending
+Status: Done
 
 Scope:
 - WASM parser/layout packages.
@@ -220,6 +228,12 @@ Acceptance:
 Verification:
 - `npm run wasm:build`
 - `npm test -- --run src/wasm/parser_layout_parity.test.ts src/renderer/svgSceneAdapter.test.ts src/renderer/corpusGate.test.ts`
+
+Outcome summary:
+- Rebuilt parser/layout WASM packages.
+- Updated `docs/examples/modifiers.drum`, `docs/examples/modifiers.svg`, and `docs/examples/modifiers-native.svg`.
+- Browser CLI smoke, native CLI smoke, Rust tests, and parity tests passed.
+- `src/renderer/corpusGate.test.ts` still reports broader pre-existing corpus-golden drift beyond this change; no bulk corpus rebaseline was folded into this change.
 
 ## Test Plan
 

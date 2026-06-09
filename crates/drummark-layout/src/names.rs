@@ -17,6 +17,7 @@ pub fn glyph_role_name(role: GlyphRole) -> &'static str {
         GlyphRole::NoteheadBlack => "noteheadBlack",
         GlyphRole::NoteheadX => "noteheadX",
         GlyphRole::NoteheadDiamond => "noteheadDiamond",
+        GlyphRole::NoteheadTriangleUp => "noteheadTriangleUp",
         GlyphRole::NoteheadCircleX => "noteheadCircleX",
         GlyphRole::NoteheadRim => "noteheadRim",
         GlyphRole::NoteheadBlackParens => "noteheadBlackParens",
@@ -47,6 +48,7 @@ pub fn glyph_role_name(role: GlyphRole) -> &'static str {
         GlyphRole::NavigationCoda => "navigationCoda",
         GlyphRole::MetNoteQuarterUp => "metNoteQuarterUp",
         GlyphRole::AugmentationDot => "augmentationDot",
+        GlyphRole::PictHalfOpen1 => "pictHalfOpen1",
     }
 }
 

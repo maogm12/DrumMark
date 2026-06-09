@@ -203,6 +203,10 @@ mod tests {
         assert_eq!(staff_y_for_track("BD"), 3.5);
         assert_eq!(staff_y_for_track("T1"), 0.5);
         assert_eq!(staff_y_for_track("C"), -1.0);
+        assert_eq!(staff_y_for_track("CB"), 0.5);
+        assert_eq!(staff_y_for_track("WB"), 1.0);
+        assert_eq!(staff_y_for_track("SPL"), -1.5);
+        assert_eq!(staff_y_for_track("CHN"), -2.0);
     }
 
     #[test]
@@ -222,8 +226,14 @@ mod tests {
         assert_eq!(g.smufl_codepoint, 0xE0A4); // ghost ligature uses black notehead as its base component
         assert_eq!(g.smufl_ligature, Some(&[0xE0F5, 0xE0A4, 0xE0F6][..]));
         assert_eq!(g.render_text(), "\u{E0F5}\u{E0A4}\u{E0F6}");
+        let g = notehead_glyph("SD", &["dead".to_string()], "d");
+        assert_eq!(g.smufl_codepoint, 0xE0A9); // dead mod -> X notehead
         let g = notehead_glyph("RC", &["bell".to_string()], "x");
         assert_eq!(g.smufl_codepoint, 0xE0DB); // ride bell → diamond black notehead
+        let g = notehead_glyph("CB", &[], "d");
+        assert_eq!(g.smufl_codepoint, 0xE0BE); // cowbell -> triangle up notehead
+        let g = notehead_glyph("WB", &[], "d");
+        assert_eq!(g.smufl_codepoint, 0xE0BE); // woodblock -> triangle up notehead
     }
 
     #[test]
@@ -7821,7 +7831,7 @@ fn test_crash_maps_to_top_ledger_line() {
 }
 
 #[test]
-fn test_bottom_ledger_lines_render_for_notes_below_staff() {
+fn test_top_ledger_lines_render_for_china_above_staff() {
     let score = RenderScore {
         version: RENDER_SCORE_VERSION.to_string(),
         header: RenderHeader {
@@ -7835,8 +7845,8 @@ fn test_bottom_ledger_lines_render_for_notes_below_staff() {
             composer: None,
         },
         tracks: vec![RenderTrack {
-            id: "WB".into(),
-            family: "percussion".into(),
+            id: "CHN".into(),
+            family: "cymbal".into(),
         }],
         measures: vec![RenderMeasure {
             index: 0,
@@ -7847,8 +7857,8 @@ fn test_bottom_ledger_lines_render_for_notes_below_staff() {
             actual_duration: Fraction { numerator: 1, denominator: 1 },
             full_duration: Fraction { numerator: 1, denominator: 1 },
             events: vec![RenderEvent {
-                track: "WB".into(),
-                track_family: "percussion".into(),
+                track: "CHN".into(),
+                track_family: "cymbal".into(),
                 start: Fraction {
                     numerator: 0,
                     denominator: 1,
@@ -7907,10 +7917,10 @@ fn test_bottom_ledger_lines_render_for_notes_below_staff() {
     assert_eq!(ledger_ys.len(), 2);
     assert!(ledger_ys
         .iter()
-        .any(|y| (*y - (staff_top + staff_space_pt * 5.0)).abs() < 0.01));
+        .any(|y| (*y - (staff_top - staff_space_pt * 1.0)).abs() < 0.01));
     assert!(ledger_ys
         .iter()
-        .any(|y| (*y - (staff_top + staff_space_pt * 6.0)).abs() < 0.01));
+        .any(|y| (*y - (staff_top - staff_space_pt * 2.0)).abs() < 0.01));
 }
 
 #[test]
@@ -8172,6 +8182,257 @@ fn test_drag_takes_precedence_over_flam_for_grace_rendering() {
             .count(),
         1
     );
+}
+
+#[test]
+fn test_roll_choke_and_half_open_emit_expected_scene_items() {
+    let mut score = single_hit_score(
+        "HH",
+        vec!["roll", "half-open"],
+        Fraction {
+            numerator: 1,
+            denominator: 8,
+        },
+    );
+    score.tracks.push(RenderTrack {
+        id: "C".into(),
+        family: "cymbal".into(),
+    });
+    score.measures[0].events.push(RenderEvent {
+        track: "C".into(),
+        track_family: "cymbal".into(),
+        start: Fraction {
+            numerator: 1,
+            denominator: 4,
+        },
+        duration: Fraction {
+            numerator: 1,
+            denominator: 8,
+        },
+        visual_duration: Fraction {
+            numerator: 1,
+            denominator: 8,
+        },
+        kind: EventKind::Hit,
+        glyph: "d".into(),
+        modifiers: vec!["choke".into()],
+        dot_count: 0,
+        modifier: Some("choke".into()),
+        voice: 1,
+        beam: "none".into(),
+        tuplet: None,
+    });
+
+    let scene = build_layout_scene(&score, &LayoutOptions::default());
+
+    assert_eq!(
+        page_all_items(&scene.pages[0])
+            .filter(|item| item.role == "roll-slash")
+            .count(),
+        3
+    );
+    assert_eq!(
+        page_all_items(&scene.pages[0])
+            .filter(|item| item.role == "half-open")
+            .count(),
+        1
+    );
+    assert_eq!(
+        page_all_items(&scene.pages[0])
+            .filter(|item| item.role == "choke")
+            .count(),
+        1
+    );
+}
+
+#[test]
+fn test_specialty_tracks_render_at_explicit_positions() {
+    let mut score = single_hit_score(
+        "CB",
+        vec![],
+        Fraction {
+            numerator: 1,
+            denominator: 4,
+        },
+    );
+    score.tracks = vec![
+        RenderTrack {
+            id: "CB".into(),
+            family: "percussion".into(),
+        },
+        RenderTrack {
+            id: "WB".into(),
+            family: "percussion".into(),
+        },
+        RenderTrack {
+            id: "SPL".into(),
+            family: "cymbal".into(),
+        },
+        RenderTrack {
+            id: "CHN".into(),
+            family: "cymbal".into(),
+        },
+    ];
+    score.measures[0].events = vec![
+        render_hit(
+            "CB",
+            vec![],
+            Fraction {
+                numerator: 0,
+                denominator: 1,
+            },
+            Fraction {
+                numerator: 1,
+                denominator: 4,
+            },
+        ),
+        render_hit(
+            "WB",
+            vec![],
+            Fraction {
+                numerator: 1,
+                denominator: 4,
+            },
+            Fraction {
+                numerator: 1,
+                denominator: 4,
+            },
+        ),
+        render_hit(
+            "SPL",
+            vec![],
+            Fraction {
+                numerator: 1,
+                denominator: 2,
+            },
+            Fraction {
+                numerator: 1,
+                denominator: 4,
+            },
+        ),
+        render_hit(
+            "CHN",
+            vec![],
+            Fraction {
+                numerator: 3,
+                denominator: 4,
+            },
+            Fraction {
+                numerator: 1,
+                denominator: 4,
+            },
+        ),
+    ];
+
+    let scene = build_layout_scene(&score, &LayoutOptions::default());
+    let staff_top = page_all_items(&scene.pages[0])
+        .find(|item| item.role == "staff-line")
+        .and_then(|item| match &item.primitive {
+            ScenePrimitive::LineSegment(line) => Some(line.y1_pt),
+            _ => None,
+        })
+        .expect("expected staff line");
+    let staff_space_pt = LayoutOptions::default().staff_space_pt;
+    let mut glyphs = page_all_items(&scene.pages[0])
+        .filter(|item| item.role == "notehead")
+        .filter_map(|item| match &item.primitive {
+            ScenePrimitive::TextRun(text) => text.text.chars().next().map(|ch| (text.y_pt, ch as u32)),
+            _ => None,
+        })
+        .collect::<Vec<_>>();
+    glyphs.sort_by(|left, right| left.0.partial_cmp(&right.0).unwrap());
+
+    assert!(glyphs.iter().any(|(_, cp)| *cp == 0xE0BE));
+    assert!(glyphs.iter().filter(|(_, cp)| *cp == 0xE0BE).count() >= 2);
+    assert!(glyphs
+        .iter()
+        .any(|(y, cp)| *cp == 0xE0BE && (*y - (staff_top + staff_space_pt * 0.5)).abs() < 0.01));
+    assert!(glyphs
+        .iter()
+        .any(|(y, cp)| *cp == 0xE0BE && (*y - (staff_top + staff_space_pt * 1.0)).abs() < 0.01));
+    assert!(glyphs
+        .iter()
+        .any(|(y, cp)| *cp == 0xE0A9 && (*y - (staff_top - staff_space_pt * 1.5)).abs() < 0.01));
+    assert!(glyphs
+        .iter()
+        .any(|(y, cp)| *cp == 0xE0A9 && (*y - (staff_top - staff_space_pt * 2.0)).abs() < 0.01));
+}
+
+#[cfg(test)]
+fn render_hit(
+    track: &str,
+    modifiers: Vec<&str>,
+    start: Fraction,
+    visual_duration: Fraction,
+) -> RenderEvent {
+    RenderEvent {
+        track: track.into(),
+        track_family: track_family(track).into(),
+        start,
+        duration: visual_duration,
+        visual_duration,
+        kind: EventKind::Hit,
+        glyph: "d".into(),
+        modifiers: modifiers.into_iter().map(str::to_string).collect::<Vec<_>>(),
+        dot_count: 0,
+        modifier: None,
+        voice: 1,
+        beam: "none".into(),
+        tuplet: None,
+    }
+}
+
+#[cfg(test)]
+fn single_hit_score(track: &str, modifiers: Vec<&str>, visual_duration: Fraction) -> RenderScore {
+    RenderScore {
+        version: RENDER_SCORE_VERSION.to_string(),
+        header: RenderHeader {
+            tempo: 120,
+            time_beats: 4,
+            time_beat_unit: 4,
+            note_value: 8,
+            grouping: vec![1, 1, 1, 1],
+            title: None,
+            subtitle: None,
+            composer: None,
+        },
+        tracks: vec![RenderTrack {
+            id: track.into(),
+            family: track_family(track).into(),
+        }],
+        measures: vec![RenderMeasure {
+            index: 0,
+            global_index: 0,
+            paragraph_index: 0,
+            measure_in_paragraph: 0,
+            source_line: 1,
+            actual_duration: Fraction { numerator: 1, denominator: 1 },
+            full_duration: Fraction { numerator: 1, denominator: 1 },
+            events: vec![render_hit(
+                track,
+                modifiers,
+                Fraction {
+                    numerator: 0,
+                    denominator: 1,
+                },
+                visual_duration,
+            )],
+            barline: Some("final".into()),
+            closing_barline: Some("final".into()),
+            start_nav: None,
+            end_nav: None,
+            volta_indices: None,
+            hairpins: vec![],
+            dynamics: vec![],
+            rehearsal_mark: None,
+            measure_repeat_slashes: None,
+            multi_rest_count: None,
+            note_value: 8,
+            volta_terminator: false,
+        }],
+        errors: vec![],
+        repeat_spans: vec![],
+    }
 }
 
 #[cfg(test)]

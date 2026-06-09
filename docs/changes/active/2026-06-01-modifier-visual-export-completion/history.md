@@ -179,3 +179,73 @@ Current -> target matrix:
   - Current layout: x notehead via cymbal fallback at `staff_y_for_track = -2.0`.
   - Current MusicXML: x notehead; display pitch `C6`.
   - Target: explicit x notehead on the second line above the staff (`staff_y = -2.0`), MusicXML x notehead with aligned display pitch.
+
+### Task 2 Implementation
+
+Status:
+- done
+
+Implemented:
+- `dead` now resolves to the x / dead notehead in layout.
+- `CB` and `WB` now resolve to the upward triangle notehead in layout.
+- `CB`, `WB`, `SPL`, and `CHN` now use explicit `staff_y_for_track(...)` semantics instead of generic fallback.
+- `roll` now emits `roll-slash` scene items anchored to the resolved stem.
+- `choke` now emits an apostrophe-like upper-right mark as `choke`.
+- `half-open` now emits a dedicated `half-open` pictogram item above the note.
+
+Verification:
+- `cargo test -p drummark-layout -- --nocapture`
+
+### Task 3 Export Alignment
+
+Status:
+- done
+
+Implemented:
+- `choke` now exports deterministic MusicXML `<other-technical>choke</other-technical>`.
+- `half-open` remains deterministic MusicXML `<other-technical>half-open</other-technical>`.
+- `CB` and `WB` now export triangle noteheads with aligned display pitches.
+- `SPL` and `CHN` now export explicit x noteheads with aligned display pitches.
+
+Verification:
+- `cargo test -p drummark-core -- --nocapture`
+- `npm test -- --run src/dsl/musicxml_corpus.test.ts`
+
+## Consolidated Changes
+
+- Integrated accepted specialty-track semantics into `docs/DRUMMARK_SPEC.md` section 5 and accepted modifier semantics into section 6.
+- Appended `## Addendum 2026-06-08: Visual / Export Completion` to `docs/RENDER_LAYOUT_CONTRACT.md`.
+
+### Task 4 Downstream Verification
+
+Status:
+- done with noted external drift
+
+Implemented:
+- Rebuilt parser/layout WASM outputs.
+- Updated `docs/examples/modifiers.drum` to cover `CB`, `WB`, `SPL`, and `CHN`.
+- Regenerated browser and native SVG outputs for the modifiers example.
+
+Verification:
+- `npm run drummark -- docs/examples/modifiers.drum --format svg`
+- `npm run drummark -- docs/examples/modifiers.drum --format xml`
+- `npm run drummark:native -- docs/examples/modifiers.drum --format svg`
+- `npm run wasm:build`
+- `npm test -- --run src/wasm/parser_layout_parity.test.ts src/renderer/svgSceneAdapter.test.ts src/dsl/musicxml_corpus.test.ts`
+
+Notes:
+- `npm test -- --run src/renderer/corpusGate.test.ts` still fails because the repository's broader corpus report and representative snapshots are already stale across many unrelated examples. This change did not bulk-rebaseline that separate corpus-golden layer.
+
+### Implementation Review
+
+Reviewer: self-review
+
+### Review Checklist
+- [x] Planned scope completed — modifier visuals/export semantics and the targeted specialty-track semantics are implemented.
+- [x] Contract ownership respected — all new noteheads and marks come from layout/MusicXML ownership, not adapter-side engraving logic.
+- [x] Tests and verification executed — Rust layout/core tests, browser CLI smoke, native CLI smoke, WASM build, and parity/musicxml tests all passed.
+- [x] Spec/contract updates integrated — accepted behavior is reflected in `docs/DRUMMARK_SPEC.md` and `docs/RENDER_LAYOUT_CONTRACT.md`.
+- [x] Regressions assessed — notehead mappings, staff positions, and MusicXML export are covered by focused tests.
+- [x] Remaining blockers identified — only the unrelated existing corpus-golden drift remains outside this change's scope.
+
+STATUS: APPROVED

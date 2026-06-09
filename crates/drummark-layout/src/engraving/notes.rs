@@ -62,9 +62,33 @@ pub(crate) struct NotePlacement {
     pub(crate) note_y: f32,
     pub(crate) note_center_x: f32,
     pub(crate) has_accent: bool,
+    pub(crate) has_roll: bool,
+    pub(crate) has_choke: bool,
+    pub(crate) has_half_open: bool,
     pub(crate) note_role: GlyphRole,
     pub(crate) stem_up_anchor_ss: Option<GlyphPoint>,
     pub(crate) stem_down_anchor_ss: Option<GlyphPoint>,
+}
+
+#[derive(Clone)]
+pub(crate) struct AnchoredGlyphPlan {
+    pub(crate) role: &'static str,
+    pub(crate) x: f32,
+    pub(crate) y: f32,
+    pub(crate) glyph_role: GlyphRole,
+    pub(crate) font_size_pt: f32,
+    pub(crate) anchor_item_id: Option<String>,
+}
+
+#[derive(Clone)]
+pub(crate) struct AnchoredLinePlan {
+    pub(crate) role: &'static str,
+    pub(crate) x1: f32,
+    pub(crate) y1: f32,
+    pub(crate) x2: f32,
+    pub(crate) y2: f32,
+    pub(crate) stroke_width: f32,
+    pub(crate) anchor_item_id: Option<String>,
 }
 
 #[derive(Clone, Copy)]
@@ -116,6 +140,8 @@ pub(crate) struct HitClusterPlan {
     pub(crate) ledger_lines: Vec<LineObstacle>,
     pub(crate) stem_plan: Option<StemRenderPlan>,
     pub(crate) accent_glyphs: Vec<GlyphObstacle>,
+    pub(crate) modifier_glyphs: Vec<AnchoredGlyphPlan>,
+    pub(crate) modifier_lines: Vec<AnchoredLinePlan>,
 }
 
 pub(crate) struct SlotTopObstacle {
@@ -505,6 +531,30 @@ pub(crate) fn render_slot_group(sink: &mut SceneEmitSink<'_>, input: RenderSlotG
             for accent in &cluster_plan.accent_glyphs {
                 top_y = top_y.min(rect_obstacle_from_glyph(accent.clone()).y1);
             }
+            for glyph in &cluster_plan.modifier_glyphs {
+                top_y = top_y.min(
+                    rect_obstacle_from_glyph(GlyphObstacle {
+                        x: glyph.x,
+                        y: glyph.y,
+                        glyph_role: glyph.glyph_role,
+                        font_size_pt: glyph.font_size_pt,
+                        anchor_item_id: glyph.anchor_item_id.clone(),
+                    })
+                    .y1,
+                );
+            }
+            for line in &cluster_plan.modifier_lines {
+                top_y = top_y.min(
+                    rect_obstacle_from_line(LineObstacle {
+                        x1: line.x1,
+                        y1: line.y1,
+                        x2: line.x2,
+                        y2: line.y2,
+                        stroke_width: line.stroke_width,
+                    })
+                    .y1,
+                );
+            }
             top_obstacles.push(SlotTopObstacle {
                 x: input.event_x,
                 top_y,
@@ -533,6 +583,24 @@ pub(crate) fn render_slot_group(sink: &mut SceneEmitSink<'_>, input: RenderSlotG
                 .cloned()
                 .map(rect_obstacle_from_glyph),
         );
+        slot_obstacles.extend(cluster_plan.modifier_glyphs.iter().map(|glyph| {
+            rect_obstacle_from_glyph(GlyphObstacle {
+                x: glyph.x,
+                y: glyph.y,
+                glyph_role: glyph.glyph_role,
+                font_size_pt: glyph.font_size_pt,
+                anchor_item_id: glyph.anchor_item_id.clone(),
+            })
+        }));
+        slot_obstacles.extend(cluster_plan.modifier_lines.iter().map(|line| {
+            rect_obstacle_from_line(LineObstacle {
+                x1: line.x1,
+                y1: line.y1,
+                x2: line.x2,
+                y2: line.y2,
+                stroke_width: line.stroke_width,
+            })
+        }));
     }
 
     let slot_hit_center_x = note_anchors_by_voice
@@ -704,6 +772,30 @@ fn sticking_baseline_y_above_slot_content(
         for accent in &cluster_plan.accent_glyphs {
             content_top = content_top.min(rect_obstacle_from_glyph(accent.clone()).y1);
         }
+        for glyph in &cluster_plan.modifier_glyphs {
+            content_top = content_top.min(
+                rect_obstacle_from_glyph(GlyphObstacle {
+                    x: glyph.x,
+                    y: glyph.y,
+                    glyph_role: glyph.glyph_role,
+                    font_size_pt: glyph.font_size_pt,
+                    anchor_item_id: glyph.anchor_item_id.clone(),
+                })
+                .y1,
+            );
+        }
+        for line in &cluster_plan.modifier_lines {
+            content_top = content_top.min(
+                rect_obstacle_from_line(LineObstacle {
+                    x1: line.x1,
+                    y1: line.y1,
+                    x2: line.x2,
+                    y2: line.y2,
+                    stroke_width: line.stroke_width,
+                })
+                .y1,
+            );
+        }
     }
     content_top - sticking_metric.line_height_pt - sticking_padding + sticking_metric.ascent_pt
 }
@@ -857,6 +949,24 @@ pub(crate) fn render_hit_cluster(
             .modifiers
             .iter()
             .any(|modifier| modifier == "accent");
+        let has_roll = placement
+            .slot_event
+            .event
+            .modifiers
+            .iter()
+            .any(|modifier| modifier == "roll");
+        let has_choke = placement
+            .slot_event
+            .event
+            .modifiers
+            .iter()
+            .any(|modifier| modifier == "choke");
+        let has_half_open = placement
+            .slot_event
+            .event
+            .modifiers
+            .iter()
+            .any(|modifier| modifier == "half-open");
         let dot_count = placement.slot_event.event.dot_count as usize;
         if dot_count > 0 {
             let dot_metric = canonical_glyph_metric(GlyphRole::AugmentationDot);
@@ -908,6 +1018,9 @@ pub(crate) fn render_hit_cluster(
             note_y: actual_note_y,
             note_center_x,
             has_accent,
+            has_roll,
+            has_choke,
+            has_half_open,
             note_role: placement.note_role,
             stem_up_anchor_ss: placement.glyph_metric.stem_up_anchor_ss,
             stem_down_anchor_ss: placement.glyph_metric.stem_down_anchor_ss,
@@ -944,6 +1057,10 @@ pub(crate) fn render_hit_cluster(
         input.stem_len_pt,
     );
     let accent_glyphs = build_accent_glyph_plans(&note_placements, stem_up, stem_plan.as_ref(), sink.staff_space_pt);
+    let modifier_glyphs =
+        build_modifier_glyph_plans(&note_placements, stem_up, stem_plan.as_ref(), sink.staff_space_pt);
+    let modifier_lines =
+        build_modifier_line_plans(&note_placements, stem_up, stem_plan.as_ref(), sink.staff_space_pt);
 
     HitClusterPlan {
         measure_id: input.measure_id.to_string(),
@@ -953,6 +1070,8 @@ pub(crate) fn render_hit_cluster(
         ledger_lines,
         stem_plan,
         accent_glyphs,
+        modifier_glyphs,
+        modifier_lines,
     }
 }
 
@@ -1115,6 +1234,43 @@ pub(crate) fn render_hit_cluster_stem_and_accents(
                         .first()
                         .map(|note| note.note_id.clone())
                 }),
+        );
+    }
+    for glyph in &cluster_plan.modifier_glyphs {
+        let glyph_id = sink.push_glyph_item(GlyphItemSpec {
+            measure_id: Some(cluster_plan.measure_id.as_str()),
+            role: glyph.role,
+            x: glyph.x,
+            y: glyph.y,
+            glyph_role: glyph.glyph_role,
+            font_family: "Bravura",
+            font_size_pt: glyph.font_size_pt,
+            fill: "#333",
+        });
+        sink.set_anchor_item_id(&glyph_id, glyph.anchor_item_id.clone().or_else(|| stem_item_id.clone()));
+    }
+    for line in &cluster_plan.modifier_lines {
+        let line_id = sink.push_line_item(LineItemSpec {
+            measure_id: Some(cluster_plan.measure_id.as_str()),
+            role: line.role,
+            x1: line.x1,
+            y1: line.y1,
+            x2: line.x2,
+            y2: line.y2,
+            stroke: "#333",
+            stroke_width: line.stroke_width,
+            stroke_line_cap: Some("round"),
+        });
+        sink.set_anchor_item_id(
+            &line_id,
+            line.anchor_item_id.clone().or_else(|| {
+                stem_item_id.clone().or_else(|| {
+                    cluster_plan
+                        .note_placements
+                        .first()
+                        .map(|note| note.note_id.clone())
+                })
+            }),
         );
     }
 }
@@ -1523,11 +1679,111 @@ fn build_accent_glyph_plans(
         .collect()
 }
 
+fn build_modifier_glyph_plans(
+    note_placements: &[NotePlacement],
+    stem_up: bool,
+    stem_plan: Option<&StemRenderPlan>,
+    staff_space_pt: f32,
+) -> Vec<AnchoredGlyphPlan> {
+    let half_open_font_size = notation_render_font_pt(staff_space_pt);
+    let half_open_width =
+        rendered_glyph_width(GlyphRole::PictHalfOpen1, half_open_font_size);
+    let half_open_gap = staff_space_pt * 0.8;
+
+    note_placements
+        .iter()
+        .filter(|placement| placement.has_half_open)
+        .map(|placement| {
+            let reference_y = stem_plan
+                .map(|plan| if stem_up { plan.y1 } else { plan.y2 })
+                .unwrap_or(placement.note_y - staff_space_pt * 1.4);
+            AnchoredGlyphPlan {
+                role: "half-open",
+                x: placement.note_center_x - half_open_width * 0.5,
+                y: reference_y - half_open_gap,
+                glyph_role: GlyphRole::PictHalfOpen1,
+                font_size_pt: half_open_font_size,
+                anchor_item_id: Some(placement.note_id.clone()),
+            }
+        })
+        .collect()
+}
+
+fn build_modifier_line_plans(
+    note_placements: &[NotePlacement],
+    stem_up: bool,
+    stem_plan: Option<&StemRenderPlan>,
+    staff_space_pt: f32,
+) -> Vec<AnchoredLinePlan> {
+    let mut plans = Vec::new();
+    let note_font_size = notation_render_font_pt(staff_space_pt);
+    let apostrophe_height = staff_space_pt * 0.7;
+    let apostrophe_width = staff_space_pt * 0.3;
+    let apostrophe_gap_x = staff_space_pt * 0.35;
+    let apostrophe_gap_y = staff_space_pt * 0.9;
+
+    for placement in note_placements.iter().filter(|placement| placement.has_choke) {
+        let note_width = rendered_glyph_width(placement.note_role, note_font_size);
+        let x1 = placement.note_x + note_width + apostrophe_gap_x;
+        let y1 = placement.note_y - apostrophe_gap_y;
+        plans.push(AnchoredLinePlan {
+            role: "choke",
+            x1,
+            y1,
+            x2: x1 + apostrophe_width,
+            y2: y1 - apostrophe_height,
+            stroke_width: ENGRAVING_STROKE_WIDTH_PT,
+            anchor_item_id: Some(placement.note_id.clone()),
+        });
+    }
+
+    if let Some(stem_plan) = stem_plan {
+        if note_placements.iter().any(|placement| placement.has_roll) {
+            let slash_spacing = staff_space_pt * 0.55;
+            let slash_half_height = staff_space_pt * 0.45;
+            let slash_left = staff_space_pt * 0.55;
+            let slash_right = staff_space_pt * 0.85;
+            let center_y = if stem_up {
+                stem_plan.y2 - (stem_plan.y2 - stem_plan.y1) * 0.45
+            } else {
+                stem_plan.y1 + (stem_plan.y2 - stem_plan.y1) * 0.45
+            };
+
+            for index in -1..=1 {
+                let offset = index as f32 * slash_spacing;
+                let (y1, y2) = if stem_up {
+                    (
+                        center_y + offset - slash_half_height,
+                        center_y + offset + slash_half_height,
+                    )
+                } else {
+                    (
+                        center_y + offset + slash_half_height,
+                        center_y + offset - slash_half_height,
+                    )
+                };
+                plans.push(AnchoredLinePlan {
+                    role: "roll-slash",
+                    x1: stem_plan.x - slash_left,
+                    y1,
+                    x2: stem_plan.x + slash_right,
+                    y2,
+                    stroke_width: ENGRAVING_STROKE_WIDTH_PT,
+                    anchor_item_id: stem_plan.anchor_note_id.clone(),
+                });
+            }
+        }
+    }
+
+    plans
+}
+
 #[cfg(test)]
 pub(crate) fn glyph_role_for_codepoint(codepoint: u32) -> GlyphRole {
     match codepoint {
         0xE0A9 => GlyphRole::NoteheadX,
         0xE0DB => GlyphRole::NoteheadDiamond,
+        0xE0BE => GlyphRole::NoteheadTriangleUp,
         0xE0B3 => GlyphRole::NoteheadCircleX,
         0xE0D0 => GlyphRole::NoteheadRim,
         _ => GlyphRole::NoteheadBlack,

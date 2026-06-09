@@ -425,6 +425,9 @@ fn notations_xml(event: &NormalizedEvent, sticking: Option<&str>) -> String {
     if event.modifiers.iter().any(|m| m == "close") {
         technical.push("<stopped/>".to_string());
     }
+    if event.modifiers.iter().any(|m| m == "choke") {
+        technical.push("<other-technical>choke</other-technical>".to_string());
+    }
     if event.modifiers.iter().any(|m| m == "half-open") {
         technical.push("<other-technical>half-open</other-technical>".to_string());
     }
@@ -565,10 +568,10 @@ fn instrument_for_track(track: &str) -> InstrumentSpec {
         "RC2" => InstrumentSpec { display_step: "E", display_octave: 5, notehead: Some("x") },
         "C" => InstrumentSpec { display_step: "A", display_octave: 5, notehead: Some("x") },
         "C2" => InstrumentSpec { display_step: "B", display_octave: 5, notehead: Some("x") },
-        "SPL" => InstrumentSpec { display_step: "D", display_octave: 6, notehead: Some("x") },
+        "SPL" => InstrumentSpec { display_step: "B", display_octave: 5, notehead: Some("x") },
         "CHN" => InstrumentSpec { display_step: "C", display_octave: 6, notehead: Some("x") },
-        "CB" => InstrumentSpec { display_step: "B", display_octave: 4, notehead: None },
-        "WB" => InstrumentSpec { display_step: "A", display_octave: 3, notehead: None },
+        "CB" => InstrumentSpec { display_step: "E", display_octave: 5, notehead: Some("triangle") },
+        "WB" => InstrumentSpec { display_step: "D", display_octave: 5, notehead: Some("triangle") },
         "CL" => InstrumentSpec { display_step: "G", display_octave: 4, notehead: None },
         "ST" => InstrumentSpec { display_step: "B", display_octave: 5, notehead: None },
         _ => InstrumentSpec { display_step: "B", display_octave: 5, notehead: None },
@@ -987,6 +990,45 @@ mod tests {
         let xml = build_music_xml(&score, false);
 
         assert_eq!(xml.matches("<notehead>diamond</notehead>").count(), 2);
+    }
+
+    #[test]
+    fn exports_choke_and_half_open_as_other_technical() {
+        let doc = Parser::new(
+            "time 4/4\n\
+             note 1/4\n\
+             grouping 4\n\n\
+             C | d:choke - - - |\n\
+             HH | d:half-open - - - |",
+        )
+        .parse_lossy();
+        let score = crate::normalize::normalize_document(&doc);
+        let xml = build_music_xml(&score, false);
+
+        assert!(xml.contains("<other-technical>choke</other-technical>"));
+        assert!(xml.contains("<other-technical>half-open</other-technical>"));
+    }
+
+    #[test]
+    fn exports_specialty_track_noteheads_with_explicit_shapes() {
+        let doc = Parser::new(
+            "time 4/4\n\
+             note 1/4\n\
+             grouping 4\n\n\
+             CB | d - - - |\n\
+             WB | d - - - |\n\
+             SPL | x - - - |\n\
+             CHN | x - - - |",
+        )
+        .parse_lossy();
+        let score = crate::normalize::normalize_document(&doc);
+        let xml = build_music_xml(&score, false);
+
+        assert_eq!(xml.matches("<notehead>triangle</notehead>").count(), 2);
+        assert!(xml.contains("<display-step>E</display-step><display-octave>5</display-octave>"));
+        assert!(xml.contains("<display-step>D</display-step><display-octave>5</display-octave>"));
+        assert!(xml.contains("<display-step>B</display-step><display-octave>5</display-octave>"));
+        assert!(xml.contains("<display-step>C</display-step><display-octave>6</display-octave>"));
     }
 
     #[test]

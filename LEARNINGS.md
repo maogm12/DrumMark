@@ -482,3 +482,14 @@ When an older note conflicts with this file, treat this file plus the active spe
 
 - Rehearsal-mark payloads cannot be reconstructed by consuming normal raw tokens one by one, because the existing lexer correctly tokenizes `#...` as a comment and will swallow a closing `]` that appears later on the same line.
 - In `crates/drummark-core/src/parser.rs`, the safe way to preserve literal bracket payload text is: consume `[` normally, inspect `lexer.remainder()` byte-by-byte for `]` / nested `[` / newline, then advance the Logos cursor with `lexer.bump(...)`. This keeps `#` literal inside rehearsal marks without changing global comment lexing.
+
+## 2026-06-07 Choke Mark Standardization
+
+- SMuFL defines `pictChokeCymbal` (U+E805) as a canonical percussion pictogram, labeled `Choke (Weinberg)`, where `Weinberg` refers to Norman Weinberg's *Guide to Standardized Drumset Notation* (Percussive Arts Society, 1998).
+- That glyph is a valid normalized cymbal-choke symbol, but when the product decision is to use the common plus-sign-like stopped mark, the better export target is MusicXML `stopped` rather than `other-technical`.
+- Treat the stopped-style plus-sign choice as a full visual/export semantic: layout should draw the plus-sign-like mark above the note, and MusicXML should emit `stopped` so renderers that understand the standard technical mark preserve the intent.
+
+## 2026-06-08 Choke Apostrophe Decision
+
+- If product notation chooses an apostrophe-like choke mark instead of the MusicXML-style stopped symbol, the safer v1 export is to keep `choke` as deterministic `other-technical` rather than pretending it is `stopped`.
+- In that configuration, `choke` layout placement should be treated as an upper-right attached mark, not a centered-above-note mark.

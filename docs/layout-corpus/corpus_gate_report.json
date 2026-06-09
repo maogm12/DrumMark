@@ -6,16 +6,13 @@
         "pages": 1,
         "systems": 1,
         "measures": 1,
-        "items": 46,
-        "composites": 2,
+        "items": 43,
+        "composites": 1,
         "itemRoles": {
           "title": 1,
           "staff-line": 5,
           "percussion-clef": 1,
           "time-signature-digit": 2,
-          "tempo-glyph": 1,
-          "tempo-equals": 1,
-          "tempo": 1,
           "opening-barline": 1,
           "notehead": 12,
           "stem": 10,
@@ -26,10 +23,10 @@
           "final-barline-thick": 1
         },
         "compositeKinds": {
-          "textBlock": 2
+          "textBlock": 1
         },
         "fragmentKinds": {
-          "textBlock:singleSegment": 2
+          "textBlock:singleSegment": 1
         }
       }
     },
@@ -39,29 +36,27 @@
         "pages": 1,
         "systems": 1,
         "measures": 1,
-        "items": 48,
-        "composites": 2,
+        "items": 40,
+        "composites": 1,
         "itemRoles": {
           "title": 1,
           "staff-line": 5,
           "percussion-clef": 1,
           "time-signature-digit": 2,
-          "tempo-glyph": 1,
-          "tempo-equals": 1,
-          "tempo": 1,
           "opening-barline": 1,
           "notehead": 10,
-          "rest": 11,
           "stem": 6,
-          "flag": 6,
+          "rest": 7,
+          "flag": 4,
+          "beam": 1,
           "final-barline-thin": 1,
           "final-barline-thick": 1
         },
         "compositeKinds": {
-          "textBlock": 2
+          "textBlock": 1
         },
         "fragmentKinds": {
-          "textBlock:singleSegment": 2
+          "textBlock:singleSegment": 1
         }
       }
     },
@@ -342,7 +337,7 @@
         "pages": 2,
         "systems": 7,
         "measures": 10,
-        "items": 342,
+        "items": 338,
         "composites": 8,
         "itemRoles": {
           "title": 1,
@@ -356,7 +351,7 @@
           "tempo": 1,
           "opening-barline": 7,
           "notehead": 77,
-          "rest": 76,
+          "rest": 72,
           "stem": 58,
           "beam": 10,
           "flag": 20,
@@ -395,16 +390,13 @@
         "pages": 2,
         "systems": 7,
         "measures": 7,
-        "items": 345,
-        "composites": 2,
+        "items": 342,
+        "composites": 1,
         "itemRoles": {
           "title": 1,
           "staff-line": 35,
           "percussion-clef": 7,
           "time-signature-digit": 2,
-          "tempo-glyph": 1,
-          "tempo-equals": 1,
-          "tempo": 1,
           "opening-barline": 7,
           "notehead": 91,
           "stem": 82,
@@ -421,10 +413,10 @@
           "final-barline-thick": 1
         },
         "compositeKinds": {
-          "textBlock": 2
+          "textBlock": 1
         },
         "fragmentKinds": {
-          "textBlock:singleSegment": 2
+          "textBlock:singleSegment": 1
         }
       }
     },
@@ -434,16 +426,13 @@
         "pages": 1,
         "systems": 1,
         "measures": 2,
-        "items": 84,
-        "composites": 4,
+        "items": 81,
+        "composites": 3,
         "itemRoles": {
           "title": 1,
           "staff-line": 5,
           "percussion-clef": 1,
           "time-signature-digit": 2,
-          "tempo-glyph": 1,
-          "tempo-equals": 1,
-          "tempo": 1,
           "opening-barline": 1,
           "notehead": 21,
           "stem": 18,
@@ -457,11 +446,11 @@
           "hairpin-bottom": 2
         },
         "compositeKinds": {
-          "textBlock": 2,
+          "textBlock": 1,
           "hairpin": 2
         },
         "fragmentKinds": {
-          "textBlock:singleSegment": 2,
+          "textBlock:singleSegment": 1,
           "hairpin:singleSegment": 2
         }
       }
@@ -507,16 +496,13 @@
         "pages": 1,
         "systems": 1,
         "measures": 4,
-        "items": 86,
-        "composites": 2,
+        "items": 83,
+        "composites": 1,
         "itemRoles": {
           "title": 1,
           "staff-line": 5,
           "percussion-clef": 1,
           "time-signature-digit": 2,
-          "tempo-glyph": 1,
-          "tempo-equals": 1,
-          "tempo": 1,
           "opening-barline": 1,
           "notehead": 32,
           "stem": 32,
@@ -526,10 +512,10 @@
           "final-barline-thick": 1
         },
         "compositeKinds": {
-          "textBlock": 2
+          "textBlock": 1
         },
         "fragmentKinds": {
-          "textBlock:singleSegment": 2
+          "textBlock:singleSegment": 1
         }
       }
     },
@@ -537,31 +523,33 @@
       "file": "docs/examples/modifiers.drum",
       "summary": {
         "pages": 2,
-        "systems": 6,
-        "measures": 6,
-        "items": 173,
+        "systems": 10,
+        "measures": 10,
+        "items": 255,
         "composites": 2,
         "itemRoles": {
           "title": 1,
-          "staff-line": 30,
-          "percussion-clef": 6,
+          "staff-line": 50,
+          "percussion-clef": 10,
           "time-signature-digit": 2,
           "tempo-glyph": 1,
           "tempo-equals": 1,
           "tempo": 1,
-          "opening-barline": 6,
-          "notehead": 20,
-          "rest": 34,
-          "stem": 20,
-          "flag": 20,
-          "barline": 5,
-          "measure-number": 5,
+          "opening-barline": 10,
+          "notehead": 24,
+          "stem": 24,
+          "rest": 54,
+          "flag": 24,
+          "barline": 9,
+          "measure-number": 9,
           "grace-notehead": 5,
           "grace-stem": 5,
           "grace-beam": 2,
           "grace-beam-secondary": 2,
-          "ledger-line": 1,
+          "roll-slash": 9,
+          "ledger-line": 4,
           "accent": 2,
+          "choke": 2,
           "grace-flag": 1,
           "grace-slash": 1,
           "final-barline-thin": 1,
@@ -581,16 +569,13 @@
         "pages": 1,
         "systems": 1,
         "measures": 1,
-        "items": 19,
-        "composites": 3,
+        "items": 16,
+        "composites": 2,
         "itemRoles": {
           "title": 1,
           "staff-line": 5,
           "percussion-clef": 1,
           "time-signature-digit": 2,
-          "tempo-glyph": 1,
-          "tempo-equals": 1,
-          "tempo": 1,
           "opening-barline": 1,
           "multi-rest-bar": 1,
           "multi-rest-serif": 2,
@@ -599,11 +584,11 @@
           "final-barline-thick": 1
         },
         "compositeKinds": {
-          "textBlock": 2,
+          "textBlock": 1,
           "multiRest": 1
         },
         "fragmentKinds": {
-          "textBlock:singleSegment": 2,
+          "textBlock:singleSegment": 1,
           "multiRest:singleSegment": 1
         }
       }
@@ -680,20 +665,16 @@
         "pages": 2,
         "systems": 6,
         "measures": 18,
-        "items": 426,
-        "composites": 15,
+        "items": 416,
+        "composites": 14,
         "itemRoles": {
           "title": 1,
           "staff-line": 30,
           "percussion-clef": 6,
           "time-signature-digit": 2,
-          "tempo-glyph": 1,
-          "tempo-equals": 1,
-          "tempo": 1,
           "opening-barline": 6,
           "repeat-start": 1,
           "notehead": 132,
-          "rest": 26,
           "stem": 116,
           "barline": 12,
           "beam": 35,
@@ -705,6 +686,7 @@
           "volta-end-hook": 3,
           "measure-number": 5,
           "ledger-line": 4,
+          "rest": 19,
           "measure-repeat": 2,
           "double-barline-left": 3,
           "double-barline-right": 3,
@@ -715,13 +697,13 @@
           "final-barline-thick": 2
         },
         "compositeKinds": {
-          "textBlock": 2,
+          "textBlock": 1,
           "volta": 4,
           "measureRepeat": 2,
           "navigation": 7
         },
         "fragmentKinds": {
-          "textBlock:singleSegment": 2,
+          "textBlock:singleSegment": 1,
           "volta:singleSegment": 2,
           "volta:start": 1,
           "volta:end": 1,
@@ -768,16 +750,13 @@
         "pages": 1,
         "systems": 1,
         "measures": 1,
-        "items": 55,
-        "composites": 2,
+        "items": 52,
+        "composites": 1,
         "itemRoles": {
           "title": 1,
           "staff-line": 5,
           "percussion-clef": 1,
           "time-signature-digit": 2,
-          "tempo-glyph": 1,
-          "tempo-equals": 1,
-          "tempo": 1,
           "opening-barline": 1,
           "notehead": 12,
           "stem": 8,
@@ -787,10 +766,10 @@
           "final-barline-thick": 1
         },
         "compositeKinds": {
-          "textBlock": 2
+          "textBlock": 1
         },
         "fragmentKinds": {
-          "textBlock:singleSegment": 2
+          "textBlock:singleSegment": 1
         }
       }
     },
@@ -800,21 +779,18 @@
         "pages": 1,
         "systems": 3,
         "measures": 5,
-        "items": 215,
-        "composites": 2,
+        "items": 208,
+        "composites": 1,
         "itemRoles": {
           "title": 1,
           "staff-line": 15,
           "percussion-clef": 3,
           "time-signature-digit": 2,
-          "tempo-glyph": 1,
-          "tempo-equals": 1,
-          "tempo": 1,
           "opening-barline": 3,
           "notehead": 59,
           "ledger-line": 4,
           "stem": 57,
-          "rest": 15,
+          "rest": 11,
           "beam": 12,
           "beam-secondary": 16,
           "flag": 6,
@@ -825,10 +801,10 @@
           "final-barline-thick": 1
         },
         "compositeKinds": {
-          "textBlock": 2
+          "textBlock": 1
         },
         "fragmentKinds": {
-          "textBlock:singleSegment": 2
+          "textBlock:singleSegment": 1
         }
       }
     },
@@ -838,31 +814,27 @@
         "pages": 1,
         "systems": 1,
         "measures": 1,
-        "items": 27,
-        "composites": 2,
+        "items": 23,
+        "composites": 1,
         "itemRoles": {
           "title": 1,
           "staff-line": 5,
           "percussion-clef": 1,
           "time-signature-digit": 2,
-          "tempo-glyph": 1,
-          "tempo-equals": 1,
-          "tempo": 1,
           "opening-barline": 1,
           "notehead": 4,
           "augmentation-dot": 1,
           "stem": 4,
-          "rest": 1,
           "beam": 1,
           "beam-secondary": 1,
           "final-barline-thin": 1,
           "final-barline-thick": 1
         },
         "compositeKinds": {
-          "textBlock": 2
+          "textBlock": 1
         },
         "fragmentKinds": {
-          "textBlock:singleSegment": 2
+          "textBlock:singleSegment": 1
         }
       }
     },
@@ -872,7 +844,7 @@
         "pages": 3,
         "systems": 19,
         "measures": 73,
-        "items": 1675,
+        "items": 1672,
         "composites": 2,
         "itemRoles": {
           "title": 1,
@@ -891,7 +863,7 @@
           "repeat-start": 2,
           "beam-secondary": 180,
           "repeat-end": 2,
-          "rest": 5,
+          "rest": 2,
           "final-barline-thin": 1,
           "final-barline-thick": 1
         },
@@ -906,10 +878,10 @@
     {
       "file": "examples/李白-李荣浩.drum",
       "summary": {
-        "pages": 6,
+        "pages": 5,
         "systems": 21,
         "measures": 80,
-        "items": 2676,
+        "items": 2660,
         "composites": 18,
         "itemRoles": {
           "title": 1,
@@ -924,7 +896,7 @@
           "notehead": 980,
           "ledger-line": 17,
           "stem": 802,
-          "rest": 329,
+          "rest": 313,
           "beam": 208,
           "barline": 65,
           "measure-number": 20,
@@ -964,7 +936,7 @@
       "summary": {
         "lineCount": 15,
         "rectCount": 3,
-        "textCount": 27,
+        "textCount": 24,
         "polylineCount": 0,
         "openingBarlines": 1,
         "genericBarlines": 0,
@@ -986,7 +958,7 @@
         "voltaLines": 0,
         "sticking": 0,
         "accents": 0,
-        "semanticTextTokens": "120 || Flow Pattern"
+        "semanticTextTokens": "Flow Pattern"
       }
     },
     {
@@ -994,7 +966,7 @@
       "summary": {
         "lineCount": 11,
         "rectCount": 3,
-        "textCount": 34,
+        "textCount": 25,
         "polylineCount": 0,
         "openingBarlines": 1,
         "genericBarlines": 0,
@@ -1004,7 +976,7 @@
         "doubleBarlineRight": 0,
         "noteheads": 10,
         "stems": 6,
-        "rests": 11,
+        "rests": 7,
         "measureRepeats": 0,
         "multiRestBars": 0,
         "multiRestCounts": 0,
@@ -1016,7 +988,7 @@
         "voltaLines": 0,
         "sticking": 0,
         "accents": 0,
-        "semanticTextTokens": "120 || Simultaneous Hits"
+        "semanticTextTokens": "Simultaneous Hits"
       }
     },
     {
@@ -1264,7 +1236,7 @@
       "summary": {
         "lineCount": 97,
         "rectCount": 18,
-        "textCount": 217,
+        "textCount": 213,
         "polylineCount": 0,
         "openingBarlines": 7,
         "genericBarlines": 7,
@@ -1274,7 +1246,7 @@
         "doubleBarlineRight": 1,
         "noteheads": 77,
         "stems": 58,
-        "rests": 76,
+        "rests": 72,
         "measureRepeats": 0,
         "multiRestBars": 0,
         "multiRestCounts": 0,
@@ -1294,7 +1266,7 @@
       "summary": {
         "lineCount": 129,
         "rectCount": 15,
-        "textCount": 169,
+        "textCount": 166,
         "polylineCount": 0,
         "openingBarlines": 7,
         "genericBarlines": 6,
@@ -1316,7 +1288,7 @@
         "voltaLines": 0,
         "sticking": 0,
         "accents": 0,
-        "semanticTextTokens": "120 || 2 || 3 || 3 || 3 || 3 || 4 || 5 || 6 || 7 || Rhythmic Groups"
+        "semanticTextTokens": "2 || 3 || 3 || 3 || 3 || 4 || 5 || 6 || 7 || Rhythmic Groups"
       }
     },
     {
@@ -1324,7 +1296,7 @@
       "summary": {
         "lineCount": 27,
         "rectCount": 4,
-        "textCount": 50,
+        "textCount": 47,
         "polylineCount": 0,
         "openingBarlines": 1,
         "genericBarlines": 1,
@@ -1346,7 +1318,7 @@
         "voltaLines": 0,
         "sticking": 0,
         "accents": 0,
-        "semanticTextTokens": "120 || Hairpin Demo"
+        "semanticTextTokens": "Hairpin Demo"
       }
     },
     {
@@ -1384,7 +1356,7 @@
       "summary": {
         "lineCount": 37,
         "rectCount": 6,
-        "textCount": 39,
+        "textCount": 36,
         "polylineCount": 0,
         "openingBarlines": 1,
         "genericBarlines": 3,
@@ -1406,25 +1378,25 @@
         "voltaLines": 0,
         "sticking": 0,
         "accents": 0,
-        "semanticTextTokens": "120 || Measure Duplication"
+        "semanticTextTokens": "Measure Duplication"
       }
     },
     {
       "file": "docs/examples/modifiers.drum",
       "summary": {
-        "lineCount": 57,
-        "rectCount": 13,
-        "textCount": 99,
+        "lineCount": 95,
+        "rectCount": 21,
+        "textCount": 135,
         "polylineCount": 0,
-        "openingBarlines": 6,
-        "genericBarlines": 5,
+        "openingBarlines": 10,
+        "genericBarlines": 9,
         "finalBarlineThin": 1,
         "finalBarlineThick": 1,
         "doubleBarlineLeft": 0,
         "doubleBarlineRight": 0,
-        "noteheads": 20,
-        "stems": 20,
-        "rests": 34,
+        "noteheads": 24,
+        "stems": 24,
+        "rests": 54,
         "measureRepeats": 0,
         "multiRestBars": 0,
         "multiRestCounts": 0,
@@ -1436,7 +1408,7 @@
         "voltaLines": 0,
         "sticking": 0,
         "accents": 2,
-        "semanticTextTokens": "2 || 3 || 4 || 5 || 6 || 96 || Articulation Techniques"
+        "semanticTextTokens": "10 || 2 || 3 || 4 || 5 || 6 || 7 || 8 || 9 || 96 || Articulation Techniques"
       }
     },
     {
@@ -1444,7 +1416,7 @@
       "summary": {
         "lineCount": 8,
         "rectCount": 3,
-        "textCount": 8,
+        "textCount": 5,
         "polylineCount": 0,
         "openingBarlines": 1,
         "genericBarlines": 0,
@@ -1466,7 +1438,7 @@
         "voltaLines": 0,
         "sticking": 0,
         "accents": 0,
-        "semanticTextTokens": "120 || Extended Rest"
+        "semanticTextTokens": "Extended Rest"
       }
     },
     {
@@ -1534,7 +1506,7 @@
       "summary": {
         "lineCount": 161,
         "rectCount": 28,
-        "textCount": 190,
+        "textCount": 180,
         "polylineCount": 0,
         "openingBarlines": 6,
         "genericBarlines": 12,
@@ -1544,7 +1516,7 @@
         "doubleBarlineRight": 3,
         "noteheads": 132,
         "stems": 116,
-        "rests": 26,
+        "rests": 19,
         "measureRepeats": 2,
         "multiRestBars": 0,
         "multiRestCounts": 0,
@@ -1556,7 +1528,7 @@
         "voltaLines": 4,
         "sticking": 0,
         "accents": 0,
-        "semanticTextTokens": "1. || 10 || 120 || 13 || 16 || 2. || 3. || 4 || 7 || D.C. al Coda || D.C. al Fine || D.S. al Coda || Fine || Repeat Structure || To"
+        "semanticTextTokens": "1. || 10 || 13 || 16 || 2. || 3. || 4 || 7 || D.C. al Coda || D.C. al Fine || D.S. al Coda || Fine || Repeat Structure || To"
       }
     },
     {
@@ -1594,7 +1566,7 @@
       "summary": {
         "lineCount": 13,
         "rectCount": 3,
-        "textCount": 39,
+        "textCount": 36,
         "polylineCount": 0,
         "openingBarlines": 1,
         "genericBarlines": 0,
@@ -1616,7 +1588,7 @@
         "voltaLines": 0,
         "sticking": 0,
         "accents": 0,
-        "semanticTextTokens": "120 || Hit Types"
+        "semanticTextTokens": "Hit Types"
       }
     },
     {
@@ -1624,7 +1596,7 @@
       "summary": {
         "lineCount": 76,
         "rectCount": 9,
-        "textCount": 102,
+        "textCount": 95,
         "polylineCount": 0,
         "openingBarlines": 3,
         "genericBarlines": 4,
@@ -1634,7 +1606,7 @@
         "doubleBarlineRight": 0,
         "noteheads": 59,
         "stems": 57,
-        "rests": 15,
+        "rests": 11,
         "measureRepeats": 0,
         "multiRestBars": 0,
         "multiRestCounts": 0,
@@ -1646,7 +1618,7 @@
         "voltaLines": 0,
         "sticking": 11,
         "accents": 0,
-        "semanticTextTokens": "120 || 3 || 5 || L || L || L || L || L || R || R || R || R || R || R || Track Assignment"
+        "semanticTextTokens": "3 || 5 || L || L || L || L || L || R || R || R || R || R || R || Track Assignment"
       }
     },
     {
@@ -1654,7 +1626,7 @@
       "summary": {
         "lineCount": 9,
         "rectCount": 3,
-        "textCount": 13,
+        "textCount": 9,
         "polylineCount": 0,
         "openingBarlines": 1,
         "genericBarlines": 0,
@@ -1664,7 +1636,7 @@
         "doubleBarlineRight": 0,
         "noteheads": 4,
         "stems": 4,
-        "rests": 1,
+        "rests": 0,
         "measureRepeats": 0,
         "multiRestBars": 0,
         "multiRestCounts": 0,
@@ -1676,7 +1648,7 @@
         "voltaLines": 0,
         "sticking": 0,
         "accents": 0,
-        "semanticTextTokens": "120 || Boundary Crossing"
+        "semanticTextTokens": "Boundary Crossing"
       }
     },
     {
@@ -1684,7 +1656,7 @@
       "summary": {
         "lineCount": 650,
         "rectCount": 91,
-        "textCount": 607,
+        "textCount": 604,
         "polylineCount": 0,
         "openingBarlines": 19,
         "genericBarlines": 70,
@@ -1694,7 +1666,7 @@
         "doubleBarlineRight": 0,
         "noteheads": 555,
         "stems": 555,
-        "rests": 5,
+        "rests": 2,
         "measureRepeats": 0,
         "multiRestBars": 0,
         "multiRestCounts": 0,
@@ -1714,7 +1686,7 @@
       "summary": {
         "lineCount": 971,
         "rectCount": 96,
-        "textCount": 1400,
+        "textCount": 1384,
         "polylineCount": 0,
         "openingBarlines": 21,
         "genericBarlines": 65,
@@ -1724,7 +1696,7 @@
         "doubleBarlineRight": 5,
         "noteheads": 980,
         "stems": 802,
-        "rests": 329,
+        "rests": 313,
         "measureRepeats": 0,
         "multiRestBars": 0,
         "multiRestCounts": 0,

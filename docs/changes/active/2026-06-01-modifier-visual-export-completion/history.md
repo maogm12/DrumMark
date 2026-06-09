@@ -234,7 +234,8 @@ Verification:
 - `npm test -- --run src/wasm/parser_layout_parity.test.ts src/renderer/svgSceneAdapter.test.ts src/dsl/musicxml_corpus.test.ts`
 
 Notes:
-- `npm test -- --run src/renderer/corpusGate.test.ts` still fails because the repository's broader corpus report and representative snapshots are already stale across many unrelated examples. This change did not bulk-rebaseline that separate corpus-golden layer.
+- Refreshed `docs/layout-corpus/corpus_gate_report.json` and the representative scene snapshots so the corpus gate reflects the current accepted layout baseline.
+- `npm test -- --run src/renderer/corpusGate.test.ts` now passes.
 
 ### Implementation Review
 

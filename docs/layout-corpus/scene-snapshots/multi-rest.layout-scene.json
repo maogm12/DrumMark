@@ -44,7 +44,7 @@
           "index": 0,
           "pageIndex": 0,
           "xPt": 40,
-          "yPt": 177,
+          "yPt": 187.6666717529297,
           "widthPt": 532,
           "heightPt": 50,
           "measures": [
@@ -54,8 +54,8 @@
               "globalIndex": 0,
               "systemId": "system-0",
               "xPt": 40,
-              "yPt": 177,
-              "widthPt": 532,
+              "yPt": 187.6666717529297,
+              "widthPt": 16393.6015625,
               "heightPt": 50
             }
           ],
@@ -67,11 +67,11 @@
               "zIndex": 0,
               "primitive": {
                 "x1Pt": 40,
-                "y1Pt": 187,
+                "y1Pt": 197.6666717529297,
                 "x2Pt": 572,
-                "y2Pt": 187,
+                "y2Pt": 197.6666717529297,
                 "stroke": "#333",
-                "strokeWidth": 1
+                "strokeWidth": 0.6000000238418579
               }
             },
             {
@@ -81,11 +81,11 @@
               "zIndex": 0,
               "primitive": {
                 "x1Pt": 40,
-                "y1Pt": 197,
+                "y1Pt": 207.6666717529297,
                 "x2Pt": 572,
-                "y2Pt": 197,
+                "y2Pt": 207.6666717529297,
                 "stroke": "#333",
-                "strokeWidth": 1
+                "strokeWidth": 0.6000000238418579
               }
             },
             {
@@ -95,11 +95,11 @@
               "zIndex": 0,
               "primitive": {
                 "x1Pt": 40,
-                "y1Pt": 207,
+                "y1Pt": 217.6666717529297,
                 "x2Pt": 572,
-                "y2Pt": 207,
+                "y2Pt": 217.6666717529297,
                 "stroke": "#333",
-                "strokeWidth": 1
+                "strokeWidth": 0.6000000238418579
               }
             },
             {
@@ -109,11 +109,11 @@
               "zIndex": 0,
               "primitive": {
                 "x1Pt": 40,
-                "y1Pt": 217,
+                "y1Pt": 227.6666717529297,
                 "x2Pt": 572,
-                "y2Pt": 217,
+                "y2Pt": 227.6666717529297,
                 "stroke": "#333",
-                "strokeWidth": 1
+                "strokeWidth": 0.6000000238418579
               }
             },
             {
@@ -123,11 +123,11 @@
               "zIndex": 0,
               "primitive": {
                 "x1Pt": 40,
-                "y1Pt": 227,
+                "y1Pt": 237.6666717529297,
                 "x2Pt": 572,
-                "y2Pt": 227,
+                "y2Pt": 237.6666717529297,
                 "stroke": "#333",
-                "strokeWidth": 1
+                "strokeWidth": 0.6000000238418579
               }
             },
             {
@@ -137,11 +137,11 @@
               "zIndex": 0,
               "primitive": {
                 "xPt": 45,
-                "yPt": 207,
+                "yPt": 217.6666717529297,
                 "textRole": "percussionClef",
                 "text": "",
                 "fontFamily": "Bravura",
-                "fontSizePt": 30,
+                "fontSizePt": 40,
                 "fill": "#333"
               }
             },
@@ -151,12 +151,12 @@
               "kind": "textRun",
               "zIndex": 0,
               "primitive": {
-                "xPt": 70,
-                "yPt": 197,
+                "xPt": 76.66667175292969,
+                "yPt": 207.6666717529297,
                 "textRole": "timeSignatureDigit",
                 "text": "",
                 "fontFamily": "Bravura",
-                "fontSizePt": 30,
+                "fontSizePt": 40,
                 "fill": "#333"
               }
             },
@@ -166,166 +166,118 @@
               "kind": "textRun",
               "zIndex": 0,
               "primitive": {
-                "xPt": 70,
-                "yPt": 217,
+                "xPt": 76.66667175292969,
+                "yPt": 227.6666717529297,
                 "textRole": "timeSignatureDigit",
                 "text": "",
                 "fontFamily": "Bravura",
-                "fontSizePt": 30,
+                "fontSizePt": 40,
                 "fill": "#333"
               }
             },
             {
               "id": "system-0-item-9",
               "measureId": "measure-0",
-              "role": "tempo-glyph",
-              "kind": "textRun",
+              "role": "opening-barline",
+              "kind": "rect",
               "zIndex": 0,
               "primitive": {
-                "xPt": 49,
-                "yPt": 167,
-                "textRole": "tempo",
-                "text": "",
-                "fontFamily": "Bravura",
-                "fontSizePt": 25,
+                "xPt": 40,
+                "yPt": 197.6666717529297,
+                "widthPt": 0.6000000238418579,
+                "heightPt": 40,
                 "fill": "#333"
               }
             },
             {
               "id": "system-0-item-10",
               "measureId": "measure-0",
-              "role": "tempo-equals",
-              "kind": "textRun",
-              "zIndex": 0,
-              "primitive": {
-                "xPt": 68.06666564941406,
-                "yPt": 167,
-                "textRole": "tempo",
-                "text": "=",
-                "fontFamily": "Academico",
-                "fontSizePt": 14,
-                "fill": "#333"
-              }
-            },
-            {
-              "id": "system-0-item-11",
-              "measureId": "measure-0",
-              "role": "tempo",
-              "kind": "textRun",
-              "zIndex": 0,
-              "primitive": {
-                "xPt": 83.06666564941406,
-                "yPt": 167,
-                "textRole": "tempo",
-                "text": "120",
-                "fontFamily": "Academico",
-                "fontSizePt": 14,
-                "fill": "#333"
-              }
-            },
-            {
-              "id": "system-0-item-12",
-              "measureId": "measure-0",
-              "role": "opening-barline",
-              "kind": "rect",
-              "zIndex": 0,
-              "primitive": {
-                "xPt": 40,
-                "yPt": 187,
-                "widthPt": 1,
-                "heightPt": 40,
-                "fill": "#333"
-              }
-            },
-            {
-              "id": "system-0-item-13",
-              "measureId": "measure-0",
               "role": "multi-rest-bar",
               "kind": "lineSegment",
               "zIndex": 0,
               "primitive": {
-                "x1Pt": 142.39999389648438,
-                "y1Pt": 207,
-                "x2Pt": 513.5999755859375,
-                "y2Pt": 207,
+                "x1Pt": 1739.9600830078125,
+                "y1Pt": 217.6666717529297,
+                "x2Pt": 14790.30859375,
+                "y2Pt": 217.6666717529297,
                 "stroke": "#333",
                 "strokeWidth": 5,
                 "strokeLineCap": "butt"
               }
             },
             {
-              "id": "system-0-item-14",
+              "id": "system-0-item-11",
               "measureId": "measure-0",
               "role": "multi-rest-serif",
               "kind": "lineSegment",
               "zIndex": 0,
               "primitive": {
-                "x1Pt": 142.39999389648438,
-                "y1Pt": 197,
-                "x2Pt": 142.39999389648438,
-                "y2Pt": 217,
+                "x1Pt": 1739.9600830078125,
+                "y1Pt": 207.6666717529297,
+                "x2Pt": 1739.9600830078125,
+                "y2Pt": 227.6666717529297,
                 "stroke": "#333",
                 "strokeWidth": 2,
                 "strokeLineCap": "butt"
               }
             },
             {
-              "id": "system-0-item-15",
+              "id": "system-0-item-12",
               "measureId": "measure-0",
               "role": "multi-rest-serif",
               "kind": "lineSegment",
               "zIndex": 0,
               "primitive": {
-                "x1Pt": 513.5999755859375,
-                "y1Pt": 197,
-                "x2Pt": 513.5999755859375,
-                "y2Pt": 217,
+                "x1Pt": 14790.30859375,
+                "y1Pt": 207.6666717529297,
+                "x2Pt": 14790.30859375,
+                "y2Pt": 227.6666717529297,
                 "stroke": "#333",
                 "strokeWidth": 2,
                 "strokeLineCap": "butt"
               }
             },
             {
-              "id": "system-0-item-16",
+              "id": "system-0-item-13",
               "measureId": "measure-0",
               "role": "multi-rest-count",
               "kind": "textRun",
               "zIndex": 0,
               "primitive": {
-                "xPt": 328,
-                "yPt": 167,
+                "xPt": 8265.1337890625,
+                "yPt": 172.6666717529297,
                 "textRole": "timeSignatureDigit",
                 "text": "",
                 "fontFamily": "Bravura",
-                "fontSizePt": 30,
+                "fontSizePt": 40,
                 "fill": "#333",
                 "textAnchor": "middle"
               }
             },
             {
-              "id": "system-0-item-17",
+              "id": "system-0-item-14",
               "measureId": "measure-0",
               "role": "final-barline-thin",
               "kind": "rect",
               "zIndex": 0,
               "primitive": {
-                "xPt": 568,
-                "yPt": 187,
-                "widthPt": 1,
+                "xPt": 16429.6015625,
+                "yPt": 197.6666717529297,
+                "widthPt": 0.6000000238418579,
                 "heightPt": 40,
                 "fill": "#333"
               }
             },
             {
-              "id": "system-0-item-18",
+              "id": "system-0-item-15",
               "measureId": "measure-0",
               "role": "final-barline-thick",
               "kind": "rect",
               "zIndex": 0,
               "primitive": {
-                "xPt": 569,
-                "yPt": 187,
-                "widthPt": 3,
+                "xPt": 16431.80078125,
+                "yPt": 197.6666717529297,
+                "widthPt": 1.8000000715255737,
                 "heightPt": 40,
                 "fill": "#333"
               }
@@ -333,26 +285,14 @@
           ],
           "composites": [
             {
-              "id": "system-0-text-block-tempo",
-              "kind": "textBlock",
-              "fragment": "singleSegment",
-              "childItemIds": [
-                "system-0-item-9",
-                "system-0-item-10",
-                "system-0-item-11"
-              ],
-              "label": "tempo",
-              "count": 120
-            },
-            {
               "id": "system-0-multi-rest-0",
               "kind": "multiRest",
               "fragment": "singleSegment",
               "childItemIds": [
-                "system-0-item-13",
-                "system-0-item-14",
-                "system-0-item-15",
-                "system-0-item-16"
+                "system-0-item-10",
+                "system-0-item-11",
+                "system-0-item-12",
+                "system-0-item-13"
               ],
               "count": 16,
               "startAnchorId": "measure-0",
@@ -363,5 +303,12 @@
       ]
     }
   ],
-  "issues": []
+  "issues": [
+    "LAYOUT_ERROR item-bounds item=system-0-item-10",
+    "LAYOUT_ERROR item-bounds item=system-0-item-11",
+    "LAYOUT_ERROR item-bounds item=system-0-item-12",
+    "LAYOUT_ERROR item-bounds item=system-0-item-13",
+    "LAYOUT_ERROR item-bounds item=system-0-item-14",
+    "LAYOUT_ERROR item-bounds item=system-0-item-15"
+  ]
 }

@@ -525,7 +525,7 @@
         "pages": 2,
         "systems": 10,
         "measures": 10,
-        "items": 255,
+        "items": 249,
         "composites": 2,
         "itemRoles": {
           "title": 1,
@@ -546,7 +546,7 @@
           "grace-stem": 5,
           "grace-beam": 2,
           "grace-beam-secondary": 2,
-          "roll-slash": 9,
+          "roll-slash": 3,
           "ledger-line": 4,
           "accent": 2,
           "choke": 2,
@@ -1384,9 +1384,9 @@
     {
       "file": "docs/examples/modifiers.drum",
       "summary": {
-        "lineCount": 93,
+        "lineCount": 84,
         "rectCount": 21,
-        "textCount": 137,
+        "textCount": 140,
         "polylineCount": 0,
         "openingBarlines": 10,
         "genericBarlines": 9,

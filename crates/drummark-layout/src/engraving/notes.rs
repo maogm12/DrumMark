@@ -1599,16 +1599,32 @@ fn build_stem_render_plan(
     let stem_layout =
         shared_stem_layout(note_placements, attach_note, stem_up, stem_anchor, smufl_ss);
     let stem_attach_y = stem_layout.stem_attach_y;
-    let stem_y1 = if stem_up {
+    let mut stem_y1 = if stem_up {
         stem_layout.stem_length_reference_y - stem_len_pt
     } else {
         stem_layout.stem_body_min_y
     };
-    let stem_y2 = if stem_up {
+    let mut stem_y2 = if stem_up {
         stem_layout.stem_body_max_y
     } else {
         stem_layout.stem_length_reference_y + stem_len_pt
     };
+    if note_placements.iter().any(|placement| placement.has_roll) {
+        let roll_height = crate::planning::rendered_glyph_height(
+            GlyphRole::Tremolo3,
+            notation_render_font_pt(staff_space_pt),
+        );
+        let required_stem_span = roll_height + staff_space_pt * 1.0;
+        let stem_span = stem_y2 - stem_y1;
+        if stem_span < required_stem_span {
+            let extension = required_stem_span - stem_span;
+            if stem_up {
+                stem_y1 -= extension;
+            } else {
+                stem_y2 += extension;
+            }
+        }
+    }
     Some(StemRenderPlan {
         x: stem_layout.stem_x,
         y1: stem_y1,
@@ -1687,8 +1703,9 @@ fn build_modifier_glyph_plans(
 ) -> Vec<AnchoredGlyphPlan> {
     let choke_font_size = notation_render_font_pt(staff_space_pt);
     let choke_width = rendered_glyph_width(GlyphRole::PictChokeCymbal, choke_font_size);
-    let choke_gap_x = staff_space_pt * 0.3;
-    let choke_gap_y = staff_space_pt * 0.65;
+    let choke_gap_x = staff_space_pt * 0.42;
+    let choke_gap_y = staff_space_pt * 0.48;
+    let tremolo_font_size = notation_render_font_pt(staff_space_pt);
     let half_open_font_size = notation_render_font_pt(staff_space_pt);
     let half_open_width =
         rendered_glyph_width(GlyphRole::PictHalfOpen1, half_open_font_size);
@@ -1703,21 +1720,38 @@ fn build_modifier_glyph_plans(
             if let Some(stem_plan) = stem_plan {
                 if stem_up {
                     x = x.max(stem_plan.x + choke_gap_x);
-                    y = y.min(stem_plan.y1 - choke_gap_y * 0.35);
+                    y = y.min(stem_plan.y1 - choke_gap_y * 0.15);
                 } else {
                     x = x.max(stem_plan.x + choke_gap_x * 0.6);
                 }
             }
             AnchoredGlyphPlan {
                 role: "choke",
-                x: x - choke_width * 0.1,
-                y,
+                x: x - choke_width * 0.1 + 1.0,
+                y: y + 2.0,
                 glyph_role: GlyphRole::PictChokeCymbal,
                 font_size_pt: choke_font_size,
                 anchor_item_id: Some(placement.note_id.clone()),
             }
         })
         .collect::<Vec<_>>();
+
+    if let Some(stem_plan) = stem_plan {
+        if note_placements.iter().any(|placement| placement.has_roll) {
+            let tremolo_metric = canonical_glyph_metric(GlyphRole::Tremolo3);
+            let center_y = stem_plan.y1 + (stem_plan.y2 - stem_plan.y1) * 0.5;
+            plans.push(AnchoredGlyphPlan {
+                role: "roll-slash",
+                x: stem_plan.x
+                    - glyph_bbox_center_x_offset(tremolo_metric, tremolo_font_size),
+                y: center_y
+                    - glyph_bbox_center_y_offset(tremolo_metric, tremolo_font_size),
+                glyph_role: GlyphRole::Tremolo3,
+                font_size_pt: tremolo_font_size,
+                anchor_item_id: stem_plan.anchor_note_id.clone(),
+            });
+        }
+    }
 
     plans.extend(note_placements.iter().filter(|placement| placement.has_half_open).map(|placement| {
             let reference_y = stem_plan
@@ -1737,51 +1771,12 @@ fn build_modifier_glyph_plans(
 }
 
 fn build_modifier_line_plans(
-    note_placements: &[NotePlacement],
-    stem_up: bool,
-    stem_plan: Option<&StemRenderPlan>,
-    staff_space_pt: f32,
+    _note_placements: &[NotePlacement],
+    _stem_up: bool,
+    _stem_plan: Option<&StemRenderPlan>,
+    _staff_space_pt: f32,
 ) -> Vec<AnchoredLinePlan> {
-    let mut plans = Vec::new();
-    if let Some(stem_plan) = stem_plan {
-        if note_placements.iter().any(|placement| placement.has_roll) {
-            let slash_spacing = staff_space_pt * 0.55;
-            let slash_half_height = staff_space_pt * 0.45;
-            let slash_left = staff_space_pt * 0.55;
-            let slash_right = staff_space_pt * 0.85;
-            let center_y = if stem_up {
-                stem_plan.y2 - (stem_plan.y2 - stem_plan.y1) * 0.45
-            } else {
-                stem_plan.y1 + (stem_plan.y2 - stem_plan.y1) * 0.45
-            };
-
-            for index in -1..=1 {
-                let offset = index as f32 * slash_spacing;
-                let (y1, y2) = if stem_up {
-                    (
-                        center_y + offset - slash_half_height,
-                        center_y + offset + slash_half_height,
-                    )
-                } else {
-                    (
-                        center_y + offset + slash_half_height,
-                        center_y + offset - slash_half_height,
-                    )
-                };
-                plans.push(AnchoredLinePlan {
-                    role: "roll-slash",
-                    x1: stem_plan.x - slash_left,
-                    y1,
-                    x2: stem_plan.x + slash_right,
-                    y2,
-                    stroke_width: ENGRAVING_STROKE_WIDTH_PT,
-                    anchor_item_id: stem_plan.anchor_note_id.clone(),
-                });
-            }
-        }
-    }
-
-    plans
+    Vec::new()
 }
 
 #[cfg(test)]

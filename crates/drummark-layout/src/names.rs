@@ -47,6 +47,7 @@ pub fn glyph_role_name(role: GlyphRole) -> &'static str {
         GlyphRole::NavigationSegno => "navigationSegno",
         GlyphRole::NavigationCoda => "navigationCoda",
         GlyphRole::MetNoteQuarterUp => "metNoteQuarterUp",
+        GlyphRole::Tremolo3 => "tremolo3",
         GlyphRole::AugmentationDot => "augmentationDot",
         GlyphRole::PictChokeCymbal => "pictChokeCymbal",
         GlyphRole::PictHalfOpen1 => "pictHalfOpen1",

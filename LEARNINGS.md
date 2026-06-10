@@ -504,3 +504,8 @@ When an older note conflicts with this file, treat this file plus the active spe
 
 - `pictChokeCymbal` is the right choke glyph when the visual target is the comma/apostrophe-like mark; the open question is placement, not glyph identity.
 - In the current scene model, choke placement should be stem-aware: for up-stem notes, bias the glyph to the right of the stem and near the stem tip; for down-stem notes, keep it at the notehead's upper-right without forcing it above a non-existent top stem.
+
+## 2026-06-10 Tremolo Glyph Centering
+
+- In `drummark-layout`, `GlyphRun.x_pt` / `y_pt` are glyph-origin coordinates, not visual centers. To center a SMuFL glyph on a target point, use `glyph_bbox_center_x_offset(...)` and `glyph_bbox_center_y_offset(...)` from `crates/drummark-layout/src/planning.rs` instead of eyeballing offsets.
+- For a stem-attached tremolo glyph, the stable geometry is: align the glyph's bbox center x to `stem_plan.x`, center it vertically on the stem span, and extend the stem tip when the default stem span is shorter than the glyph height plus padding. Otherwise the glyph will appear off-center and the flag/stem pair will look under-length.

@@ -8229,7 +8229,7 @@ fn test_roll_choke_and_half_open_emit_expected_scene_items() {
         page_all_items(&scene.pages[0])
             .filter(|item| item.role == "roll-slash")
             .count(),
-        3
+        1
     );
     assert_eq!(
         page_all_items(&scene.pages[0])
@@ -8250,6 +8250,39 @@ fn test_roll_choke_and_half_open_emit_expected_scene_items() {
         panic!("choke should be rendered as a glyph");
     };
     assert_eq!(choke_glyph.glyph_role, GlyphRole::PictChokeCymbal);
+    let roll = page_all_items(&scene.pages[0])
+        .find(|item| item.role == "roll-slash")
+        .expect("expected roll slash item");
+    let ScenePrimitive::GlyphRun(roll_glyph) = &roll.primitive else {
+        panic!("roll should be rendered as a glyph");
+    };
+    assert_eq!(roll_glyph.glyph_role, GlyphRole::Tremolo3);
+    let roll_anchor = roll
+        .anchor_item_id
+        .as_deref()
+        .expect("expected roll anchor item id");
+    let stem = page_all_items(&scene.pages[0])
+        .find(|item| item.role == "stem" && item.anchor_item_id.as_deref() == Some(roll_anchor))
+        .expect("expected stem anchored to roll note");
+    let ScenePrimitive::LineSegment(stem_line) = &stem.primitive else {
+        panic!("roll anchor should be a stem line");
+    };
+    let roll_center_x = roll_glyph.x_pt
+        + glyph_bbox_center_x_offset(
+            canonical_glyph_metric(GlyphRole::Tremolo3),
+            roll_glyph.font_size_pt,
+        );
+    let roll_center_y = roll_glyph.y_pt
+        + glyph_bbox_center_y_offset(
+            canonical_glyph_metric(GlyphRole::Tremolo3),
+            roll_glyph.font_size_pt,
+        );
+    assert!((roll_center_x - stem_line.x1_pt).abs() < 0.01);
+    assert!(roll_center_y > stem_line.y1_pt);
+    assert!(roll_center_y < stem_line.y2_pt);
+    let roll_height =
+        rendered_glyph_height(GlyphRole::Tremolo3, roll_glyph.font_size_pt);
+    assert!(stem_line.y2_pt - stem_line.y1_pt >= roll_height + 4.9);
 }
 
 #[test]

@@ -90,6 +90,26 @@ Reviewer: self-review
 
 STATUS: APPROVED
 
+## 2026-06-10
+
+### Follow-up Layout Refinement
+
+Reason:
+- The switched `roll` tremolo glyph was visually offset from the stem centerline, and the inherited stem length was too short for the new glyph-based rendering.
+
+Implemented:
+- Centered `roll-slash` on the stem using the canonical glyph bbox center helpers instead of manual x/y nudges.
+- Extended rolled stems when needed so the tremolo glyph sits on a stem span that visually matches the symbol height.
+- Refreshed modifier example outputs, WASM layout artifacts, and the corpus snapshot/baseline for the intentional tremolo-glyph change.
+
+Verification:
+- `cargo test -p drummark-layout test_roll_choke_and_half_open_emit_expected_scene_items -- --exact`
+- `cargo test -p drummark-layout test_specialty_tracks_render_at_explicit_positions -- --exact`
+- `npm run wasm:build`
+- `npm run drummark -- docs/examples/modifiers.drum --format svg`
+- `cargo run -p drummark-cli --bin drummark -- docs/examples/modifiers.drum --format svg`
+- `npm test -- --run src/renderer/corpusGate.test.ts`
+
 ### Approved Plan
 
 Approved file: `docs/changes/active/2026-06-01-modifier-visual-export-completion/plan.md`

@@ -499,3 +499,8 @@ When an older note conflicts with this file, treat this file plus the active spe
 - `noteheadTriangleUpBlack` is the correct SMuFL triangle notehead for `CB` and `WB`; in Bravura it is `U+E0BE` with built-in stem anchors, so it can be treated like an ordinary notehead glyph rather than an adapter-side symbol swap.
 - `pictHalfOpen1` is a usable half-open glyph for v1 hi-hat rendering; in Bravura/SMuFL it is `U+E7F6`.
 - For `roll`, line-based stem slashes are simpler and more stable in the current scene model than introducing a dedicated glyph role for tremolo strokes; they integrate naturally with existing obstacle and anchor handling.
+
+## 2026-06-10 Choke Glyph Placement
+
+- `pictChokeCymbal` is the right choke glyph when the visual target is the comma/apostrophe-like mark; the open question is placement, not glyph identity.
+- In the current scene model, choke placement should be stem-aware: for up-stem notes, bias the glyph to the right of the stem and near the stem tip; for down-stem notes, keep it at the notehead's upper-right without forcing it above a non-existent top stem.

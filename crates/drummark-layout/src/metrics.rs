@@ -37,6 +37,7 @@ pub enum GlyphRole {
     NavigationCoda,
     MetNoteQuarterUp,
     AugmentationDot,
+    PictChokeCymbal,
     PictHalfOpen1,
 }
 
@@ -404,6 +405,9 @@ pub fn canonical_glyph_metric(role: GlyphRole) -> CanonicalGlyphMetric {
         ),
         GlyphRole::AugmentationDot => {
             glyph_metric(role, 0xE1E7, None, [0.0, 0.0], [0.5, 0.5], None, None)
+        }
+        GlyphRole::PictChokeCymbal => {
+            glyph_metric(role, 0xE805, None, [0.004, 0.008], [0.608, 1.004], None, None)
         }
         GlyphRole::PictHalfOpen1 => {
             glyph_metric(role, 0xE7F6, None, [0.0, 0.0], [1.144, 1.144], None, None)

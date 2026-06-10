@@ -1384,9 +1384,9 @@
     {
       "file": "docs/examples/modifiers.drum",
       "summary": {
-        "lineCount": 95,
+        "lineCount": 93,
         "rectCount": 21,
-        "textCount": 135,
+        "textCount": 137,
         "polylineCount": 0,
         "openingBarlines": 10,
         "genericBarlines": 9,

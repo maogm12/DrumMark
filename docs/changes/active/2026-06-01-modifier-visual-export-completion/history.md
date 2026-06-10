@@ -190,7 +190,7 @@ Implemented:
 - `CB` and `WB` now resolve to the upward triangle notehead in layout.
 - `CB`, `WB`, `SPL`, and `CHN` now use explicit `staff_y_for_track(...)` semantics instead of generic fallback.
 - `roll` now emits `roll-slash` scene items anchored to the resolved stem.
-- `choke` now emits an apostrophe-like upper-right mark as `choke`.
+- `choke` now emits `pictChokeCymbal` as a stem-aware upper-right glyph item with role `choke`.
 - `half-open` now emits a dedicated `half-open` pictogram item above the note.
 
 Verification:

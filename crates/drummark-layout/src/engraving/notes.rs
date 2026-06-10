@@ -1685,15 +1685,41 @@ fn build_modifier_glyph_plans(
     stem_plan: Option<&StemRenderPlan>,
     staff_space_pt: f32,
 ) -> Vec<AnchoredGlyphPlan> {
+    let choke_font_size = notation_render_font_pt(staff_space_pt);
+    let choke_width = rendered_glyph_width(GlyphRole::PictChokeCymbal, choke_font_size);
+    let choke_gap_x = staff_space_pt * 0.3;
+    let choke_gap_y = staff_space_pt * 0.65;
     let half_open_font_size = notation_render_font_pt(staff_space_pt);
     let half_open_width =
         rendered_glyph_width(GlyphRole::PictHalfOpen1, half_open_font_size);
     let half_open_gap = staff_space_pt * 0.8;
-
-    note_placements
+    let mut plans = note_placements
         .iter()
-        .filter(|placement| placement.has_half_open)
+        .filter(|placement| placement.has_choke)
         .map(|placement| {
+            let note_width = rendered_glyph_width(placement.note_role, choke_font_size);
+            let mut x = placement.note_x + note_width + choke_gap_x;
+            let mut y = placement.note_y - choke_gap_y;
+            if let Some(stem_plan) = stem_plan {
+                if stem_up {
+                    x = x.max(stem_plan.x + choke_gap_x);
+                    y = y.min(stem_plan.y1 - choke_gap_y * 0.35);
+                } else {
+                    x = x.max(stem_plan.x + choke_gap_x * 0.6);
+                }
+            }
+            AnchoredGlyphPlan {
+                role: "choke",
+                x: x - choke_width * 0.1,
+                y,
+                glyph_role: GlyphRole::PictChokeCymbal,
+                font_size_pt: choke_font_size,
+                anchor_item_id: Some(placement.note_id.clone()),
+            }
+        })
+        .collect::<Vec<_>>();
+
+    plans.extend(note_placements.iter().filter(|placement| placement.has_half_open).map(|placement| {
             let reference_y = stem_plan
                 .map(|plan| if stem_up { plan.y1 } else { plan.y2 })
                 .unwrap_or(placement.note_y - staff_space_pt * 1.4);
@@ -1705,8 +1731,9 @@ fn build_modifier_glyph_plans(
                 font_size_pt: half_open_font_size,
                 anchor_item_id: Some(placement.note_id.clone()),
             }
-        })
-        .collect()
+        }));
+
+    plans
 }
 
 fn build_modifier_line_plans(
@@ -1716,27 +1743,6 @@ fn build_modifier_line_plans(
     staff_space_pt: f32,
 ) -> Vec<AnchoredLinePlan> {
     let mut plans = Vec::new();
-    let note_font_size = notation_render_font_pt(staff_space_pt);
-    let apostrophe_height = staff_space_pt * 0.7;
-    let apostrophe_width = staff_space_pt * 0.3;
-    let apostrophe_gap_x = staff_space_pt * 0.35;
-    let apostrophe_gap_y = staff_space_pt * 0.9;
-
-    for placement in note_placements.iter().filter(|placement| placement.has_choke) {
-        let note_width = rendered_glyph_width(placement.note_role, note_font_size);
-        let x1 = placement.note_x + note_width + apostrophe_gap_x;
-        let y1 = placement.note_y - apostrophe_gap_y;
-        plans.push(AnchoredLinePlan {
-            role: "choke",
-            x1,
-            y1,
-            x2: x1 + apostrophe_width,
-            y2: y1 - apostrophe_height,
-            stroke_width: ENGRAVING_STROKE_WIDTH_PT,
-            anchor_item_id: Some(placement.note_id.clone()),
-        });
-    }
-
     if let Some(stem_plan) = stem_plan {
         if note_placements.iter().any(|placement| placement.has_roll) {
             let slash_spacing = staff_space_pt * 0.55;

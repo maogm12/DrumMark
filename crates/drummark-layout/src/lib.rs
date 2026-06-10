@@ -8243,6 +8243,13 @@ fn test_roll_choke_and_half_open_emit_expected_scene_items() {
             .count(),
         1
     );
+    let choke = page_all_items(&scene.pages[0])
+        .find(|item| item.role == "choke")
+        .expect("expected choke item");
+    let ScenePrimitive::GlyphRun(choke_glyph) = &choke.primitive else {
+        panic!("choke should be rendered as a glyph");
+    };
+    assert_eq!(choke_glyph.glyph_role, GlyphRole::PictChokeCymbal);
 }
 
 #[test]

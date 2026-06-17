@@ -369,7 +369,9 @@ fn token_exceeds_exact_duration_range(token: &TokenGlyph) -> Option<String> {
         TokenGlyph::Combined { items } | TokenGlyph::Braced { items, .. } => {
             items.iter().find_map(token_exceeds_exact_duration_range)
         }
-        TokenGlyph::Group { items, .. } => items.iter().find_map(token_exceeds_exact_duration_range),
+        TokenGlyph::Group { items, .. } => {
+            items.iter().find_map(token_exceeds_exact_duration_range)
+        }
         _ => None,
     }
 }
@@ -685,14 +687,12 @@ pub fn normalize_document(doc: &Document) -> NormalizedScore {
                     collect_track_hairpins(&hairpin_scan_time, global_index as usize, state);
                 measure_hairpins.extend(track_hairpins);
 
-                dynamic_candidates.extend(
-                    scan_dynamic_tokens(&tokens, divisions)
-                        .into_iter()
-                        .map(|candidate| DynamicIntent {
-                            level: candidate.level,
-                            at: candidate.at,
-                        }),
-                );
+                dynamic_candidates.extend(scan_dynamic_tokens(&tokens, divisions).into_iter().map(
+                    |candidate| DynamicIntent {
+                        level: candidate.level,
+                        at: candidate.at,
+                    },
+                ));
                 rehearsal_candidates.extend(scan_rehearsal_mark_tokens(&tokens, divisions));
             }
 
@@ -812,7 +812,10 @@ pub fn normalize_document(doc: &Document) -> NormalizedScore {
     }
 
     let mut tracks = tracks;
-    for event in all_measures.iter().flat_map(|measure| measure.events.iter()) {
+    for event in all_measures
+        .iter()
+        .flat_map(|measure| measure.events.iter())
+    {
         if tracks.iter().any(|track| track.id == event.track) {
             continue;
         }
@@ -1008,8 +1011,7 @@ mod dynamic_test {
 
     #[test]
     fn normalizes_and_sorts_explicit_dynamics() {
-        let p =
-            parser::Parser::new("time 4/4\nnote 1/4\ngrouping 2+2\nSD | @p d d @f d d @ff |\n");
+        let p = parser::Parser::new("time 4/4\nnote 1/4\ngrouping 2+2\nSD | @p d d @f d d @ff |\n");
         let doc = p.parse().unwrap();
         let score = normalize::normalize_document(&doc);
 
@@ -1072,11 +1074,10 @@ mod rehearsal_mark_test {
 
     #[test]
     fn deduplicates_identical_rehearsal_marks_across_tracks() {
-        let doc = parser::Parser::new(
-            "time 4/4\nnote 1/4\nHH | [A] x x x x |\nSD | [A] d d d d |\n",
-        )
-        .parse()
-        .unwrap();
+        let doc =
+            parser::Parser::new("time 4/4\nnote 1/4\nHH | [A] x x x x |\nSD | [A] d d d d |\n")
+                .parse()
+                .unwrap();
         let score = normalize::normalize_document(&doc);
 
         assert_eq!(score.errors, Vec::<String>::new());
@@ -1102,16 +1103,18 @@ mod rehearsal_mark_test {
         assert_eq!(first.text, " A ");
         assert_eq!(first.anchor.offset, Fraction::new(1, 3));
         assert_eq!(score.measures[1].rehearsal_mark.as_ref().unwrap().text, "");
-        assert_eq!(score.measures[2].rehearsal_mark.as_ref().unwrap().text, "   ");
+        assert_eq!(
+            score.measures[2].rehearsal_mark.as_ref().unwrap().text,
+            "   "
+        );
     }
 
     #[test]
     fn rejects_conflicting_rehearsal_marks() {
-        let doc = parser::Parser::new(
-            "time 4/4\nnote 1/4\nHH | [A] x x x x |\nSD | x [A] d d d |\n",
-        )
-        .parse()
-        .unwrap();
+        let doc =
+            parser::Parser::new("time 4/4\nnote 1/4\nHH | [A] x x x x |\nSD | x [A] d d d |\n")
+                .parse()
+                .unwrap();
         let score = normalize::normalize_document(&doc);
 
         assert!(score
@@ -1122,11 +1125,10 @@ mod rehearsal_mark_test {
 
     #[test]
     fn resolves_nested_routed_and_trailing_offsets() {
-        let doc = parser::Parser::new(
-            "time 5/4\nnote 1/4\n| @SD { d d [A] } @BD { b b } d [tail] |\n",
-        )
-        .parse()
-        .unwrap();
+        let doc =
+            parser::Parser::new("time 5/4\nnote 1/4\n| @SD { d d [A] } @BD { b b } d [tail] |\n")
+                .parse()
+                .unwrap();
         let score = normalize::normalize_document(&doc);
 
         assert!(score
@@ -1149,9 +1151,10 @@ mod rehearsal_mark_test {
             .parse()
             .unwrap();
         let score = normalize::normalize_document(&doc);
-        assert!(score.errors.iter().any(|message| {
-            message.contains("Measure has no duration-bearing content")
-        }));
+        assert!(score
+            .errors
+            .iter()
+            .any(|message| { message.contains("Measure has no duration-bearing content") }));
     }
 }
 
@@ -1214,10 +1217,7 @@ mod group_visual_test {
             .filter(|event| event.kind == crate::event::EventKind::Sticking)
             .map(|event| event.start)
             .collect::<Vec<_>>();
-        assert_eq!(
-            sticking_starts,
-            vec![Fraction::zero(), Fraction::new(1, 4)]
-        );
+        assert_eq!(sticking_starts, vec![Fraction::zero(), Fraction::new(1, 4)]);
     }
 
     #[test]
@@ -1252,7 +1252,9 @@ mod header_test {
 
     #[test]
     fn test_missing_tempo_header_normalizes_to_zero() {
-        let doc = parser::Parser::new("time 4/4\nHH | x - x - |\n").parse().unwrap();
+        let doc = parser::Parser::new("time 4/4\nHH | x - x - |\n")
+            .parse()
+            .unwrap();
         assert_eq!(doc.headers.tempo, None);
         let score = normalize::normalize_document(&doc);
         assert_eq!(score.header.tempo, 0);
@@ -1260,7 +1262,9 @@ mod header_test {
 
     #[test]
     fn test_explicit_tempo_header_is_preserved() {
-        let doc = parser::Parser::new("tempo 96\ntime 4/4\nHH | x - x - |\n").parse().unwrap();
+        let doc = parser::Parser::new("tempo 96\ntime 4/4\nHH | x - x - |\n")
+            .parse()
+            .unwrap();
         let score = normalize::normalize_document(&doc);
         assert_eq!(score.header.tempo, 96);
     }
@@ -1271,10 +1275,9 @@ mod header_test {
         let score = normalize::normalize_document(&doc);
 
         assert!(score.measures.is_empty());
-        assert!(score
-            .errors
-            .iter()
-            .any(|message| message.contains(crate::parser::LEGACY_DIVISIONS_HEADER_REMOVED_MESSAGE)));
+        assert!(score.errors.iter().any(
+            |message| message.contains(crate::parser::LEGACY_DIVISIONS_HEADER_REMOVED_MESSAGE)
+        ));
     }
 }
 
@@ -1356,9 +1359,15 @@ mod volta_test {
         let score = normalize::normalize_document(&doc);
         assert_eq!(score.errors, Vec::<String>::new());
         assert_eq!(score.measures.len(), 2);
-        assert!(score.measures[0].events.iter().any(|event| event.track == "BD"));
+        assert!(score.measures[0]
+            .events
+            .iter()
+            .any(|event| event.track == "BD"));
         assert!(
-            !score.measures[1].events.iter().any(|event| event.track == "BD"),
+            !score.measures[1]
+                .events
+                .iter()
+                .any(|event| event.track == "BD"),
             "missing BD measure should become empty instead of repeating BD notes"
         );
     }

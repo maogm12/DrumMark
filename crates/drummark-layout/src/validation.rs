@@ -1,7 +1,9 @@
 use std::collections::BTreeSet;
 
 use crate::scene_geometry::scene_item_bounds;
-use crate::scene_page::{page_all_composites, page_all_items, page_all_measures, page_header_items};
+use crate::scene_page::{
+    page_all_composites, page_all_items, page_all_measures, page_header_items,
+};
 use crate::{LayoutScene, SceneItem, ScenePage};
 
 pub(crate) fn validate_layout_scene(scene: &LayoutScene, staff_space_pt: f32) -> Vec<String> {
@@ -144,16 +146,20 @@ pub(crate) fn overflow_systems_by_page(scene: &LayoutScene) -> BTreeSet<(u32, St
 
 pub(crate) fn item_system_id(page: &ScenePage, item: &SceneItem) -> Option<String> {
     if let Some(measure_id) = item.measure_id.as_deref() {
-        if let Some(system) = page
-            .systems
-            .iter()
-            .find(|system| system.measures.iter().any(|measure| measure.id == measure_id))
-        {
+        if let Some(system) = page.systems.iter().find(|system| {
+            system
+                .measures
+                .iter()
+                .any(|measure| measure.id == measure_id)
+        }) {
             return Some(system.id.clone());
         }
     }
 
-    if page_header_items(page).iter().any(|header_item| header_item.id == item.id) {
+    if page_header_items(page)
+        .iter()
+        .any(|header_item| header_item.id == item.id)
+    {
         return None;
     }
 

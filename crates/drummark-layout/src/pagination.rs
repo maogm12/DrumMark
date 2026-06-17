@@ -285,7 +285,9 @@ pub(crate) fn paginate_unpaginated_page(
 
     scene.pages = pages;
     scene.issues.extend(pagination.issues);
-    scene.issues.extend(validate_layout_scene(&scene, opts.staff_space_pt));
+    scene
+        .issues
+        .extend(validate_layout_scene(&scene, opts.staff_space_pt));
     scene
 }
 
@@ -418,7 +420,8 @@ pub(crate) fn assemble_placed_system_box(
         .iter()
         .map(|composite| {
             let mut final_composite = composite.clone();
-            final_composite.id = format!("system-{}-{}", system_box.system_index, final_composite.id);
+            final_composite.id =
+                format!("system-{}-{}", system_box.system_index, final_composite.id);
             final_composite.child_item_ids = final_composite
                 .child_item_ids
                 .iter()

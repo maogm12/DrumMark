@@ -59,8 +59,16 @@ pub fn build_music_xml(score: &NormalizedScore, hide_voice2_rests: bool) -> Stri
         .enumerate()
         .map(|(index, export_measure)| {
             let force_line_break = index > 0
-                && export_measures[index - 1].measure.source_line != export_measure.measure.source_line;
-            measure_xml(score, &export_measures, export_measure, divisions, force_line_break, hide_voice2_rests)
+                && export_measures[index - 1].measure.source_line
+                    != export_measure.measure.source_line;
+            measure_xml(
+                score,
+                &export_measures,
+                export_measure,
+                divisions,
+                force_line_break,
+                hide_voice2_rests,
+            )
         })
         .collect::<Vec<_>>()
         .join("");
@@ -114,9 +122,18 @@ fn score_metadata_xml(score: &NormalizedScore) -> String {
 fn credit_xml(kind: &str, words: &str) -> String {
     let mixed_stack = "Charter, Bitstream Charter, Sitka Text, Cambria, Georgia, Times New Roman, PingFang SC, Microsoft YaHei, Noto Sans SC, sans-serif";
     let attributes = match kind {
-        "title" => format!("justify=\"center\" font-size=\"20\" font-family=\"{}\" font-weight=\"bold\"", mixed_stack),
-        "subtitle" => format!("justify=\"center\" font-size=\"12\" font-family=\"{}\" font-style=\"italic\"", mixed_stack),
-        "composer" => format!("justify=\"right\" font-size=\"10\" font-family=\"{}\"", mixed_stack),
+        "title" => format!(
+            "justify=\"center\" font-size=\"20\" font-family=\"{}\" font-weight=\"bold\"",
+            mixed_stack
+        ),
+        "subtitle" => format!(
+            "justify=\"center\" font-size=\"12\" font-family=\"{}\" font-style=\"italic\"",
+            mixed_stack
+        ),
+        "composer" => format!(
+            "justify=\"right\" font-size=\"10\" font-family=\"{}\"",
+            mixed_stack
+        ),
         _ => String::new(),
     };
     format!(
@@ -153,8 +170,16 @@ fn measure_xml(
         let first = export_measure.output_index == 0;
         format!(
             "<attributes>{}{}{}{}{}{}</attributes>{}",
-            if first { format!("<divisions>{}</divisions>", divisions) } else { String::new() },
-            if first { "<key><fifths>0</fifths></key>".to_string() } else { String::new() },
+            if first {
+                format!("<divisions>{}</divisions>", divisions)
+            } else {
+                String::new()
+            },
+            if first {
+                "<key><fifths>0</fifths></key>".to_string()
+            } else {
+                String::new()
+            },
             if first {
                 format!(
                     "<time><beats>{}</beats><beat-type>{}</beat-type></time>",
@@ -163,8 +188,16 @@ fn measure_xml(
             } else {
                 String::new()
             },
-            if first { "<staves>1</staves>".to_string() } else { String::new() },
-            if first { "<clef number=\"1\"><sign>percussion</sign><line>2</line></clef>".to_string() } else { String::new() },
+            if first {
+                "<staves>1</staves>".to_string()
+            } else {
+                String::new()
+            },
+            if first {
+                "<clef number=\"1\"><sign>percussion</sign><line>2</line></clef>".to_string()
+            } else {
+                String::new()
+            },
             style_xml,
             if first && score.header.tempo > 0 {
                 format!(
@@ -181,7 +214,10 @@ fn measure_xml(
 
     let up_notes = process_voice_entries(
         &up_entries,
-        VoiceTrack { voice: 1, stem: "up" },
+        VoiceTrack {
+            voice: 1,
+            stem: "up",
+        },
         score,
         measure_duration,
         content_measure.full_duration,
@@ -191,7 +227,10 @@ fn measure_xml(
     );
     let down_notes = process_voice_entries(
         &down_entries,
-        VoiceTrack { voice: 2, stem: "down" },
+        VoiceTrack {
+            voice: 2,
+            stem: "down",
+        },
         score,
         measure_duration,
         content_measure.full_duration,
@@ -214,7 +253,9 @@ fn measure_xml(
         voice_content.extend(down_notes);
     }
 
-    let is_purely_empty = content_measure.actual_duration.compare(content_measure.full_duration)
+    let is_purely_empty = content_measure
+        .actual_duration
+        .compare(content_measure.full_duration)
         == Ordering::Equal
         && (measure.multi_rest_count.is_some()
             || (up_entries.iter().all(is_rest_entry) && down_entries.iter().all(is_rest_entry)));
@@ -262,10 +303,12 @@ fn process_voice_entries(
     hide_voice2_rests: bool,
 ) -> Vec<String> {
     if !entries.is_empty() && entries.iter().all(is_rest_entry) {
-        let total = entries.iter().fold(Fraction::zero(), |sum, entry| match entry {
-            VoiceEntry::Rest { duration, .. } => sum.add(*duration),
-            VoiceEntry::Notes { duration, .. } => sum.add(*duration),
-        });
+        let total = entries
+            .iter()
+            .fold(Fraction::zero(), |sum, entry| match entry {
+                VoiceEntry::Rest { duration, .. } => sum.add(*duration),
+                VoiceEntry::Notes { duration, .. } => sum.add(*duration),
+            });
         if total.compare(measure_duration) == Ordering::Equal
             && measure_duration.compare(full_duration) == Ordering::Equal
         {
@@ -295,7 +338,8 @@ fn process_voice_entries(
                 events,
             } => {
                 let prev_beamable = index > 0 && entry_is_beamable(&entries[index - 1]);
-                let next_beamable = index + 1 < entries.len() && entry_is_beamable(&entries[index + 1]);
+                let next_beamable =
+                    index + 1 < entries.len() && entry_is_beamable(&entries[index + 1]);
                 let beamable = is_beamable(*duration);
                 let beam_state = if beamable && !prev_beamable && next_beamable {
                     Some("begin")
@@ -419,7 +463,9 @@ fn notations_xml(event: &NormalizedEvent, sticking: Option<&str>) -> String {
     let mut technical = Vec::new();
     let mut articulations = Vec::new();
     let mut ornaments = Vec::new();
-    if event.modifiers.iter().any(|m| m == "open") && notehead_value(event, instrument_for_track(&event.track)) != Some("circle-x") {
+    if event.modifiers.iter().any(|m| m == "open")
+        && notehead_value(event, instrument_for_track(&event.track)) != Some("circle-x")
+    {
         technical.push("<open-string/>".to_string());
     }
     if event.modifiers.iter().any(|m| m == "close") {
@@ -457,7 +503,10 @@ fn notations_xml(event: &NormalizedEvent, sticking: Option<&str>) -> String {
         content.push(format!("<technical>{}</technical>", technical.join("")));
     }
     if !articulations.is_empty() {
-        content.push(format!("<articulations>{}</articulations>", articulations.join("")));
+        content.push(format!(
+            "<articulations>{}</articulations>",
+            articulations.join("")
+        ));
     }
     if !ornaments.is_empty() {
         content.push(format!("<ornaments>{}</ornaments>", ornaments.join("")));
@@ -495,7 +544,12 @@ fn forward_xml(duration: u64) -> String {
     format!("<forward><duration>{}</duration></forward>", duration)
 }
 
-fn grace_note_xml(event: &NormalizedEvent, voice: VoiceTrack, slash: bool, beams: &[&str]) -> String {
+fn grace_note_xml(
+    event: &NormalizedEvent,
+    voice: VoiceTrack,
+    slash: bool,
+    beams: &[&str],
+) -> String {
     let instrument = instrument_for_track(&event.track);
     let slash_attr = if slash { " slash=\"yes\"" } else { "" };
     let beam_xml = beams
@@ -542,9 +596,7 @@ fn notehead_value(event: &NormalizedEvent, instrument: InstrumentSpec) -> Option
     if event.track == "SD" && event.modifiers.iter().any(|m| m == "cross") {
         return Some("x");
     }
-    if matches!(event.track.as_str(), "RC" | "RC2")
-        && event.modifiers.iter().any(|m| m == "bell")
-    {
+    if matches!(event.track.as_str(), "RC" | "RC2") && event.modifiers.iter().any(|m| m == "bell") {
         return Some("diamond");
     }
     if event.track == "HH" && event.modifiers.iter().any(|m| m == "open") {
@@ -555,26 +607,106 @@ fn notehead_value(event: &NormalizedEvent, instrument: InstrumentSpec) -> Option
 
 fn instrument_for_track(track: &str) -> InstrumentSpec {
     match track {
-        "HH" => InstrumentSpec { display_step: "G", display_octave: 5, notehead: Some("x") },
-        "HF" => InstrumentSpec { display_step: "D", display_octave: 4, notehead: Some("x") },
-        "SD" => InstrumentSpec { display_step: "C", display_octave: 5, notehead: None },
-        "BD" => InstrumentSpec { display_step: "F", display_octave: 4, notehead: None },
-        "BD2" => InstrumentSpec { display_step: "E", display_octave: 4, notehead: None },
-        "T1" => InstrumentSpec { display_step: "E", display_octave: 5, notehead: None },
-        "T2" => InstrumentSpec { display_step: "D", display_octave: 5, notehead: None },
-        "T3" => InstrumentSpec { display_step: "A", display_octave: 4, notehead: None },
-        "T4" => InstrumentSpec { display_step: "G", display_octave: 4, notehead: None },
-        "RC" => InstrumentSpec { display_step: "F", display_octave: 5, notehead: Some("x") },
-        "RC2" => InstrumentSpec { display_step: "E", display_octave: 5, notehead: Some("x") },
-        "C" => InstrumentSpec { display_step: "A", display_octave: 5, notehead: Some("x") },
-        "C2" => InstrumentSpec { display_step: "B", display_octave: 5, notehead: Some("x") },
-        "SPL" => InstrumentSpec { display_step: "B", display_octave: 5, notehead: Some("x") },
-        "CHN" => InstrumentSpec { display_step: "C", display_octave: 6, notehead: Some("x") },
-        "CB" => InstrumentSpec { display_step: "E", display_octave: 5, notehead: Some("triangle") },
-        "WB" => InstrumentSpec { display_step: "D", display_octave: 5, notehead: Some("triangle") },
-        "CL" => InstrumentSpec { display_step: "G", display_octave: 4, notehead: None },
-        "ST" => InstrumentSpec { display_step: "B", display_octave: 5, notehead: None },
-        _ => InstrumentSpec { display_step: "B", display_octave: 5, notehead: None },
+        "HH" => InstrumentSpec {
+            display_step: "G",
+            display_octave: 5,
+            notehead: Some("x"),
+        },
+        "HF" => InstrumentSpec {
+            display_step: "D",
+            display_octave: 4,
+            notehead: Some("x"),
+        },
+        "SD" => InstrumentSpec {
+            display_step: "C",
+            display_octave: 5,
+            notehead: None,
+        },
+        "BD" => InstrumentSpec {
+            display_step: "F",
+            display_octave: 4,
+            notehead: None,
+        },
+        "BD2" => InstrumentSpec {
+            display_step: "E",
+            display_octave: 4,
+            notehead: None,
+        },
+        "T1" => InstrumentSpec {
+            display_step: "E",
+            display_octave: 5,
+            notehead: None,
+        },
+        "T2" => InstrumentSpec {
+            display_step: "D",
+            display_octave: 5,
+            notehead: None,
+        },
+        "T3" => InstrumentSpec {
+            display_step: "A",
+            display_octave: 4,
+            notehead: None,
+        },
+        "T4" => InstrumentSpec {
+            display_step: "G",
+            display_octave: 4,
+            notehead: None,
+        },
+        "RC" => InstrumentSpec {
+            display_step: "F",
+            display_octave: 5,
+            notehead: Some("x"),
+        },
+        "RC2" => InstrumentSpec {
+            display_step: "E",
+            display_octave: 5,
+            notehead: Some("x"),
+        },
+        "C" => InstrumentSpec {
+            display_step: "A",
+            display_octave: 5,
+            notehead: Some("x"),
+        },
+        "C2" => InstrumentSpec {
+            display_step: "B",
+            display_octave: 5,
+            notehead: Some("x"),
+        },
+        "SPL" => InstrumentSpec {
+            display_step: "B",
+            display_octave: 5,
+            notehead: Some("x"),
+        },
+        "CHN" => InstrumentSpec {
+            display_step: "C",
+            display_octave: 6,
+            notehead: Some("x"),
+        },
+        "CB" => InstrumentSpec {
+            display_step: "E",
+            display_octave: 5,
+            notehead: Some("triangle"),
+        },
+        "WB" => InstrumentSpec {
+            display_step: "D",
+            display_octave: 5,
+            notehead: Some("triangle"),
+        },
+        "CL" => InstrumentSpec {
+            display_step: "G",
+            display_octave: 4,
+            notehead: None,
+        },
+        "ST" => InstrumentSpec {
+            display_step: "B",
+            display_octave: 5,
+            notehead: None,
+        },
+        _ => InstrumentSpec {
+            display_step: "B",
+            display_octave: 5,
+            notehead: None,
+        },
     }
 }
 
@@ -585,7 +717,10 @@ fn measure_style_xml(measure: &ExportMeasure) -> String {
             .slashes
             .map(|value| format!(" slashes=\"{}\"", value))
             .unwrap_or_default();
-        let count = repeat.count.map(|value| value.to_string()).unwrap_or_default();
+        let count = repeat
+            .count
+            .map(|value| value.to_string())
+            .unwrap_or_default();
         styles.push(format!(
             "<measure-repeat type=\"{}\"{}>{}</measure-repeat>",
             repeat.kind, slashes, count
@@ -616,9 +751,18 @@ fn build_export_measures(score: &NormalizedScore) -> Vec<ExportMeasure> {
                     let is_first = i == 0;
                     let is_last = i + 1 == slashes;
                     let mut export_measure = measure.clone();
-                    export_measure.measure_repeat_slashes = if is_first { Some(slashes) } else { None };
-                    export_measure.start_nav = if is_first { measure.start_nav.clone() } else { None };
-                    export_measure.end_nav = if is_last { measure.end_nav.clone() } else { None };
+                    export_measure.measure_repeat_slashes =
+                        if is_first { Some(slashes) } else { None };
+                    export_measure.start_nav = if is_first {
+                        measure.start_nav.clone()
+                    } else {
+                        None
+                    };
+                    export_measure.end_nav = if is_last {
+                        measure.end_nav.clone()
+                    } else {
+                        None
+                    };
                     export_measure.barline = if is_first {
                         left_edge_barline(measure.barline.as_deref())
                     } else if is_last {
@@ -631,7 +775,11 @@ fn build_export_measures(score: &NormalizedScore) -> Vec<ExportMeasure> {
                         content_measure: source,
                         output_index: expanded.len(),
                         measure_repeat_styles: if is_first {
-                            vec![MeasureRepeatStyle { kind: "start", count: Some(slashes), slashes: Some(slashes) }]
+                            vec![MeasureRepeatStyle {
+                                kind: "start",
+                                count: Some(slashes),
+                                slashes: Some(slashes),
+                            }]
                         } else {
                             Vec::new()
                         },
@@ -647,8 +795,16 @@ fn build_export_measures(score: &NormalizedScore) -> Vec<ExportMeasure> {
                     let is_last = i + 1 == count;
                     let mut export_measure = measure.clone();
                     export_measure.multi_rest_count = if is_first { Some(count) } else { None };
-                    export_measure.start_nav = if is_first { measure.start_nav.clone() } else { None };
-                    export_measure.end_nav = if is_last { measure.end_nav.clone() } else { None };
+                    export_measure.start_nav = if is_first {
+                        measure.start_nav.clone()
+                    } else {
+                        None
+                    };
+                    export_measure.end_nav = if is_last {
+                        measure.end_nav.clone()
+                    } else {
+                        None
+                    };
                     export_measure.barline = if is_first {
                         left_edge_barline(measure.barline.as_deref())
                     } else if is_last {
@@ -681,7 +837,11 @@ fn build_export_measures(score: &NormalizedScore) -> Vec<ExportMeasure> {
             content_measure,
             output_index: expanded.len(),
             measure_repeat_styles: if measure.measure_repeat_slashes == Some(1) {
-                vec![MeasureRepeatStyle { kind: "start", count: Some(1), slashes: Some(1) }]
+                vec![MeasureRepeatStyle {
+                    kind: "start",
+                    count: Some(1),
+                    slashes: Some(1),
+                }]
             } else {
                 Vec::new()
             },
@@ -728,9 +888,15 @@ fn left_barline_xml(measure: &NormalizedMeasure, previous: Option<&NormalizedMea
     let starts_volta = current_volta.is_some() && current_volta != previous_volta;
     let mut parts = Vec::new();
     if let Some(volta) = current_volta.filter(|_| starts_volta) {
-        parts.push(format!("<ending number=\"{}\" type=\"start\"/>", xml_escape(&volta)));
+        parts.push(format!(
+            "<ending number=\"{}\" type=\"start\"/>",
+            xml_escape(&volta)
+        ));
     }
-    if matches!(measure.barline.as_deref(), Some("repeat-start" | "repeat-both")) {
+    if matches!(
+        measure.barline.as_deref(),
+        Some("repeat-start" | "repeat-both")
+    ) {
         parts.push("<repeat direction=\"forward\"/>".to_string());
     }
     if parts.is_empty() {
@@ -751,9 +917,15 @@ fn right_barline_xml(measure: &NormalizedMeasure, next: Option<&NormalizedMeasur
         _ => {}
     }
     if let Some(volta) = current_volta.filter(|_| ends_volta) {
-        parts.push(format!("<ending number=\"{}\" type=\"stop\"/>", xml_escape(&volta)));
+        parts.push(format!(
+            "<ending number=\"{}\" type=\"stop\"/>",
+            xml_escape(&volta)
+        ));
     }
-    if matches!(measure.barline.as_deref(), Some("repeat-end" | "repeat-both")) {
+    if matches!(
+        measure.barline.as_deref(),
+        Some("repeat-end" | "repeat-both")
+    ) {
         parts.push("<repeat direction=\"backward\"/>".to_string());
     }
     if parts.is_empty() {
@@ -764,19 +936,24 @@ fn right_barline_xml(measure: &NormalizedMeasure, next: Option<&NormalizedMeasur
 }
 
 fn volta_key(measure: &NormalizedMeasure) -> Option<String> {
-    measure
-        .volta
-        .as_ref()
-        .map(|indices| indices.iter().map(u32::to_string).collect::<Vec<_>>().join(","))
+    measure.volta.as_ref().map(|indices| {
+        indices
+            .iter()
+            .map(u32::to_string)
+            .collect::<Vec<_>>()
+            .join(",")
+    })
 }
 
 fn start_nav_direction_xml(start_nav: &Option<StartNav>) -> String {
     match start_nav {
         Some(StartNav::Segno { .. }) => {
-            "<direction placement=\"above\"><direction-type><segno/></direction-type></direction>".to_string()
+            "<direction placement=\"above\"><direction-type><segno/></direction-type></direction>"
+                .to_string()
         }
         Some(StartNav::Coda { .. }) => {
-            "<direction placement=\"above\"><direction-type><coda/></direction-type></direction>".to_string()
+            "<direction placement=\"above\"><direction-type><coda/></direction-type></direction>"
+                .to_string()
         }
         None => String::new(),
     }
@@ -811,7 +988,11 @@ fn rehearsal_direction_xml(measure: &NormalizedMeasure, divisions: u64) -> Strin
     )
 }
 
-fn hairpin_directions_xml(export_measures: &[ExportMeasure], measure_index: usize, divisions: u64) -> String {
+fn hairpin_directions_xml(
+    export_measures: &[ExportMeasure],
+    measure_index: usize,
+    divisions: u64,
+) -> String {
     let Some(current) = export_measures.get(measure_index) else {
         return String::new();
     };
@@ -830,13 +1011,29 @@ fn hairpin_directions_xml(export_measures: &[ExportMeasure], measure_index: usiz
         }
         if hairpin.start_measure_index == hairpin.end_measure_index {
             if current_measure_index == hairpin.start_measure_index {
-                fragments.push(wedge_direction_xml(hairpin_start_type(hairpin.kind), number, fraction_to_divisions(hairpin.start, divisions)));
-                fragments.push(wedge_direction_xml("stop", number, fraction_to_divisions(hairpin.end, divisions)));
+                fragments.push(wedge_direction_xml(
+                    hairpin_start_type(hairpin.kind),
+                    number,
+                    fraction_to_divisions(hairpin.start, divisions),
+                ));
+                fragments.push(wedge_direction_xml(
+                    "stop",
+                    number,
+                    fraction_to_divisions(hairpin.end, divisions),
+                ));
             }
         } else if current_measure_index == hairpin.start_measure_index {
-            fragments.push(wedge_direction_xml(hairpin_start_type(hairpin.kind), number, fraction_to_divisions(hairpin.start, divisions)));
+            fragments.push(wedge_direction_xml(
+                hairpin_start_type(hairpin.kind),
+                number,
+                fraction_to_divisions(hairpin.start, divisions),
+            ));
         } else if current_measure_index == hairpin.end_measure_index {
-            fragments.push(wedge_direction_xml("stop", number, fraction_to_divisions(hairpin.end, divisions)));
+            fragments.push(wedge_direction_xml(
+                "stop",
+                number,
+                fraction_to_divisions(hairpin.end, divisions),
+            ));
         } else {
             fragments.push(wedge_direction_xml("continue", number, 0));
         }
@@ -1077,7 +1274,10 @@ mod tests {
     fn maps_visual_note_shapes_for_dotted_durations() {
         assert_eq!(note_shape_for_fraction(Fraction::new(1, 4)), ("quarter", 0));
         assert_eq!(note_shape_for_fraction(Fraction::new(3, 8)), ("quarter", 1));
-        assert_eq!(note_shape_for_fraction(Fraction::new(7, 16)), ("quarter", 2));
+        assert_eq!(
+            note_shape_for_fraction(Fraction::new(7, 16)),
+            ("quarter", 2)
+        );
         assert_eq!(note_shape_for_fraction(Fraction::new(1, 8)), ("eighth", 0));
         assert_eq!(note_shape_for_fraction(Fraction::new(3, 16)), ("eighth", 1));
     }
@@ -1096,7 +1296,9 @@ mod tests {
         let entries = build_voice_entries(measure, 1);
 
         assert!(matches!(&entries[0], VoiceEntry::Notes { events, .. } if events.len() == 2));
-        assert!(matches!(&entries[1], VoiceEntry::Rest { duration, .. } if *duration == Fraction::new(1, 4)));
+        assert!(
+            matches!(&entries[1], VoiceEntry::Rest { duration, .. } if *duration == Fraction::new(1, 4))
+        );
         assert!(matches!(&entries[2], VoiceEntry::Notes { events, .. } if events.len() == 2));
     }
 
@@ -1142,10 +1344,8 @@ mod tests {
 
     #[test]
     fn exports_rehearsal_marks_with_offsets_and_preserved_whitespace() {
-        let doc = Parser::new(
-            "time 4/4\nnote 1/4\nHH | x [ A ] x | x x x x [tail] |\n",
-        )
-        .parse_lossy();
+        let doc =
+            Parser::new("time 4/4\nnote 1/4\nHH | x [ A ] x | x x x x [tail] |\n").parse_lossy();
         let score = crate::normalize::normalize_document(&doc);
         let xml = build_music_xml(&score, false);
 

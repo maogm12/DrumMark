@@ -17,7 +17,9 @@ pub fn page_header_composites(page: &ScenePage) -> &[SceneComposite] {
 }
 
 pub fn page_all_measures(page: &ScenePage) -> impl Iterator<Item = &SceneMeasure> {
-    page.systems.iter().flat_map(|system| system.measures.iter())
+    page.systems
+        .iter()
+        .flat_map(|system| system.measures.iter())
 }
 
 pub fn page_all_items(page: &ScenePage) -> impl Iterator<Item = &SceneItem> {
@@ -27,17 +29,18 @@ pub fn page_all_items(page: &ScenePage) -> impl Iterator<Item = &SceneItem> {
 }
 
 pub fn page_all_composites(page: &ScenePage) -> impl Iterator<Item = &SceneComposite> {
-    page_header_composites(page)
-        .iter()
-        .chain(
-            page.systems
-                .iter()
-                .flat_map(|system| system.composites.iter()),
-        )
+    page_header_composites(page).iter().chain(
+        page.systems
+            .iter()
+            .flat_map(|system| system.composites.iter()),
+    )
 }
 
 pub fn page_measure_count(page: &ScenePage) -> usize {
-    page.systems.iter().map(|system| system.measures.len()).sum()
+    page.systems
+        .iter()
+        .map(|system| system.measures.len())
+        .sum()
 }
 
 pub fn collect_page_measures(page: &ScenePage) -> Vec<SceneMeasure> {
@@ -52,10 +55,12 @@ pub fn route_items_to_systems(systems: &mut [SceneSystem], items: Vec<SceneItem>
         let Some(measure_id) = item.measure_id.as_deref() else {
             continue;
         };
-        if let Some(system) = systems
-            .iter_mut()
-            .find(|system| system.measures.iter().any(|measure| measure.id == measure_id))
-        {
+        if let Some(system) = systems.iter_mut().find(|system| {
+            system
+                .measures
+                .iter()
+                .any(|measure| measure.id == measure_id)
+        }) {
             system.items.push(item);
         }
     }

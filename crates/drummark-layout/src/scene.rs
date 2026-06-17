@@ -1,10 +1,10 @@
 use super::*;
+#[cfg(test)]
+use crate::scene_geometry::bounds_for_items;
 use crate::scene_page::{
     collect_page_measures, route_composites_to_systems, route_items_to_systems,
 };
 use crate::structural::spans::push_system_volta_composites;
-#[cfg(test)]
-use crate::scene_geometry::bounds_for_items;
 
 // ── Platform-Neutral Scene Output ───────────────────────────────
 
@@ -326,7 +326,8 @@ pub fn build_layout_scene(score: &RenderScore, opts: &LayoutOptions) -> LayoutSc
             composites: Vec::new(),
         });
         let current = page.systems.last_mut().expect("system just pushed");
-        let mut sink = SceneEmitSink::new(&mut current.items, &mut item_counter, opts.staff_space_pt);
+        let mut sink =
+            SceneEmitSink::new(&mut current.items, &mut item_counter, opts.staff_space_pt);
 
         for i in 0..5 {
             let ly = sy + staff_ss * (1.0 + i as f32);
@@ -360,7 +361,8 @@ pub fn build_layout_scene(score: &RenderScore, opts: &LayoutOptions) -> LayoutSc
             });
         }
         if let Some(tsx) = preamble.time_signature_x_pt {
-            let time_sig_metric = canonical_text_metric(TextRole::TimeSignatureDigit, opts.staff_space_pt);
+            let time_sig_metric =
+                canonical_text_metric(TextRole::TimeSignatureDigit, opts.staff_space_pt);
             sink.push_text_item(TextItemSpec {
                 measure_id: None,
                 role: "time-signature-digit",
@@ -527,12 +529,8 @@ pub fn build_layout_scene(score: &RenderScore, opts: &LayoutOptions) -> LayoutSc
                     measure.barline.as_deref(),
                     opts,
                 );
-                let inner_right = compact_measure_inner_right(
-                    mx,
-                    *mw,
-                    right_barline,
-                    opts.staff_space_pt,
-                );
+                let inner_right =
+                    compact_measure_inner_right(mx, *mw, right_barline, opts.staff_space_pt);
                 let inner_width = (inner_right - inner_left).max(0.0);
                 let pad =
                     (inner_width * MULTI_REST_INNER_PAD_RATIO).max(MULTI_REST_INNER_PAD_MIN_PT);
@@ -579,7 +577,8 @@ pub fn build_layout_scene(score: &RenderScore, opts: &LayoutOptions) -> LayoutSc
                     .chars()
                     .map(|c| char::from_u32(0xE080 + c.to_digit(10).unwrap()).unwrap())
                     .collect();
-                let time_sig_metric = canonical_text_metric(TextRole::TimeSignatureDigit, opts.staff_space_pt);
+                let time_sig_metric =
+                    canonical_text_metric(TextRole::TimeSignatureDigit, opts.staff_space_pt);
                 let count_y = s_top - staff_ss * 0.5 - time_sig_metric.font_size_pt * 0.5;
                 let count_id = sink.push_text_item(TextItemSpec {
                     measure_id: Some(&measure_id),
@@ -612,8 +611,12 @@ pub fn build_layout_scene(score: &RenderScore, opts: &LayoutOptions) -> LayoutSc
                         let repeat_id = sink.push_glyph_item(GlyphItemSpec {
                             measure_id: Some(&measure_id),
                             role: "measure-repeat",
-                            x: mx + *mw * 0.5 - repeat_metric.bbox_center_x_pt(glyph_position_pt(opts.staff_space_pt)),
-                            y: s_mid + repeat_metric.bbox_center_y_pt(glyph_position_pt(opts.staff_space_pt)),
+                            x: mx + *mw * 0.5
+                                - repeat_metric
+                                    .bbox_center_x_pt(glyph_position_pt(opts.staff_space_pt)),
+                            y: s_mid
+                                + repeat_metric
+                                    .bbox_center_y_pt(glyph_position_pt(opts.staff_space_pt)),
                             glyph_role: GlyphRole::MeasureRepeatMark1Bar,
                             font_family: "Bravura",
                             font_size_pt: notation_render_font_pt(opts.staff_space_pt),
@@ -638,8 +641,12 @@ pub fn build_layout_scene(score: &RenderScore, opts: &LayoutOptions) -> LayoutSc
                         let repeat_id = sink.push_glyph_item(GlyphItemSpec {
                             measure_id: Some(&measure_id),
                             role: "measure-repeat",
-                            x: span_center_x - repeat_metric.bbox_center_x_pt(glyph_position_pt(opts.staff_space_pt)),
-                            y: s_mid + repeat_metric.bbox_center_y_pt(glyph_position_pt(opts.staff_space_pt)),
+                            x: span_center_x
+                                - repeat_metric
+                                    .bbox_center_x_pt(glyph_position_pt(opts.staff_space_pt)),
+                            y: s_mid
+                                + repeat_metric
+                                    .bbox_center_y_pt(glyph_position_pt(opts.staff_space_pt)),
                             glyph_role: GlyphRole::MeasureRepeatMark2Bars,
                             font_family: "Bravura",
                             font_size_pt: notation_render_font_pt(opts.staff_space_pt),
@@ -754,7 +761,8 @@ pub fn build_layout_scene(score: &RenderScore, opts: &LayoutOptions) -> LayoutSc
 
     for (sys_idx, system) in page.systems.iter_mut().enumerate() {
         let measures = system.measures.clone();
-        let mut sink = SceneEmitSink::new(&mut system.items, &mut item_counter, opts.staff_space_pt);
+        let mut sink =
+            SceneEmitSink::new(&mut system.items, &mut item_counter, opts.staff_space_pt);
         push_system_volta_composites(
             &mut sink,
             &mut system.composites,

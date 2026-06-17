@@ -65,8 +65,7 @@ fn hb_subset_preserves_notehead_outline_scale() {
 
     let mut chars = BTreeSet::new();
     chars.insert(ch);
-    let subset_bytes =
-        hb_subset::subset(&bytes, chars.iter().copied()).expect("subset");
+    let subset_bytes = hb_subset::subset(&bytes, chars.iter().copied()).expect("subset");
     let sub = Face::parse(&subset_bytes, 0).expect("parse subset");
     assert_eq!(full.units_per_em(), sub.units_per_em(), "UPM must match");
     let sub_bounds = glyph_bounds(&sub, ch).expect("subset notehead bounds");

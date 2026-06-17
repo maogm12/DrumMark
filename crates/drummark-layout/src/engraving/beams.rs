@@ -1,14 +1,16 @@
+use crate::engraving::constants::BEAM_THICKNESS_PT;
+use crate::engraving::notes::secondary_beam_offset_from_primary_pt;
 use crate::metrics::{canonical_glyph_metric, GlyphPoint, GlyphRole};
 use crate::scene_builder::{GlyphItemSpec, PathItemSpec, SceneEmitSink};
 use crate::{flag_position_pt, flag_render_font_pt};
-use crate::engraving::constants::BEAM_THICKNESS_PT;
-use crate::engraving::notes::secondary_beam_offset_from_primary_pt;
 
 #[derive(Clone, Debug)]
 pub(crate) struct BeamAnchor {
     pub(crate) x: f32,
     pub(crate) stem_x: f32,
     pub(crate) stem_tip_y: f32,
+    pub(crate) roll_beam_limit_y: Option<f32>,
+    pub(crate) roll_beam_overlap_x: Option<(f32, f32)>,
     pub(crate) stem_attach_y: f32,
     pub(crate) voice: u8,
     pub(crate) group: u32,
@@ -74,7 +76,12 @@ pub(crate) fn render_beam_groups(
                         y_ss: 0.0,
                     });
             let flag_x = anchor.stem_x - flag_anchor.x_ss * smufl_ss;
-            let flag_y = anchor.stem_tip_y + flag_anchor.y_ss * smufl_ss;
+            let flag_y = anchor.stem_tip_y
+                + if anchor.up {
+                    flag_metric.bbox_ne_y_ss * smufl_ss
+                } else {
+                    flag_metric.bbox_sw_y_ss * smufl_ss
+                };
             let flag_id = sink.push_glyph_item(GlyphItemSpec {
                 measure_id: Some(measure_id),
                 role: "flag",
@@ -100,20 +107,50 @@ pub(crate) fn render_beam_groups(
         let x1 = first.stem_x;
         let xn = last.stem_x;
         let dx = xn - x1;
-        let beam_shift = max_beam_shift_for_min_stem_length(
-            group,
-            x1,
-            primary_y,
-            xn,
-            end_y,
-            min_stem_len_pt,
-        );
+        let beam_shift =
+            max_beam_shift_for_min_stem_length(group, x1, primary_y, xn, end_y, min_stem_len_pt);
         if first.up {
             primary_y -= beam_shift;
             end_y -= beam_shift;
         } else {
             primary_y += beam_shift;
             end_y += beam_shift;
+        }
+
+        let mut roll_shift = 0.0_f32;
+        for anchor in group.iter() {
+            let Some(limit_y) = anchor.roll_beam_limit_y else {
+                continue;
+            };
+            let (overlap_x1, overlap_x2) = anchor
+                .roll_beam_overlap_x
+                .unwrap_or((anchor.stem_x, anchor.stem_x));
+            let clip_start = overlap_x1.max(x1.min(last.stem_x));
+            let clip_end = overlap_x2.min(x1.max(last.stem_x));
+            if clip_start > clip_end {
+                continue;
+            }
+            let beam_y_start = beam_y_at_x(clip_start, x1, primary_y, last.stem_x, end_y);
+            let beam_y_end = beam_y_at_x(clip_end, x1, primary_y, last.stem_x, end_y);
+            let beam_y = if first.up {
+                beam_y_start.max(beam_y_end)
+            } else {
+                beam_y_start.min(beam_y_end)
+            };
+            if first.up {
+                if beam_y > limit_y {
+                    roll_shift = roll_shift.max(beam_y - limit_y);
+                }
+            } else if beam_y < limit_y {
+                roll_shift = roll_shift.max(limit_y - beam_y);
+            }
+        }
+        if first.up {
+            primary_y -= roll_shift;
+            end_y -= roll_shift;
+        } else {
+            primary_y += roll_shift;
+            end_y += roll_shift;
         }
 
         // After the final beam slope is chosen, every stem must terminate on that beam.
@@ -133,7 +170,14 @@ pub(crate) fn render_beam_groups(
         let beam_id = sink.push_path_item(PathItemSpec {
             measure_id: Some(measure_id),
             role: "beam",
-            d: beam_path_d(first.stem_x, primary_y, last.stem_x, end_y, first.up, BEAM_THICKNESS_PT),
+            d: beam_path_d(
+                first.stem_x,
+                primary_y,
+                last.stem_x,
+                end_y,
+                first.up,
+                BEAM_THICKNESS_PT,
+            ),
             fill: "#333",
             stroke: None,
             stroke_width: None,

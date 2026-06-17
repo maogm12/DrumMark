@@ -1,10 +1,3 @@
-use crate::structural::constants::{
-    DYNAMIC_EDGE_PADDING_PT, DYNAMIC_TEXT_PADDING_X_PT, DYNAMIC_TEXT_PADDING_Y_PT,
-    HAIRPIN_GAP_BELOW_STAFF_SPACES, HAIRPIN_OPEN_HEIGHT_STAFF_SPACES,
-    HAIRPIN_TRAILING_INSET_PT, LOWER_EXPRESSION_GAP_PT, NAV_DEFAULT_Y_OFFSET_PT, NAV_GAP_PT,
-    NAV_INLINE_TEXT_GAP_PT, NAV_MEASURE_EDGE_INSET_PT, NAV_TEXT_BASELINE_OFFSET_PT,
-    NAV_TEXT_FONT, VOLTA_LABEL_X_OFFSET_PT,
-};
 use crate::constants::{
     MEASURE_RIGHT_PAD_PT, NON_INITIAL_MEASURE_LEFT_PAD_PT, VOLTA_LINE_THICKNESS_PT,
 };
@@ -13,7 +6,15 @@ use crate::planning::{
     measure_left_pad, rendered_glyph_width, volta_label_baseline_gap_pt, volta_line_height_pt,
     volta_skyline_gap_pt, volta_text_size_pt,
 };
-use crate::scene_builder::{GlyphItemSpec, LineItemSpec, RectItemSpec, SceneEmitSink, TextItemSpec};
+use crate::scene_builder::{
+    GlyphItemSpec, LineItemSpec, RectItemSpec, SceneEmitSink, TextItemSpec,
+};
+use crate::structural::constants::{
+    DYNAMIC_EDGE_PADDING_PT, DYNAMIC_TEXT_PADDING_X_PT, DYNAMIC_TEXT_PADDING_Y_PT,
+    HAIRPIN_GAP_BELOW_STAFF_SPACES, HAIRPIN_OPEN_HEIGHT_STAFF_SPACES, HAIRPIN_TRAILING_INSET_PT,
+    LOWER_EXPRESSION_GAP_PT, NAV_DEFAULT_Y_OFFSET_PT, NAV_GAP_PT, NAV_INLINE_TEXT_GAP_PT,
+    NAV_MEASURE_EDGE_INSET_PT, NAV_TEXT_BASELINE_OFFSET_PT, NAV_TEXT_FONT, VOLTA_LABEL_X_OFFSET_PT,
+};
 use crate::structural::skyline::{
     bottom_skyline_sample, bottom_skyline_sample_including_hairpins, skyline_top_for_range,
     top_skyline_sample, top_skyline_sample_optional,
@@ -184,7 +185,13 @@ fn volta_line_y_for_segment(
         .expect("volta segment has measures");
     let last = segment_measures.last().expect("volta segment has measures");
     let first_display = display_measure_for_scene(measures, first);
-    let x1 = volta_segment_left_x(first, first_display, starts_at_system_left, is_first_system, opts);
+    let x1 = volta_segment_left_x(
+        first,
+        first_display,
+        starts_at_system_left,
+        is_first_system,
+        opts,
+    );
     let x2 = last.x_pt + last.width_pt;
     let staff_space_pt = opts.staff_space_pt;
     let skyline_gap = volta_skyline_gap_pt(staff_space_pt);
@@ -228,8 +235,9 @@ fn volta_line_y_for_segment(
         let metric_scale = text_size / count_metric.font_size_pt.max(1e-6);
         let label_width =
             canonical_text_width(TextRole::CountLabel, &label_text, staff_space_pt) * metric_scale;
-        let label_bottom_extent =
-            text_size + volta_label_baseline_gap_pt(staff_space_pt) + count_metric.descent_pt * metric_scale;
+        let label_bottom_extent = text_size
+            + volta_label_baseline_gap_pt(staff_space_pt)
+            + count_metric.descent_pt * metric_scale;
         line_y = line_y.min(volta_line_y_for_child(
             items,
             segment_measures,
@@ -535,8 +543,11 @@ pub(crate) fn render_rehearsal_marks(
         else {
             continue;
         };
-        let text_width =
-            canonical_text_width(TextRole::RehearsalMark, &spec.rehearsal_mark.text, sink.staff_space_pt);
+        let text_width = canonical_text_width(
+            TextRole::RehearsalMark,
+            &spec.rehearsal_mark.text,
+            sink.staff_space_pt,
+        );
         let box_width = text_width + REHEARSAL_MARK_PADDING_X_PT * 2.0;
         let box_height = metric.line_height_pt + REHEARSAL_MARK_PADDING_Y_PT * 2.0;
         let anchor_x = measure_anchor_x(
@@ -666,11 +677,14 @@ pub(crate) fn render_nav_markers(
                 let coda_render = coda_glyph_render_font_pt(sink.staff_space_pt);
                 let coda_position = coda_glyph_position_pt(sink.staff_space_pt);
                 let coda_width = rendered_glyph_width(GlyphRole::NavigationCoda, coda_position);
-                let to_text_width = canonical_text_width(TextRole::CountLabel, "To", sink.staff_space_pt);
-                let combined_x_start = right_x - coda_width - NAV_INLINE_TEXT_GAP_PT - to_text_width;
+                let to_text_width =
+                    canonical_text_width(TextRole::CountLabel, "To", sink.staff_space_pt);
+                let combined_x_start =
+                    right_x - coda_width - NAV_INLINE_TEXT_GAP_PT - to_text_width;
                 let combined_x_end = right_x;
                 let default_glyph_y = spec.top - NAV_DEFAULT_Y_OFFSET_PT;
-                let default_text_y = spec.top - count_metric.descent_pt - NAV_TEXT_BASELINE_OFFSET_PT;
+                let default_text_y =
+                    spec.top - count_metric.descent_pt - NAV_TEXT_BASELINE_OFFSET_PT;
                 let occupied_top = skyline_top_for_range(
                     sink.items(),
                     combined_x_start,
@@ -713,7 +727,8 @@ pub(crate) fn render_nav_markers(
                 vec![text_id, glyph_id]
             }
             _ => {
-                let text_width = canonical_text_width(TextRole::CountLabel, label, sink.staff_space_pt);
+                let text_width =
+                    canonical_text_width(TextRole::CountLabel, label, sink.staff_space_pt);
                 let x_start = spec.x + spec.width - NAV_MEASURE_EDGE_INSET_PT - text_width;
                 let x_end = spec.x + spec.width - NAV_MEASURE_EDGE_INSET_PT;
                 let default_y = spec.top - count_metric.descent_pt - NAV_TEXT_BASELINE_OFFSET_PT;
@@ -785,9 +800,15 @@ pub(crate) fn render_hairpin_fragments(
             );
             let fragment_total = fragments.len();
             let total_start = hairpin.start_measure_index as f32
-                + normalized_measure_progress(hairpin.start, measure_duration_for_index(hairpin.start_measure_index));
+                + normalized_measure_progress(
+                    hairpin.start,
+                    measure_duration_for_index(hairpin.start_measure_index),
+                );
             let mut total_end = hairpin.end_measure_index as f32
-                + normalized_measure_progress(hairpin.end, measure_duration_for_index(hairpin.end_measure_index));
+                + normalized_measure_progress(
+                    hairpin.end,
+                    measure_duration_for_index(hairpin.end_measure_index),
+                );
             if total_end <= total_start {
                 total_end = total_start + 0.05;
             }
@@ -806,7 +827,8 @@ pub(crate) fn render_hairpin_fragments(
                     0.0
                 };
                 let end_progress = if last.global_index == hairpin.end_measure_index {
-                    normalized_measure_progress(hairpin.end, last_duration).max(start_progress + 0.05)
+                    normalized_measure_progress(hairpin.end, last_duration)
+                        .max(start_progress + 0.05)
                 } else {
                     1.0
                 };
@@ -854,8 +876,7 @@ pub(crate) fn render_hairpin_fragments(
                     sink.staff_space_pt,
                 ) + hairpin_gap_below_pt
                     + hairpin_offset_y;
-                let center_y =
-                    occupied_bottom + left_open_height.max(right_open_height) * 0.5;
+                let center_y = occupied_bottom + left_open_height.max(right_open_height) * 0.5;
                 let left_top_y = center_y - left_open_height * 0.5;
                 let left_bottom_y = center_y + left_open_height * 0.5;
                 let right_top_y = center_y - right_open_height * 0.5;
@@ -923,8 +944,11 @@ pub(crate) fn render_dynamic_marks(
         for dynamic in &display_measure.measure.dynamics {
             let text = dynamic.level.as_str().to_string();
             let text_width = canonical_text_width(TextRole::Dynamic, &text, sink.staff_space_pt);
-            let anchor_x =
-                measure_anchor_x(scene_measure, display_measure.measure.actual_duration, dynamic.at);
+            let anchor_x = measure_anchor_x(
+                scene_measure,
+                display_measure.measure.actual_duration,
+                dynamic.at,
+            );
             let left_bound = scene_measure.x_pt + DYNAMIC_EDGE_PADDING_PT;
             let right_bound = scene_measure.x_pt + scene_measure.width_pt - DYNAMIC_EDGE_PADDING_PT;
             let half_width = text_width * 0.5;
@@ -1012,21 +1036,22 @@ fn measure_belongs_to_system(systems: &[SceneSystem], measure_id: &str, system_i
     })
 }
 
-fn measure_anchor_x(
-    measure: &SceneMeasure,
-    actual_duration: Fraction,
-    fraction: Fraction,
-) -> f32 {
+fn measure_anchor_x(measure: &SceneMeasure, actual_duration: Fraction, fraction: Fraction) -> f32 {
     let progress = normalized_measure_progress(fraction, actual_duration);
     measure.x_pt
         + NON_INITIAL_MEASURE_LEFT_PAD_PT
-        + progress * (measure.width_pt - NON_INITIAL_MEASURE_LEFT_PAD_PT - MEASURE_RIGHT_PAD_PT)
-            .max(1.0)
+        + progress
+            * (measure.width_pt - NON_INITIAL_MEASURE_LEFT_PAD_PT - MEASURE_RIGHT_PAD_PT).max(1.0)
 }
 
 fn normalized_measure_progress(fraction: Fraction, duration: Fraction) -> f32 {
-    if compare_fractions(duration, Fraction { numerator: 0, denominator: 1 })
-        != std::cmp::Ordering::Greater
+    if compare_fractions(
+        duration,
+        Fraction {
+            numerator: 0,
+            denominator: 1,
+        },
+    ) != std::cmp::Ordering::Greater
     {
         return 0.0;
     }

@@ -31,9 +31,12 @@ pub(crate) fn stack_scene_structural_items(
 
     for composite in composites {
         if composite.kind == CompositeKind::Volta {
-            if let Some((_, y, _, _)) =
-                bounding_box_for_ids(items, &item_index, &composite.child_item_ids, staff_space_pt)
-            {
+            if let Some((_, y, _, _)) = bounding_box_for_ids(
+                items,
+                &item_index,
+                &composite.child_item_ids,
+                staff_space_pt,
+            ) {
                 let key = (y * 100.0).round() as i32;
                 volta_groups
                     .entry(key)
@@ -54,9 +57,12 @@ pub(crate) fn stack_scene_structural_items(
         if composite.child_item_ids.is_empty() {
             continue;
         }
-        if let Some((x, y, width, height)) =
-            bounding_box_for_ids(items, &item_index, &composite.child_item_ids, staff_space_pt)
-        {
+        if let Some((x, y, width, height)) = bounding_box_for_ids(
+            items,
+            &item_index,
+            &composite.child_item_ids,
+            staff_space_pt,
+        ) {
             groups.push(EdgeGroup {
                 item_ids: composite.child_item_ids.clone(),
                 x,
@@ -70,7 +76,9 @@ pub(crate) fn stack_scene_structural_items(
     }
 
     for (_, item_ids) in volta_groups {
-        if let Some((x, y, width, height)) = bounding_box_for_ids(items, &item_index, &item_ids, staff_space_pt) {
+        if let Some((x, y, width, height)) =
+            bounding_box_for_ids(items, &item_index, &item_ids, staff_space_pt)
+        {
             groups.push(EdgeGroup {
                 item_ids,
                 x,
@@ -164,9 +172,7 @@ pub(crate) fn stack_sticking_items(
             .iter()
             .find(|item| item.id == sticking_id)
             .and_then(|item| item.anchor_item_id.clone());
-        let reference_staff_top = measure_staff_top
-            .get(sticking_measure_id.as_str())
-            .copied();
+        let reference_staff_top = measure_staff_top.get(sticking_measure_id.as_str()).copied();
 
         let Some((left, _, width, height)) = items
             .iter()
@@ -231,7 +237,12 @@ pub(crate) fn stack_sticking_items(
             .enumerate()
             .map(|(index, item)| (item.id.clone(), index))
             .collect::<std::collections::HashMap<_, _>>();
-        translate_item_ids(items, &item_index, std::slice::from_ref(&sticking_id), delta);
+        translate_item_ids(
+            items,
+            &item_index,
+            std::slice::from_ref(&sticking_id),
+            delta,
+        );
     }
 }
 
@@ -304,10 +315,7 @@ mod tests {
         stack_sticking_items(&mut items, &[measure("m0", 200.0)], 4.0, 10.0);
 
         let stem_top = item_bounds(
-            items
-                .iter()
-                .find(|item| item.role == "stem")
-                .expect("stem"),
+            items.iter().find(|item| item.role == "stem").expect("stem"),
             10.0,
         )
         .unwrap()

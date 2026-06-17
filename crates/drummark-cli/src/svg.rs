@@ -9,16 +9,15 @@ pub fn render_scene_to_svg(scene: &LayoutScene) -> String {
         .map(|page| page.width_pt)
         .fold(0.0_f32, f32::max)
         .max(1.0);
-    let height = scene
-        .pages
-        .iter()
-        .map(|page| page.height_pt)
-        .sum::<f32>()
+    let height = scene.pages.iter().map(|page| page.height_pt).sum::<f32>()
         + PAGE_GAP_PT * scene.pages.len().saturating_sub(1) as f32;
 
     let mut svg = format!(
         r#"<svg xmlns="http://www.w3.org/2000/svg" width="{:.0}" height="{:.0}" viewBox="0 0 {:.3} {:.3}">"#,
-        width, height.max(1.0), width, height.max(1.0)
+        width,
+        height.max(1.0),
+        width,
+        height.max(1.0)
     );
 
     let mut y_offset = 0.0_f32;

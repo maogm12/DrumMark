@@ -1,13 +1,11 @@
+use super::constants::FINAL_BARLINE_LEFT_OFFSET_PT;
 use crate::metrics::GlyphRole;
+use crate::notation_render_font_pt;
+use crate::planning::{repeat_barline_rendered_width, start_repeat_vertical_origin};
+use crate::scene_builder::{GlyphItemSpec, RectItemSpec, SceneEmitSink};
 use crate::{
     staff_barline_height_pt, ENGRAVING_BARLINE_THICK_WIDTH_PT, ENGRAVING_BARLINE_WIDTH_PT,
 };
-use crate::planning::{
-    repeat_barline_rendered_width, start_repeat_vertical_origin,
-};
-use crate::notation_render_font_pt;
-use crate::scene_builder::{GlyphItemSpec, RectItemSpec, SceneEmitSink};
-use super::constants::FINAL_BARLINE_LEFT_OFFSET_PT;
 
 pub(crate) fn render_left_barline(
     sink: &mut SceneEmitSink<'_>,
@@ -100,7 +98,8 @@ pub(crate) fn render_right_barline(sink: &mut SceneEmitSink<'_>, spec: RightBarl
             sink.push_glyph_item(GlyphItemSpec {
                 measure_id: spec.measure_id,
                 role: "repeat-end",
-                x: spec.x - repeat_barline_rendered_width(GlyphRole::RepeatRight, sink.staff_space_pt),
+                x: spec.x
+                    - repeat_barline_rendered_width(GlyphRole::RepeatRight, sink.staff_space_pt),
                 y,
                 glyph_role: GlyphRole::RepeatRight,
                 font_family: "Bravura",

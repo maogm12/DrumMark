@@ -26,6 +26,8 @@ pub use compat_planning::{
     build_systems, place_barlines, place_notes, stack_edge_elements, ElementKind, LayoutElement,
     MeasureLayout, SlotMapper, System,
 };
+#[allow(unused_imports)] // `planning` / `scene` pull these in via `crate::*`.
+pub(crate) use constants::*;
 pub use contract::*;
 #[allow(unused_imports)] // `scene` / `planning` pull these in via `super::*`.
 use display::*;
@@ -51,13 +53,11 @@ pub use names::{
 pub use options::*;
 #[allow(unused_imports)] // `scene` and integration tests.
 pub(crate) use pagination::{
-    assemble_placed_system_box, automatic_system_spacing_pt, header_box_from_page, layout_overflow_warning,
-    page0_first_system_cursor, paginate_system_boxes, paginate_unpaginated_page,
-    system_boxes_from_page, BoxPaginationResult, HeaderLayoutBox, PlacedSystemBox,
-    SystemLayoutBox,
+    assemble_placed_system_box, automatic_system_spacing_pt, header_box_from_page,
+    layout_overflow_warning, page0_first_system_cursor, paginate_system_boxes,
+    paginate_unpaginated_page, system_boxes_from_page, BoxPaginationResult, HeaderLayoutBox,
+    PlacedSystemBox, SystemLayoutBox,
 };
-#[allow(unused_imports)] // `planning` / `scene` pull these in via `crate::*`.
-pub(crate) use constants::*;
 #[allow(unused_imports)] // `scene` pulls these in via `super::*`.
 use planning::*;
 use scene_builder::{GlyphItemSpec, LineItemSpec, SceneEmitSink, TextItemSpec};
@@ -65,29 +65,29 @@ use scene_builder::{GlyphItemSpec, LineItemSpec, SceneEmitSink, TextItemSpec};
 use scene_geometry::item_bounds;
 #[allow(unused_imports)] // `scene` pulls these in via `super::*`.
 use structural::spans::{
-    render_dynamic_marks, render_hairpin_fragments, render_nav_markers,
-    render_rehearsal_marks, DeferredNavMarker, DeferredRehearsalMark,
+    render_dynamic_marks, render_hairpin_fragments, render_nav_markers, render_rehearsal_marks,
+    DeferredNavMarker, DeferredRehearsalMark,
 };
 #[cfg(test)]
 use structural::spans::{volta_type_for_measure, VoltaSegmentType};
 use structural::stacking::{stack_scene_structural_items, stack_sticking_items};
 
 pub use scene::build_layout_scene;
+pub(crate) use scene::fraction_to_f32;
 pub use scene_page::{
     collect_page_measures, page_all_composites, page_all_items, page_all_measures,
     page_header_composites, page_header_items, page_measure_count, route_composites_to_systems,
     route_items_to_systems,
 };
-pub(crate) use scene::fraction_to_f32;
 pub use snapshot::layout_scene_snapshot;
 pub use wire::layout_scene_to_js;
 
 #[cfg(test)]
+use crate::engraving::notes::glyph_role_for_codepoint;
+#[cfg(test)]
 use collision::{rect_obstacle_from_bounds, rects_intersect, RectObstacle};
 #[cfg(test)]
 use scene::render_header_layout_box;
-#[cfg(test)]
-use crate::engraving::notes::glyph_role_for_codepoint;
 #[cfg(test)]
 use validation::validate_layout_scene;
 
@@ -120,7 +120,7 @@ pub fn notation_render_font_pt(staff_space_pt: f32) -> f32 {
     glyph_position_pt(staff_space_pt)
 }
 pub fn flag_position_pt(staff_space_pt: f32) -> f32 {
-    staff_space_pt * 2.933333
+    glyph_position_pt(staff_space_pt)
 }
 pub fn flag_render_font_pt(staff_space_pt: f32) -> f32 {
     flag_position_pt(staff_space_pt)
@@ -132,7 +132,8 @@ pub fn grace_render_font_pt(staff_space_pt: f32) -> f32 {
     grace_position_pt(staff_space_pt)
 }
 pub fn grace_stem_length_pt(staff_space_pt: f32) -> f32 {
-    staff_space_pt * options::DEFAULT_STEM_LEN_SS * grace_position_pt(staff_space_pt) / glyph_position_pt(staff_space_pt)
+    staff_space_pt * options::DEFAULT_STEM_LEN_SS * grace_position_pt(staff_space_pt)
+        / glyph_position_pt(staff_space_pt)
 }
 pub fn nav_glyph_position_pt(staff_space_pt: f32) -> f32 {
     staff_space_pt * 2.666667
@@ -165,10 +166,7 @@ pub(crate) fn tempo_equals_value_gap_pt(staff_space_pt: f32) -> f32 {
     staff_space_pt * 0.35
 }
 
-pub(crate) fn tempo_item_x_positions(
-    left_margin_pt: f32,
-    staff_space_pt: f32,
-) -> (f32, f32, f32) {
+pub(crate) fn tempo_item_x_positions(left_margin_pt: f32, staff_space_pt: f32) -> (f32, f32, f32) {
     let glyph_x = left_margin_pt + tempo_margin_offset_pt(staff_space_pt);
     let glyph_width = canonical_glyph_metric(GlyphRole::MetNoteQuarterUp).width_ss()
         * tempo_glyph_position_pt(staff_space_pt)
@@ -316,8 +314,14 @@ mod tests {
             paragraph_index: 0,
             measure_in_paragraph: 0,
             source_line: 1,
-            actual_duration: Fraction { numerator: 1, denominator: 1 },
-            full_duration: Fraction { numerator: 1, denominator: 1 },
+            actual_duration: Fraction {
+                numerator: 1,
+                denominator: 1,
+            },
+            full_duration: Fraction {
+                numerator: 1,
+                denominator: 1,
+            },
             events: vec![test_rest(
                 Fraction {
                     numerator: 0,
@@ -348,8 +352,14 @@ mod tests {
             paragraph_index: 0,
             measure_in_paragraph: 0,
             source_line: 1,
-            actual_duration: Fraction { numerator: 1, denominator: 1 },
-            full_duration: Fraction { numerator: 1, denominator: 1 },
+            actual_duration: Fraction {
+                numerator: 1,
+                denominator: 1,
+            },
+            full_duration: Fraction {
+                numerator: 1,
+                denominator: 1,
+            },
             events: vec![test_rest(
                 Fraction {
                     numerator: 0,
@@ -583,8 +593,14 @@ mod tests {
                     paragraph_index: 0,
                     measure_in_paragraph: 0,
                     source_line: 1,
-                    actual_duration: Fraction { numerator: 1, denominator: 1 },
-                    full_duration: Fraction { numerator: 1, denominator: 1 },
+                    actual_duration: Fraction {
+                        numerator: 1,
+                        denominator: 1,
+                    },
+                    full_duration: Fraction {
+                        numerator: 1,
+                        denominator: 1,
+                    },
                     events: vec![RenderEvent {
                         track: "HH".into(),
                         track_family: "cymbal".into(),
@@ -640,8 +656,14 @@ mod tests {
                     paragraph_index: 1,
                     measure_in_paragraph: 0,
                     source_line: 2,
-                    actual_duration: Fraction { numerator: 1, denominator: 1 },
-                    full_duration: Fraction { numerator: 1, denominator: 1 },
+                    actual_duration: Fraction {
+                        numerator: 1,
+                        denominator: 1,
+                    },
+                    full_duration: Fraction {
+                        numerator: 1,
+                        denominator: 1,
+                    },
                     events: vec![
                         RenderEvent {
                             track: "HH".into(),
@@ -711,8 +733,14 @@ mod tests {
                     paragraph_index: 2,
                     measure_in_paragraph: 0,
                     source_line: 3,
-                    actual_duration: Fraction { numerator: 1, denominator: 1 },
-                    full_duration: Fraction { numerator: 1, denominator: 1 },
+                    actual_duration: Fraction {
+                        numerator: 1,
+                        denominator: 1,
+                    },
+                    full_duration: Fraction {
+                        numerator: 1,
+                        denominator: 1,
+                    },
                     events: vec![RenderEvent {
                         track: "HH".into(),
                         track_family: "cymbal".into(),
@@ -756,8 +784,14 @@ mod tests {
                     paragraph_index: 3,
                     measure_in_paragraph: 0,
                     source_line: 4,
-                    actual_duration: Fraction { numerator: 1, denominator: 1 },
-                    full_duration: Fraction { numerator: 1, denominator: 1 },
+                    actual_duration: Fraction {
+                        numerator: 1,
+                        denominator: 1,
+                    },
+                    full_duration: Fraction {
+                        numerator: 1,
+                        denominator: 1,
+                    },
                     events: vec![RenderEvent {
                         track: "SD".into(),
                         track_family: "drum".into(),
@@ -944,7 +978,10 @@ mod tests {
                 },
             },
         });
-        let scene = build_layout_scene(&simple_layout_score(vec![measure]), &LayoutOptions::default());
+        let scene = build_layout_scene(
+            &simple_layout_score(vec![measure]),
+            &LayoutOptions::default(),
+        );
         let page = &scene.pages[0];
         let text = text_for_role(page, "rehearsalMark.text");
         let rect = rect_for_role(page, "rehearsalMark.box");
@@ -976,7 +1013,10 @@ mod tests {
                 },
             },
         });
-        let scene = build_layout_scene(&simple_layout_score(vec![measure]), &LayoutOptions::default());
+        let scene = build_layout_scene(
+            &simple_layout_score(vec![measure]),
+            &LayoutOptions::default(),
+        );
         let page = &scene.pages[0];
         let nav = page_all_items(page)
             .find(|item| item.role == "nav-start")
@@ -1181,7 +1221,10 @@ mod tests {
         let staff_space_pt = LayoutOptions::default().staff_space_pt;
         let mut content_bottom = f32::NEG_INFINITY;
         for item in page_all_items(page) {
-            if !matches!(item.role.as_str(), "notehead" | "stem" | "beam" | "beam-secondary") {
+            if !matches!(
+                item.role.as_str(),
+                "notehead" | "stem" | "beam" | "beam-secondary"
+            ) {
                 continue;
             }
             let Some((_, y, _, height)) = item_bounds(item, staff_space_pt) else {
@@ -1445,10 +1488,7 @@ mod tests {
         };
         assert_eq!(volta_text.text_role, TextRole::CountLabel);
         assert_eq!(volta_text.font_family, "Academico");
-        assert_eq!(
-            volta_text.font_size_pt,
-            volta_text_size_pt(staff_space_pt)
-        );
+        assert_eq!(volta_text.font_size_pt, volta_text_size_pt(staff_space_pt));
 
         let accent_item = items
             .iter()
@@ -1460,7 +1500,10 @@ mod tests {
         };
         assert_eq!(accent_glyph.glyph_role, GlyphRole::ArticAccentAbove);
         assert_eq!(accent_glyph.font_family, "Bravura");
-        assert_eq!(accent_glyph.font_size_pt, notation_render_font_pt(staff_space_pt));
+        assert_eq!(
+            accent_glyph.font_size_pt,
+            notation_render_font_pt(staff_space_pt)
+        );
 
         let sticking_score = RenderScore {
             version: RENDER_SCORE_VERSION.to_string(),
@@ -1484,8 +1527,14 @@ mod tests {
                 paragraph_index: 0,
                 measure_in_paragraph: 0,
                 source_line: 1,
-                actual_duration: Fraction { numerator: 1, denominator: 1 },
-                full_duration: Fraction { numerator: 1, denominator: 1 },
+                actual_duration: Fraction {
+                    numerator: 1,
+                    denominator: 1,
+                },
+                full_duration: Fraction {
+                    numerator: 1,
+                    denominator: 1,
+                },
                 events: vec![
                     RenderEvent {
                         track: "HH".into(),
@@ -1848,7 +1897,8 @@ mod tests {
             end_measure_index: 0,
         }];
 
-        let scene = build_layout_scene(&simple_layout_score(vec![short]), &LayoutOptions::default());
+        let scene =
+            build_layout_scene(&simple_layout_score(vec![short]), &LayoutOptions::default());
         let measure = page_all_measures(&scene.pages[0]).next().unwrap();
         let dynamic = page_all_items(&scene.pages[0])
             .find(|item| item.role == "dynamic")
@@ -2059,7 +2109,10 @@ mod tests {
             .filter(|item| item.role == "notehead")
             .collect();
         assert_eq!(noteheads.len(), 8);
-        let mut xs: Vec<f32> = noteheads.iter().map(|item| item_visual_center_x(item)).collect();
+        let mut xs: Vec<f32> = noteheads
+            .iter()
+            .map(|item| item_visual_center_x(item))
+            .collect();
         xs.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
         let gaps: Vec<f32> = xs.windows(2).map(|pair| pair[1] - pair[0]).collect();
         let min_gap = gaps.iter().copied().fold(f32::INFINITY, f32::min);
@@ -2095,8 +2148,14 @@ mod tests {
                 paragraph_index: 0,
                 measure_in_paragraph: index,
                 source_line: 1,
-                actual_duration: Fraction { numerator: 1, denominator: 1 },
-                full_duration: Fraction { numerator: 1, denominator: 1 },
+                actual_duration: Fraction {
+                    numerator: 1,
+                    denominator: 1,
+                },
+                full_duration: Fraction {
+                    numerator: 1,
+                    denominator: 1,
+                },
                 events: events.clone(),
                 barline: Some("regular".into()),
                 closing_barline: if index == 3 {
@@ -2134,7 +2193,8 @@ mod tests {
             let measure_id = format!("measure-{measure_index}");
             let mut noteheads: Vec<_> = page_all_items(page)
                 .filter(|item| {
-                    item.role == "notehead" && item.measure_id.as_deref() == Some(measure_id.as_str())
+                    item.role == "notehead"
+                        && item.measure_id.as_deref() == Some(measure_id.as_str())
                 })
                 .collect();
             noteheads.sort_by(|a, b| {
@@ -2142,7 +2202,11 @@ mod tests {
                     .partial_cmp(&item_visual_center_x(b))
                     .unwrap_or(std::cmp::Ordering::Equal)
             });
-            assert_eq!(noteheads.len(), 8, "measure {measure_index} should have 8 notes");
+            assert_eq!(
+                noteheads.len(),
+                8,
+                "measure {measure_index} should have 8 notes"
+            );
 
             let first_cx = item_visual_center_x(&noteheads[0]);
             let last_cx = item_visual_center_x(&noteheads[7]);
@@ -2187,8 +2251,14 @@ mod tests {
             paragraph_index: 0,
             measure_in_paragraph: 0,
             source_line: 1,
-            actual_duration: Fraction { numerator: 1, denominator: 1 },
-            full_duration: Fraction { numerator: 1, denominator: 1 },
+            actual_duration: Fraction {
+                numerator: 1,
+                denominator: 1,
+            },
+            full_duration: Fraction {
+                numerator: 1,
+                denominator: 1,
+            },
             events: vec![
                 RenderEvent {
                     track: "HH".into(),
@@ -2326,10 +2396,8 @@ mod tests {
             "quarter-note gaps should stay even across the measure: gaps={gaps:?}"
         );
 
-        let inner_left = measure_box.x_pt
-            + measure_left_pad(0, true, Some("regular"), &opts);
-        let inner_right = measure_box.x_pt
-            + measure_box.width_pt
+        let inner_left = measure_box.x_pt + measure_left_pad(0, true, Some("regular"), &opts);
+        let inner_right = measure_box.x_pt + measure_box.width_pt
             - measure_right_pad(Some("final"), opts.staff_space_pt);
         let left_edge_gap = xs[0] - inner_left;
         let right_edge_gap = inner_right - xs[3];
@@ -2347,8 +2415,14 @@ mod tests {
             paragraph_index: 0,
             measure_in_paragraph: 0,
             source_line: 1,
-            actual_duration: Fraction { numerator: 1, denominator: 1 },
-            full_duration: Fraction { numerator: 1, denominator: 1 },
+            actual_duration: Fraction {
+                numerator: 1,
+                denominator: 1,
+            },
+            full_duration: Fraction {
+                numerator: 1,
+                denominator: 1,
+            },
             events: vec![test_rest(
                 Fraction {
                     numerator: 0,
@@ -2379,8 +2453,14 @@ mod tests {
             paragraph_index: 0,
             measure_in_paragraph: 0,
             source_line: 1,
-            actual_duration: Fraction { numerator: 1, denominator: 1 },
-            full_duration: Fraction { numerator: 1, denominator: 1 },
+            actual_duration: Fraction {
+                numerator: 1,
+                denominator: 1,
+            },
+            full_duration: Fraction {
+                numerator: 1,
+                denominator: 1,
+            },
             events: vec![test_hit(
                 "HH",
                 Fraction {
@@ -2439,8 +2519,14 @@ mod tests {
             paragraph_index: 0,
             measure_in_paragraph: 0,
             source_line: 1,
-            actual_duration: Fraction { numerator: 1, denominator: 1 },
-            full_duration: Fraction { numerator: 1, denominator: 1 },
+            actual_duration: Fraction {
+                numerator: 1,
+                denominator: 1,
+            },
+            full_duration: Fraction {
+                numerator: 1,
+                denominator: 1,
+            },
             events: vec![
                 test_hit(
                     "HH",
@@ -2640,8 +2726,14 @@ mod tests {
             paragraph_index: 0,
             measure_in_paragraph: 0,
             source_line: 1,
-            actual_duration: Fraction { numerator: 1, denominator: 1 },
-            full_duration: Fraction { numerator: 1, denominator: 1 },
+            actual_duration: Fraction {
+                numerator: 1,
+                denominator: 1,
+            },
+            full_duration: Fraction {
+                numerator: 1,
+                denominator: 1,
+            },
             events: vec![
                 test_hit(
                     "HH",
@@ -2743,8 +2835,14 @@ mod tests {
             paragraph_index: 0,
             measure_in_paragraph: 0,
             source_line: 1,
-            actual_duration: Fraction { numerator: 1, denominator: 1 },
-            full_duration: Fraction { numerator: 1, denominator: 1 },
+            actual_duration: Fraction {
+                numerator: 1,
+                denominator: 1,
+            },
+            full_duration: Fraction {
+                numerator: 1,
+                denominator: 1,
+            },
             events: vec![
                 hit,
                 test_rest(
@@ -2798,8 +2896,14 @@ mod tests {
             paragraph_index: 0,
             measure_in_paragraph: 0,
             source_line: 1,
-            actual_duration: Fraction { numerator: 1, denominator: 1 },
-            full_duration: Fraction { numerator: 1, denominator: 1 },
+            actual_duration: Fraction {
+                numerator: 1,
+                denominator: 1,
+            },
+            full_duration: Fraction {
+                numerator: 1,
+                denominator: 1,
+            },
             events: vec![
                 test_rest(
                     Fraction {
@@ -2863,8 +2967,14 @@ mod tests {
             paragraph_index: 0,
             measure_in_paragraph: 0,
             source_line: 1,
-            actual_duration: Fraction { numerator: 1, denominator: 1 },
-            full_duration: Fraction { numerator: 1, denominator: 1 },
+            actual_duration: Fraction {
+                numerator: 1,
+                denominator: 1,
+            },
+            full_duration: Fraction {
+                numerator: 1,
+                denominator: 1,
+            },
             events: vec![
                 test_rest(
                     Fraction {
@@ -2952,7 +3062,9 @@ mod tests {
         assert!(visible_roles.iter().any(|role| role == "subtitle"));
         assert!(visible_roles.iter().any(|role| role == "composer"));
         assert!(visible_roles.iter().any(|role| role == "percussion-clef"));
-        assert!(visible_roles.iter().any(|role| role == "time-signature-digit"));
+        assert!(visible_roles
+            .iter()
+            .any(|role| role == "time-signature-digit"));
         assert!(visible_roles.iter().any(|role| role == "tempo"));
 
         let hidden_roles: Vec<_> = page_all_items(&hidden.pages[0])
@@ -2963,7 +3075,9 @@ mod tests {
         assert!(!hidden_roles.iter().any(|role| role == "subtitle"));
         assert!(!hidden_roles.iter().any(|role| role == "composer"));
         assert!(!hidden_roles.iter().any(|role| role == "percussion-clef"));
-        assert!(!hidden_roles.iter().any(|role| role == "time-signature-digit"));
+        assert!(!hidden_roles
+            .iter()
+            .any(|role| role == "time-signature-digit"));
         assert!(!hidden_roles.iter().any(|role| role == "tempo"));
         assert!(!hidden_roles.iter().any(|role| role == "tempo-glyph"));
         assert!(!hidden_roles.iter().any(|role| role == "tempo-equals"));
@@ -2971,7 +3085,8 @@ mod tests {
 
     #[test]
     fn test_hide_clef_and_time_signature_shrink_first_measure_preamble() {
-        let baseline_pad = system_start_reserved_width(true, &LayoutOptions::default(), Some("regular"));
+        let baseline_pad =
+            system_start_reserved_width(true, &LayoutOptions::default(), Some("regular"));
         let compact_pad = system_start_reserved_width(
             true,
             &LayoutOptions {
@@ -3011,8 +3126,14 @@ mod tests {
                 paragraph_index: 0,
                 measure_in_paragraph: 0,
                 source_line: 1,
-                actual_duration: Fraction { numerator: 1, denominator: 1 },
-                full_duration: Fraction { numerator: 1, denominator: 1 },
+                actual_duration: Fraction {
+                    numerator: 1,
+                    denominator: 1,
+                },
+                full_duration: Fraction {
+                    numerator: 1,
+                    denominator: 1,
+                },
                 events: vec![RenderEvent {
                     track: "SD".into(),
                     track_family: "drum".into(),
@@ -3228,8 +3349,14 @@ mod tests {
             paragraph_index: 0,
             measure_in_paragraph: 0,
             source_line: 1,
-            actual_duration: Fraction { numerator: 1, denominator: 1 },
-            full_duration: Fraction { numerator: 1, denominator: 1 },
+            actual_duration: Fraction {
+                numerator: 1,
+                denominator: 1,
+            },
+            full_duration: Fraction {
+                numerator: 1,
+                denominator: 1,
+            },
             events: vec![
                 test_hit(
                     "SD",
@@ -3318,8 +3445,14 @@ mod tests {
             paragraph_index: 0,
             measure_in_paragraph: 0,
             source_line: 1,
-            actual_duration: Fraction { numerator: 1, denominator: 1 },
-            full_duration: Fraction { numerator: 1, denominator: 1 },
+            actual_duration: Fraction {
+                numerator: 1,
+                denominator: 1,
+            },
+            full_duration: Fraction {
+                numerator: 1,
+                denominator: 1,
+            },
             events: vec![
                 RenderEvent {
                     track: "HH".into(),
@@ -4151,8 +4284,14 @@ mod tests {
             paragraph_index: 0,
             measure_in_paragraph: 0,
             source_line: 1,
-            actual_duration: Fraction { numerator: 1, denominator: 1 },
-            full_duration: Fraction { numerator: 1, denominator: 1 },
+            actual_duration: Fraction {
+                numerator: 1,
+                denominator: 1,
+            },
+            full_duration: Fraction {
+                numerator: 1,
+                denominator: 1,
+            },
             events: vec![
                 RenderEvent {
                     track: "HH".into(),
@@ -4261,8 +4400,14 @@ mod tests {
             paragraph_index: 0,
             measure_in_paragraph: 0,
             source_line: 1,
-            actual_duration: Fraction { numerator: 1, denominator: 1 },
-            full_duration: Fraction { numerator: 1, denominator: 1 },
+            actual_duration: Fraction {
+                numerator: 1,
+                denominator: 1,
+            },
+            full_duration: Fraction {
+                numerator: 1,
+                denominator: 1,
+            },
             events: vec![
                 RenderEvent {
                     track: "SD".into(),
@@ -4356,8 +4501,14 @@ mod tests {
             paragraph_index: 0,
             measure_in_paragraph: 0,
             source_line: 1,
-            actual_duration: Fraction { numerator: 1, denominator: 1 },
-            full_duration: Fraction { numerator: 1, denominator: 1 },
+            actual_duration: Fraction {
+                numerator: 1,
+                denominator: 1,
+            },
+            full_duration: Fraction {
+                numerator: 1,
+                denominator: 1,
+            },
             events: vec![
                 RenderEvent {
                     track: "HH".into(),
@@ -4450,8 +4601,14 @@ mod tests {
             paragraph_index: 0,
             measure_in_paragraph: 0,
             source_line: 1,
-            actual_duration: Fraction { numerator: 1, denominator: 1 },
-            full_duration: Fraction { numerator: 1, denominator: 1 },
+            actual_duration: Fraction {
+                numerator: 1,
+                denominator: 1,
+            },
+            full_duration: Fraction {
+                numerator: 1,
+                denominator: 1,
+            },
             events: vec![
                 RenderEvent {
                     track: "HH".into(),
@@ -4626,8 +4783,14 @@ mod tests {
             paragraph_index: 0,
             measure_in_paragraph: 0,
             source_line: 1,
-            actual_duration: Fraction { numerator: 1, denominator: 1 },
-            full_duration: Fraction { numerator: 1, denominator: 1 },
+            actual_duration: Fraction {
+                numerator: 1,
+                denominator: 1,
+            },
+            full_duration: Fraction {
+                numerator: 1,
+                denominator: 1,
+            },
             events: vec![
                 quarter(0, EventKind::Sticking, "ST", "R"),
                 quarter(0, EventKind::Hit, "SD", "d"),
@@ -4776,10 +4939,7 @@ mod tests {
             scene.pages[0].systems.len() >= 2,
             "expected a second system for dense sticking measures"
         );
-        let last_system = scene.pages[0]
-            .systems
-            .last()
-            .expect("last system");
+        let last_system = scene.pages[0].systems.last().expect("last system");
         let last_measure_ids = last_system
             .measures
             .iter()
@@ -4834,8 +4994,14 @@ mod tests {
             paragraph_index: 0,
             measure_in_paragraph: 0,
             source_line: 1,
-            actual_duration: Fraction { numerator: 1, denominator: 1 },
-            full_duration: Fraction { numerator: 1, denominator: 1 },
+            actual_duration: Fraction {
+                numerator: 1,
+                denominator: 1,
+            },
+            full_duration: Fraction {
+                numerator: 1,
+                denominator: 1,
+            },
             events: vec![
                 RenderEvent {
                     track: "SD".into(),
@@ -4956,8 +5122,14 @@ mod tests {
             paragraph_index: 0,
             measure_in_paragraph: 0,
             source_line: 1,
-            actual_duration: Fraction { numerator: 1, denominator: 1 },
-            full_duration: Fraction { numerator: 1, denominator: 1 },
+            actual_duration: Fraction {
+                numerator: 1,
+                denominator: 1,
+            },
+            full_duration: Fraction {
+                numerator: 1,
+                denominator: 1,
+            },
             events: vec![
                 RenderEvent {
                     track: "SD".into(),
@@ -5175,8 +5347,14 @@ mod tests {
                 paragraph_index: 0,
                 measure_in_paragraph: 0,
                 source_line: 1,
-                actual_duration: Fraction { numerator: 1, denominator: 1 },
-                full_duration: Fraction { numerator: 1, denominator: 1 },
+                actual_duration: Fraction {
+                    numerator: 1,
+                    denominator: 1,
+                },
+                full_duration: Fraction {
+                    numerator: 1,
+                    denominator: 1,
+                },
                 events: vec![
                     hit("T3", 0, 1),
                     hit("C", 1, 8),
@@ -5229,9 +5407,7 @@ mod tests {
         let all_stems = items_by_role(&scene, "stem")
             .into_iter()
             .filter_map(|item| match &item.primitive {
-                ScenePrimitive::LineSegment(line) => {
-                    Some((line.x1_pt, line.y1_pt, line.y2_pt))
-                }
+                ScenePrimitive::LineSegment(line) => Some((line.x1_pt, line.y1_pt, line.y2_pt)),
                 _ => None,
             })
             .collect::<Vec<_>>();
@@ -5314,8 +5490,14 @@ mod tests {
                 paragraph_index: 0,
                 measure_in_paragraph: 0,
                 source_line: 1,
-                actual_duration: Fraction { numerator: 1, denominator: 1 },
-                full_duration: Fraction { numerator: 1, denominator: 1 },
+                actual_duration: Fraction {
+                    numerator: 1,
+                    denominator: 1,
+                },
+                full_duration: Fraction {
+                    numerator: 1,
+                    denominator: 1,
+                },
                 events: vec![
                     hit("T3", 0, 1),
                     hit("C", 1, 8),
@@ -5366,8 +5548,14 @@ mod tests {
             paragraph_index: 0,
             measure_in_paragraph: 0,
             source_line: 1,
-            actual_duration: Fraction { numerator: 1, denominator: 1 },
-            full_duration: Fraction { numerator: 1, denominator: 1 },
+            actual_duration: Fraction {
+                numerator: 1,
+                denominator: 1,
+            },
+            full_duration: Fraction {
+                numerator: 1,
+                denominator: 1,
+            },
             events: vec![
                 RenderEvent {
                     track: "HH".into(),
@@ -5478,9 +5666,8 @@ mod tests {
         assert!(items_by_role(&scene, "tempo").is_empty());
         assert!(items_by_role(&scene, "tempo-glyph").is_empty());
         assert!(items_by_role(&scene, "tempo-equals").is_empty());
-        assert!(!page_all_composites(&scene.pages[0]).any(|composite| {
-            composite.label.as_deref() == Some("tempo")
-        }));
+        assert!(!page_all_composites(&scene.pages[0])
+            .any(|composite| { composite.label.as_deref() == Some("tempo") }));
     }
 }
 
@@ -5501,8 +5688,14 @@ fn test_place_notes() {
         paragraph_index: 0,
         measure_in_paragraph: 0,
         source_line: 1,
-        actual_duration: Fraction { numerator: 1, denominator: 1 },
-        full_duration: Fraction { numerator: 1, denominator: 1 },
+        actual_duration: Fraction {
+            numerator: 1,
+            denominator: 1,
+        },
+        full_duration: Fraction {
+            numerator: 1,
+            denominator: 1,
+        },
         events: vec![NormalizedEvent {
             track: "HH".into(),
             start: Fraction {
@@ -5600,8 +5793,14 @@ fn test_barlines() {
         paragraph_index: 0,
         measure_in_paragraph: 0,
         source_line: 1,
-        actual_duration: Fraction { numerator: 1, denominator: 1 },
-        full_duration: Fraction { numerator: 1, denominator: 1 },
+        actual_duration: Fraction {
+            numerator: 1,
+            denominator: 1,
+        },
+        full_duration: Fraction {
+            numerator: 1,
+            denominator: 1,
+        },
         events: vec![],
         barline: Some("|:".into()),
         closing_barline: Some("|:".into()),
@@ -5646,8 +5845,14 @@ fn test_contract_scene_smoke() {
             paragraph_index: 0,
             measure_in_paragraph: 0,
             source_line: 1,
-            actual_duration: Fraction { numerator: 1, denominator: 1 },
-            full_duration: Fraction { numerator: 1, denominator: 1 },
+            actual_duration: Fraction {
+                numerator: 1,
+                denominator: 1,
+            },
+            full_duration: Fraction {
+                numerator: 1,
+                denominator: 1,
+            },
             events: vec![RenderEvent {
                 track: "HH".into(),
                 track_family: "cymbal".into(),
@@ -5698,18 +5903,20 @@ fn test_contract_scene_smoke() {
     assert_eq!(scene.pages.len(), 1);
     assert_eq!(scene.pages[0].systems.len(), 1);
     assert_eq!(page_measure_count(&scene.pages[0]), 1);
-    assert_eq!(page_all_measures(&scene.pages[0]).next().expect("measure").index, 0);
-    assert!(page_all_composites(&scene.pages[0])
-        .all(|c| c.kind != CompositeKind::RepeatSpan));
-    assert!(page_all_items(&scene.pages[0])
-        .all(|item| !item.role.starts_with("repeat-span")));
+    assert_eq!(
+        page_all_measures(&scene.pages[0])
+            .next()
+            .expect("measure")
+            .index,
+        0
+    );
+    assert!(page_all_composites(&scene.pages[0]).all(|c| c.kind != CompositeKind::RepeatSpan));
+    assert!(page_all_items(&scene.pages[0]).all(|item| !item.role.starts_with("repeat-span")));
     let page = &scene.pages[0];
-    assert!(page_all_composites(page).any(|c| {
-        c.kind == CompositeKind::TextBlock && c.label.as_deref() == Some("title")
-    }));
-    assert!(page_all_composites(page).any(|c| {
-        c.kind == CompositeKind::TextBlock && c.label.as_deref() == Some("tempo")
-    }));
+    assert!(page_all_composites(page)
+        .any(|c| { c.kind == CompositeKind::TextBlock && c.label.as_deref() == Some("title") }));
+    assert!(page_all_composites(page)
+        .any(|c| { c.kind == CompositeKind::TextBlock && c.label.as_deref() == Some("tempo") }));
     assert!(page_all_items(page)
         .filter(|item| matches!(item.role.as_str(), "tempo-glyph" | "tempo-equals" | "tempo"))
         .all(|item| item.measure_id.as_deref() == Some("measure-0")));
@@ -5843,7 +6050,8 @@ fn test_header_layout_box_bounds_and_page0_cursor_use_actual_visual_bottom() {
 #[test]
 fn test_tempo_anchor_uses_left_margin_single_gap() {
     let opts = LayoutOptions::default();
-    let (glyph_x, equals_x, value_x) = tempo_item_x_positions(opts.left_margin_pt, opts.staff_space_pt);
+    let (glyph_x, equals_x, value_x) =
+        tempo_item_x_positions(opts.left_margin_pt, opts.staff_space_pt);
     let expected_glyph_x = opts.left_margin_pt + tempo_margin_offset_pt(opts.staff_space_pt);
 
     assert!((glyph_x - expected_glyph_x).abs() < 0.01);
@@ -5874,8 +6082,14 @@ fn test_tempo_anchor_uses_left_margin_single_gap() {
                 paragraph_index: 0,
                 measure_in_paragraph: 0,
                 source_line: 1,
-                actual_duration: Fraction { numerator: 1, denominator: 1 },
-                full_duration: Fraction { numerator: 1, denominator: 1 },
+                actual_duration: Fraction {
+                    numerator: 1,
+                    denominator: 1,
+                },
+                full_duration: Fraction {
+                    numerator: 1,
+                    denominator: 1,
+                },
                 events: vec![RenderEvent {
                     track: "HH".into(),
                     track_family: "cymbal".into(),
@@ -5981,14 +6195,16 @@ fn test_paginate_system_boxes_with_mock_boxes() {
     assert_eq!(result.placements[0].page_y, 90.0);
     assert_eq!(result.placements[0].page_x, 12.0);
     assert_eq!(result.placements[1].page_index, 0);
-    let first_origin = result.placements[0].page_y
-        - (boxes[0].visual_top - boxes[0].local_system_origin_y);
-    let second_origin = result.placements[1].page_y
-        - (boxes[1].visual_top - boxes[1].local_system_origin_y);
-    let expected_gap = automatic_system_spacing_pt(&boxes, &header, &opts)
-        + opts.system_spacing_offset_pt;
+    let first_origin =
+        result.placements[0].page_y - (boxes[0].visual_top - boxes[0].local_system_origin_y);
+    let second_origin =
+        result.placements[1].page_y - (boxes[1].visual_top - boxes[1].local_system_origin_y);
+    let expected_gap =
+        automatic_system_spacing_pt(&boxes, &header, &opts) + opts.system_spacing_offset_pt;
     assert!(
-        (second_origin - first_origin - staff_bounding_height_pt(opts.staff_space_pt)
+        (second_origin
+            - first_origin
+            - staff_bounding_height_pt(opts.staff_space_pt)
             - expected_gap)
             .abs()
             < 0.01
@@ -6153,7 +6369,10 @@ fn test_system_spacing_negative_offset_can_overlap() {
     let header = spacing_test_header();
     let result = paginate_system_boxes(&boxes, &header, &opts);
 
-    assert_eq!(result.placements[0].page_index, result.placements[1].page_index);
+    assert_eq!(
+        result.placements[0].page_index,
+        result.placements[1].page_index
+    );
     let first_bottom = result.placements[0].page_y + (boxes[0].visual_bottom - boxes[0].visual_top);
     assert!(
         first_bottom > result.placements[1].page_y,
@@ -6368,8 +6587,14 @@ fn test_system_box_orchestrator_outputs_multiple_pages_for_long_scores() {
             paragraph_index: index,
             measure_in_paragraph: 0,
             source_line: index + 1,
-            actual_duration: Fraction { numerator: 1, denominator: 1 },
-            full_duration: Fraction { numerator: 1, denominator: 1 },
+            actual_duration: Fraction {
+                numerator: 1,
+                denominator: 1,
+            },
+            full_duration: Fraction {
+                numerator: 1,
+                denominator: 1,
+            },
             events: vec![event.clone()],
             barline: Some("regular".into()),
             closing_barline: Some("regular".into()),
@@ -6439,8 +6664,14 @@ fn test_volta_composites_are_emitted() {
                 paragraph_index: 0,
                 measure_in_paragraph: 0,
                 source_line: 1,
-                actual_duration: Fraction { numerator: 1, denominator: 1 },
-                full_duration: Fraction { numerator: 1, denominator: 1 },
+                actual_duration: Fraction {
+                    numerator: 1,
+                    denominator: 1,
+                },
+                full_duration: Fraction {
+                    numerator: 1,
+                    denominator: 1,
+                },
                 events: vec![],
                 barline: Some("repeat-start".into()),
                 closing_barline: Some("repeat-start".into()),
@@ -6461,8 +6692,14 @@ fn test_volta_composites_are_emitted() {
                 paragraph_index: 0,
                 measure_in_paragraph: 1,
                 source_line: 1,
-                actual_duration: Fraction { numerator: 1, denominator: 1 },
-                full_duration: Fraction { numerator: 1, denominator: 1 },
+                actual_duration: Fraction {
+                    numerator: 1,
+                    denominator: 1,
+                },
+                full_duration: Fraction {
+                    numerator: 1,
+                    denominator: 1,
+                },
                 events: vec![],
                 barline: Some("repeat-end".into()),
                 closing_barline: Some("repeat-end".into()),
@@ -6529,8 +6766,14 @@ fn test_adjacent_voltas_share_y_and_positive_offset_moves_up() {
         paragraph_index: 0,
         measure_in_paragraph: index,
         source_line: 1,
-        actual_duration: Fraction { numerator: 1, denominator: 1 },
-        full_duration: Fraction { numerator: 1, denominator: 1 },
+        actual_duration: Fraction {
+            numerator: 1,
+            denominator: 1,
+        },
+        full_duration: Fraction {
+            numerator: 1,
+            denominator: 1,
+        },
         events: vec![event.clone()],
         barline: Some("regular".into()),
         closing_barline: Some("regular".into()),
@@ -6640,8 +6883,14 @@ fn test_two_bar_measure_repeat_expands_into_two_display_measures() {
                 paragraph_index: 0,
                 measure_in_paragraph: 0,
                 source_line: 1,
-                actual_duration: Fraction { numerator: 1, denominator: 1 },
-                full_duration: Fraction { numerator: 1, denominator: 1 },
+                actual_duration: Fraction {
+                    numerator: 1,
+                    denominator: 1,
+                },
+                full_duration: Fraction {
+                    numerator: 1,
+                    denominator: 1,
+                },
                 events: vec![],
                 barline: Some("regular".into()),
                 closing_barline: Some("regular".into()),
@@ -6662,8 +6911,14 @@ fn test_two_bar_measure_repeat_expands_into_two_display_measures() {
                 paragraph_index: 0,
                 measure_in_paragraph: 1,
                 source_line: 1,
-                actual_duration: Fraction { numerator: 1, denominator: 1 },
-                full_duration: Fraction { numerator: 1, denominator: 1 },
+                actual_duration: Fraction {
+                    numerator: 1,
+                    denominator: 1,
+                },
+                full_duration: Fraction {
+                    numerator: 1,
+                    denominator: 1,
+                },
                 events: vec![],
                 barline: Some("regular".into()),
                 closing_barline: Some("final".into()),
@@ -6732,8 +6987,14 @@ fn test_structural_composites_are_emitted() {
                 paragraph_index: 0,
                 measure_in_paragraph: 0,
                 source_line: 1,
-                actual_duration: Fraction { numerator: 1, denominator: 1 },
-                full_duration: Fraction { numerator: 1, denominator: 1 },
+                actual_duration: Fraction {
+                    numerator: 1,
+                    denominator: 1,
+                },
+                full_duration: Fraction {
+                    numerator: 1,
+                    denominator: 1,
+                },
                 events: vec![],
                 barline: Some("regular".into()),
                 closing_barline: Some("regular".into()),
@@ -6766,8 +7027,14 @@ fn test_structural_composites_are_emitted() {
                 paragraph_index: 0,
                 measure_in_paragraph: 1,
                 source_line: 1,
-                actual_duration: Fraction { numerator: 1, denominator: 1 },
-                full_duration: Fraction { numerator: 1, denominator: 1 },
+                actual_duration: Fraction {
+                    numerator: 1,
+                    denominator: 1,
+                },
+                full_duration: Fraction {
+                    numerator: 1,
+                    denominator: 1,
+                },
                 events: vec![],
                 barline: Some("regular".into()),
                 closing_barline: Some("regular".into()),
@@ -6825,8 +7092,14 @@ fn test_system_boundaries_align_with_staff_edges() {
             paragraph_index: 0,
             measure_in_paragraph: 0,
             source_line: 1,
-            actual_duration: Fraction { numerator: 1, denominator: 1 },
-            full_duration: Fraction { numerator: 1, denominator: 1 },
+            actual_duration: Fraction {
+                numerator: 1,
+                denominator: 1,
+            },
+            full_duration: Fraction {
+                numerator: 1,
+                denominator: 1,
+            },
             events: vec![RenderEvent {
                 track: "HH".into(),
                 track_family: "cymbal".into(),
@@ -6915,8 +7188,14 @@ fn test_first_measure_repeat_start_sits_after_system_preamble() {
             paragraph_index: 0,
             measure_in_paragraph: 0,
             source_line: 1,
-            actual_duration: Fraction { numerator: 1, denominator: 1 },
-            full_duration: Fraction { numerator: 1, denominator: 1 },
+            actual_duration: Fraction {
+                numerator: 1,
+                denominator: 1,
+            },
+            full_duration: Fraction {
+                numerator: 1,
+                denominator: 1,
+            },
             events: vec![RenderEvent {
                 track: "SD".into(),
                 track_family: "drum".into(),
@@ -6992,11 +7271,22 @@ fn test_first_measure_repeat_start_sits_after_system_preamble() {
         repeat_glyph.x_pt > opening_rect.x_pt + preamble_width * 0.4,
         "repeat should sit in the system preamble (preamble_width={preamble_width:.2})"
     );
-    assert!((repeat_top - opening_rect.y_pt).abs() < 0.5,
-        "repeat_top={repeat_top:.2} opening.y={:.2}", opening_rect.y_pt);
-    assert!((repeat_bottom - (opening_rect.y_pt + opening_rect.height_pt)).abs() < 6.0,
-        "repeat_bottom={repeat_bottom:.2} opening_rect.y={:.2} h={:.2}", opening_rect.y_pt, opening_rect.height_pt);
-    assert!(note_x > repeat_glyph.x_pt + repeat_barline_rendered_width(GlyphRole::RepeatLeft, opts.staff_space_pt));
+    assert!(
+        (repeat_top - opening_rect.y_pt).abs() < 0.5,
+        "repeat_top={repeat_top:.2} opening.y={:.2}",
+        opening_rect.y_pt
+    );
+    assert!(
+        (repeat_bottom - (opening_rect.y_pt + opening_rect.height_pt)).abs() < 6.0,
+        "repeat_bottom={repeat_bottom:.2} opening_rect.y={:.2} h={:.2}",
+        opening_rect.y_pt,
+        opening_rect.height_pt
+    );
+    assert!(
+        note_x
+            > repeat_glyph.x_pt
+                + repeat_barline_rendered_width(GlyphRole::RepeatLeft, opts.staff_space_pt)
+    );
     assert!(
         note_x - (repeat_glyph.x_pt + repeat_barline_rendered_width(GlyphRole::RepeatLeft, opts.staff_space_pt))
             >= 10.0,
@@ -7116,7 +7406,8 @@ fn test_non_initial_repeat_start_reserves_content_gap() {
         })
         .expect("expected first notehead in second measure");
 
-    let (repeat_x, _, repeat_w, _) = item_bounds(repeat_start, 10.0).expect("repeat should have bounds");
+    let (repeat_x, _, repeat_w, _) =
+        item_bounds(repeat_start, 10.0).expect("repeat should have bounds");
     let (note_x, _, _, _) = item_bounds(first_note, 10.0).expect("notehead should have bounds");
     let gap = note_x - (repeat_x + repeat_w);
 
@@ -7205,7 +7496,8 @@ fn test_second_system_first_measure_repeat_start_clears_clef() {
         .expect("expected notehead in second-system first measure");
 
     let clef_end = preamble_layout(opts.left_margin_pt, false, &opts).visible_end_x_pt;
-    let (repeat_x, _, repeat_w, _) = item_bounds(repeat_start, 10.0).expect("repeat should have bounds");
+    let (repeat_x, _, repeat_w, _) =
+        item_bounds(repeat_start, 10.0).expect("repeat should have bounds");
     let (note_x, _, _, _) = item_bounds(first_note, 10.0).expect("notehead should have bounds");
 
     assert!(
@@ -7263,8 +7555,14 @@ fn test_adjacent_repeat_end_start_uses_smufl_right_left_glyph() {
             paragraph_index: 0,
             measure_in_paragraph: index,
             source_line: 1,
-            actual_duration: Fraction { numerator: 1, denominator: 1 },
-            full_duration: Fraction { numerator: 1, denominator: 1 },
+            actual_duration: Fraction {
+                numerator: 1,
+                denominator: 1,
+            },
+            full_duration: Fraction {
+                numerator: 1,
+                denominator: 1,
+            },
             events: vec![RenderEvent {
                 track: "HH".into(),
                 track_family: "cymbal".into(),
@@ -7357,8 +7655,14 @@ fn test_later_system_uses_smaller_start_zone_than_first_system() {
             paragraph_index: index,
             measure_in_paragraph: 0,
             source_line: 1,
-            actual_duration: Fraction { numerator: 1, denominator: 1 },
-            full_duration: Fraction { numerator: 1, denominator: 1 },
+            actual_duration: Fraction {
+                numerator: 1,
+                denominator: 1,
+            },
+            full_duration: Fraction {
+                numerator: 1,
+                denominator: 1,
+            },
             events: vec![RenderEvent {
                 track: "HH".into(),
                 track_family: "cymbal".into(),
@@ -7470,8 +7774,14 @@ fn test_later_system_measure_number_uses_absolute_measure_index() {
                 paragraph_index: 0,
                 measure_in_paragraph: 0,
                 source_line: 1,
-                actual_duration: Fraction { numerator: 1, denominator: 1 },
-                full_duration: Fraction { numerator: 1, denominator: 1 },
+                actual_duration: Fraction {
+                    numerator: 1,
+                    denominator: 1,
+                },
+                full_duration: Fraction {
+                    numerator: 1,
+                    denominator: 1,
+                },
                 events: vec![],
                 barline: Some("regular".into()),
                 closing_barline: Some("regular".into()),
@@ -7492,8 +7802,14 @@ fn test_later_system_measure_number_uses_absolute_measure_index() {
                 paragraph_index: 1,
                 measure_in_paragraph: 0,
                 source_line: 2,
-                actual_duration: Fraction { numerator: 1, denominator: 1 },
-                full_duration: Fraction { numerator: 1, denominator: 1 },
+                actual_duration: Fraction {
+                    numerator: 1,
+                    denominator: 1,
+                },
+                full_duration: Fraction {
+                    numerator: 1,
+                    denominator: 1,
+                },
                 events: vec![],
                 barline: Some("final".into()),
                 closing_barline: Some("final".into()),
@@ -7548,8 +7864,14 @@ fn test_hide_measure_number_omits_system_labels() {
                 paragraph_index: 0,
                 measure_in_paragraph: index,
                 source_line: 1,
-                actual_duration: Fraction { numerator: 1, denominator: 1 },
-                full_duration: Fraction { numerator: 1, denominator: 1 },
+                actual_duration: Fraction {
+                    numerator: 1,
+                    denominator: 1,
+                },
+                full_duration: Fraction {
+                    numerator: 1,
+                    denominator: 1,
+                },
                 events: vec![RenderEvent {
                     track: "HH".into(),
                     track_family: "cymbal".into(),
@@ -7600,8 +7922,7 @@ fn test_hide_measure_number_omits_system_labels() {
         },
     );
     assert!(
-        page_all_items(&scene.pages[0])
-            .all(|item| item.role != "measure-number"),
+        page_all_items(&scene.pages[0]).all(|item| item.role != "measure-number"),
         "hide_measure_number should omit per-system measure labels"
     );
 }
@@ -7630,8 +7951,14 @@ fn test_down_stem_keeps_notehead_on_right_and_flag_on_stem_right_side() {
             paragraph_index: 0,
             measure_in_paragraph: 0,
             source_line: 1,
-            actual_duration: Fraction { numerator: 1, denominator: 1 },
-            full_duration: Fraction { numerator: 1, denominator: 1 },
+            actual_duration: Fraction {
+                numerator: 1,
+                denominator: 1,
+            },
+            full_duration: Fraction {
+                numerator: 1,
+                denominator: 1,
+            },
             events: vec![RenderEvent {
                 track: "BD".into(),
                 track_family: "drum".into(),
@@ -7732,8 +8059,14 @@ fn test_crash_maps_to_top_ledger_line() {
             paragraph_index: 0,
             measure_in_paragraph: 0,
             source_line: 1,
-            actual_duration: Fraction { numerator: 1, denominator: 1 },
-            full_duration: Fraction { numerator: 1, denominator: 1 },
+            actual_duration: Fraction {
+                numerator: 1,
+                denominator: 1,
+            },
+            full_duration: Fraction {
+                numerator: 1,
+                denominator: 1,
+            },
             events: vec![RenderEvent {
                 track: "C".into(),
                 track_family: "cymbal".into(),
@@ -7854,8 +8187,14 @@ fn test_top_ledger_lines_render_for_china_above_staff() {
             paragraph_index: 0,
             measure_in_paragraph: 0,
             source_line: 1,
-            actual_duration: Fraction { numerator: 1, denominator: 1 },
-            full_duration: Fraction { numerator: 1, denominator: 1 },
+            actual_duration: Fraction {
+                numerator: 1,
+                denominator: 1,
+            },
+            full_duration: Fraction {
+                numerator: 1,
+                denominator: 1,
+            },
             events: vec![RenderEvent {
                 track: "CHN".into(),
                 track_family: "cymbal".into(),
@@ -7947,8 +8286,14 @@ fn test_flam_renders_grace_notehead_stem_and_slash() {
             paragraph_index: 0,
             measure_in_paragraph: 0,
             source_line: 1,
-            actual_duration: Fraction { numerator: 1, denominator: 1 },
-            full_duration: Fraction { numerator: 1, denominator: 1 },
+            actual_duration: Fraction {
+                numerator: 1,
+                denominator: 1,
+            },
+            full_duration: Fraction {
+                numerator: 1,
+                denominator: 1,
+            },
             events: vec![RenderEvent {
                 track: "SD".into(),
                 track_family: "drum".into(),
@@ -8280,9 +8625,421 @@ fn test_roll_choke_and_half_open_emit_expected_scene_items() {
     assert!((roll_center_x - stem_line.x1_pt).abs() < 0.01);
     assert!(roll_center_y > stem_line.y1_pt);
     assert!(roll_center_y < stem_line.y2_pt);
-    let roll_height =
-        rendered_glyph_height(GlyphRole::Tremolo3, roll_glyph.font_size_pt);
-    assert!(stem_line.y2_pt - stem_line.y1_pt >= roll_height + 4.9);
+    let roll_height = rendered_glyph_height(GlyphRole::Tremolo3, roll_glyph.font_size_pt);
+    assert!(
+        stem_line.y2_pt - stem_line.y1_pt
+            >= roll_height + LayoutOptions::default().staff_space_pt * 0.85
+    );
+}
+
+#[test]
+fn test_up_flag_bbox_top_aligns_with_stem_tip() {
+    let scene = build_layout_scene(
+        &single_hit_score(
+            "HH",
+            vec![],
+            Fraction {
+                numerator: 1,
+                denominator: 8,
+            },
+        ),
+        &LayoutOptions::default(),
+    );
+    let stem = page_all_items(&scene.pages[0])
+        .find(|item| item.role == "stem")
+        .expect("expected stem");
+    let flag = page_all_items(&scene.pages[0])
+        .find(|item| item.role == "flag")
+        .expect("expected flag");
+    let ScenePrimitive::LineSegment(stem_line) = &stem.primitive else {
+        panic!("expected stem line");
+    };
+    let ScenePrimitive::GlyphRun(flag_glyph) = &flag.primitive else {
+        panic!("expected flag glyph");
+    };
+    let flag_top = flag_glyph.y_pt
+        - canonical_glyph_metric(flag_glyph.glyph_role).bbox_ne_y_ss
+            * (flag_glyph.font_size_pt / 4.0);
+    assert!((flag_top - stem_line.y1_pt).abs() < 0.01);
+}
+
+#[test]
+fn test_roll_keeps_tremolo_height_stable_and_extends_shorter_flagged_stems() {
+    fn roll_geometry(denominator: u32) -> (f32, f32) {
+        let scene = build_layout_scene(
+            &single_hit_score(
+                "HH",
+                vec!["roll"],
+                Fraction {
+                    numerator: 1,
+                    denominator,
+                },
+            ),
+            &LayoutOptions::default(),
+        );
+        let roll = page_all_items(&scene.pages[0])
+            .find(|item| item.role == "roll-slash")
+            .expect("expected roll slash item");
+        let ScenePrimitive::GlyphRun(roll_glyph) = &roll.primitive else {
+            panic!("roll should be rendered as a glyph");
+        };
+        let anchor = roll
+            .anchor_item_id
+            .as_deref()
+            .expect("expected roll anchor item id");
+        let stem = page_all_items(&scene.pages[0])
+            .find(|item| item.role == "stem" && item.anchor_item_id.as_deref() == Some(anchor))
+            .expect("expected anchored stem");
+        let ScenePrimitive::LineSegment(stem_line) = &stem.primitive else {
+            panic!("roll anchor should be a stem line");
+        };
+        (
+            rendered_glyph_height(GlyphRole::Tremolo3, roll_glyph.font_size_pt),
+            stem_line.y2_pt - stem_line.y1_pt,
+        )
+    }
+
+    let (eighth_roll_height, eighth_stem_span) = roll_geometry(8);
+    let (sixteenth_roll_height, sixteenth_stem_span) = roll_geometry(16);
+    let (thirty_second_roll_height, thirty_second_stem_span) = roll_geometry(32);
+
+    assert!((eighth_roll_height - sixteenth_roll_height).abs() < 0.01);
+    assert!((eighth_roll_height - thirty_second_roll_height).abs() < 0.01);
+    assert!(
+        sixteenth_stem_span > eighth_stem_span,
+        "expected 16th stem ({sixteenth_stem_span}) > 8th stem ({eighth_stem_span})"
+    );
+    assert!(
+        thirty_second_stem_span > sixteenth_stem_span,
+        "expected 32nd stem ({thirty_second_stem_span}) > 16th stem ({sixteenth_stem_span})"
+    );
+}
+
+#[cfg(test)]
+fn beam_path_bottom_over_x_range(
+    item: &SceneItem,
+    overlap_x1: f32,
+    overlap_x2: f32,
+) -> Option<f32> {
+    let ScenePrimitive::Path(path) = &item.primitive else {
+        return None;
+    };
+    let coords = path
+        .d
+        .split(|ch: char| !(ch.is_ascii_digit() || ch == '.' || ch == '-'))
+        .filter(|segment| !segment.is_empty())
+        .filter_map(|segment| segment.parse::<f32>().ok())
+        .collect::<Vec<_>>();
+    let [x1, y1, x2, y2, x3, y3, x4, y4] = coords.as_slice() else {
+        return None;
+    };
+    let seg_min_x = x1.min(*x2);
+    let seg_max_x = x1.max(*x2);
+    let clip_start = overlap_x1.max(seg_min_x);
+    let clip_end = overlap_x2.min(seg_max_x);
+    if clip_start > clip_end {
+        return None;
+    }
+    let interp = |ax: f32, ay: f32, bx: f32, by: f32, x: f32| {
+        let dx = bx - ax;
+        if dx.abs() < 0.001 {
+            ay.max(by)
+        } else {
+            ay + (by - ay) * ((x - ax) / dx)
+        }
+    };
+    Some(
+        [
+            interp(*x1, *y1, *x2, *y2, clip_start),
+            interp(*x1, *y1, *x2, *y2, clip_end),
+            interp(*x4, *y4, *x3, *y3, clip_start),
+            interp(*x4, *y4, *x3, *y3, clip_end),
+        ]
+        .into_iter()
+        .fold(f32::NEG_INFINITY, f32::max),
+    )
+}
+
+#[test]
+fn test_beamed_thirty_second_roll_keeps_beam_stack_clear_of_tremolo() {
+    let measure = RenderMeasure {
+        index: 0,
+        global_index: 0,
+        paragraph_index: 0,
+        measure_in_paragraph: 0,
+        source_line: 1,
+        actual_duration: Fraction {
+            numerator: 1,
+            denominator: 1,
+        },
+        full_duration: Fraction {
+            numerator: 1,
+            denominator: 1,
+        },
+        events: vec![
+            RenderEvent {
+                track: "HH".into(),
+                track_family: "cymbal".into(),
+                start: Fraction {
+                    numerator: 0,
+                    denominator: 1,
+                },
+                duration: Fraction {
+                    numerator: 1,
+                    denominator: 32,
+                },
+                visual_duration: Fraction {
+                    numerator: 1,
+                    denominator: 32,
+                },
+                kind: EventKind::Hit,
+                glyph: "d".into(),
+                modifiers: vec!["roll".into()],
+                dot_count: 0,
+                modifier: None,
+                voice: 1,
+                beam: "begin".into(),
+                tuplet: None,
+            },
+            RenderEvent {
+                track: "HH".into(),
+                track_family: "cymbal".into(),
+                start: Fraction {
+                    numerator: 1,
+                    denominator: 32,
+                },
+                duration: Fraction {
+                    numerator: 1,
+                    denominator: 32,
+                },
+                visual_duration: Fraction {
+                    numerator: 1,
+                    denominator: 32,
+                },
+                kind: EventKind::Hit,
+                glyph: "d".into(),
+                modifiers: vec![],
+                dot_count: 0,
+                modifier: None,
+                voice: 1,
+                beam: "end".into(),
+                tuplet: None,
+            },
+        ],
+        barline: Some("regular".into()),
+        closing_barline: Some("final".into()),
+        start_nav: None,
+        end_nav: None,
+        volta_indices: None,
+        hairpins: vec![],
+        dynamics: vec![],
+        rehearsal_mark: None,
+        measure_repeat_slashes: None,
+        multi_rest_count: None,
+        note_value: 8,
+        volta_terminator: false,
+    };
+    let scene = build_layout_scene(
+        &RenderScore {
+            version: RENDER_SCORE_VERSION.to_string(),
+            header: RenderHeader {
+                tempo: 120,
+                time_beats: 4,
+                time_beat_unit: 4,
+                note_value: 8,
+                grouping: vec![1, 1, 1, 1],
+                title: None,
+                subtitle: None,
+                composer: None,
+            },
+            tracks: vec![RenderTrack {
+                id: "HH".into(),
+                family: "cymbal".into(),
+            }],
+            measures: vec![measure],
+            errors: vec![],
+            repeat_spans: vec![],
+        },
+        &LayoutOptions::default(),
+    );
+    let roll = page_all_items(&scene.pages[0])
+        .find(|item| item.role == "roll-slash")
+        .expect("expected roll");
+    let ScenePrimitive::GlyphRun(roll_glyph) = &roll.primitive else {
+        panic!("roll should be glyph");
+    };
+    let (roll_x, _, roll_width, _) =
+        item_bounds(roll, LayoutOptions::default().staff_space_pt).expect("expected roll bounds");
+    let roll_top = roll_glyph.y_pt
+        - canonical_glyph_metric(roll_glyph.glyph_role).bbox_ne_y_ss
+            * (roll_glyph.font_size_pt / 4.0);
+    let min_roll_clearance = LayoutOptions::default().staff_space_pt
+        * (crate::engraving::constants::ROLL_FLAG_GAP_SS
+            + crate::engraving::constants::ROLL_FLAG_EXTRA_CLEARANCE_SS);
+    let beam_stack_bottom = page_all_items(&scene.pages[0])
+        .filter(|item| item.role == "beam" || item.role == "beam-secondary")
+        .filter_map(|item| beam_path_bottom_over_x_range(item, roll_x, roll_x + roll_width))
+        .fold(f32::NEG_INFINITY, f32::max);
+    assert!(
+        roll_top - beam_stack_bottom >= min_roll_clearance,
+        "expected beam stack bottom ({beam_stack_bottom}) to clear roll top ({roll_top}) by at least {min_roll_clearance}"
+    );
+}
+
+#[test]
+fn test_middle_beamed_thirty_second_roll_keeps_beam_stack_clear_of_tremolo() {
+    let measure = RenderMeasure {
+        index: 0,
+        global_index: 0,
+        paragraph_index: 0,
+        measure_in_paragraph: 0,
+        source_line: 1,
+        actual_duration: Fraction {
+            numerator: 3,
+            denominator: 32,
+        },
+        full_duration: Fraction {
+            numerator: 1,
+            denominator: 1,
+        },
+        events: vec![
+            RenderEvent {
+                track: "SN".into(),
+                track_family: "drum".into(),
+                start: Fraction {
+                    numerator: 0,
+                    denominator: 1,
+                },
+                duration: Fraction {
+                    numerator: 1,
+                    denominator: 32,
+                },
+                visual_duration: Fraction {
+                    numerator: 1,
+                    denominator: 32,
+                },
+                kind: EventKind::Hit,
+                glyph: "o".into(),
+                modifiers: vec![],
+                dot_count: 0,
+                modifier: None,
+                voice: 1,
+                beam: "begin".into(),
+                tuplet: None,
+            },
+            RenderEvent {
+                track: "HH".into(),
+                track_family: "cymbal".into(),
+                start: Fraction {
+                    numerator: 1,
+                    denominator: 32,
+                },
+                duration: Fraction {
+                    numerator: 1,
+                    denominator: 32,
+                },
+                visual_duration: Fraction {
+                    numerator: 1,
+                    denominator: 32,
+                },
+                kind: EventKind::Hit,
+                glyph: "d".into(),
+                modifiers: vec!["roll".into()],
+                dot_count: 0,
+                modifier: None,
+                voice: 1,
+                beam: "continue".into(),
+                tuplet: None,
+            },
+            RenderEvent {
+                track: "SN".into(),
+                track_family: "drum".into(),
+                start: Fraction {
+                    numerator: 2,
+                    denominator: 32,
+                },
+                duration: Fraction {
+                    numerator: 1,
+                    denominator: 32,
+                },
+                visual_duration: Fraction {
+                    numerator: 1,
+                    denominator: 32,
+                },
+                kind: EventKind::Hit,
+                glyph: "o".into(),
+                modifiers: vec![],
+                dot_count: 0,
+                modifier: None,
+                voice: 1,
+                beam: "end".into(),
+                tuplet: None,
+            },
+        ],
+        barline: Some("regular".into()),
+        closing_barline: Some("final".into()),
+        start_nav: None,
+        end_nav: None,
+        volta_indices: None,
+        hairpins: vec![],
+        dynamics: vec![],
+        rehearsal_mark: None,
+        measure_repeat_slashes: None,
+        multi_rest_count: None,
+        note_value: 8,
+        volta_terminator: false,
+    };
+    let scene = build_layout_scene(
+        &RenderScore {
+            version: RENDER_SCORE_VERSION.to_string(),
+            header: RenderHeader {
+                tempo: 120,
+                time_beats: 4,
+                time_beat_unit: 4,
+                note_value: 8,
+                grouping: vec![1, 1, 1, 1],
+                title: None,
+                subtitle: None,
+                composer: None,
+            },
+            tracks: vec![
+                RenderTrack {
+                    id: "SN".into(),
+                    family: "drum".into(),
+                },
+                RenderTrack {
+                    id: "HH".into(),
+                    family: "cymbal".into(),
+                },
+            ],
+            measures: vec![measure],
+            errors: vec![],
+            repeat_spans: vec![],
+        },
+        &LayoutOptions::default(),
+    );
+    let roll = page_all_items(&scene.pages[0])
+        .find(|item| item.role == "roll-slash")
+        .expect("expected roll");
+    let ScenePrimitive::GlyphRun(roll_glyph) = &roll.primitive else {
+        panic!("roll should be glyph");
+    };
+    let (roll_x, _, roll_width, _) =
+        item_bounds(roll, LayoutOptions::default().staff_space_pt).expect("expected roll bounds");
+    let roll_top = roll_glyph.y_pt
+        - canonical_glyph_metric(roll_glyph.glyph_role).bbox_ne_y_ss
+            * (roll_glyph.font_size_pt / 4.0);
+    let min_roll_clearance = LayoutOptions::default().staff_space_pt
+        * (crate::engraving::constants::ROLL_FLAG_GAP_SS
+            + crate::engraving::constants::ROLL_FLAG_EXTRA_CLEARANCE_SS);
+    let beam_stack_bottom = page_all_items(&scene.pages[0])
+        .filter(|item| item.role == "beam" || item.role == "beam-secondary")
+        .filter_map(|item| beam_path_bottom_over_x_range(item, roll_x, roll_x + roll_width))
+        .fold(f32::NEG_INFINITY, f32::max);
+    assert!(
+        roll_top - beam_stack_bottom >= min_roll_clearance,
+        "expected beam stack bottom ({beam_stack_bottom}) to clear middle-note roll top ({roll_top}) by at least {min_roll_clearance}"
+    );
 }
 
 #[test]
@@ -8376,7 +9133,9 @@ fn test_specialty_tracks_render_at_explicit_positions() {
     let mut glyphs = page_all_items(&scene.pages[0])
         .filter(|item| item.role == "notehead")
         .filter_map(|item| match &item.primitive {
-            ScenePrimitive::TextRun(text) => text.text.chars().next().map(|ch| (text.y_pt, ch as u32)),
+            ScenePrimitive::TextRun(text) => {
+                text.text.chars().next().map(|ch| (text.y_pt, ch as u32))
+            }
             _ => None,
         })
         .collect::<Vec<_>>();
@@ -8413,7 +9172,10 @@ fn render_hit(
         visual_duration,
         kind: EventKind::Hit,
         glyph: "d".into(),
-        modifiers: modifiers.into_iter().map(str::to_string).collect::<Vec<_>>(),
+        modifiers: modifiers
+            .into_iter()
+            .map(str::to_string)
+            .collect::<Vec<_>>(),
         dot_count: 0,
         modifier: None,
         voice: 1,
@@ -8446,8 +9208,14 @@ fn single_hit_score(track: &str, modifiers: Vec<&str>, visual_duration: Fraction
             paragraph_index: 0,
             measure_in_paragraph: 0,
             source_line: 1,
-            actual_duration: Fraction { numerator: 1, denominator: 1 },
-            full_duration: Fraction { numerator: 1, denominator: 1 },
+            actual_duration: Fraction {
+                numerator: 1,
+                denominator: 1,
+            },
+            full_duration: Fraction {
+                numerator: 1,
+                denominator: 1,
+            },
             events: vec![render_hit(
                 track,
                 modifiers,
@@ -8499,8 +9267,14 @@ fn grace_modifier_score(modifier: &str, visual_duration: Fraction) -> RenderScor
             paragraph_index: 0,
             measure_in_paragraph: 0,
             source_line: 1,
-            actual_duration: Fraction { numerator: 1, denominator: 1 },
-            full_duration: Fraction { numerator: 1, denominator: 1 },
+            actual_duration: Fraction {
+                numerator: 1,
+                denominator: 1,
+            },
+            full_duration: Fraction {
+                numerator: 1,
+                denominator: 1,
+            },
             events: vec![RenderEvent {
                 track: "SD".into(),
                 track_family: "drum".into(),

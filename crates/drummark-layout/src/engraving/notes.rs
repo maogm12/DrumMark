@@ -1,3 +1,13 @@
+use super::constants::{
+    ACCENT_FALLBACK_Y_PT, ACCENT_GAP_PT, BEAM_ENVELOPE_PAD_X_PT, BEAM_THICKNESS_PT,
+    CHORD_DISPLACE_EPSILON, DOT_ON_LINE_SHIFT_SS, FLAM_SLASH_HALF_HEIGHT_PT_AT_BASE_SS,
+    FLAM_SLASH_LEFT_PT_AT_BASE_SS, FLAM_SLASH_RIGHT_PT_AT_BASE_SS, FLAM_SLASH_STEM_SHIFT_RATIO,
+    GRACE_BEAM_THICKNESS_PT_AT_BASE_SS, GRACE_NOTE_GAP_PT_AT_BASE_SS,
+    GRACE_NOTE_SPACING_PT_AT_BASE_SS, GRACE_SCALE_BASE_STAFF_SPACE_PT,
+    GRACE_SECONDARY_BEAM_OFFSET_PT_AT_BASE_SS, NOTE_X_OFFSET_PT, REST_FALLBACK_CENTER_X_PT,
+    REST_OVERLAP_EPSILON, ROLL_ADDITIONAL_FLAG_CLEARANCE_SS, ROLL_FLAG_EXTRA_CLEARANCE_SS,
+    ROLL_FLAG_GAP_SS, ROLL_NOTE_GAP_SS, SECONDARY_BEAM_GAP_PT, STICKING_PADDING_PT,
+};
 use crate::collision::{
     rect_obstacle_from_glyph, rect_obstacle_from_line, rect_overlap_area, GlyphObstacle,
     LineObstacle, RectObstacle,
@@ -21,16 +31,6 @@ use crate::scene_builder::{
 use crate::{
     glyph_position_pt, grace_position_pt, grace_render_font_pt, grace_stem_length_pt,
     notation_render_font_pt, ENGRAVING_STROKE_WIDTH_PT,
-};
-use super::constants::{
-    ACCENT_FALLBACK_Y_PT, ACCENT_GAP_PT, BEAM_ENVELOPE_PAD_X_PT, BEAM_THICKNESS_PT,
-    CHORD_DISPLACE_EPSILON, DOT_ON_LINE_SHIFT_SS, GRACE_BEAM_THICKNESS_PT_AT_BASE_SS,
-    GRACE_NOTE_GAP_PT_AT_BASE_SS, GRACE_NOTE_SPACING_PT_AT_BASE_SS,
-    GRACE_SCALE_BASE_STAFF_SPACE_PT, GRACE_SECONDARY_BEAM_OFFSET_PT_AT_BASE_SS,
-    NOTE_X_OFFSET_PT, REST_FALLBACK_CENTER_X_PT, REST_OVERLAP_EPSILON,
-    SECONDARY_BEAM_GAP_PT, STICKING_PADDING_PT, FLAM_SLASH_HALF_HEIGHT_PT_AT_BASE_SS,
-    FLAM_SLASH_LEFT_PT_AT_BASE_SS, FLAM_SLASH_RIGHT_PT_AT_BASE_SS,
-    FLAM_SLASH_STEM_SHIFT_RATIO,
 };
 
 use super::beams::{render_beam_groups, BeamAnchor};
@@ -116,6 +116,8 @@ pub(crate) struct BeamAnchorPlan {
     pub(crate) x: f32,
     pub(crate) stem_x: f32,
     pub(crate) stem_tip_y: f32,
+    pub(crate) roll_beam_limit_y: Option<f32>,
+    pub(crate) roll_beam_overlap_x: Option<(f32, f32)>,
     pub(crate) stem_attach_y: f32,
     pub(crate) voice: u8,
     pub(crate) group: u32,
@@ -244,7 +246,13 @@ pub(crate) fn render_measure_events(
         ));
     }
 
-    render_tuplet_groups(sink, input.measure_id, &slot_events, input.staff_top, &all_top_obstacles);
+    render_tuplet_groups(
+        sink,
+        input.measure_id,
+        &slot_events,
+        input.staff_top,
+        &all_top_obstacles,
+    );
     render_beam_groups(
         sink,
         input.measure_id,
@@ -314,11 +322,7 @@ pub(crate) fn measure_uses_dual_voice_rest_zones(
 ///
 /// Single-voice scores use traditional center-staff defaults. Dual-voice scores keep voice 1
 /// in the upper staff (line 4 area) and voice 2 in the lower staff (line 2 area).
-fn preferred_rest_lane_ss(
-    voice: u8,
-    rest_metric: CanonicalGlyphMetric,
-    dual_voice: bool,
-) -> f32 {
+fn preferred_rest_lane_ss(voice: u8, rest_metric: CanonicalGlyphMetric, dual_voice: bool) -> f32 {
     if !dual_voice {
         return match rest_metric.role {
             GlyphRole::RestWhole => 1.0,
@@ -381,7 +385,10 @@ fn rest_placement_for_lane(
     }
 }
 
-pub(crate) fn notehead_obstacles(note_placements: &[NotePlacement], staff_space_pt: f32) -> Vec<RectObstacle> {
+pub(crate) fn notehead_obstacles(
+    note_placements: &[NotePlacement],
+    staff_space_pt: f32,
+) -> Vec<RectObstacle> {
     note_placements
         .iter()
         .map(|note| {
@@ -493,7 +500,10 @@ fn rest_is_hidden_by_slot_context(rest: &SlotEvent<'_>, slot_group: &[SlotEvent<
         })
 }
 
-pub(crate) fn render_slot_group(sink: &mut SceneEmitSink<'_>, input: RenderSlotGroupInput<'_, '_>) -> Vec<SlotTopObstacle> {
+pub(crate) fn render_slot_group(
+    sink: &mut SceneEmitSink<'_>,
+    input: RenderSlotGroupInput<'_, '_>,
+) -> Vec<SlotTopObstacle> {
     let mut note_anchors_by_voice: std::collections::BTreeMap<u8, Vec<NotePlacement>> =
         std::collections::BTreeMap::new();
     let mut hit_cluster_plans = Vec::new();
@@ -566,7 +576,10 @@ pub(crate) fn render_slot_group(sink: &mut SceneEmitSink<'_>, input: RenderSlotG
 
     let mut slot_obstacles = Vec::new();
     for cluster_plan in &hit_cluster_plans {
-        slot_obstacles.extend(notehead_obstacles(&cluster_plan.note_placements, sink.staff_space_pt));
+        slot_obstacles.extend(notehead_obstacles(
+            &cluster_plan.note_placements,
+            sink.staff_space_pt,
+        ));
         slot_obstacles.extend(ledger_line_obstacles(&cluster_plan.ledger_lines));
         if let Some(stem_plan) = cluster_plan.stem_plan.as_ref() {
             slot_obstacles.push(stem_obstacle(stem_plan));
@@ -645,7 +658,8 @@ pub(crate) fn render_slot_group(sink: &mut SceneEmitSink<'_>, input: RenderSlotG
         let reference_note_metric =
             notehead_glyph(&rest.event.track, &rest.event.modifiers, &rest.event.glyph);
         let note_center_x = slot_hit_center_x.unwrap_or_else(|| {
-            input.event_x - REST_FALLBACK_CENTER_X_PT + glyph_bbox_center_x_offset(reference_note_metric, rest_font_size)
+            input.event_x - REST_FALLBACK_CENTER_X_PT
+                + glyph_bbox_center_x_offset(reference_note_metric, rest_font_size)
         });
         let (placement, diagnostic) = resolve_rest_placement(
             rest,
@@ -984,7 +998,8 @@ pub(crate) fn render_hit_cluster(
             for i in 0..dot_count {
                 let dot_x = note_x
                     + (i as f32) * dot_spacing_x
-                    + canonical_glyph_metric(placement.note_role).width_ss() * note_position_pt / 4.0
+                    + canonical_glyph_metric(placement.note_role).width_ss() * note_position_pt
+                        / 4.0
                     + GRACE_NOTE_SPACING_PT_AT_BASE_SS * dot_scale;
                 let dot_y = input.staff_top + dot_y_ss * sink.staff_space_pt;
                 sink.push_text_item(TextItemSpec {
@@ -1056,11 +1071,25 @@ pub(crate) fn render_hit_cluster(
         sink.staff_space_pt,
         input.stem_len_pt,
     );
-    let accent_glyphs = build_accent_glyph_plans(&note_placements, stem_up, stem_plan.as_ref(), sink.staff_space_pt);
-    let modifier_glyphs =
-        build_modifier_glyph_plans(&note_placements, stem_up, stem_plan.as_ref(), sink.staff_space_pt);
-    let modifier_lines =
-        build_modifier_line_plans(&note_placements, stem_up, stem_plan.as_ref(), sink.staff_space_pt);
+    let accent_glyphs = build_accent_glyph_plans(
+        &note_placements,
+        stem_up,
+        stem_plan.as_ref(),
+        sink.staff_space_pt,
+    );
+    let modifier_glyphs = build_modifier_glyph_plans(
+        &note_placements,
+        stem_up,
+        stem_plan.as_ref(),
+        sink.staff_space_pt,
+        beam_level > 0,
+    );
+    let modifier_lines = build_modifier_line_plans(
+        &note_placements,
+        stem_up,
+        stem_plan.as_ref(),
+        sink.staff_space_pt,
+    );
 
     HitClusterPlan {
         measure_id: input.measure_id.to_string(),
@@ -1202,6 +1231,8 @@ pub(crate) fn render_hit_cluster_stem_and_accents(
                 x: anchor_plan.x,
                 stem_x: anchor_plan.stem_x,
                 stem_tip_y: anchor_plan.stem_tip_y,
+                roll_beam_limit_y: anchor_plan.roll_beam_limit_y,
+                roll_beam_overlap_x: anchor_plan.roll_beam_overlap_x,
                 stem_attach_y: anchor_plan.stem_attach_y,
                 voice: anchor_plan.voice,
                 group: anchor_plan.group,
@@ -1247,7 +1278,13 @@ pub(crate) fn render_hit_cluster_stem_and_accents(
             font_size_pt: glyph.font_size_pt,
             fill: "#333",
         });
-        sink.set_anchor_item_id(&glyph_id, glyph.anchor_item_id.clone().or_else(|| stem_item_id.clone()));
+        sink.set_anchor_item_id(
+            &glyph_id,
+            glyph
+                .anchor_item_id
+                .clone()
+                .or_else(|| stem_item_id.clone()),
+        );
     }
     for line in &cluster_plan.modifier_lines {
         let line_id = sink.push_line_item(LineItemSpec {
@@ -1308,8 +1345,7 @@ pub(crate) fn render_grace_notes_for_hit(
     let flam_slash_right_pt = FLAM_SLASH_RIGHT_PT_AT_BASE_SS * grace_scale;
     let flam_slash_half_v = FLAM_SLASH_HALF_HEIGHT_PT_AT_BASE_SS * grace_scale;
     let flam_slash_shift = grace_stem_len_pt * FLAM_SLASH_STEM_SHIFT_RATIO;
-    let grace_secondary_beam_offset_pt =
-        GRACE_SECONDARY_BEAM_OFFSET_PT_AT_BASE_SS * grace_scale;
+    let grace_secondary_beam_offset_pt = GRACE_SECONDARY_BEAM_OFFSET_PT_AT_BASE_SS * grace_scale;
     let grace_beam_thickness_pt = GRACE_BEAM_THICKNESS_PT_AT_BASE_SS * grace_scale;
     let note_metric = canonical_glyph_metric(note_role);
     let note_glyph = note_metric.render_text();
@@ -1387,7 +1423,12 @@ pub(crate) fn render_grace_notes_for_hit(
                 measure_id: Some(measure_id),
                 role: "grace-flag",
                 x: stem_x - flag_anchor.x_ss * smufl_ss,
-                y: stem_tip_y + flag_anchor.y_ss * smufl_ss,
+                y: stem_tip_y
+                    + if stem_up {
+                        flag_metric.bbox_ne_y_ss * smufl_ss
+                    } else {
+                        flag_metric.bbox_sw_y_ss * smufl_ss
+                    },
                 glyph_role: flag_role,
                 font_family: "Bravura",
                 font_size_pt: grace_render,
@@ -1404,9 +1445,15 @@ pub(crate) fn render_grace_notes_for_hit(
                 stem_tip_y - flam_slash_shift
             };
             let (slash_y1, slash_y2) = if stem_up {
-                (slash_ref_y + flam_slash_half_v, slash_ref_y - flam_slash_half_v)
+                (
+                    slash_ref_y + flam_slash_half_v,
+                    slash_ref_y - flam_slash_half_v,
+                )
             } else {
-                (slash_ref_y - flam_slash_half_v, slash_ref_y + flam_slash_half_v)
+                (
+                    slash_ref_y - flam_slash_half_v,
+                    slash_ref_y + flam_slash_half_v,
+                )
             };
             let slash_id = sink.push_line_item(LineItemSpec {
                 measure_id: Some(measure_id),
@@ -1429,14 +1476,25 @@ pub(crate) fn render_grace_notes_for_hit(
         let primary_id = sink.push_path_item(PathItemSpec {
             measure_id: Some(measure_id),
             role: "grace-beam",
-            d: grace_beam_path_d(first_x, first_y, last_x, last_y, stem_up, grace_beam_thickness_pt),
+            d: grace_beam_path_d(
+                first_x,
+                first_y,
+                last_x,
+                last_y,
+                stem_up,
+                grace_beam_thickness_pt,
+            ),
             fill: "#333",
             stroke: None,
             stroke_width: None,
         });
         sink.set_anchor_item_id(&primary_id, Some(first_stem_id.clone()));
 
-        let secondary_offset = if stem_up { grace_secondary_beam_offset_pt } else { -grace_secondary_beam_offset_pt };
+        let secondary_offset = if stem_up {
+            grace_secondary_beam_offset_pt
+        } else {
+            -grace_secondary_beam_offset_pt
+        };
         let secondary_id = sink.push_path_item(PathItemSpec {
             measure_id: Some(measure_id),
             role: "grace-beam-secondary",
@@ -1609,20 +1667,65 @@ fn build_stem_render_plan(
     } else {
         stem_layout.stem_length_reference_y + stem_len_pt
     };
+    let mut roll_beam_limit_y = None;
+    let mut roll_beam_overlap_x = None;
     if note_placements.iter().any(|placement| placement.has_roll) {
-        let roll_height = crate::planning::rendered_glyph_height(
-            GlyphRole::Tremolo3,
-            notation_render_font_pt(staff_space_pt),
-        );
-        let required_stem_span = roll_height + staff_space_pt * 1.0;
-        let stem_span = stem_y2 - stem_y1;
-        if stem_span < required_stem_span {
-            let extension = required_stem_span - stem_span;
+        let tremolo_font_size = notation_render_font_pt(staff_space_pt);
+        let tremolo_metric = canonical_glyph_metric(GlyphRole::Tremolo3);
+        let roll_height =
+            crate::planning::rendered_glyph_height(GlyphRole::Tremolo3, tremolo_font_size);
+        let roll_note_gap = staff_space_pt * ROLL_NOTE_GAP_SS;
+        let roll_gap_to_flag = staff_space_pt * ROLL_FLAG_GAP_SS;
+        let anchor_note = stem_layout
+            .anchor_note_id
+            .and_then(|index| note_placements.get(index))
+            .unwrap_or(attach_note);
+        let anchor_metric = canonical_glyph_metric(anchor_note.note_role);
+        let note_outer_edge = if stem_up {
+            anchor_note.note_y - anchor_metric.bbox_ne_y_ss * staff_space_pt
+        } else {
+            anchor_note.note_y - anchor_metric.bbox_sw_y_ss * staff_space_pt
+        };
+        let required_outer_span = if beam_group.is_some() && beam_level > 0 {
+            roll_note_gap
+                + roll_height
+                + roll_gap_to_flag
+                + staff_space_pt * ROLL_FLAG_EXTRA_CLEARANCE_SS
+                + beam_stack_extent_from_stem_pt(beam_level)
+        } else if beam_level > 0 {
+            let additional_flag_extension = beam_level.saturating_sub(1) as f32
+                * staff_space_pt
+                * ROLL_ADDITIONAL_FLAG_CLEARANCE_SS;
+            roll_note_gap
+                + roll_height
+                + roll_gap_to_flag
+                + staff_space_pt * ROLL_FLAG_EXTRA_CLEARANCE_SS
+                + additional_flag_extension
+        } else {
+            roll_note_gap + roll_height + staff_space_pt * 0.4
+        };
+        let current_outer_span = if stem_up {
+            note_outer_edge - stem_y1
+        } else {
+            stem_y2 - note_outer_edge
+        };
+        if current_outer_span < required_outer_span {
+            let extension = required_outer_span - current_outer_span;
             if stem_up {
                 stem_y1 -= extension;
             } else {
                 stem_y2 += extension;
             }
+        }
+        if beam_group.is_some() && beam_level > 0 {
+            let ss_to_pt = tremolo_font_size / 4.0;
+            let tremolo_draw_x =
+                stem_layout.stem_x - glyph_bbox_center_x_offset(tremolo_metric, tremolo_font_size);
+            roll_beam_limit_y = Some(if stem_up { stem_y1 } else { stem_y2 });
+            roll_beam_overlap_x = Some((
+                tremolo_draw_x + tremolo_metric.bbox_sw_x_ss * ss_to_pt,
+                tremolo_draw_x + tremolo_metric.bbox_ne_x_ss * ss_to_pt,
+            ));
         }
     }
     Some(StemRenderPlan {
@@ -1638,6 +1741,8 @@ fn build_stem_render_plan(
                 x: event_x,
                 stem_x: stem_layout.stem_x,
                 stem_tip_y: if stem_up { stem_y1 } else { stem_y2 },
+                roll_beam_limit_y,
+                roll_beam_overlap_x,
                 stem_attach_y,
                 voice,
                 group,
@@ -1700,6 +1805,7 @@ fn build_modifier_glyph_plans(
     stem_up: bool,
     stem_plan: Option<&StemRenderPlan>,
     staff_space_pt: f32,
+    _has_flag: bool,
 ) -> Vec<AnchoredGlyphPlan> {
     let choke_font_size = notation_render_font_pt(staff_space_pt);
     let choke_width = rendered_glyph_width(GlyphRole::PictChokeCymbal, choke_font_size);
@@ -1707,8 +1813,7 @@ fn build_modifier_glyph_plans(
     let choke_gap_y = staff_space_pt * 0.48;
     let tremolo_font_size = notation_render_font_pt(staff_space_pt);
     let half_open_font_size = notation_render_font_pt(staff_space_pt);
-    let half_open_width =
-        rendered_glyph_width(GlyphRole::PictHalfOpen1, half_open_font_size);
+    let half_open_width = rendered_glyph_width(GlyphRole::PictHalfOpen1, half_open_font_size);
     let half_open_gap = staff_space_pt * 0.8;
     let mut plans = note_placements
         .iter()
@@ -1739,13 +1844,48 @@ fn build_modifier_glyph_plans(
     if let Some(stem_plan) = stem_plan {
         if note_placements.iter().any(|placement| placement.has_roll) {
             let tremolo_metric = canonical_glyph_metric(GlyphRole::Tremolo3);
-            let center_y = stem_plan.y1 + (stem_plan.y2 - stem_plan.y1) * 0.5;
+            let anchor_note = stem_plan
+                .anchor_note_id
+                .as_ref()
+                .and_then(|anchor_id| {
+                    note_placements
+                        .iter()
+                        .find(|placement| placement.note_id == *anchor_id)
+                })
+                .or_else(|| {
+                    if stem_up {
+                        note_placements.iter().min_by(|a, b| {
+                            a.note_y
+                                .partial_cmp(&b.note_y)
+                                .unwrap_or(std::cmp::Ordering::Equal)
+                        })
+                    } else {
+                        note_placements.iter().max_by(|a, b| {
+                            a.note_y
+                                .partial_cmp(&b.note_y)
+                                .unwrap_or(std::cmp::Ordering::Equal)
+                        })
+                    }
+                })
+                .expect("roll should have an anchor note");
+            let anchor_metric = canonical_glyph_metric(anchor_note.note_role);
+            let note_outer_edge = if stem_up {
+                anchor_note.note_y - anchor_metric.bbox_ne_y_ss * staff_space_pt
+            } else {
+                anchor_note.note_y - anchor_metric.bbox_sw_y_ss * staff_space_pt
+            };
+            let roll_center_offset = staff_space_pt * ROLL_NOTE_GAP_SS
+                + crate::planning::rendered_glyph_height(GlyphRole::Tremolo3, tremolo_font_size)
+                    * 0.5;
+            let center_y = if stem_up {
+                note_outer_edge - roll_center_offset
+            } else {
+                note_outer_edge + roll_center_offset
+            };
             plans.push(AnchoredGlyphPlan {
                 role: "roll-slash",
-                x: stem_plan.x
-                    - glyph_bbox_center_x_offset(tremolo_metric, tremolo_font_size),
-                y: center_y
-                    - glyph_bbox_center_y_offset(tremolo_metric, tremolo_font_size),
+                x: stem_plan.x - glyph_bbox_center_x_offset(tremolo_metric, tremolo_font_size),
+                y: center_y - glyph_bbox_center_y_offset(tremolo_metric, tremolo_font_size),
                 glyph_role: GlyphRole::Tremolo3,
                 font_size_pt: tremolo_font_size,
                 anchor_item_id: stem_plan.anchor_note_id.clone(),
@@ -1753,19 +1893,24 @@ fn build_modifier_glyph_plans(
         }
     }
 
-    plans.extend(note_placements.iter().filter(|placement| placement.has_half_open).map(|placement| {
-            let reference_y = stem_plan
-                .map(|plan| if stem_up { plan.y1 } else { plan.y2 })
-                .unwrap_or(placement.note_y - staff_space_pt * 1.4);
-            AnchoredGlyphPlan {
-                role: "half-open",
-                x: placement.note_center_x - half_open_width * 0.5,
-                y: reference_y - half_open_gap,
-                glyph_role: GlyphRole::PictHalfOpen1,
-                font_size_pt: half_open_font_size,
-                anchor_item_id: Some(placement.note_id.clone()),
-            }
-        }));
+    plans.extend(
+        note_placements
+            .iter()
+            .filter(|placement| placement.has_half_open)
+            .map(|placement| {
+                let reference_y = stem_plan
+                    .map(|plan| if stem_up { plan.y1 } else { plan.y2 })
+                    .unwrap_or(placement.note_y - staff_space_pt * 1.4);
+                AnchoredGlyphPlan {
+                    role: "half-open",
+                    x: placement.note_center_x - half_open_width * 0.5,
+                    y: reference_y - half_open_gap,
+                    glyph_role: GlyphRole::PictHalfOpen1,
+                    font_size_pt: half_open_font_size,
+                    anchor_item_id: Some(placement.note_id.clone()),
+                }
+            }),
+    );
 
     plans
 }

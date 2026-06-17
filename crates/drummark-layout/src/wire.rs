@@ -234,11 +234,7 @@ pub(crate) fn to_wire_scene(scene: &LayoutScene) -> WireLayoutScene {
                 height_pt: page.height_pt,
                 header: page.header.as_ref().map(|header| WirePageHeader {
                     items: header.items.iter().map(wire_scene_item).collect(),
-                    composites: header
-                        .composites
-                        .iter()
-                        .map(wire_scene_composite)
-                        .collect(),
+                    composites: header.composites.iter().map(wire_scene_composite).collect(),
                 }),
                 systems: page
                     .systems
@@ -253,11 +249,7 @@ pub(crate) fn to_wire_scene(scene: &LayoutScene) -> WireLayoutScene {
                         height_pt: system.height_pt,
                         measures: system.measures.iter().map(wire_scene_measure).collect(),
                         items: system.items.iter().map(wire_scene_item).collect(),
-                        composites: system
-                            .composites
-                            .iter()
-                            .map(wire_scene_composite)
-                            .collect(),
+                        composites: system.composites.iter().map(wire_scene_composite).collect(),
                     })
                     .collect(),
             })
@@ -326,12 +318,8 @@ pub fn layout_scene_to_js(scene: &LayoutScene) -> JsValue {
                 &header_composites.into(),
             )
             .unwrap();
-            js_sys::Reflect::set(
-                &page_obj,
-                &JsValue::from_str("header"),
-                &header_obj.into(),
-            )
-            .unwrap();
+            js_sys::Reflect::set(&page_obj, &JsValue::from_str("header"), &header_obj.into())
+                .unwrap();
         }
 
         let systems = Array::new();
@@ -382,17 +370,62 @@ pub fn layout_scene_to_js(scene: &LayoutScene) -> JsValue {
             let measures = Array::new();
             for measure in &system.measures {
                 let measure_obj = Object::new();
-                js_sys::Reflect::set(&measure_obj, &JsValue::from_str("id"), &JsValue::from_str(&measure.id)).unwrap();
-                js_sys::Reflect::set(&measure_obj, &JsValue::from_str("index"), &JsValue::from_f64(measure.index as f64)).unwrap();
-                js_sys::Reflect::set(&measure_obj, &JsValue::from_str("globalIndex"), &JsValue::from_f64(measure.global_index as f64)).unwrap();
-                js_sys::Reflect::set(&measure_obj, &JsValue::from_str("systemId"), &JsValue::from_str(&measure.system_id)).unwrap();
-                js_sys::Reflect::set(&measure_obj, &JsValue::from_str("xPt"), &JsValue::from_f64(measure.x_pt as f64)).unwrap();
-                js_sys::Reflect::set(&measure_obj, &JsValue::from_str("yPt"), &JsValue::from_f64(measure.y_pt as f64)).unwrap();
-                js_sys::Reflect::set(&measure_obj, &JsValue::from_str("widthPt"), &JsValue::from_f64(measure.width_pt as f64)).unwrap();
-                js_sys::Reflect::set(&measure_obj, &JsValue::from_str("heightPt"), &JsValue::from_f64(measure.height_pt as f64)).unwrap();
+                js_sys::Reflect::set(
+                    &measure_obj,
+                    &JsValue::from_str("id"),
+                    &JsValue::from_str(&measure.id),
+                )
+                .unwrap();
+                js_sys::Reflect::set(
+                    &measure_obj,
+                    &JsValue::from_str("index"),
+                    &JsValue::from_f64(measure.index as f64),
+                )
+                .unwrap();
+                js_sys::Reflect::set(
+                    &measure_obj,
+                    &JsValue::from_str("globalIndex"),
+                    &JsValue::from_f64(measure.global_index as f64),
+                )
+                .unwrap();
+                js_sys::Reflect::set(
+                    &measure_obj,
+                    &JsValue::from_str("systemId"),
+                    &JsValue::from_str(&measure.system_id),
+                )
+                .unwrap();
+                js_sys::Reflect::set(
+                    &measure_obj,
+                    &JsValue::from_str("xPt"),
+                    &JsValue::from_f64(measure.x_pt as f64),
+                )
+                .unwrap();
+                js_sys::Reflect::set(
+                    &measure_obj,
+                    &JsValue::from_str("yPt"),
+                    &JsValue::from_f64(measure.y_pt as f64),
+                )
+                .unwrap();
+                js_sys::Reflect::set(
+                    &measure_obj,
+                    &JsValue::from_str("widthPt"),
+                    &JsValue::from_f64(measure.width_pt as f64),
+                )
+                .unwrap();
+                js_sys::Reflect::set(
+                    &measure_obj,
+                    &JsValue::from_str("heightPt"),
+                    &JsValue::from_f64(measure.height_pt as f64),
+                )
+                .unwrap();
                 measures.push(&measure_obj);
             }
-            js_sys::Reflect::set(&system_obj, &JsValue::from_str("measures"), &measures.into()).unwrap();
+            js_sys::Reflect::set(
+                &system_obj,
+                &JsValue::from_str("measures"),
+                &measures.into(),
+            )
+            .unwrap();
 
             let items = Array::new();
             for item in &system.items {
@@ -404,7 +437,12 @@ pub fn layout_scene_to_js(scene: &LayoutScene) -> JsValue {
             for composite in &system.composites {
                 composites.push(&wire_js_composite(composite).into());
             }
-            js_sys::Reflect::set(&system_obj, &JsValue::from_str("composites"), &composites.into()).unwrap();
+            js_sys::Reflect::set(
+                &system_obj,
+                &JsValue::from_str("composites"),
+                &composites.into(),
+            )
+            .unwrap();
 
             systems.push(&system_obj);
         }

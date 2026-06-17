@@ -1,12 +1,12 @@
-use crate::contract::Fraction;
-use crate::fraction::{add_fractions, compare_fractions};
-use crate::metrics::{canonical_text_metric, canonical_text_width, TextRole};
-use crate::scene_builder::{LineItemSpec, SceneEmitSink, TextItemSpec};
 use super::constants::{
     TUPLET_BASELINE_OFFSET_SS, TUPLET_COLLISION_GAP_SS, TUPLET_HOOK_HEIGHT_SS,
     TUPLET_LABEL_BASELINE_ASCENT_RATIO, TUPLET_LABEL_FONT_SS, TUPLET_LABEL_GAP_SS,
     TUPLET_MIN_LABEL_GAP_SS, TUPLET_RUN_SIDE_PAD_SS, TUPLET_VOICE_STACK_OFFSET_SS,
 };
+use crate::contract::Fraction;
+use crate::fraction::{add_fractions, compare_fractions};
+use crate::metrics::{canonical_text_metric, canonical_text_width, TextRole};
+use crate::scene_builder::{LineItemSpec, SceneEmitSink, TextItemSpec};
 
 use super::notes::{SlotEvent, SlotTopObstacle};
 
@@ -101,8 +101,7 @@ pub(crate) fn render_tuplet_groups(
         let right = run.end_x + ss * TUPLET_RUN_SIDE_PAD_SS;
         let label = run.key.count.to_string();
         let label_width = canonical_text_width(TextRole::CountLabel, &label, ss);
-        let label_gap =
-            (label_width + ss * TUPLET_LABEL_GAP_SS).max(ss * TUPLET_MIN_LABEL_GAP_SS);
+        let label_gap = (label_width + ss * TUPLET_LABEL_GAP_SS).max(ss * TUPLET_MIN_LABEL_GAP_SS);
         let center_x = (left + right) * 0.5;
         let gap_left = center_x - label_gap * 0.5;
         let gap_right = center_x + label_gap * 0.5;

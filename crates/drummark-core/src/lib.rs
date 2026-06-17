@@ -59,11 +59,7 @@ pub fn build_music_xml(source: &str, hide_voice2_rests: bool) -> JsValue {
     } else {
         musicxml::build_music_xml(&score, hide_voice2_rests)
     };
-    set(
-        &output,
-        "xml",
-        &JsValue::from_str(&xml),
-    );
+    set(&output, "xml", &JsValue::from_str(&xml));
     let errors = Array::new();
     for error in &score.errors {
         errors.push(&normalized_error_to_js(error));
@@ -452,8 +448,16 @@ fn render_score_to_js(score: &drummark_layout::RenderScore) -> JsValue {
             "sourceLine",
             &JsValue::from_f64(measure.source_line as f64),
         );
-        set(&entry, "actualDuration", &render_fraction_js(measure.actual_duration));
-        set(&entry, "fullDuration", &render_fraction_js(measure.full_duration));
+        set(
+            &entry,
+            "actualDuration",
+            &render_fraction_js(measure.actual_duration),
+        );
+        set(
+            &entry,
+            "fullDuration",
+            &render_fraction_js(measure.full_duration),
+        );
         set(
             &entry,
             "noteValue",
@@ -549,7 +553,11 @@ fn render_score_to_js(score: &drummark_layout::RenderScore) -> JsValue {
             let rehearsal = Object::new();
             set(&rehearsal, "text", &JsValue::from_str(&rehearsal_mark.text));
             let anchor = Object::new();
-            set(&anchor, "offset", &render_fraction_js(rehearsal_mark.anchor.offset));
+            set(
+                &anchor,
+                "offset",
+                &render_fraction_js(rehearsal_mark.anchor.offset),
+            );
             set(&rehearsal, "anchor", &anchor.into());
             set(&entry, "rehearsal_mark", &rehearsal.into());
         }

@@ -5,8 +5,9 @@ use std::path::{Path, PathBuf};
 
 use drummark_layout::{LayoutScene, ScenePrimitive};
 use printpdf::{
-    Color, Line, LineCapStyle, LinePoint, Mm, Op, PaintMode, ParsedFont, PdfDocument, PdfFontHandle,
-    PdfPage, PdfSaveOptions, Point, Polygon, PolygonRing, Pt, Rect, Rgb, TextItem, WindingOrder,
+    Color, Line, LineCapStyle, LinePoint, Mm, Op, PaintMode, ParsedFont, PdfDocument,
+    PdfFontHandle, PdfPage, PdfSaveOptions, Point, Polygon, PolygonRing, Pt, Rect, Rgb, TextItem,
+    WindingOrder,
 };
 use ttf_parser::Face;
 
@@ -33,9 +34,8 @@ pub fn render_scene_to_pdf(scene: &LayoutScene, cli: &Cli) -> Result<Vec<u8>, St
     let fallback_font = fallback
         .as_ref()
         .map(|font| {
-            ParsedFont::from_bytes(&font.bytes, 0, &mut warnings).ok_or_else(|| {
-                format!("failed to parse fallback font {}", font.path.display())
-            })
+            ParsedFont::from_bytes(&font.bytes, 0, &mut warnings)
+                .ok_or_else(|| format!("failed to parse fallback font {}", font.path.display()))
         })
         .transpose()?;
     let bravura_id = doc.add_font(&bravura_font);
@@ -97,7 +97,10 @@ fn emit_item(
                 .and_then(char::from_u32)
                 .ok_or_else(|| "glyph run missing SMuFL codepoint".to_string())?;
             if !bravura.covers(ch)? {
-                return Err(format!("Bravura does not cover notation glyph U+{:04X}", ch as u32));
+                return Err(format!(
+                    "Bravura does not cover notation glyph U+{:04X}",
+                    ch as u32
+                ));
             }
             emit_text(
                 ops,
@@ -120,8 +123,9 @@ fn emit_item(
             for run in runs {
                 let font_id = match run.font {
                     TextFont::Bravura => bravura_id,
-                    TextFont::Fallback => fallback_id
-                        .ok_or_else(|| "text requires fallback font but none was loaded".to_string())?,
+                    TextFont::Fallback => fallback_id.ok_or_else(|| {
+                        "text requires fallback font but none was loaded".to_string()
+                    })?,
                 };
                 emit_text(
                     ops,
@@ -372,7 +376,10 @@ fn collect_used_font_chars(
                         .and_then(char::from_u32)
                         .ok_or_else(|| "glyph run missing SMuFL codepoint".to_string())?;
                     if !bravura.covers(ch)? {
-                        return Err(format!("Bravura does not cover notation glyph U+{:04X}", ch as u32));
+                        return Err(format!(
+                            "Bravura does not cover notation glyph U+{:04X}",
+                            ch as u32
+                        ));
                     }
                     used.bravura.insert(ch);
                 }
@@ -432,9 +439,13 @@ impl FontFace {
     fn advance_pt(&self, ch: char, size_pt: f32) -> Result<f32, String> {
         let face = Face::parse(&self.bytes, 0)
             .map_err(|error| format!("failed to parse font {}: {error:?}", self.path.display()))?;
-        let glyph = face
-            .glyph_index(ch)
-            .ok_or_else(|| format!("font {} does not cover U+{:04X}", self.path.display(), ch as u32))?;
+        let glyph = face.glyph_index(ch).ok_or_else(|| {
+            format!(
+                "font {} does not cover U+{:04X}",
+                self.path.display(),
+                ch as u32
+            )
+        })?;
         let advance = face.glyph_hor_advance(glyph).unwrap_or(face.units_per_em());
         Ok(advance as f32 / face.units_per_em() as f32 * size_pt)
     }

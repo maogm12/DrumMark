@@ -196,11 +196,13 @@ pub(crate) fn is_end_repeat_barline(barline: Option<&str>) -> bool {
 }
 
 pub(crate) fn start_repeat_reserved_width(staff_space_pt: f32) -> f32 {
-    repeat_barline_rendered_width(GlyphRole::RepeatLeft, staff_space_pt) + START_REPEAT_TRAILING_GAP_PT
+    repeat_barline_rendered_width(GlyphRole::RepeatLeft, staff_space_pt)
+        + START_REPEAT_TRAILING_GAP_PT
 }
 
 pub(crate) fn end_repeat_reserved_width(staff_space_pt: f32) -> f32 {
-    repeat_barline_rendered_width(GlyphRole::RepeatRight, staff_space_pt) + START_REPEAT_TRAILING_GAP_PT
+    repeat_barline_rendered_width(GlyphRole::RepeatRight, staff_space_pt)
+        + START_REPEAT_TRAILING_GAP_PT
 }
 
 pub(crate) fn first_measure_start_repeat_left_pad(
@@ -398,8 +400,13 @@ pub(crate) fn normalized_grouping(header: &RenderHeader) -> Vec<u32> {
 }
 
 fn effective_measure_duration(measure: &RenderMeasure) -> Fraction {
-    if compare_fractions(measure.actual_duration, Fraction { numerator: 0, denominator: 1 })
-        == std::cmp::Ordering::Greater
+    if compare_fractions(
+        measure.actual_duration,
+        Fraction {
+            numerator: 0,
+            denominator: 1,
+        },
+    ) == std::cmp::Ordering::Greater
     {
         measure.actual_duration
     } else {
@@ -413,12 +420,18 @@ fn effective_group_durations(header: &RenderHeader, measure: &RenderMeasure) -> 
     let mut durations = Vec::new();
 
     for beat_units in grouping {
-        if compare_fractions(remaining, Fraction { numerator: 0, denominator: 1 })
-            != std::cmp::Ordering::Greater
+        if compare_fractions(
+            remaining,
+            Fraction {
+                numerator: 0,
+                denominator: 1,
+            },
+        ) != std::cmp::Ordering::Greater
         {
             break;
         }
-        let group_duration = measure_fraction_for_beat_units(beat_units.max(1), header.time_beat_unit);
+        let group_duration =
+            measure_fraction_for_beat_units(beat_units.max(1), header.time_beat_unit);
         let current = if compare_fractions(remaining, group_duration) == std::cmp::Ordering::Less {
             remaining
         } else {
@@ -825,10 +838,8 @@ pub(crate) fn measure_geometry(
             .find(|event| matches!(event.kind, EventKind::Hit | EventKind::Rest))
             .map(|event| {
                 let font_pt = notation_render_font_pt(input.staff_space_pt);
-                let reference_metric =
-                    notehead_glyph(&event.track, &event.modifiers, &event.glyph);
-                NOTE_METRIC_TO_DRAW_X_PT
-                    - glyph_bbox_center_x_offset(reference_metric, font_pt)
+                let reference_metric = notehead_glyph(&event.track, &event.modifiers, &event.glyph);
+                NOTE_METRIC_TO_DRAW_X_PT - glyph_bbox_center_x_offset(reference_metric, font_pt)
             })
             .unwrap_or(NOTE_METRIC_TO_DRAW_X_PT);
         geometry.content_left_pt = lane_left + margin + notehead_center_shift;
@@ -907,7 +918,10 @@ pub(crate) fn finalize_planned_system<'a>(
                 .as_deref()
                 .or(current_measures[index].barline.as_deref());
             let is_compact = current_measures[index].measure.multi_rest_count.is_some()
-                || current_measures[index].measure.measure_repeat_slashes.is_some();
+                || current_measures[index]
+                    .measure
+                    .measure_repeat_slashes
+                    .is_some();
             let compact_content_width = if is_compact { *width } else { 0.0 };
             compact_content_width + left + measure_right_pad(right_barline, opts.staff_space_pt)
         })
@@ -917,7 +931,10 @@ pub(crate) fn finalize_planned_system<'a>(
         .enumerate()
         .filter_map(|(index, width)| {
             let is_compact = current_measures[index].measure.multi_rest_count.is_some()
-                || current_measures[index].measure.measure_repeat_slashes.is_some();
+                || current_measures[index]
+                    .measure
+                    .measure_repeat_slashes
+                    .is_some();
             if is_compact {
                 None
             } else {
@@ -941,8 +958,15 @@ pub(crate) fn finalize_planned_system<'a>(
                 .as_deref()
                 .or(current_measures[index].barline.as_deref());
             let is_compact = current_measures[index].measure.multi_rest_count.is_some()
-                || current_measures[index].measure.measure_repeat_slashes.is_some();
-            let content_width = if is_compact { width.max(width * scale) } else { width * scale };
+                || current_measures[index]
+                    .measure
+                    .measure_repeat_slashes
+                    .is_some();
+            let content_width = if is_compact {
+                width.max(width * scale)
+            } else {
+                width * scale
+            };
             content_width + left + measure_right_pad(right_barline, opts.staff_space_pt)
         })
         .collect();

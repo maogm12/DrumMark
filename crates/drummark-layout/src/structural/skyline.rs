@@ -17,7 +17,8 @@ pub(crate) fn top_skyline_sample(
     fallback_top: f32,
     staff_space_pt: f32,
 ) -> f32 {
-    top_skyline_sample_optional(items, block_measures, x1, x2, staff_space_pt).unwrap_or(fallback_top)
+    top_skyline_sample_optional(items, block_measures, x1, x2, staff_space_pt)
+        .unwrap_or(fallback_top)
 }
 
 pub(crate) fn top_skyline_sample_optional(

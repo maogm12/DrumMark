@@ -5,7 +5,10 @@ use std::process::{Command, Output, Stdio};
 
 use tempfile::tempdir;
 
-const OVERVIEW: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../../docs/examples/overview.drum");
+const OVERVIEW: &str = concat!(
+    env!("CARGO_MANIFEST_DIR"),
+    "/../../docs/examples/overview.drum"
+);
 
 fn drummark() -> Command {
     Command::new(env!("CARGO_BIN_EXE_drummark"))
@@ -69,7 +72,11 @@ fn musicxml_svg_and_debug_json_formats_work() {
 
     for format in ["ast", "ir", "scene"] {
         let output = run(&[OVERVIEW, "--format", format]);
-        assert!(output.status.success(), "{format} failed: {}", stderr(&output));
+        assert!(
+            output.status.success(),
+            "{format} failed: {}",
+            stderr(&output)
+        );
         let value: serde_json::Value =
             serde_json::from_slice(&output.stdout).expect("debug JSON should parse");
         match format {
@@ -96,7 +103,8 @@ fn legacy_divisions_rejects_non_ast_outputs() {
         let output = run(&[path.to_str().unwrap(), "--format", format]);
         assert!(!output.status.success(), "{format} unexpectedly succeeded");
         assert!(
-            stderr(&output).contains("legacy `divisions` header has been removed; use `note 1/N` instead"),
+            stderr(&output)
+                .contains("legacy `divisions` header has been removed; use `note 1/N` instead"),
             "{format} stderr missing migration diagnostic: {}",
             stderr(&output)
         );
@@ -104,8 +112,11 @@ fn legacy_divisions_rejects_non_ast_outputs() {
 
     let ast = run(&[path.to_str().unwrap(), "--format", "ast"]);
     assert!(ast.status.success(), "ast failed: {}", stderr(&ast));
-    let value: serde_json::Value = serde_json::from_slice(&ast.stdout).expect("ast json should parse");
-    assert!(value["errors"].as_array().is_some_and(|errors| !errors.is_empty()));
+    let value: serde_json::Value =
+        serde_json::from_slice(&ast.stdout).expect("ast json should parse");
+    assert!(value["errors"]
+        .as_array()
+        .is_some_and(|errors| !errors.is_empty()));
 }
 
 #[test]
@@ -132,7 +143,9 @@ fn stdin_and_output_file_work() {
         .expect("failed to write stdin");
     let output = child.wait_with_output().expect("failed to wait");
     assert!(output.status.success(), "stdin failed: {}", stderr(&output));
-    assert!(fs::read_to_string(output_path).unwrap().contains("<score-partwise"));
+    assert!(fs::read_to_string(output_path)
+        .unwrap()
+        .contains("<score-partwise"));
 }
 
 #[test]
@@ -195,36 +208,51 @@ fn invalid_explicit_font_paths_fail() {
 #[test]
 fn staff_size_affects_notehead_font_size() {
     let scene_at_10 = run(&[OVERVIEW, "--format", "scene", "--staff-size", "10"]);
-    assert!(scene_at_10.status.success(), "scene failed at staff-size 10: {}", stderr(&scene_at_10));
+    assert!(
+        scene_at_10.status.success(),
+        "scene failed at staff-size 10: {}",
+        stderr(&scene_at_10)
+    );
     let v10: serde_json::Value = serde_json::from_slice(&scene_at_10.stdout).unwrap();
     let font_10 = page_items(&v10["pages"][0])
         .into_iter()
         .find(|i| i["role"] == "notehead")
         .and_then(|i| i["primitive"]["fontSizePt"].as_f64())
         .expect("notehead fontSizePt");
-    assert!((font_10 - 40.0).abs() < 1.0, "expected notehead fontSizePt ~40 at staff-size 10, got {font_10}");
-
+    assert!(
+        (font_10 - 40.0).abs() < 1.0,
+        "expected notehead fontSizePt ~40 at staff-size 10, got {font_10}"
+    );
 
     let scene_at_8 = run(&[OVERVIEW, "--format", "scene", "--staff-size", "8"]);
-    assert!(scene_at_8.status.success(), "scene failed at staff-size 8: {}", stderr(&scene_at_8));
+    assert!(
+        scene_at_8.status.success(),
+        "scene failed at staff-size 8: {}",
+        stderr(&scene_at_8)
+    );
     let v8: serde_json::Value = serde_json::from_slice(&scene_at_8.stdout).unwrap();
     let font_8 = page_items(&v8["pages"][0])
         .into_iter()
         .find(|i| i["role"] == "notehead")
         .and_then(|i| i["primitive"]["fontSizePt"].as_f64())
         .expect("notehead fontSizePt");
-    assert!((font_8 - 32.0).abs() < 1.0, "expected notehead fontSizePt ~32 at staff-size 8, got {font_8}");
+    assert!(
+        (font_8 - 32.0).abs() < 1.0,
+        "expected notehead fontSizePt ~32 at staff-size 8, got {font_8}"
+    );
 }
 
 fn fallback_font() -> Option<PathBuf> {
     std::env::var_os("DRUMMARK_TEST_FALLBACK_FONT")
         .map(PathBuf::from)
         .filter(|path| path.is_file())
-        .or_else(|| first_existing(&[
-            "/Library/Fonts/Arial Unicode.ttf",
-            "/System/Library/Fonts/Supplemental/Arial Unicode.ttf",
-            "/System/Library/Fonts/STHeiti Medium.ttc",
-        ]))
+        .or_else(|| {
+            first_existing(&[
+                "/Library/Fonts/Arial Unicode.ttf",
+                "/System/Library/Fonts/Supplemental/Arial Unicode.ttf",
+                "/System/Library/Fonts/STHeiti Medium.ttc",
+            ])
+        })
 }
 
 fn first_existing(paths: &[&str]) -> Option<PathBuf> {

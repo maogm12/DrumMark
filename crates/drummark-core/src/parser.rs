@@ -770,18 +770,16 @@ impl<'a> Parser<'a> {
             match self.peek() {
                 None | Some(Token::Newline) => break,
                 Some(ref t) if t.is_barline_like() => break,
-                Some(_) => {
-                    match self.parse_measure_expr() {
-                        Ok(expr) => tokens.push(expr),
-                        Err(error) => {
-                            self.errors.push(error);
-                            tokens.clear();
-                            recovered = true;
-                            self.recover_to_measure_boundary();
-                            break;
-                        }
+                Some(_) => match self.parse_measure_expr() {
+                    Ok(expr) => tokens.push(expr),
+                    Err(error) => {
+                        self.errors.push(error);
+                        tokens.clear();
+                        recovered = true;
+                        self.recover_to_measure_boundary();
+                        break;
                     }
-                }
+                },
             }
         }
         let (closing_barline, closing_barline_location) = self.parse_closing_barline();
@@ -955,17 +953,16 @@ impl<'a> Parser<'a> {
                     ));
                 }
                 '\n' => {
-                    return Err(self.error_at(
-                        payload_start + byte_index,
-                        "unclosed rehearsal mark",
-                    ));
+                    return Err(
+                        self.error_at(payload_start + byte_index, "unclosed rehearsal mark")
+                    );
                 }
                 _ => {}
             }
         }
 
-        let payload_len = closing_len
-            .ok_or_else(|| self.error_at(payload_start, "unclosed rehearsal mark"))?;
+        let payload_len =
+            closing_len.ok_or_else(|| self.error_at(payload_start, "unclosed rehearsal mark"))?;
         let payload = self.source[payload_start..payload_start + payload_len].to_string();
         self.lexer.bump(payload_len + 1);
         self.last_start = payload_start + payload_len;
@@ -1640,8 +1637,9 @@ mod tests {
 
     #[test]
     fn test_rehearsal_marks_parse_literal_payloads() {
-        let doc =
-            parse_ok("time 4/4\nnote 1/8\n| [A] [Verse] [x d b] [2: x x] [A:B] [  A  ] [] [   ] |\n");
+        let doc = parse_ok(
+            "time 4/4\nnote 1/8\n| [A] [Verse] [x d b] [2: x x] [A:B] [  A  ] [] [   ] |\n",
+        );
         let tokens = &doc.paragraphs[0].lines[0].measures[0].tokens;
         let payloads = tokens
             .iter()
@@ -1673,7 +1671,10 @@ mod tests {
             "time 4/4\nnote 1/4\n| [A[B] |\n",
             "time 4/4\nnote 1/4\n| [A\n] |\n",
         ] {
-            assert!(!parse_err(src).is_empty(), "expected parse error for {src:?}");
+            assert!(
+                !parse_err(src).is_empty(),
+                "expected parse error for {src:?}"
+            );
         }
     }
 

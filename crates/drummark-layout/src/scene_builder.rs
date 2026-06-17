@@ -16,8 +16,16 @@ pub(crate) struct SceneBuilder<'a> {
 pub(crate) type SceneEmitSink<'a> = SceneBuilder<'a>;
 
 impl<'a> SceneBuilder<'a> {
-    pub(crate) fn new(items: &'a mut Vec<SceneItem>, counter: &'a mut usize, staff_space_pt: f32) -> Self {
-        Self { items, counter, staff_space_pt }
+    pub(crate) fn new(
+        items: &'a mut Vec<SceneItem>,
+        counter: &'a mut usize,
+        staff_space_pt: f32,
+    ) -> Self {
+        Self {
+            items,
+            counter,
+            staff_space_pt,
+        }
     }
 
     pub(crate) fn items(&self) -> &[SceneItem] {

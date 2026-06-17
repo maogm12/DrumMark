@@ -33,7 +33,11 @@ impl SlotMapper {
 
     pub fn beat_width(&self, beat_slots: u32, slots_per_quarter: u32) -> f32 {
         let quarters = beat_slots as f32 / slots_per_quarter as f32;
-        let density_bonus = if beat_slots > 1 { DENSE_BEAT_WIDTH_BONUS } else { 1.0 };
+        let density_bonus = if beat_slots > 1 {
+            DENSE_BEAT_WIDTH_BONUS
+        } else {
+            1.0
+        };
         quarters * self.px_per_quarter * density_bonus
     }
 }
@@ -121,7 +125,11 @@ pub fn place_notes(
     elements
 }
 
-pub fn place_barlines(measure: &NormalizedMeasure, measure_x: f32, opts: &LayoutOptions) -> Vec<LayoutElement> {
+pub fn place_barlines(
+    measure: &NormalizedMeasure,
+    measure_x: f32,
+    opts: &LayoutOptions,
+) -> Vec<LayoutElement> {
     let mut elements = Vec::new();
     let bar_type = measure.barline.as_deref().unwrap_or("regular");
     elements.push(LayoutElement {
@@ -222,8 +230,10 @@ pub fn build_systems(score: &NormalizedScore, opts: &LayoutOptions) -> Vec<Syste
         measures: Vec::new(),
     };
     let mut cursor_x = opts.left_margin_pt + LEGACY_SYSTEM_CURSOR_OFFSET_PT;
-    let usable_width =
-        opts.page_width_pt - opts.left_margin_pt - opts.right_margin_pt - LEGACY_SYSTEM_CURSOR_OFFSET_PT;
+    let usable_width = opts.page_width_pt
+        - opts.left_margin_pt
+        - opts.right_margin_pt
+        - LEGACY_SYSTEM_CURSOR_OFFSET_PT;
 
     for measure in &score.measures {
         let is_compact =

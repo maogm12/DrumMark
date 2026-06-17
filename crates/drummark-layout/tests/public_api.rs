@@ -40,8 +40,14 @@ fn crate_root_public_api_smoke() {
         paragraph_index: 0,
         measure_in_paragraph: 0,
         source_line: 1,
-        actual_duration: Fraction { numerator: 1, denominator: 1 },
-        full_duration: Fraction { numerator: 1, denominator: 1 },
+        actual_duration: Fraction {
+            numerator: 1,
+            denominator: 1,
+        },
+        full_duration: Fraction {
+            numerator: 1,
+            denominator: 1,
+        },
         events: vec![hit],
         barline: Some("regular".to_string()),
         closing_barline: Some("final".to_string()),

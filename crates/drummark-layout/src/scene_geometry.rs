@@ -35,7 +35,10 @@ impl SceneItemBounds {
     }
 }
 
-pub(crate) fn bounds_for_items(items: &[SceneItem], staff_space_pt: f32) -> Result<Option<SceneItemBounds>, String> {
+pub(crate) fn bounds_for_items(
+    items: &[SceneItem],
+    staff_space_pt: f32,
+) -> Result<Option<SceneItemBounds>, String> {
     let mut min_x = f32::INFINITY;
     let mut min_y = f32::INFINITY;
     let mut max_x = f32::NEG_INFINITY;
@@ -156,7 +159,10 @@ pub(crate) fn item_bounds(item: &SceneItem, staff_space_pt: f32) -> Option<(f32,
 }
 
 /// Strict bounds for validation and pagination assembly.
-pub(crate) fn scene_item_bounds(item: &SceneItem, staff_space_pt: f32) -> Result<SceneItemBounds, String> {
+pub(crate) fn scene_item_bounds(
+    item: &SceneItem,
+    staff_space_pt: f32,
+) -> Result<SceneItemBounds, String> {
     match &item.primitive {
         ScenePrimitive::TextRun(text) => {
             let metric = canonical_text_metric(text.text_role, staff_space_pt);

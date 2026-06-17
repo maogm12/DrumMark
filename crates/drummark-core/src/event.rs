@@ -102,10 +102,7 @@ pub fn token_to_events(
         } => {
             if value == "-" {
                 // ST is a text-annotation track; "-" is a rhythmic spacer, not a rest.
-                let track = track_override
-                    .as_deref()
-                    .or(context_track)
-                    .unwrap_or("HH");
+                let track = track_override.as_deref().or(context_track).unwrap_or("HH");
                 if track == "ST" {
                     return vec![];
                 }

@@ -222,3 +222,21 @@ If work already exists under `docs/proposals/`, either finish it under that lega
 ### Scope
 - **Translated**: UI chrome (tabs, buttons, tooltips, aria-labels), status bar, settings labels, preview states, alerts.
 - **Not translated**: Debug section labels, music notation terms (D.C., Fine, Coda — standard Italian), CLI output, parser error messages, docs page.
+
+## Cursor Cloud specific instructions
+
+DrumMark is a fully client-side static web app (Preact + Vite) with a Rust core compiled to WASM. There is **no backend server**. All standard commands are the `package.json` scripts (see `dev`, `build`, `test`, `typecheck`, `cargo:test`, `cargo:lint`, `drummark`, `drummark:native`).
+
+### Toolchain caveats (non-obvious)
+- **Rust must be ≥1.86 (use `stable`).** `Cargo.lock` pins `wasm-bindgen 0.2.121`, and its matching `wasm-bindgen-cli 0.2.121` refuses to build on older rustc. The base image historically defaulted to a too-old rustc; if `rustc --version` is <1.86, run `rustup default stable`.
+- **WASM build uses `wasm-bindgen` directly, not `wasm-pack`.** `npm run wasm:build` (`scripts/build_wasm.mjs`) shells out to `cargo build --target wasm32-unknown-unknown` + `wasm-bindgen`. The installed `wasm-bindgen` CLI version must match the `wasm-bindgen` crate in `Cargo.lock` (currently `0.2.121`), or the wrappers fail to load. `wasm-pack` is only referenced by CI and is not needed for `npm run dev`/`build`.
+- **Native crate (`drummark-cli`) needs C++ headers for the clang default.** `cc`/`c++` resolve to clang 18, which selects GCC 14 but only builds if `libstdc++-14-dev` is installed; otherwise the `hb-subset`/harfbuzz build (PDF export) fails with `'cassert' file not found`. This system package must be present in the image; it is not part of the npm/cargo dependency refresh.
+
+### Running the app
+- `npm run dev` runs `predev` first (builds docs HTML + all four WASM packages) then serves via Vite. The app is served under the base path: **`http://localhost:5173/DrumMark/`** (not `/`).
+- `predev`/`prebuild` regenerate the git-tracked `src/wasm/*/drummark_core_bg.wasm` binaries. Running dev/build will show these as modified in `git status`; discard them (`git checkout -- src/wasm`) before committing unless a WASM change is intended.
+
+### Known pre-existing failures on `main` (not environment problems)
+At setup time these fail on a clean checkout regardless of the toolchain; do not mistake them for env breakage:
+- `cargo test --workspace` / `cargo:lint` — `crates/drummark-cli/src/json.rs` has a non-exhaustive `match` missing `MeasureExpr::RehearsalMark`, and clippy flags `for_kv_map` in `normalize.rs`. The `drummark-core` and `drummark-layout` crates (which power the app/WASM) build and test cleanly: `cargo test -p drummark-core -p drummark-layout`.
+- `npm test` — `src/dsl/example_corpus.test.ts` and `src/renderer/corpusGate.test.ts` fail because the checked-in golden (`docs/parser-cutover/example_corpus_report.json` and the corpus semantic report) is stale vs current parser output. The other ~125 vitest tests pass; `npm run typecheck` passes.
